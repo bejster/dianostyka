@@ -117,21 +117,21 @@ export default function Page() {
   if (D.tags.has('libido') && (D.stress >= 3 || D.sleep < 6.5)) insights.push(`Niższe libido + ${D.stress >= 3 ? 'chroniczny stres' : 'kiepski sen'} = <b>klasyka spadku testosteronu</b>. Badania 10 199 mężczyzn: to styl życia, nie wiek.`);
   if (D.tags.has('belly') && (D.binge >= 2 || D.dietChaos >= 3)) insights.push(`Brzuch nie schodzi + objadanie = <b>insulinooporność w budowie</b>. Sam trening tego nie przebije.`);
   if (D.drinks > 10 && D.tags.has('libido')) insights.push(`${D.drinks} drinków regularnie + niższe libido. 14+ drinków tygodniowo = <b>~6.8% chroniczny spadek T</b>. Alkohol zamienia testosteron w estrogen.`);
-  if (C.total > 15000) insights.push(`<b>${C.total.toLocaleString('pl-PL')} zl w pol roku</b>. Nie na imprezy - na ich konsekwencje.`);
+  if (C.total > 15000) insights.push(`<b>${C.total.toLocaleString('pl-PL')} zł w pół roku</b>. Nie na imprezy - na ich konsekwencje.`);
 
-  // Comparisons (za tyle moglbys miec...)
+  // Comparisons
   const comparisons: string[] = [];
   if (C.total > 10000) comparisons.push('wakacje all-inclusive');
-  if (C.total > 5000) comparisons.push('pol roku profesjonalnego prowadzenia');
-  if (C.total > 20000) comparisons.push('uzywany samochod');
-  if (C.total > 35000) comparisons.push('wklad wlasny na mieszkanie');
+  if (C.total > 5000) comparisons.push('pół roku profesjonalnego prowadzenia');
+  if (C.total > 20000) comparisons.push('używany samochód');
+  if (C.total > 35000) comparisons.push('wkład własny na mieszkanie');
 
-  // Norm data (Ty vs przecietny)
+  // Norm data
   const normMax = Math.max(C.total, 30000);
   const normData = [
     { label: 'Ty', value: C.total, color: M.red, pct: (C.total / normMax) * 100 },
-    { label: 'Srednia', value: 12000, color: M.t4, pct: (12000 / normMax) * 100 },
-    { label: 'Swiadomy', value: 4200, color: M.grn, pct: (4200 / normMax) * 100 },
+    { label: 'Średnia', value: 12000, color: M.t4, pct: (12000 / normMax) * 100 },
+    { label: 'Świadomy', value: 4200, color: M.grn, pct: (4200 / normMax) * 100 },
   ];
 
   // Projection data (kumulacja M1-M6)
@@ -139,22 +139,22 @@ export default function Page() {
   const projData = [1, 2, 3, 4, 5, 6].map(m => ({ m, v: mo * m }));
   const projMax = projData[5]?.v || 1;
 
-  // Timeline (co sie dzieje w Twoim ciele)
+  // Timeline
   const timeline: { period: string; text: string }[] = [];
   if (D.sleep < 6.5 || D.sleepQ >= 3) {
-    timeline.push({ period: 'Kazda noc', text: `${D.sleep}h snu${D.sleepQ >= 3 ? ' i do tego kiepska jakosc' : ''}. HGH wydziela sie w glebokim snie. Bez niego <b>regeneracja miesniowa, spalanie tluszczu i odnowa komorkowa nie zachodza</b>. Ludzie spiacy <6h maja 13% wyzsze ryzyko smierci i traca 19-29% produktywnosci.` });
+    timeline.push({ period: 'Każda noc', text: `${D.sleep}h snu${D.sleepQ >= 3 ? ' i do tego kiepska jakość' : ''}. HGH wydziela się w głębokim śnie. Bez niego <b>regeneracja mięśniowa, spalanie tłuszczu i odnowa komórkowa nie zachodzą</b>. Ludzie śpiący <6h mają 13% wyższe ryzyko śmierci i tracą 19-29% produktywności.` });
   }
   if (D.stress >= 3 || D.energy >= 3) {
-    timeline.push({ period: 'Caly dzien', text: `Wysoki stres + niska energia = <b>kortyzol chronicznie podwyzszony</b>. Cialo w trybie przetrwania: magazynuje tluszcz na brzuchu, rozklada miesnie na energie, tlumi libido. To nie silna wola. To biochemia.` });
+    timeline.push({ period: 'Cały dzień', text: `Wysoki stres + niska energia = <b>kortyzol chronicznie podwyższony</b>. Ciało w trybie przetrwania: magazynuje tłuszcz na brzuchu, rozkłada mięśnie na energię, tłumi libido. To nie silna wola. To biochemia.` });
   }
   if (D.wknd > 0 && D.drinks > 3) {
-    timeline.push({ period: 'Weekend', text: `${D.drinks} drinkow x ${D.wknd} weekendow. Dawka >1.5g/kg alkoholu (5-6 piw dla 70kg) = <b>spadek testosteronu o ~27% w 12h</b>, normalizacja po 36h. ${D.subs > 0 ? 'Substancje dodatkowo wyczerpuja serotonine i dopamine.' : 'Synteza bialek miesniowych zatrzymana na 2-3 dni.'}` });
+    timeline.push({ period: 'Weekend', text: `${D.drinks} drinków x ${D.wknd} weekendów. Dawka >1.5g/kg alkoholu (5-6 piw dla 70kg) = <b>spadek testosteronu o ~27% w 12h</b>, normalizacja po 36h. ${D.subs > 0 ? 'Substancje dodatkowo wyczerpują serotoninę i dopaminę.' : 'Synteza białek mięśniowych zatrzymana na 2-3 dni.'}` });
   }
   if (D.dietChaos >= 3 || D.binge >= 3) {
-    timeline.push({ period: 'Cyklicznie', text: `Chaotyczne jedzenie${D.binge >= 3 ? ' + cykliczne objadanie' : ''} = <b>skoki insuliny</b>. Cialo nie wie kiedy budowac, kiedy spalac. Domyslnie magazynuje. Tluszcz trzewny to bezposredni efekt.` });
+    timeline.push({ period: 'Cyklicznie', text: `Chaotyczne jedzenie${D.binge >= 3 ? ' + cykliczne objadanie' : ''} = <b>skoki insuliny</b>. Ciało nie wie kiedy budować, kiedy spalać. Domyślnie magazynuje. Tłuszcz trzewny to bezpośredni efekt.` });
   }
   if (C.totalLostH > 20) {
-    timeline.push({ period: '6 miesiecy', text: `<b>${C.totalLostH}h</b> pracy na autopilocie. Przy Twojej stawce to <b>${C.prodCost.toLocaleString('pl-PL')} zl</b>. Twoj mozg chemicznie nie jest w stanie dzialac na 100% kiedy hormony, sen i dieta nie graja.` });
+    timeline.push({ period: '6 miesięcy', text: `<b>${C.totalLostH}h</b> pracy na autopilocie. Przy Twojej stawce to <b>${C.prodCost.toLocaleString('pl-PL')} zł</b>. Twój mózg chemicznie nie jest w stanie działać na 100% kiedy hormony, sen i dieta nie grają.` });
   }
 
   // Melatonina do hormonow
@@ -457,13 +457,13 @@ export default function Page() {
             {comparisons.length > 0 && (
               <div style={{ background: M.s1, border: `1px solid ${M.brd}`, padding: 16, marginBottom: 24, borderRadius: 12 }}>
                 <p style={{ fontSize: 13, color: M.t2, lineHeight: 1.5, fontWeight: 300 }}
-                  dangerouslySetInnerHTML={{ __html: `Za <strong style="color:${M.t1};font-weight:600">${C.total.toLocaleString('pl-PL')} zl</strong> w pol roku moglbys miec: ${comparisons.join(', ')}.` }} />
+                  dangerouslySetInnerHTML={{ __html: `Za <strong style="color:${M.t1};font-weight:600">${C.total.toLocaleString('pl-PL')} zł</strong> w pół roku mógłbyś mieć: ${comparisons.join(', ')}.` }} />
               </div>
             )}
 
             {/* Norm: Ty vs przecietny */}
             <div style={{ background: M.s1, border: `1px solid ${M.brd}`, padding: '20px 16px', marginBottom: 24, borderRadius: 12 }}>
-              <div style={{ fontFamily: M.mono, fontSize: 9, letterSpacing: 2, textTransform: 'uppercase', color: M.t4, marginBottom: 14 }}>Ty vs przecietny facet 25-35</div>
+              <div style={{ fontFamily: M.mono, fontSize: 9, letterSpacing: 2, textTransform: 'uppercase', color: M.t4, marginBottom: 14 }}>Ty vs przeciętny facet 25-35</div>
               {normData.map((n, i) => (
                 <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: i < normData.length - 1 ? 10 : 0 }}>
                   <span style={{ fontSize: 11, color: i === 0 ? M.t2 : M.t3, width: 60, flexShrink: 0 }}>{n.label}</span>
@@ -476,13 +476,13 @@ export default function Page() {
                 </div>
               ))}
               <div style={{ marginTop: 10, fontSize: 10, color: M.t4, fontStyle: 'italic' }}>
-                &ldquo;Swiadomy&rdquo; = zyje normalnie, ale rozumie mechanizmy i minimalizuje straty.
+                &ldquo;Świadomy&rdquo; = żyje normalnie, ale rozumie mechanizmy i minimalizuje straty.
               </div>
             </div>
 
             {/* Projection: kumulacja 6 mies */}
             <div style={{ background: M.s1, border: `1px solid ${M.brd}`, padding: '20px 16px', marginBottom: 24, borderRadius: 12 }}>
-              <div style={{ fontFamily: M.mono, fontSize: 9, letterSpacing: 2, textTransform: 'uppercase', color: M.t4, marginBottom: 16 }}>Kumulacja strat: 6 miesiecy</div>
+              <div style={{ fontFamily: M.mono, fontSize: 9, letterSpacing: 2, textTransform: 'uppercase', color: M.t4, marginBottom: 16 }}>Kumulacja strat: 6 miesięcy</div>
               <div style={{ display: 'flex', justifyContent: 'space-between', gap: 2, marginBottom: 8 }}>
                 {projData.map((p, i) => (
                   <div key={i} style={{ flex: 1, textAlign: 'center' }}>
@@ -495,8 +495,8 @@ export default function Page() {
                 ))}
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 12, paddingTop: 12, borderTop: `1px solid ${M.brd}` }}>
-                <span style={{ fontSize: 12, color: M.t3 }}>Suma po 6 miesiacach</span>
-                <span style={{ fontFamily: M.mono, fontSize: 18, fontWeight: 700, color: M.red }}>{C.total.toLocaleString('pl-PL')} zl</span>
+                <span style={{ fontSize: 12, color: M.t3 }}>Suma po 6 miesiącach</span>
+                <span style={{ fontFamily: M.mono, fontSize: 18, fontWeight: 700, color: M.red }}>{C.total.toLocaleString('pl-PL')} zł</span>
               </div>
             </div>
 
@@ -537,7 +537,7 @@ export default function Page() {
             {/* Timeline: co sie dzieje w Twoim ciele */}
             {timeline.length > 0 && (
               <div style={{ marginBottom: 24 }}>
-                <div style={{ fontFamily: M.mono, fontSize: 9, letterSpacing: 2, textTransform: 'uppercase', color: M.t4, marginBottom: 16 }}>Co sie dzieje w Twoim ciele</div>
+                <div style={{ fontFamily: M.mono, fontSize: 9, letterSpacing: 2, textTransform: 'uppercase', color: M.t4, marginBottom: 16 }}>Co się dzieje w Twoim ciele</div>
                 {timeline.map((t, i) => (
                   <div key={i} style={{ display: 'flex', gap: 12, marginBottom: 12 }}>
                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flexShrink: 0 }}>
@@ -569,9 +569,9 @@ export default function Page() {
             {/* Closing statement */}
             <div style={{ textAlign: 'center', padding: '28px 16px', marginBottom: 24, border: `1px solid ${M.brd}`, background: M.s1, borderRadius: 14 }}>
               <p style={{ fontSize: 14, color: M.t2, lineHeight: 1.6, fontWeight: 300 }}>
-                To nie jest kara za to jak zyjesz.<br />
-                To jest <strong style={{ color: M.t1, fontWeight: 600 }}>mechanika</strong>: hormony, mozg, metabolizm.<br />
-                Kiedy rozumiesz co sie dzieje w srodku, mozesz zyc normalnie i nie placic za to takiej ceny.
+                To nie jest kara za to jak żyjesz.<br />
+                To jest <strong style={{ color: M.t1, fontWeight: 600 }}>mechanika</strong>: hormony, mózg, metabolizm.<br />
+                Kiedy rozumiesz co się dzieje w środku, możesz żyć normalnie i nie płacić za to takiej ceny.
               </p>
             </div>
 
