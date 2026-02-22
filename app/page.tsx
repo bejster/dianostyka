@@ -29,7 +29,8 @@ function costs(D: FD) {
   const trainCost = Math.round(D.gym * 6 * (D.miss / 4));
   const signalCost = Math.round(D.tags.size * 500);
   const total = sleepCost + mentalCost + foodCost + wkndCost + prodCost + trainCost + signalCost;
-  return { sleepCost, mentalCost, foodCost, wkndCost, prodCost, trainCost, signalCost, total };
+  const totalLostH = Math.round(D.lost * 26);
+  return { sleepCost, mentalCost, foodCost, wkndCost, prodCost, trainCost, signalCost, total, totalLostH };
 }
 
 function score(D: FD) {
@@ -116,7 +117,48 @@ export default function Page() {
   if (D.tags.has('libido') && (D.stress >= 3 || D.sleep < 6.5)) insights.push(`Niższe libido + ${D.stress >= 3 ? 'chroniczny stres' : 'kiepski sen'} = <b>klasyka spadku testosteronu</b>. Badania 10 199 mężczyzn: to styl życia, nie wiek.`);
   if (D.tags.has('belly') && (D.binge >= 2 || D.dietChaos >= 3)) insights.push(`Brzuch nie schodzi + objadanie = <b>insulinooporność w budowie</b>. Sam trening tego nie przebije.`);
   if (D.drinks > 10 && D.tags.has('libido')) insights.push(`${D.drinks} drinków regularnie + niższe libido. 14+ drinków tygodniowo = <b>~6.8% chroniczny spadek T</b>. Alkohol zamienia testosteron w estrogen.`);
-  if (C.total > 15000) insights.push(`<b>${C.total.toLocaleString('pl-PL')} zł w pół roku</b>. Nie na imprezy — na ich konsekwencje.`);
+  if (C.total > 15000) insights.push(`<b>${C.total.toLocaleString('pl-PL')} zl w pol roku</b>. Nie na imprezy - na ich konsekwencje.`);
+
+  // Comparisons (za tyle moglbys miec...)
+  const comparisons: string[] = [];
+  if (C.total > 10000) comparisons.push('wakacje all-inclusive');
+  if (C.total > 5000) comparisons.push('pol roku profesjonalnego prowadzenia');
+  if (C.total > 20000) comparisons.push('uzywany samochod');
+  if (C.total > 35000) comparisons.push('wklad wlasny na mieszkanie');
+
+  // Norm data (Ty vs przecietny)
+  const normMax = Math.max(C.total, 30000);
+  const normData = [
+    { label: 'Ty', value: C.total, color: M.red, pct: (C.total / normMax) * 100 },
+    { label: 'Srednia', value: 12000, color: M.t4, pct: (12000 / normMax) * 100 },
+    { label: 'Swiadomy', value: 4200, color: M.grn, pct: (4200 / normMax) * 100 },
+  ];
+
+  // Projection data (kumulacja M1-M6)
+  const mo = Math.round(C.total / 6);
+  const projData = [1, 2, 3, 4, 5, 6].map(m => ({ m, v: mo * m }));
+  const projMax = projData[5]?.v || 1;
+
+  // Timeline (co sie dzieje w Twoim ciele)
+  const timeline: { period: string; text: string }[] = [];
+  if (D.sleep < 6.5 || D.sleepQ >= 3) {
+    timeline.push({ period: 'Kazda noc', text: `${D.sleep}h snu${D.sleepQ >= 3 ? ' i do tego kiepska jakosc' : ''}. HGH wydziela sie w glebokim snie. Bez niego <b>regeneracja miesniowa, spalanie tluszczu i odnowa komorkowa nie zachodza</b>. Ludzie spiacy <6h maja 13% wyzsze ryzyko smierci i traca 19-29% produktywnosci.` });
+  }
+  if (D.stress >= 3 || D.energy >= 3) {
+    timeline.push({ period: 'Caly dzien', text: `Wysoki stres + niska energia = <b>kortyzol chronicznie podwyzszony</b>. Cialo w trybie przetrwania: magazynuje tluszcz na brzuchu, rozklada miesnie na energie, tlumi libido. To nie silna wola. To biochemia.` });
+  }
+  if (D.wknd > 0 && D.drinks > 3) {
+    timeline.push({ period: 'Weekend', text: `${D.drinks} drinkow x ${D.wknd} weekendow. Dawka >1.5g/kg alkoholu (5-6 piw dla 70kg) = <b>spadek testosteronu o ~27% w 12h</b>, normalizacja po 36h. ${D.subs > 0 ? 'Substancje dodatkowo wyczerpuja serotonine i dopamine.' : 'Synteza bialek miesniowych zatrzymana na 2-3 dni.'}` });
+  }
+  if (D.dietChaos >= 3 || D.binge >= 3) {
+    timeline.push({ period: 'Cyklicznie', text: `Chaotyczne jedzenie${D.binge >= 3 ? ' + cykliczne objadanie' : ''} = <b>skoki insuliny</b>. Cialo nie wie kiedy budowac, kiedy spalac. Domyslnie magazynuje. Tluszcz trzewny to bezposredni efekt.` });
+  }
+  if (C.totalLostH > 20) {
+    timeline.push({ period: '6 miesiecy', text: `<b>${C.totalLostH}h</b> pracy na autopilocie. Przy Twojej stawce to <b>${C.prodCost.toLocaleString('pl-PL')} zl</b>. Twoj mozg chemicznie nie jest w stanie dzialac na 100% kiedy hormony, sen i dieta nie graja.` });
+  }
+
+  // Melatonina do hormonow
+  if (D.sleepQ >= 3 || D.screenBed >= 3) hormones.push({ n: 'Melatonina', a: '↓', i: 'Zaburzony cykl', c: M.org });
 
   const sevOpts = [{ n: '0', l: 'Brak' }, { n: '1', l: 'Rzadko' }, { n: '2', l: 'Często' }, { n: '3', l: 'Zawsze' }];
   const sevColors = [M.grn, M.yel, M.org, M.red];
@@ -130,7 +172,7 @@ export default function Page() {
         {sevOpts.map((o, i) => {
           const on = val === i;
           return (
-            <button key={i} onClick={() => sev(k, i)} style={{ padding: '10px 2px', textAlign: 'center', border: `1px solid ${on ? sevColors[i] : M.brd}`, background: on ? sevColors[i] + '15' : M.s1, cursor: 'pointer' }}>
+            <button key={i} onClick={() => sev(k, i)} style={{ padding: '10px 2px', textAlign: 'center', border: `1px solid ${on ? sevColors[i] : M.brd}`, background: on ? sevColors[i] + '15' : M.s1, cursor: 'pointer', borderRadius: 8 }}>
               <span style={{ fontFamily: M.mono, fontSize: 16, fontWeight: 700, display: 'block', marginBottom: 1, color: on ? sevColors[i] : M.t3 }}>{o.n}</span>
               <span style={{ fontSize: 9, color: on ? sevColors[i] : M.t4, textTransform: 'uppercase', letterSpacing: 0.5 }}>{o.l}</span>
             </button>
@@ -150,8 +192,8 @@ export default function Page() {
           <span style={{ fontFamily: M.mono, fontSize: 15, fontWeight: 700, color: hot ? M.red : M.t1, minWidth: 52, textAlign: 'right' }}>{val}{unit}</span>
         </div>}
         <div style={{ position: 'relative', height: 32, display: 'flex', alignItems: 'center' }}>
-          <div style={{ position: 'absolute', left: 0, right: 0, height: 2, background: M.s2 }} />
-          <div style={{ position: 'absolute', left: 0, height: 2, width: `${p}%`, background: hot ? M.red : M.t4 }} />
+          <div style={{ position: 'absolute', left: 0, right: 0, height: 2, background: M.s2, borderRadius: 1 }} />
+          <div style={{ position: 'absolute', left: 0, height: 2, width: `${p}%`, background: hot ? M.red : M.t4, borderRadius: 1 }} />
           <input type="range" min={min} max={max} step={step} value={val} onChange={e => upd(k, parseFloat(e.target.value))} style={{ width: '100%', height: 32, WebkitAppearance: 'none', background: 'transparent', position: 'relative', zIndex: 2, cursor: 'pointer' }} />
         </div>
         {note && <div style={{ textAlign: 'right', fontFamily: M.mono, fontSize: 10, color: M.t4, marginTop: 3 }}>{note}</div>}
@@ -162,8 +204,8 @@ export default function Page() {
   const Chip = ({ t, label }: { t: ChipKey; label: string }) => {
     const on = D.tags.has(t);
     return (
-      <div onClick={() => tog(t)} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: 12, background: on ? M.red + '15' : M.s1, border: `1px solid ${on ? M.red + '30' : M.brd}`, cursor: 'pointer', marginBottom: 4 }}>
-        <div style={{ width: 15, height: 15, border: `1.5px solid ${on ? M.red : M.brd2}`, background: on ? M.red : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+      <div onClick={() => tog(t)} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: 12, background: on ? M.red + '15' : M.s1, border: `1px solid ${on ? M.red + '30' : M.brd}`, cursor: 'pointer', marginBottom: 4, borderRadius: 10 }}>
+        <div style={{ width: 16, height: 16, border: `1.5px solid ${on ? M.red : M.brd2}`, background: on ? M.red : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, borderRadius: 4 }}>
           {on && <span style={{ fontSize: 9, color: '#fff' }}>✓</span>}
         </div>
         <span style={{ flex: 1, fontSize: 13, color: on ? M.t1 : M.t2 }}>{label}</span>
@@ -173,7 +215,7 @@ export default function Page() {
 
   const SH = ({ n, title }: { n: string; title: string }) => (
     <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4 }}>
-      <div style={{ fontFamily: M.mono, fontSize: 9, fontWeight: 700, background: M.t4, color: M.bg, width: 22, height: 22, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{n}</div>
+      <div style={{ fontFamily: M.mono, fontSize: 9, fontWeight: 700, background: M.t4, color: M.bg, width: 22, height: 22, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, borderRadius: 6 }}>{n}</div>
       <div style={{ fontSize: 13, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1.5 }}>{title}</div>
     </div>
   );
@@ -186,11 +228,11 @@ export default function Page() {
         body{background:${M.bg};color:${M.t1};font-family:${M.sans};min-height:100vh;overflow-x:hidden;-webkit-font-smoothing:antialiased}
         body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse 80% 50% at 50% 0%,#ef444406 0%,transparent 60%),repeating-linear-gradient(0deg,transparent,transparent 59px,#ffffff02 59px,#ffffff02 60px),repeating-linear-gradient(90deg,transparent,transparent 59px,#ffffff02 59px,#ffffff02 60px);pointer-events:none;z-index:0}
         input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:32px;background:transparent;cursor:pointer}
-        input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:20px;height:20px;background:${M.t1};border:none;border-radius:0;cursor:grab}
+        input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;height:18px;background:${M.t1};border:none;border-radius:50%;cursor:grab}
         input[type=range]::-webkit-slider-thumb:active{background:${M.red};cursor:grabbing}
-        input[type=range]::-moz-range-thumb{width:20px;height:20px;background:${M.t1};border:none;border-radius:0}
+        input[type=range]::-moz-range-thumb{width:18px;height:18px;background:${M.t1};border:none;border-radius:50%}
         input[type=range]::-moz-range-track{background:transparent}
-        input[type=email]{width:100%;padding:16px;background:${M.s1};border:1px solid ${M.brd2};color:${M.t1};font-size:16px;font-family:${M.sans};outline:none}
+        input[type=email]{width:100%;padding:16px;background:${M.s1};border:1px solid ${M.brd2};color:${M.t1};font-size:16px;font-family:${M.sans};outline:none;border-radius:10px}
         input[type=email]:focus{border-color:${M.red}}
         button{font-family:${M.sans};transition:opacity .15s}
         button:hover{opacity:.85}
@@ -208,8 +250,8 @@ export default function Page() {
                 <span style={{ fontFamily: M.mono, fontSize: 9, letterSpacing: 2, textTransform: 'uppercase', color: M.t4 }}>Sekcja {sec + 1} z {SECTIONS.length}</span>
                 <span style={{ fontFamily: M.mono, fontSize: 11, fontWeight: 700, color: pct > 60 ? M.red : M.t2 }}>{pct}%</span>
               </div>
-              <div style={{ height: 3, background: M.s2, overflow: 'hidden' }}>
-                <div style={{ height: '100%', width: `${pct}%`, background: `linear-gradient(90deg, ${M.yel}, ${M.org}, ${M.red})`, transition: 'width 0.4s ease' }} />
+              <div style={{ height: 3, background: M.s2, overflow: 'hidden', borderRadius: 2 }}>
+                <div style={{ height: '100%', width: `${pct}%`, background: `linear-gradient(90deg, ${M.yel}, ${M.org}, ${M.red})`, transition: 'width 0.4s ease', borderRadius: 2 }} />
               </div>
               <div style={{ display: 'flex', gap: 4, marginTop: 8 }}>
                 {SECTIONS.map((s, i) => (
@@ -230,14 +272,14 @@ export default function Page() {
               {/* Hero */}
               {sec === 0 && (
                 <div style={{ padding: '32px 0 28px', textAlign: 'center' }}>
-                  <div style={{ display: 'inline-flex', fontFamily: M.mono, fontSize: 9, letterSpacing: 3, textTransform: 'uppercase', color: M.red, border: `1px solid ${M.red}30`, padding: '5px 14px', marginBottom: 18, background: M.red + '15' }}>
+                  <div style={{ display: 'inline-flex', fontFamily: M.mono, fontSize: 9, letterSpacing: 3, textTransform: 'uppercase', color: M.red, border: `1px solid ${M.red}30`, padding: '5px 14px', marginBottom: 18, background: M.red + '15', borderRadius: 20 }}>
                     ⚡ 2 minuty prawdy
                   </div>
                   <h1 style={{ fontSize: 26, fontWeight: 800, lineHeight: 1.15, letterSpacing: -0.5, marginBottom: 12 }}>
                     Ile <em style={{ fontStyle: 'normal', color: M.red }}>naprawdę</em> Cię kosztuje<br />to jak teraz żyjesz?
                   </h1>
                   <p style={{ color: M.t3, fontSize: 13, lineHeight: 1.55, fontWeight: 300, maxWidth: 340, margin: '0 auto 12px' }}>
-                    Nie moralizuję. Przeliczam. Hormony, mózg i formę — na złotówki. Na bazie badań, nie opinii.
+                    Nie moralizuję. Przeliczam. Hormony, mózg i formę - na złotówki. Na bazie badań, nie opinii.
                   </p>
                   <div style={{ fontFamily: M.mono, fontSize: 9, color: M.t4, letterSpacing: 1 }}>🔒 Zero danych · Tylko Ty to widzisz</div>
                 </div>
@@ -304,7 +346,7 @@ export default function Page() {
                     ['mood', 'Wahania nastroju, drażliwość'],
                     ['libido', 'Obniżone libido lub motywacja seksualna'],
                     ['belly', 'Brzuch który nie schodzi mimo treningu'],
-                    ['brain', 'Brain fog — mgła, problemy z koncentracją'],
+                    ['brain', 'Brain fog - mgła, problemy z koncentracją'],
                     ['anxiety', 'Niepokój, natrętne myśli'],
                     ['joints', 'Bóle stawów lub słaba regeneracja'],
                     ['skin', 'Pogorszona cera, wypryski'],
@@ -317,11 +359,11 @@ export default function Page() {
               {/* Nav */}
               <div style={{ display: 'flex', gap: 10, marginTop: 32 }}>
                 {sec > 0 && (
-                  <button onClick={back} style={{ flex: 1, padding: 14, background: M.s1, color: M.t2, border: `1px solid ${M.brd}`, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
+                  <button onClick={back} style={{ flex: 1, padding: 14, background: M.s1, color: M.t2, border: `1px solid ${M.brd}`, fontSize: 13, fontWeight: 600, cursor: 'pointer', borderRadius: 10 }}>
                     ← Wstecz
                   </button>
                 )}
-                <button onClick={go} style={{ flex: 2, padding: 16, background: sec === SECTIONS.length - 1 ? M.red : M.t1, color: sec === SECTIONS.length - 1 ? '#fff' : M.bg, border: 'none', fontFamily: M.mono, fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 3, cursor: 'pointer' }}>
+                <button onClick={go} style={{ flex: 2, padding: 16, background: sec === SECTIONS.length - 1 ? M.red : M.t1, color: sec === SECTIONS.length - 1 ? '#fff' : M.bg, border: 'none', fontFamily: M.mono, fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 3, cursor: 'pointer', borderRadius: 10 }}>
                   {sec === SECTIONS.length - 1 ? 'Oblicz moje straty →' : 'Dalej →'}
                 </button>
               </div>
@@ -333,7 +375,7 @@ export default function Page() {
         {phase === 'gate' && (
           <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '40px 16px', textAlign: 'center' }}>
             <div style={{ maxWidth: 400, width: '100%' }}>
-              <div style={{ fontFamily: M.mono, fontSize: 9, letterSpacing: 3, textTransform: 'uppercase', color: M.red, border: `1px solid ${M.red}30`, background: M.red + '15', padding: '5px 14px', display: 'inline-block', marginBottom: 28 }}>
+              <div style={{ fontFamily: M.mono, fontSize: 9, letterSpacing: 3, textTransform: 'uppercase', color: M.red, border: `1px solid ${M.red}30`, background: M.red + '15', padding: '5px 14px', display: 'inline-block', marginBottom: 28, borderRadius: 20 }}>
                 Obliczono
               </div>
 
@@ -345,7 +387,7 @@ export default function Page() {
               </div>
 
               {/* Cost preview */}
-              <div style={{ background: M.s1, border: `1px solid ${M.red}30`, padding: 16, marginBottom: 28 }}>
+              <div style={{ background: M.s1, border: `1px solid ${M.red}30`, padding: 16, marginBottom: 28, borderRadius: 12 }}>
                 <div style={{ fontFamily: M.mono, fontSize: 9, letterSpacing: 2, textTransform: 'uppercase', color: M.t4, marginBottom: 6 }}>Szacowane straty / 6 miesięcy</div>
                 <div style={{ fontFamily: M.mono, fontSize: 36, fontWeight: 800, color: M.red }}>{C.total.toLocaleString('pl-PL')} zł</div>
               </div>
@@ -354,7 +396,7 @@ export default function Page() {
                 Podaj email żeby<br />zobaczyć pełną analizę
               </h2>
               <p style={{ fontSize: 13, color: M.t3, lineHeight: 1.6, marginBottom: 24, fontWeight: 300 }}>
-                Breakdown hormonów, co się dzieje w Twoim ciele i konkretne wnioski — na maila i poniżej.
+                Breakdown hormonów, co się dzieje w Twoim ciele i konkretne wnioski - na maila i poniżej.
               </p>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
@@ -364,7 +406,7 @@ export default function Page() {
                   style={{ borderColor: emailErr ? M.red : undefined }} />
                 {emailErr && <div style={{ fontSize: 11, color: M.red, fontFamily: M.mono, textAlign: 'left' }}>{emailErr}</div>}
                 <button onClick={submit} disabled={loading}
-                  style={{ width: '100%', padding: 16, background: loading ? M.brd2 : M.red, color: loading ? M.t4 : '#fff', border: 'none', fontFamily: M.mono, fontSize: 11, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', cursor: loading ? 'not-allowed' : 'pointer' }}>
+                  style={{ width: '100%', padding: 16, background: loading ? M.brd2 : M.red, color: loading ? M.t4 : '#fff', border: 'none', fontFamily: M.mono, fontSize: 11, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', cursor: loading ? 'not-allowed' : 'pointer', borderRadius: 10 }}>
                   {loading ? 'Wysyłam...' : 'Pokaż pełną analizę →'}
                 </button>
               </div>
@@ -397,17 +439,64 @@ export default function Page() {
                 </div>
               </div>
               <div style={{ fontSize: 14, fontWeight: 600, color: scoreColor, marginTop: 12 }}>
-                {SC >= 75 ? 'Pracujesz przeciwko sobie' : SC >= 50 ? 'Hormony i mózg pod presją' : SC >= 25 ? 'Twoje ciało już to czuje' : 'Niskie ryzyko — ale nie zero'}
+                {SC >= 75 ? 'Pracujesz przeciwko sobie' : SC >= 50 ? 'Hormony i mózg pod presją' : SC >= 25 ? 'Twoje ciało już to czuje' : 'Niskie ryzyko - ale nie zero'}
               </div>
             </div>
 
             {/* Total */}
-            <div style={{ background: M.red, textAlign: 'center', padding: '24px 20px 20px', position: 'relative', overflow: 'hidden', marginBottom: 24 }}>
+            <div style={{ background: M.red, textAlign: 'center', padding: '24px 20px 20px', position: 'relative', overflow: 'hidden', marginBottom: 24, borderRadius: 14 }}>
               <div style={{ position: 'absolute', inset: 0, backgroundImage: 'repeating-linear-gradient(-45deg,transparent,transparent 3px,rgba(0,0,0,.05) 3px,rgba(0,0,0,.05) 6px)' }} />
               <div style={{ position: 'relative' }}>
                 <div style={{ fontFamily: M.mono, fontSize: 9, letterSpacing: 3, textTransform: 'uppercase', opacity: .7, marginBottom: 6 }}>Tracisz w 6 miesięcy</div>
                 <div style={{ fontFamily: M.mono, fontSize: 40, fontWeight: 800 }}>{C.total.toLocaleString('pl-PL')} zł</div>
                 <div style={{ fontFamily: M.mono, fontSize: 12, opacity: .65, marginTop: 4 }}>= {Math.round(C.total / 6).toLocaleString('pl-PL')} zł / miesiąc</div>
+              </div>
+            </div>
+
+            {/* Comparison text */}
+            {comparisons.length > 0 && (
+              <div style={{ background: M.s1, border: `1px solid ${M.brd}`, padding: 16, marginBottom: 24, borderRadius: 12 }}>
+                <p style={{ fontSize: 13, color: M.t2, lineHeight: 1.5, fontWeight: 300 }}
+                  dangerouslySetInnerHTML={{ __html: `Za <strong style="color:${M.t1};font-weight:600">${C.total.toLocaleString('pl-PL')} zl</strong> w pol roku moglbys miec: ${comparisons.join(', ')}.` }} />
+              </div>
+            )}
+
+            {/* Norm: Ty vs przecietny */}
+            <div style={{ background: M.s1, border: `1px solid ${M.brd}`, padding: '20px 16px', marginBottom: 24, borderRadius: 12 }}>
+              <div style={{ fontFamily: M.mono, fontSize: 9, letterSpacing: 2, textTransform: 'uppercase', color: M.t4, marginBottom: 14 }}>Ty vs przecietny facet 25-35</div>
+              {normData.map((n, i) => (
+                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: i < normData.length - 1 ? 10 : 0 }}>
+                  <span style={{ fontSize: 11, color: i === 0 ? M.t2 : M.t3, width: 60, flexShrink: 0 }}>{n.label}</span>
+                  <div style={{ flex: 1, height: 8, background: M.s2, overflow: 'hidden', borderRadius: 4 }}>
+                    <div style={{ height: '100%', background: n.color, width: `${n.pct}%`, transition: 'width .8s ease', borderRadius: 4 }} />
+                  </div>
+                  <span style={{ fontFamily: M.mono, fontSize: 11, fontWeight: 600, width: 65, flexShrink: 0, textAlign: 'right', color: n.color === M.red ? M.red : n.color === M.grn ? M.grn : M.t3 }}>
+                    {n.value >= 1000 ? `${(n.value / 1000).toFixed(1)}k` : n.value.toLocaleString('pl-PL')}
+                  </span>
+                </div>
+              ))}
+              <div style={{ marginTop: 10, fontSize: 10, color: M.t4, fontStyle: 'italic' }}>
+                &ldquo;Swiadomy&rdquo; = zyje normalnie, ale rozumie mechanizmy i minimalizuje straty.
+              </div>
+            </div>
+
+            {/* Projection: kumulacja 6 mies */}
+            <div style={{ background: M.s1, border: `1px solid ${M.brd}`, padding: '20px 16px', marginBottom: 24, borderRadius: 12 }}>
+              <div style={{ fontFamily: M.mono, fontSize: 9, letterSpacing: 2, textTransform: 'uppercase', color: M.t4, marginBottom: 16 }}>Kumulacja strat: 6 miesiecy</div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', gap: 2, marginBottom: 8 }}>
+                {projData.map((p, i) => (
+                  <div key={i} style={{ flex: 1, textAlign: 'center' }}>
+                    <div style={{ height: 60, display: 'flex', alignItems: 'flex-end', justifyContent: 'center', marginBottom: 4 }}>
+                      <div style={{ width: '100%', maxWidth: 28, background: M.red, minHeight: 2, height: `${(p.v / projMax) * 55}px`, borderRadius: '4px 4px 0 0', transition: 'height .6s ease' }} />
+                    </div>
+                    <div style={{ fontFamily: M.mono, fontSize: 9, color: M.t4 }}>M{p.m}</div>
+                    <div style={{ fontFamily: M.mono, fontSize: 8, color: M.t3, marginTop: 2 }}>{(p.v / 1000).toFixed(1)}k</div>
+                  </div>
+                ))}
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 12, paddingTop: 12, borderTop: `1px solid ${M.brd}` }}>
+                <span style={{ fontSize: 12, color: M.t3 }}>Suma po 6 miesiacach</span>
+                <span style={{ fontFamily: M.mono, fontSize: 18, fontWeight: 700, color: M.red }}>{C.total.toLocaleString('pl-PL')} zl</span>
               </div>
             </div>
 
@@ -417,12 +506,12 @@ export default function Page() {
                 <div style={{ fontFamily: M.mono, fontSize: 9, letterSpacing: 2, textTransform: 'uppercase', color: M.t4, marginBottom: 14 }}>Podział strat</div>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
                   {catData.map((c, i) => (
-                    <div key={i} style={{ background: M.s1, border: `1px solid ${M.brd}`, padding: '14px 12px' }}>
+                    <div key={i} style={{ background: M.s1, border: `1px solid ${M.brd}`, padding: '14px 12px', borderRadius: 10 }}>
                       <div style={{ fontSize: 15, marginBottom: 4 }}>{c.ic}</div>
                       <div style={{ fontFamily: M.mono, fontSize: 16, fontWeight: 700, color: M.red }}>{c.v.toLocaleString('pl-PL')} zł</div>
                       <div style={{ fontSize: 9, color: M.t4, textTransform: 'uppercase', letterSpacing: 1, marginTop: 2 }}>{c.l}</div>
-                      <div style={{ height: 3, background: M.s2, marginTop: 8 }}>
-                        <div style={{ height: '100%', background: c.c, width: `${(c.v / maxC) * 100}%`, transition: 'width 1s ease .3s' }} />
+                      <div style={{ height: 3, background: M.s2, marginTop: 8, borderRadius: 2 }}>
+                        <div style={{ height: '100%', background: c.c, width: `${(c.v / maxC) * 100}%`, transition: 'width 1s ease .3s', borderRadius: 2 }} />
                       </div>
                     </div>
                   ))}
@@ -432,14 +521,34 @@ export default function Page() {
 
             {/* Hormones */}
             {hormones.length > 0 && (
-              <div style={{ background: M.s1, border: `1px solid ${M.brd}`, padding: '20px 16px', marginBottom: 24 }}>
+              <div style={{ background: M.s1, border: `1px solid ${M.brd}`, padding: '20px 16px', marginBottom: 24, borderRadius: 12 }}>
                 <div style={{ fontFamily: M.mono, fontSize: 9, letterSpacing: 2, textTransform: 'uppercase', color: M.t4, marginBottom: 14 }}>Wpływ na Twoje hormony</div>
                 {hormones.map((h, i) => (
                   <div key={i} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 0', borderBottom: i < hormones.length - 1 ? `1px solid ${M.brd}` : 'none' }}>
                     <span style={{ fontSize: 13, color: M.t2, display: 'flex', alignItems: 'center', gap: 6 }}>
                       <span style={{ fontSize: 16 }}>{h.a}</span> {h.n}
                     </span>
-                    <span style={{ fontFamily: M.mono, fontSize: 10, padding: '2px 8px', letterSpacing: 0.5, color: h.c, border: `1px solid ${h.c}33` }}>{h.i}</span>
+                    <span style={{ fontFamily: M.mono, fontSize: 10, padding: '2px 8px', letterSpacing: 0.5, color: h.c, border: `1px solid ${h.c}33`, borderRadius: 6 }}>{h.i}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Timeline: co sie dzieje w Twoim ciele */}
+            {timeline.length > 0 && (
+              <div style={{ marginBottom: 24 }}>
+                <div style={{ fontFamily: M.mono, fontSize: 9, letterSpacing: 2, textTransform: 'uppercase', color: M.t4, marginBottom: 16 }}>Co sie dzieje w Twoim ciele</div>
+                {timeline.map((t, i) => (
+                  <div key={i} style={{ display: 'flex', gap: 12, marginBottom: 12 }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flexShrink: 0 }}>
+                      <div style={{ width: 8, height: 8, background: M.red, borderRadius: 4, flexShrink: 0 }} />
+                      {i < timeline.length - 1 && <div style={{ width: 1, flex: 1, background: M.brd, marginTop: 3, minHeight: 10 }} />}
+                    </div>
+                    <div>
+                      <div style={{ fontFamily: M.mono, fontSize: 10.5, fontWeight: 600, color: M.t1, marginBottom: 2 }}>{t.period}</div>
+                      <p style={{ fontSize: 12.5, color: M.t3, fontWeight: 300, lineHeight: 1.45 }}
+                        dangerouslySetInnerHTML={{ __html: t.text.replace(/<b>/g, `<strong style="color:${M.t2};font-weight:500">`).replace(/<\/b>/g, '</strong>') }} />
+                    </div>
                   </div>
                 ))}
               </div>
@@ -449,7 +558,7 @@ export default function Page() {
             {insights.length > 0 && (
               <div style={{ marginBottom: 24 }}>
                 {insights.map((ins, i) => (
-                  <div key={i} style={{ padding: 14, borderLeft: `2px solid ${M.red}`, background: M.s1, marginBottom: 4 }}>
+                  <div key={i} style={{ padding: 14, borderLeft: `2px solid ${M.red}`, background: M.s1, marginBottom: 4, borderRadius: '0 10px 10px 0' }}>
                     <p style={{ fontSize: 12.5, color: M.t3, lineHeight: 1.55, fontWeight: 300 }}
                       dangerouslySetInnerHTML={{ __html: ins.replace(/<b>/g, `<strong style="color:${M.t1};font-weight:600">`).replace(/<\/b>/g, '</strong>') }} />
                   </div>
@@ -457,23 +566,32 @@ export default function Page() {
               </div>
             )}
 
+            {/* Closing statement */}
+            <div style={{ textAlign: 'center', padding: '28px 16px', marginBottom: 24, border: `1px solid ${M.brd}`, background: M.s1, borderRadius: 14 }}>
+              <p style={{ fontSize: 14, color: M.t2, lineHeight: 1.6, fontWeight: 300 }}>
+                To nie jest kara za to jak zyjesz.<br />
+                To jest <strong style={{ color: M.t1, fontWeight: 600 }}>mechanika</strong>: hormony, mozg, metabolizm.<br />
+                Kiedy rozumiesz co sie dzieje w srodku, mozesz zyc normalnie i nie placic za to takiej ceny.
+              </p>
+            </div>
+
             {/* CTA */}
-            <div style={{ background: M.s1, border: `1px solid ${M.brd2}`, padding: '24px 20px', marginBottom: 24 }}>
+            <div style={{ background: M.s1, border: `1px solid ${M.brd2}`, padding: '24px 20px', marginBottom: 24, borderRadius: 14 }}>
               <div style={{ fontFamily: M.mono, fontSize: 9, letterSpacing: 2, textTransform: 'uppercase', color: M.t4, marginBottom: 12 }}>Co dalej?</div>
               <p style={{ fontSize: 14, color: M.t2, lineHeight: 1.65, fontWeight: 300, marginBottom: 20 }}>
-                Pracuję z ludźmi którzy żyją dokładnie tak jak Ty — imprezy, praca, chaos.
+                Pracuję z ludźmi którzy żyją dokładnie tak jak Ty - imprezy, praca, chaos.
                 Mimo to mają formę, energię i sprawny mózg. <strong style={{ color: M.t1, fontWeight: 600 }}>Bez rezygnowania z życia.</strong>
               </p>
               <a href="https://system.talerzihantle.com" target="_blank" rel="noopener noreferrer"
-                style={{ display: 'block', background: M.red, color: '#fff', fontFamily: M.mono, fontSize: 11, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', textDecoration: 'none', padding: 18, textAlign: 'center', marginBottom: 12 }}>
+                style={{ display: 'block', background: M.red, color: '#fff', fontFamily: M.mono, fontSize: 11, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', textDecoration: 'none', padding: 18, textAlign: 'center', marginBottom: 12, borderRadius: 10 }}>
                 Sprawdź czy się kwalifikujesz →
               </a>
               <div style={{ textAlign: 'center', fontSize: 11, color: M.t4, fontFamily: M.mono, letterSpacing: 0.5 }}>
                 lub napisz <strong style={{ color: M.t3 }}>JAZDA</strong> w DM → @hantleitalerz
               </div>
               <a href="https://neurobiologia-formy.netlify.app" target="_blank" rel="noopener noreferrer"
-                style={{ display: 'block', textAlign: 'center', marginTop: 16, padding: '14px 20px', background: 'transparent', border: `1px solid ${M.red}`, color: M.red, fontFamily: M.mono, fontSize: 10, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', textDecoration: 'none' }}>
-                Neurobiologia Formy — 49 zł →
+                style={{ display: 'block', textAlign: 'center', marginTop: 16, padding: '14px 20px', background: 'transparent', border: `1px solid ${M.red}`, color: M.red, fontFamily: M.mono, fontSize: 10, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', textDecoration: 'none', borderRadius: 10 }}>
+                Neurobiologia Formy - 49 zł →
               </a>
               <p style={{ textAlign: 'center', fontSize: 10, color: M.t4, marginTop: 6, fontFamily: M.mono }}>
                 Nie jesteś gotowy na prowadzenie? Zacznij tutaj.
@@ -481,7 +599,7 @@ export default function Page() {
             </div>
 
             {/* Sources */}
-            <div style={{ padding: 16, background: M.s1, border: `1px solid ${M.brd}`, marginBottom: 32 }}>
+            <div style={{ padding: 16, background: M.s1, border: `1px solid ${M.brd}`, marginBottom: 32, borderRadius: 12 }}>
               <div style={{ fontFamily: M.mono, fontSize: 9, letterSpacing: 2, textTransform: 'uppercase', color: M.t4, marginBottom: 10 }}>Skąd te liczby</div>
               <div style={{ fontSize: 10, color: M.t4, lineHeight: 1.7 }}>
                 {['Nutrition & Metabolism, 2014: alkohol >1.5g/kg = spadek T ~27% w 12h',
