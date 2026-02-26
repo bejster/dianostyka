@@ -589,7 +589,7 @@ export default function Page() {
               <div style={{ textAlign: 'center', fontSize: 11, color: M.t4, fontFamily: M.mono, letterSpacing: 0.5 }}>
                 lub napisz <strong style={{ color: M.t3 }}>JAZDA</strong> w DM → @hantleitalerz
               </div>
-              <a href="https://neurobiologia-formy.netlify.app" target="_blank" rel="noopener noreferrer"
+              <a href="https://neurobiologia-formy.talerzihantle.com" target="_blank" rel="noopener noreferrer"
                 style={{ display: 'block', textAlign: 'center', marginTop: 16, padding: '14px 20px', background: 'transparent', border: `1px solid ${M.red}`, color: M.red, fontFamily: M.mono, fontSize: 10, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', textDecoration: 'none', borderRadius: 10 }}>
                 Neurobiologia Formy - 49 zł →
               </a>
