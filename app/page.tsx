@@ -1,5 +1,5 @@
 'use client';
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 
 type SevKey = 'sleepQ' | 'screenBed' | 'stress' | 'energy' | 'dopamine' | 'dietChaos' | 'binge';
 type ChipKey = 'fatigue' | 'mood' | 'libido' | 'belly' | 'brain' | 'anxiety' | 'joints' | 'skin' | 'motivation' | 'digest';
@@ -58,6 +58,7 @@ export default function Page() {
   const [email, setEmail] = useState('');
   const [emailErr, setEmailErr] = useState('');
   const [loading, setLoading] = useState(false);
+  const [animatedScore, setAnimatedScore] = useState(0);
   const topRef = useRef<HTMLDivElement>(null);
 
   const upd = (k: keyof FD, v: number) => setD(p => ({ ...p, [k]: v }));
@@ -93,6 +94,29 @@ export default function Page() {
   const scoreColor = SC >= 75 ? M.red : SC >= 50 ? M.org : SC >= 25 ? M.yel : M.grn;
   const circ = 2 * Math.PI * 64;
   const offset = circ - (SC / 100) * circ;
+
+  // Animated score counter for results
+  useEffect(() => {
+    if (phase === 'results') {
+      let start = 0;
+      const end = SC;
+      const duration = 1500;
+      const startTime = Date.now();
+
+      const animate = () => {
+        const now = Date.now();
+        const progress = Math.min((now - startTime) / duration, 1);
+        const easeOut = 1 - Math.pow(1 - progress, 3);
+        setAnimatedScore(Math.round(start + (end - start) * easeOut));
+
+        if (progress < 1) {
+          requestAnimationFrame(animate);
+        }
+      };
+
+      requestAnimationFrame(animate);
+    }
+  }, [phase, SC]);
 
   const catData = [
     { ic: '😴', v: C.sleepCost, l: 'Sen', c: '#a855f7' }, { ic: '🧠', v: C.mentalCost, l: 'Stres', c: '#3b82f6' },
@@ -172,7 +196,7 @@ export default function Page() {
         {sevOpts.map((o, i) => {
           const on = val === i;
           return (
-            <button key={i} onClick={() => sev(k, i)} style={{ padding: '12px 2px', textAlign: 'center', border: `1px solid ${on ? sevColors[i] : M.brd}`, background: on ? sevColors[i] + '15' : M.s1, cursor: 'pointer', borderRadius: 8 }}>
+            <button key={i} onClick={() => sev(k, i)} className="glass-card-hover" style={{ padding: '12px 2px', textAlign: 'center', border: `1px solid ${on ? sevColors[i] : M.brd}`, background: on ? sevColors[i] + '15' : 'rgba(17,17,20,0.4)', cursor: 'pointer', borderRadius: 8, backdropFilter: 'blur(10px)', boxShadow: on ? `0 0 15px ${sevColors[i]}40` : 'none', transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)' }}>
               <span style={{ fontFamily: M.mono, fontSize: 17, fontWeight: 700, display: 'block', marginBottom: 2, color: on ? sevColors[i] : M.t2 }}>{o.n}</span>
               <span style={{ fontSize: 10, fontWeight: 500, color: on ? sevColors[i] : M.t3, textTransform: 'uppercase', letterSpacing: 0.5 }}>{o.l}</span>
             </button>
@@ -189,7 +213,7 @@ export default function Page() {
       <div style={{ marginBottom: 24 }}>
         {label && <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 8 }}>
           <span style={{ fontSize: 14, color: M.t1, fontWeight: 500, flex: 1, lineHeight: 1.4 }}>{label}</span>
-          <span style={{ fontFamily: M.mono, fontSize: 16, fontWeight: 700, color: hot ? M.red : M.t1, minWidth: 56, textAlign: 'right' }}>{val}{unit}</span>
+          <span className={hot ? 'text-shadow-glow' : ''} style={{ fontFamily: M.mono, fontSize: 16, fontWeight: 700, color: hot ? M.red : M.t1, minWidth: 56, textAlign: 'right' }}>{val}{unit}</span>
         </div>}
         <div style={{ position: 'relative', height: 32, display: 'flex', alignItems: 'center' }}>
           <div style={{ position: 'absolute', left: 0, right: 0, height: 2, background: M.s2, borderRadius: 1 }} />
@@ -204,8 +228,8 @@ export default function Page() {
   const Chip = ({ t, label }: { t: ChipKey; label: string }) => {
     const on = D.tags.has(t);
     return (
-      <div onClick={() => tog(t)} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: 14, background: on ? M.red + '15' : M.s1, border: `1px solid ${on ? M.red + '30' : M.brd}`, cursor: 'pointer', marginBottom: 4, borderRadius: 10 }}>
-        <div style={{ width: 18, height: 18, border: `1.5px solid ${on ? M.red : M.brd2}`, background: on ? M.red : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, borderRadius: 4 }}>
+      <div onClick={() => tog(t)} className={`glass-card-hover ${on ? 'chip-selected' : ''}`} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: 14, background: on ? M.red + '15' : 'rgba(17,17,20,0.4)', border: `1px solid ${on ? M.red + '30' : M.brd}`, cursor: 'pointer', marginBottom: 4, borderRadius: 10, backdropFilter: 'blur(10px)', boxShadow: on ? `0 0 20px ${M.red}30` : 'none', transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)' }}>
+        <div style={{ width: 18, height: 18, border: `1.5px solid ${on ? M.red : M.brd2}`, background: on ? M.red : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, borderRadius: 4, transition: 'all 0.2s' }}>
           {on && <span style={{ fontSize: 10, color: '#fff' }}>✓</span>}
         </div>
         <span style={{ flex: 1, fontSize: 14, fontWeight: 400, color: on ? M.t1 : M.t2 }}>{label}</span>
@@ -222,36 +246,19 @@ export default function Page() {
 
   return (
     <>
-      <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;600;700;800&display=swap');
-        *{margin:0;padding:0;box-sizing:border-box}
-        body{background:${M.bg};color:${M.t1};font-family:${M.sans};min-height:100vh;overflow-x:hidden;-webkit-font-smoothing:antialiased}
-        body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse 80% 50% at 50% 0%,#ef444406 0%,transparent 60%),repeating-linear-gradient(0deg,transparent,transparent 59px,#ffffff02 59px,#ffffff02 60px),repeating-linear-gradient(90deg,transparent,transparent 59px,#ffffff02 59px,#ffffff02 60px);pointer-events:none;z-index:0}
-        input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:32px;background:transparent;cursor:pointer}
-        input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;height:18px;background:${M.t1};border:none;border-radius:50%;cursor:grab}
-        input[type=range]::-webkit-slider-thumb:active{background:${M.red};cursor:grabbing}
-        input[type=range]::-moz-range-thumb{width:18px;height:18px;background:${M.t1};border:none;border-radius:50%}
-        input[type=range]::-moz-range-track{background:transparent}
-        input[type=email]{width:100%;padding:16px;background:${M.s1};border:1px solid ${M.brd2};color:${M.t1};font-size:16px;font-weight:500;font-family:${M.sans};outline:none;border-radius:10px}
-        input[type=email]:focus{border-color:${M.red}}
-        button{font-family:${M.sans};transition:opacity .15s}
-        button:hover{opacity:.85}
-        a:hover{opacity:.85}
-      `}</style>
-
       <div ref={topRef} style={{ maxWidth: 440, margin: '0 auto', padding: '0 0 80px', position: 'relative', zIndex: 1 }}>
 
         {/* ── FORM ── */}
         {phase === 'form' && (
-          <>
+          <div className="section-enter">
             {/* Progress */}
-            <div style={{ position: 'sticky', top: 0, zIndex: 100, background: 'rgba(9,9,11,0.96)', backdropFilter: 'blur(20px)', borderBottom: `1px solid ${M.brd}`, padding: '10px 16px' }}>
+            <div className="blur-overlay" style={{ position: 'sticky', top: 0, zIndex: 100, background: 'rgba(9,9,11,0.85)', borderBottom: `1px solid ${M.brd}`, padding: '10px 16px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 8 }}>
                 <span style={{ fontFamily: M.mono, fontSize: 10, letterSpacing: 2, textTransform: 'uppercase', color: M.t3 }}>Sekcja {sec + 1} z {SECTIONS.length}</span>
                 <span style={{ fontFamily: M.mono, fontSize: 11, fontWeight: 700, color: pct > 60 ? M.red : M.t2 }}>{pct}%</span>
               </div>
               <div style={{ height: 3, background: M.s2, overflow: 'hidden', borderRadius: 2 }}>
-                <div style={{ height: '100%', width: `${pct}%`, background: `linear-gradient(90deg, ${M.yel}, ${M.org}, ${M.red})`, transition: 'width 0.4s ease', borderRadius: 2 }} />
+                <div className="progress-bar" style={{ height: '100%', width: `${pct}%`, background: `linear-gradient(90deg, ${M.yel}, ${M.org}, ${M.red})`, transition: 'width 0.4s ease', borderRadius: 2 }} />
               </div>
               <div style={{ display: 'flex', gap: 4, marginTop: 8 }}>
                 {SECTIONS.map((s, i) => (
@@ -262,9 +269,9 @@ export default function Page() {
 
             {/* Live counter */}
             {C.total > 0 && (
-              <div style={{ position: 'sticky', top: 68, zIndex: 99, background: 'rgba(9,9,11,0.96)', backdropFilter: 'blur(20px)', borderBottom: `1px solid ${M.brd}`, padding: '8px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div className="blur-overlay glow-pulse" style={{ position: 'sticky', top: 68, zIndex: 99, background: 'rgba(9,9,11,0.9)', borderBottom: `1px solid ${M.brd}`, padding: '8px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <span style={{ fontFamily: M.mono, fontSize: 10, letterSpacing: 2, textTransform: 'uppercase', color: M.t3 }}>Straty / 6 mies.</span>
-                <span style={{ fontFamily: M.mono, fontSize: 18, fontWeight: 700, color: M.red }}>{C.total.toLocaleString('pl-PL')} zł</span>
+                <span className="gradient-text-animated" style={{ fontFamily: M.mono, fontSize: 18, fontWeight: 700 }}>{C.total.toLocaleString('pl-PL')} zł</span>
               </div>
             )}
 
@@ -272,11 +279,11 @@ export default function Page() {
               {/* Hero */}
               {sec === 0 && (
                 <div style={{ padding: '32px 0 28px', textAlign: 'center' }}>
-                  <div style={{ display: 'inline-flex', fontFamily: M.mono, fontSize: 10, letterSpacing: 3, textTransform: 'uppercase', color: M.red, border: `1px solid ${M.red}30`, padding: '6px 16px', marginBottom: 18, background: M.red + '15', borderRadius: 20, fontWeight: 600 }}>
+                  <div className="glow-pulse" style={{ display: 'inline-flex', fontFamily: M.mono, fontSize: 10, letterSpacing: 3, textTransform: 'uppercase', color: M.red, border: `1px solid ${M.red}30`, padding: '6px 16px', marginBottom: 18, background: M.red + '15', borderRadius: 20, fontWeight: 600 }}>
                     ⚡ 2 minuty prawdy
                   </div>
-                  <h1 style={{ fontSize: 28, fontWeight: 800, lineHeight: 1.15, letterSpacing: -0.5, marginBottom: 14 }}>
-                    Ile <em style={{ fontStyle: 'normal', color: M.red }}>naprawdę</em> Cię kosztuje<br />to jak teraz żyjesz?
+                  <h1 className="gradient-text-animated" style={{ fontSize: 28, fontWeight: 800, lineHeight: 1.15, letterSpacing: -0.5, marginBottom: 14 }}>
+                    Ile naprawdę Cię kosztuje<br />to jak teraz żyjesz?
                   </h1>
                   <p style={{ color: M.t2, fontSize: 14, lineHeight: 1.6, fontWeight: 400, maxWidth: 340, margin: '0 auto 12px' }}>
                     Nie moralizuję. Przeliczam. Hormony, mózg i formę — na złotówki. Na bazie badań, nie opinii.
@@ -289,7 +296,7 @@ export default function Page() {
               {sec > 0 && (
                 <div style={{ padding: '24px 0 20px' }}>
                   <div style={{ fontFamily: M.mono, fontSize: 10, letterSpacing: 2, textTransform: 'uppercase', color: M.t3, marginBottom: 8 }}>Sekcja {sec + 1}</div>
-                  <h2 style={{ fontSize: 20, fontWeight: 800, letterSpacing: -0.3 }}>{SECTIONS[sec]}</h2>
+                  <h2 className="gradient-text" style={{ fontSize: 20, fontWeight: 800, letterSpacing: -0.3 }}>{SECTIONS[sec]}</h2>
                 </div>
               )}
 
@@ -359,37 +366,38 @@ export default function Page() {
               {/* Nav */}
               <div style={{ display: 'flex', gap: 10, marginTop: 32 }}>
                 {sec > 0 && (
-                  <button onClick={back} style={{ flex: 1, padding: 14, background: M.s1, color: M.t2, border: `1px solid ${M.brd}`, fontSize: 14, fontWeight: 600, cursor: 'pointer', borderRadius: 10 }}>
+                  <button onClick={back} className="glass-card hover-lift" style={{ flex: 1, padding: 14, color: M.t2, border: 'none', fontSize: 14, fontWeight: 600, cursor: 'pointer', borderRadius: 10 }}>
                     ← Wstecz
                   </button>
                 )}
-                <button onClick={go} style={{ flex: 2, padding: 16, background: sec === SECTIONS.length - 1 ? M.red : M.t1, color: sec === SECTIONS.length - 1 ? '#fff' : M.bg, border: 'none', fontFamily: M.mono, fontSize: 12, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 2, cursor: 'pointer', borderRadius: 10 }}>
+                <button onClick={go} className={sec === SECTIONS.length - 1 ? 'btn-primary' : ''} style={{ flex: 2, padding: 16, background: sec === SECTIONS.length - 1 ? M.red : M.t1, color: sec === SECTIONS.length - 1 ? '#fff' : M.bg, border: 'none', fontFamily: M.mono, fontSize: 12, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 2, cursor: 'pointer', borderRadius: 10 }}>
                   {sec === SECTIONS.length - 1 ? 'Oblicz moje straty →' : 'Dalej →'}
                 </button>
               </div>
             </div>
-          </>
+          </div>
         )}
 
         {/* ── EMAIL GATE ── */}
         {phase === 'gate' && (
-          <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '40px 16px', textAlign: 'center' }}>
+          <div className="section-enter" style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '40px 16px', textAlign: 'center' }}>
             <div style={{ maxWidth: 400, width: '100%' }}>
-              <div style={{ fontFamily: M.mono, fontSize: 10, fontWeight: 600, letterSpacing: 3, textTransform: 'uppercase', color: M.red, border: `1px solid ${M.red}30`, background: M.red + '15', padding: '6px 16px', display: 'inline-block', marginBottom: 28, borderRadius: 20 }}>
+              <div className="lock-icon" style={{ fontSize: 48, marginBottom: 16 }}>🔒</div>
+              <div className="glow-pulse" style={{ fontFamily: M.mono, fontSize: 10, fontWeight: 600, letterSpacing: 3, textTransform: 'uppercase', color: M.red, border: `1px solid ${M.red}30`, background: M.red + '15', padding: '6px 16px', display: 'inline-block', marginBottom: 28, borderRadius: 20 }}>
                 Obliczono
               </div>
 
               {/* Score preview */}
               <div style={{ marginBottom: 24 }}>
                 <div style={{ fontFamily: M.mono, fontSize: 10, letterSpacing: 2, textTransform: 'uppercase', color: M.t3, marginBottom: 8 }}>Twój Damage Score</div>
-                <div style={{ fontFamily: M.mono, fontSize: 80, fontWeight: 800, lineHeight: 1, color: scoreColor }}>{SC}</div>
+                <div className="score-circle text-shadow-glow" style={{ fontFamily: M.mono, fontSize: 80, fontWeight: 800, lineHeight: 1, color: scoreColor }}>{SC}</div>
                 <div style={{ fontFamily: M.mono, fontSize: 12, color: M.t3, marginTop: 4 }}>/100</div>
               </div>
 
               {/* Cost preview */}
-              <div style={{ background: M.s1, border: `1px solid ${M.red}30`, padding: 16, marginBottom: 28, borderRadius: 12 }}>
+              <div className="glass-card glow-red" style={{ padding: 16, marginBottom: 28, borderRadius: 12, border: `1px solid ${M.red}40` }}>
                 <div style={{ fontFamily: M.mono, fontSize: 10, letterSpacing: 2, textTransform: 'uppercase', color: M.t3, marginBottom: 6 }}>Szacowane straty / 6 miesięcy</div>
-                <div style={{ fontFamily: M.mono, fontSize: 36, fontWeight: 800, color: M.red }}>{C.total.toLocaleString('pl-PL')} zł</div>
+                <div className="gradient-text-animated" style={{ fontFamily: M.mono, fontSize: 36, fontWeight: 800 }}>{C.total.toLocaleString('pl-PL')} zł</div>
               </div>
 
               <h2 style={{ fontSize: 22, fontWeight: 800, lineHeight: 1.2, letterSpacing: -0.5, marginBottom: 12 }}>
@@ -405,7 +413,7 @@ export default function Page() {
                   onKeyDown={e => e.key === 'Enter' && submit()}
                   style={{ borderColor: emailErr ? M.red : undefined }} />
                 {emailErr && <div style={{ fontSize: 11, color: M.red, fontFamily: M.mono, textAlign: 'left' }}>{emailErr}</div>}
-                <button onClick={submit} disabled={loading}
+                <button onClick={submit} disabled={loading} className={loading ? '' : 'btn-primary'}
                   style={{ width: '100%', padding: 16, background: loading ? M.brd2 : M.red, color: loading ? M.t4 : '#fff', border: 'none', fontFamily: M.mono, fontSize: 11, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', cursor: loading ? 'not-allowed' : 'pointer', borderRadius: 10 }}>
                   {loading ? 'Wysyłam...' : 'Pokaż pełną analizę →'}
                 </button>
@@ -419,22 +427,22 @@ export default function Page() {
         {phase === 'results' && (
           <div style={{ padding: '40px 16px 0' }}>
             {/* Header */}
-            <div style={{ textAlign: 'center', marginBottom: 32, paddingBottom: 24, borderBottom: `1px solid ${M.brd}` }}>
+            <div className="result-item" style={{ textAlign: 'center', marginBottom: 32, paddingBottom: 24, borderBottom: `1px solid ${M.brd}` }}>
               <div style={{ fontFamily: M.mono, fontSize: 10, letterSpacing: 3, textTransform: 'uppercase', color: M.t3, marginBottom: 8 }}>Wyniki</div>
-              <h2 style={{ fontSize: 22, fontWeight: 800, letterSpacing: -0.5 }}>Twoja diagnoza</h2>
+              <h2 className="gradient-text-animated" style={{ fontSize: 22, fontWeight: 800, letterSpacing: -0.5 }}>Twoja diagnoza</h2>
             </div>
 
             {/* Score ring */}
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', margin: '0 0 32px' }}>
-              <div style={{ position: 'relative', width: 160, height: 160 }}>
+            <div className="result-item" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', margin: '0 0 32px' }}>
+              <div className="score-circle" style={{ position: 'relative', width: 160, height: 160 }}>
                 <svg width="160" height="160" style={{ transform: 'rotate(-90deg)' }}>
                   <circle cx="80" cy="80" r="64" fill="none" stroke={M.s2} strokeWidth={8} />
-                  <circle cx="80" cy="80" r="64" fill="none" stroke={scoreColor} strokeWidth={8}
+                  <circle className="score-ring" cx="80" cy="80" r="64" fill="none" stroke={scoreColor} strokeWidth={8}
                     strokeDasharray={circ} strokeDashoffset={offset}
                     style={{ transition: 'stroke-dashoffset 1.2s cubic-bezier(.4,0,.2,1)' }} />
                 </svg>
                 <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-                  <span style={{ fontFamily: M.mono, fontSize: 34, fontWeight: 800, color: scoreColor, lineHeight: 1 }}>{SC}</span>
+                  <span className="text-shadow-glow" style={{ fontFamily: M.mono, fontSize: 34, fontWeight: 800, color: scoreColor, lineHeight: 1 }}>{animatedScore}</span>
                   <span style={{ fontFamily: M.mono, fontSize: 11, color: M.t3, letterSpacing: 1 }}>/100</span>
                 </div>
               </div>
@@ -444,7 +452,7 @@ export default function Page() {
             </div>
 
             {/* Total */}
-            <div style={{ background: M.red, textAlign: 'center', padding: '24px 20px 20px', position: 'relative', overflow: 'hidden', marginBottom: 24, borderRadius: 14 }}>
+            <div className="result-item glass-card" style={{ textAlign: 'center', padding: '24px 20px 20px', position: 'relative', overflow: 'hidden', marginBottom: 24, borderRadius: 14, background: M.red, border: `1px solid ${M.red}` }}>
               <div style={{ position: 'absolute', inset: 0, backgroundImage: 'repeating-linear-gradient(-45deg,transparent,transparent 3px,rgba(0,0,0,.05) 3px,rgba(0,0,0,.05) 6px)' }} />
               <div style={{ position: 'relative' }}>
                 <div style={{ fontFamily: M.mono, fontSize: 9, letterSpacing: 3, textTransform: 'uppercase', opacity: .7, marginBottom: 6 }}>Tracisz w 6 miesięcy</div>
@@ -455,20 +463,20 @@ export default function Page() {
 
             {/* Comparison text */}
             {comparisons.length > 0 && (
-              <div style={{ background: M.s1, border: `1px solid ${M.brd}`, padding: 16, marginBottom: 24, borderRadius: 12 }}>
+              <div className="result-item glass-card" style={{ padding: 16, marginBottom: 24, borderRadius: 12 }}>
                 <p style={{ fontSize: 14, color: M.t1, lineHeight: 1.5, fontWeight: 400 }}
                   dangerouslySetInnerHTML={{ __html: `Za <strong style="color:${M.t1};font-weight:600">${C.total.toLocaleString('pl-PL')} zł</strong> w pół roku mógłbyś mieć: ${comparisons.join(', ')}.` }} />
               </div>
             )}
 
             {/* Norm: Ty vs przecietny */}
-            <div style={{ background: M.s1, border: `1px solid ${M.brd}`, padding: '20px 16px', marginBottom: 24, borderRadius: 12 }}>
+            <div className="result-item glass-card" style={{ padding: '20px 16px', marginBottom: 24, borderRadius: 12 }}>
               <div style={{ fontFamily: M.mono, fontSize: 10, letterSpacing: 2, textTransform: 'uppercase', color: M.t3, marginBottom: 14 }}>Ty vs przeciętny facet 25-35</div>
               {normData.map((n, i) => (
                 <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: i < normData.length - 1 ? 10 : 0 }}>
                   <span style={{ fontSize: 12, fontWeight: 500, color: i === 0 ? M.t1 : M.t2, width: 65, flexShrink: 0 }}>{n.label}</span>
                   <div style={{ flex: 1, height: 8, background: M.s2, overflow: 'hidden', borderRadius: 4 }}>
-                    <div style={{ height: '100%', background: n.color, width: `${n.pct}%`, transition: 'width .8s ease', borderRadius: 4 }} />
+                    <div className="category-bar" style={{ height: '100%', background: n.color, width: `${n.pct}%`, borderRadius: 4, boxShadow: `0 0 10px ${n.color}60` }} />
                   </div>
                   <span style={{ fontFamily: M.mono, fontSize: 11, fontWeight: 600, width: 65, flexShrink: 0, textAlign: 'right', color: n.color === M.red ? M.red : n.color === M.grn ? M.grn : M.t3 }}>
                     {n.value >= 1000 ? `${(n.value / 1000).toFixed(1)}k` : n.value.toLocaleString('pl-PL')}
@@ -481,13 +489,13 @@ export default function Page() {
             </div>
 
             {/* Projection: kumulacja 6 mies */}
-            <div style={{ background: M.s1, border: `1px solid ${M.brd}`, padding: '20px 16px', marginBottom: 24, borderRadius: 12 }}>
+            <div className="result-item glass-card" style={{ padding: '20px 16px', marginBottom: 24, borderRadius: 12 }}>
               <div style={{ fontFamily: M.mono, fontSize: 10, letterSpacing: 2, textTransform: 'uppercase', color: M.t3, marginBottom: 16 }}>Kumulacja strat: 6 miesięcy</div>
               <div style={{ display: 'flex', justifyContent: 'space-between', gap: 2, marginBottom: 8 }}>
                 {projData.map((p, i) => (
                   <div key={i} style={{ flex: 1, textAlign: 'center' }}>
                     <div style={{ height: 60, display: 'flex', alignItems: 'flex-end', justifyContent: 'center', marginBottom: 4 }}>
-                      <div style={{ width: '100%', maxWidth: 28, background: M.red, minHeight: 2, height: `${(p.v / projMax) * 55}px`, borderRadius: '4px 4px 0 0', transition: 'height .6s ease' }} />
+                      <div className="category-bar" style={{ width: '100%', maxWidth: 28, background: `linear-gradient(180deg, ${M.red}, ${M.org})`, minHeight: 2, height: `${(p.v / projMax) * 55}px`, borderRadius: '4px 4px 0 0', boxShadow: `0 0 15px ${M.red}40` }} />
                     </div>
                     <div style={{ fontFamily: M.mono, fontSize: 10, color: M.t3 }}>M{p.m}</div>
                     <div style={{ fontFamily: M.mono, fontSize: 10, color: M.t2, marginTop: 2, fontWeight: 500 }}>{(p.v / 1000).toFixed(1)}k</div>
@@ -496,22 +504,22 @@ export default function Page() {
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 12, paddingTop: 12, borderTop: `1px solid ${M.brd}` }}>
                 <span style={{ fontSize: 13, color: M.t2, fontWeight: 500 }}>Suma po 6 miesiącach</span>
-                <span style={{ fontFamily: M.mono, fontSize: 18, fontWeight: 700, color: M.red }}>{C.total.toLocaleString('pl-PL')} zł</span>
+                <span className="gradient-text-animated" style={{ fontFamily: M.mono, fontSize: 18, fontWeight: 700 }}>{C.total.toLocaleString('pl-PL')} zł</span>
               </div>
             </div>
 
             {/* Cats grid */}
             {catData.length > 0 && (
-              <div style={{ marginBottom: 24 }}>
+              <div className="result-item" style={{ marginBottom: 24 }}>
                 <div style={{ fontFamily: M.mono, fontSize: 10, letterSpacing: 2, textTransform: 'uppercase', color: M.t3, marginBottom: 14 }}>Podział strat</div>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
                   {catData.map((c, i) => (
-                    <div key={i} style={{ background: M.s1, border: `1px solid ${M.brd}`, padding: '14px 12px', borderRadius: 10 }}>
+                    <div key={i} className="glass-card hover-lift" style={{ padding: '14px 12px', borderRadius: 10 }}>
                       <div style={{ fontSize: 15, marginBottom: 4 }}>{c.ic}</div>
-                      <div style={{ fontFamily: M.mono, fontSize: 16, fontWeight: 700, color: M.red }}>{c.v.toLocaleString('pl-PL')} zł</div>
+                      <div className="gradient-text" style={{ fontFamily: M.mono, fontSize: 16, fontWeight: 700 }}>{c.v.toLocaleString('pl-PL')} zł</div>
                       <div style={{ fontSize: 11, color: M.t3, textTransform: 'uppercase', letterSpacing: 1, marginTop: 2, fontWeight: 500 }}>{c.l}</div>
                       <div style={{ height: 3, background: M.s2, marginTop: 8, borderRadius: 2 }}>
-                        <div style={{ height: '100%', background: c.c, width: `${(c.v / maxC) * 100}%`, transition: 'width 1s ease .3s', borderRadius: 2 }} />
+                        <div className="category-bar" style={{ height: '100%', background: c.c, width: `${(c.v / maxC) * 100}%`, borderRadius: 2, boxShadow: `0 0 8px ${c.c}60` }} />
                       </div>
                     </div>
                   ))}
@@ -521,14 +529,14 @@ export default function Page() {
 
             {/* Hormones */}
             {hormones.length > 0 && (
-              <div style={{ background: M.s1, border: `1px solid ${M.brd}`, padding: '20px 16px', marginBottom: 24, borderRadius: 12 }}>
+              <div className="result-item glass-card" style={{ padding: '20px 16px', marginBottom: 24, borderRadius: 12 }}>
                 <div style={{ fontFamily: M.mono, fontSize: 10, letterSpacing: 2, textTransform: 'uppercase', color: M.t3, marginBottom: 14 }}>Wpływ na Twoje hormony</div>
                 {hormones.map((h, i) => (
                   <div key={i} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 0', borderBottom: i < hormones.length - 1 ? `1px solid ${M.brd}` : 'none' }}>
                     <span style={{ fontSize: 14, fontWeight: 500, color: M.t1, display: 'flex', alignItems: 'center', gap: 6 }}>
                       <span style={{ fontSize: 16 }}>{h.a}</span> {h.n}
                     </span>
-                    <span style={{ fontFamily: M.mono, fontSize: 11, fontWeight: 500, padding: '3px 10px', letterSpacing: 0.5, color: h.c, border: `1px solid ${h.c}33`, borderRadius: 6 }}>{h.i}</span>
+                    <span style={{ fontFamily: M.mono, fontSize: 11, fontWeight: 500, padding: '3px 10px', letterSpacing: 0.5, color: h.c, border: `1px solid ${h.c}33`, borderRadius: 6, boxShadow: `0 0 10px ${h.c}20` }}>{h.i}</span>
                   </div>
                 ))}
               </div>
@@ -536,12 +544,12 @@ export default function Page() {
 
             {/* Timeline: co sie dzieje w Twoim ciele */}
             {timeline.length > 0 && (
-              <div style={{ marginBottom: 24 }}>
+              <div className="result-item" style={{ marginBottom: 24 }}>
                 <div style={{ fontFamily: M.mono, fontSize: 10, letterSpacing: 2, textTransform: 'uppercase', color: M.t3, marginBottom: 16 }}>Co się dzieje w Twoim ciele</div>
                 {timeline.map((t, i) => (
                   <div key={i} style={{ display: 'flex', gap: 12, marginBottom: 12 }}>
                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flexShrink: 0 }}>
-                      <div style={{ width: 8, height: 8, background: M.red, borderRadius: 4, flexShrink: 0 }} />
+                      <div className="glow-red" style={{ width: 8, height: 8, background: M.red, borderRadius: 4, flexShrink: 0 }} />
                       {i < timeline.length - 1 && <div style={{ width: 1, flex: 1, background: M.brd, marginTop: 3, minHeight: 10 }} />}
                     </div>
                     <div>
@@ -556,9 +564,9 @@ export default function Page() {
 
             {/* Insights */}
             {insights.length > 0 && (
-              <div style={{ marginBottom: 24 }}>
+              <div className="result-item" style={{ marginBottom: 24 }}>
                 {insights.map((ins, i) => (
-                  <div key={i} style={{ padding: 14, borderLeft: `2px solid ${M.red}`, background: M.s1, marginBottom: 4, borderRadius: '0 10px 10px 0' }}>
+                  <div key={i} className="glass-card" style={{ padding: 14, borderLeft: `2px solid ${M.red}`, marginBottom: 4, borderRadius: '0 10px 10px 0' }}>
                     <p style={{ fontSize: 13.5, color: M.t3, lineHeight: 1.55, fontWeight: 400 }}
                       dangerouslySetInnerHTML={{ __html: ins.replace(/<b>/g, `<strong style="color:${M.t1};font-weight:600">`).replace(/<\/b>/g, '</strong>') }} />
                   </div>
@@ -567,7 +575,7 @@ export default function Page() {
             )}
 
             {/* Closing statement */}
-            <div style={{ textAlign: 'center', padding: '28px 16px', marginBottom: 24, border: `1px solid ${M.brd}`, background: M.s1, borderRadius: 14 }}>
+            <div className="result-item glass-card" style={{ textAlign: 'center', padding: '28px 16px', marginBottom: 24, borderRadius: 14 }}>
               <p style={{ fontSize: 15, color: M.t2, lineHeight: 1.65, fontWeight: 400 }}>
                 To nie jest kara za to jak żyjesz.<br />
                 To jest <strong style={{ color: M.t1, fontWeight: 600 }}>mechanika</strong>: hormony, mózg, metabolizm.<br />
@@ -576,21 +584,21 @@ export default function Page() {
             </div>
 
             {/* CTA */}
-            <div style={{ background: M.s1, border: `1px solid ${M.brd2}`, padding: '24px 20px', marginBottom: 24, borderRadius: 14 }}>
+            <div className="result-item glass-card" style={{ padding: '24px 20px', marginBottom: 24, borderRadius: 14 }}>
               <div style={{ fontFamily: M.mono, fontSize: 10, letterSpacing: 2, textTransform: 'uppercase', color: M.t3, marginBottom: 12 }}>Co dalej?</div>
               <p style={{ fontSize: 15, color: M.t2, lineHeight: 1.65, fontWeight: 400, marginBottom: 20 }}>
                 Pracuję z ludźmi którzy żyją dokładnie tak jak Ty — imprezy, praca, chaos.
                 Mimo to mają formę, energię i sprawny mózg. <strong style={{ color: M.t1, fontWeight: 600 }}>Bez rezygnowania z życia.</strong>
               </p>
-              <a href="https://system.talerzihantle.com" target="_blank" rel="noopener noreferrer"
+              <a href="https://system.talerzihantle.com" target="_blank" rel="noopener noreferrer" className="btn-primary hover-lift"
                 style={{ display: 'block', background: M.red, color: '#fff', fontFamily: M.mono, fontSize: 11, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', textDecoration: 'none', padding: 18, textAlign: 'center', marginBottom: 12, borderRadius: 10 }}>
                 Sprawdź czy się kwalifikujesz →
               </a>
               <div style={{ textAlign: 'center', fontSize: 12, color: M.t3, fontFamily: M.mono, letterSpacing: 0.5 }}>
                 lub napisz <strong style={{ color: M.t1 }}>JAZDA</strong> w DM → @hantleitalerz
               </div>
-              <a href="https://neurobiologia-formy.talerzihantle.com" target="_blank" rel="noopener noreferrer"
-                style={{ display: 'block', textAlign: 'center', marginTop: 16, padding: '14px 20px', background: 'transparent', border: `1px solid ${M.red}`, color: M.red, fontFamily: M.mono, fontSize: 10, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', textDecoration: 'none', borderRadius: 10 }}>
+              <a href="https://neurobiologia-formy.talerzihantle.com" target="_blank" rel="noopener noreferrer" className="hover-lift"
+                style={{ display: 'block', textAlign: 'center', marginTop: 16, padding: '14px 20px', background: 'transparent', border: `1px solid ${M.red}`, color: M.red, fontFamily: M.mono, fontSize: 10, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', textDecoration: 'none', borderRadius: 10, boxShadow: `0 0 20px ${M.red}20` }}>
                 Neurobiologia Formy - 49 zł →
               </a>
               <p style={{ textAlign: 'center', fontSize: 11, color: M.t3, marginTop: 6, fontFamily: M.mono }}>
@@ -599,7 +607,7 @@ export default function Page() {
             </div>
 
             {/* Sources */}
-            <div style={{ padding: 16, background: M.s1, border: `1px solid ${M.brd}`, marginBottom: 32, borderRadius: 12 }}>
+            <div className="result-item glass-card" style={{ padding: 16, marginBottom: 32, borderRadius: 12 }}>
               <div style={{ fontFamily: M.mono, fontSize: 10, letterSpacing: 2, textTransform: 'uppercase', color: M.t3, marginBottom: 10 }}>Skąd te liczby</div>
               <div style={{ fontSize: 12, color: M.t2, lineHeight: 1.7 }}>
                 {['Nutrition & Metabolism, 2014: alkohol >1.5g/kg = spadek T ~27% w 12h',
