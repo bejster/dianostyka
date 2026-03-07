@@ -60,9 +60,9 @@ const M = {
   yel: '#d4a82a',
   grn: '#3cba5e',
   t1: '#ffffff',
-  t2: '#d4d0c8',
-  t3: '#9a958a',
-  t4: '#5e5a50',
+  t2: '#e0ddd6',
+  t3: '#b8b3a8',
+  t4: '#8a857a',
   mono: "'JetBrains Mono', 'SF Mono', 'Fira Code', monospace",
   sans: "'Inter', system-ui, -apple-system, sans-serif",
 };
@@ -267,7 +267,8 @@ export default function Page() {
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;600;700;800&display=swap');
         *{margin:0;padding:0;box-sizing:border-box}
         body{background:${M.bg};color:${M.t1};font-family:${M.sans};min-height:100vh;overflow-x:hidden;-webkit-font-smoothing:antialiased;width:100%}
-        h1,h2,h3{text-shadow:0 0 20px rgba(255,255,255,.08),0 1px 2px rgba(0,0,0,.5)}
+        h1,h2,h3{text-shadow:0 0 20px rgba(255,255,255,.1),0 1px 2px rgba(0,0,0,.6)}
+        p,span,div,label{text-shadow:0 1px 2px rgba(0,0,0,.4)}
         body::before{content:'';position:fixed;inset:0;background:radial-gradient(600px circle at 20% 10%,${M.gold}08 0%,transparent 50%),radial-gradient(400px circle at 80% 60%,${M.gold}05 0%,transparent 50%),radial-gradient(300px circle at 50% 90%,${M.gold}04 0%,transparent 40%);pointer-events:none;z-index:0}
         body::after{content:'';position:fixed;inset:0;background:url("data:image/svg+xml,%3Csvg width='100' height='100' xmlns='http://www.w3.org/2000/svg'%3E%3Cdefs%3E%3Cpattern id='g' width='100' height='100' patternUnits='userSpaceOnUse'%3E%3Cpath d='M100 0L50 86.6 0 0z' fill='none' stroke='%23c8a84e' stroke-opacity='0.025' stroke-width='0.5'/%3E%3Ccircle cx='50' cy='35' r='1' fill='%23c8a84e' fill-opacity='0.04'/%3E%3C/pattern%3E%3C/defs%3E%3Crect width='100' height='100' fill='url(%23g)'/%3E%3C/svg%3E");pointer-events:none;z-index:0}
 
