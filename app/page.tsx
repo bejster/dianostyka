@@ -170,9 +170,9 @@ export default function Page() {
     timeline.push({ period: '6 miesięcy', text: `<b>${C.totalLostH}h</b> pracy na autopilocie. Przy Twojej stawce to <b>${C.prodCost.toLocaleString('pl-PL')} zł</b>. Twój mózg chemicznie nie jest w stanie działać na 100% kiedy hormony, sen i dieta nie grają.` });
   }
 
-  // Severity opcje ze złotą skalą
+  // Severity opcje - jednolita złota skala
   const sevOpts = [{ n: '0', l: 'Brak' }, { n: '1', l: 'Rzadko' }, { n: '2', l: 'Często' }, { n: '3', l: 'Zawsze' }];
-  const sevColors = [M.grn, M.yel, M.org, M.red];
+  const sevColors = [M.t4, M.goldDim, M.goldMuted, M.gold];
 
   const SevField = ({ label, sub, k, val }: { label: string; sub?: string; k: SevKey; val: number }) => (
     <div style={{ marginBottom: 26 }}>
@@ -209,10 +209,10 @@ export default function Page() {
           <span style={{ fontSize: 15, color: M.t1, fontWeight: 500, flex: 1, lineHeight: 1.45 }}>{label}</span>
           <span style={{ fontFamily: M.mono, fontSize: 17, fontWeight: 700, color: hot ? M.gold : M.t1, minWidth: 60, textAlign: 'right' }}>{val}{unit}</span>
         </div>}
-        <div style={{ position: 'relative', height: 44, display: 'flex', alignItems: 'center' }}>
-          <div style={{ position: 'absolute', left: 0, right: 0, height: 6, background: M.s3, borderRadius: 3 }} />
-          <div style={{ position: 'absolute', left: 0, height: 6, width: `${p}%`, background: hot ? `linear-gradient(90deg, ${M.goldDim}, ${M.gold})` : M.t4, borderRadius: 3, transition: 'width .15s ease' }} />
-          <input type="range" min={min} max={max} step={step} value={val} onChange={e => upd(k, parseFloat(e.target.value))} style={{ width: '100%', height: 44, WebkitAppearance: 'none', background: 'transparent', position: 'relative', zIndex: 2, cursor: 'pointer' }} />
+        <div style={{ position: 'relative', height: 44, display: 'flex', alignItems: 'center', padding: '0 2px' }}>
+          <div style={{ position: 'absolute', left: 2, right: 2, height: 6, background: M.s3, borderRadius: 3, top: '50%', marginTop: -3 }} />
+          <div style={{ position: 'absolute', left: 2, height: 6, width: `calc(${p}% - ${p * 0.04}px)`, background: hot ? M.gold : M.t4, borderRadius: 3, transition: 'width .1s linear', top: '50%', marginTop: -3, opacity: hot ? 0.85 : 0.5 }} />
+          <input type="range" min={min} max={max} step={step} value={val} onChange={e => upd(k, parseFloat(e.target.value))} style={{ width: '100%', height: 44, WebkitAppearance: 'none', background: 'transparent', position: 'relative', zIndex: 2, cursor: 'pointer', margin: 0, padding: 0 }} />
         </div>
         {note && <div style={{ textAlign: 'right', fontFamily: M.mono, fontSize: 11, color: M.t3, marginTop: 6 }}>{note}</div>}
       </div>
@@ -267,15 +267,15 @@ export default function Page() {
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;600;700;800&display=swap');
         *{margin:0;padding:0;box-sizing:border-box}
         body{background:${M.bg};color:${M.t1};font-family:${M.sans};min-height:100vh;overflow-x:hidden;-webkit-font-smoothing:antialiased}
-        body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse 70% 45% at 50% -5%,${M.gold}06 0%,transparent 55%),radial-gradient(ellipse 50% 30% at 80% 100%,${M.gold}04 0%,transparent 50%);pointer-events:none;z-index:0}
-        body::after{content:'';position:fixed;inset:0;background:url("data:image/svg+xml,%3Csvg width='60' height='60' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0 0h60v60H0z' fill='none'/%3E%3Cpath d='M0 30h60M30 0v60' stroke='%23c8a84e' stroke-opacity='0.025' stroke-width='0.5'/%3E%3C/svg%3E");pointer-events:none;z-index:0}
+        body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse 80% 50% at 50% 0%,${M.gold}04 0%,transparent 50%);pointer-events:none;z-index:0}
+        body::after{content:'';position:fixed;inset:0;background:url("data:image/svg+xml,%3Csvg width='80' height='80' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0 0h80v80H0z' fill='none'/%3E%3Cpath d='M0 40h80M40 0v80' stroke='%23c8a84e' stroke-opacity='0.018' stroke-width='0.5'/%3E%3C/svg%3E");pointer-events:none;z-index:0}
 
-        input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:44px;background:transparent;cursor:pointer;margin:0}
-        input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:28px;height:28px;background:${M.gold};border:3px solid ${M.bg};border-radius:50%;cursor:grab;box-shadow:0 0 0 1px ${M.gold}40,0 2px 8px ${M.gold}30;transition:transform .15s ease,box-shadow .15s ease}
-        input[type=range]::-webkit-slider-thumb:hover{transform:scale(1.15);box-shadow:0 0 0 2px ${M.gold}50,0 4px 16px ${M.gold}40}
-        input[type=range]::-webkit-slider-thumb:active{transform:scale(1.1);cursor:grabbing;background:${M.goldMuted}}
-        input[type=range]::-moz-range-thumb{width:24px;height:24px;background:${M.gold};border:3px solid ${M.bg};border-radius:50%;cursor:grab;box-shadow:0 0 0 1px ${M.gold}40,0 2px 8px ${M.gold}30}
-        input[type=range]::-moz-range-track{background:transparent;height:6px}
+        input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:44px;background:transparent;cursor:pointer;margin:0;touch-action:pan-x}
+        input[type=range]::-webkit-slider-runnable-track{height:6px;background:transparent;border-radius:3px}
+        input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:24px;height:24px;background:${M.gold};border:none;border-radius:50%;cursor:grab;box-shadow:0 2px 6px rgba(0,0,0,.4);margin-top:-9px;transition:box-shadow .15s ease}
+        input[type=range]::-webkit-slider-thumb:active{cursor:grabbing;box-shadow:0 2px 10px ${M.gold}50}
+        input[type=range]::-moz-range-thumb{width:24px;height:24px;background:${M.gold};border:none;border-radius:50%;cursor:grab;box-shadow:0 2px 6px rgba(0,0,0,.4)}
+        input[type=range]::-moz-range-track{background:transparent;height:6px;border:none}
 
         input[type=email]{width:100%;padding:16px 18px;background:${M.s1};border:1.5px solid ${M.brd2};color:${M.t1};font-size:16px;font-weight:500;font-family:${M.sans};outline:none;border-radius:12px;transition:border-color .2s ease}
         input[type=email]:focus{border-color:${M.gold}}
