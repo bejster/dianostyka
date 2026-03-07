@@ -59,10 +59,10 @@ const M = {
   org: '#e8923a',
   yel: '#d4a82a',
   grn: '#3cba5e',
-  t1: '#f2f0eb',
-  t2: '#b8b4aa',
-  t3: '#777268',
-  t4: '#4a473f',
+  t1: '#ffffff',
+  t2: '#d4d0c8',
+  t3: '#9a958a',
+  t4: '#5e5a50',
   mono: "'JetBrains Mono', 'SF Mono', 'Fira Code', monospace",
   sans: "'Inter', system-ui, -apple-system, sans-serif",
 };
@@ -266,7 +266,8 @@ export default function Page() {
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;600;700;800&display=swap');
         *{margin:0;padding:0;box-sizing:border-box}
-        body{background:${M.bg};color:${M.t1};font-family:${M.sans};min-height:100vh;overflow-x:hidden;-webkit-font-smoothing:antialiased}
+        body{background:${M.bg};color:${M.t1};font-family:${M.sans};min-height:100vh;overflow-x:hidden;-webkit-font-smoothing:antialiased;width:100%}
+        h1,h2,h3{text-shadow:0 0 20px rgba(255,255,255,.08),0 1px 2px rgba(0,0,0,.5)}
         body::before{content:'';position:fixed;inset:0;background:radial-gradient(600px circle at 20% 10%,${M.gold}08 0%,transparent 50%),radial-gradient(400px circle at 80% 60%,${M.gold}05 0%,transparent 50%),radial-gradient(300px circle at 50% 90%,${M.gold}04 0%,transparent 40%);pointer-events:none;z-index:0}
         body::after{content:'';position:fixed;inset:0;background:url("data:image/svg+xml,%3Csvg width='100' height='100' xmlns='http://www.w3.org/2000/svg'%3E%3Cdefs%3E%3Cpattern id='g' width='100' height='100' patternUnits='userSpaceOnUse'%3E%3Cpath d='M100 0L50 86.6 0 0z' fill='none' stroke='%23c8a84e' stroke-opacity='0.025' stroke-width='0.5'/%3E%3Ccircle cx='50' cy='35' r='1' fill='%23c8a84e' fill-opacity='0.04'/%3E%3C/pattern%3E%3C/defs%3E%3Crect width='100' height='100' fill='url(%23g)'/%3E%3C/svg%3E");pointer-events:none;z-index:0}
 
@@ -297,7 +298,7 @@ export default function Page() {
         ::-webkit-scrollbar-thumb{background:${M.brd2};border-radius:2px}
       `}</style>
 
-      <div ref={topRef} style={{ maxWidth: 440, margin: '0 auto', padding: '0 0 60px', position: 'relative', zIndex: 1 }}>
+      <div ref={topRef} style={{ maxWidth: 440, width: '100%', margin: '0 auto', padding: '0 0 60px', position: 'relative', zIndex: 1 }}>
 
         {/* ── FORM ── */}
         {phase === 'form' && (
@@ -322,7 +323,7 @@ export default function Page() {
             {C.total > 0 && (
               <div style={{ position: 'sticky', top: 72, zIndex: 99, background: 'rgba(10,10,10,0.94)', backdropFilter: 'blur(24px)', borderBottom: `1px solid ${M.brd}`, padding: '10px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <span style={{ fontFamily: M.mono, fontSize: 10, letterSpacing: 2.5, textTransform: 'uppercase', color: M.t4 }}>Straty / 6 mies.</span>
-                <span style={{ fontFamily: M.mono, fontSize: 18, fontWeight: 700, color: M.gold }}>{C.total.toLocaleString('pl-PL')} zł</span>
+                <span style={{ fontFamily: M.mono, fontSize: 18, fontWeight: 700, color: M.gold, textShadow: `0 0 12px ${M.gold}25` }}>{C.total.toLocaleString('pl-PL')} zł</span>
               </div>
             )}
 
@@ -337,7 +338,7 @@ export default function Page() {
                   }}>
                     ⚡ 2 minuty
                   </div>
-                  <h1 style={{ fontSize: 28, fontWeight: 800, lineHeight: 1.18, letterSpacing: -0.5, marginBottom: 16, color: M.t1 }}>
+                  <h1 style={{ fontSize: 28, fontWeight: 800, lineHeight: 1.18, letterSpacing: -0.5, marginBottom: 16, color: M.t1, textShadow: '0 0 24px rgba(255,255,255,.1), 0 1px 3px rgba(0,0,0,.5)' }}>
                     Ile <em style={{ fontStyle: 'normal', color: M.gold }}>naprawdę</em> Cię kosztuje<br />to jak teraz żyjesz?
                   </h1>
                   <p style={{ color: M.t3, fontSize: 14.5, lineHeight: 1.65, fontWeight: 400, maxWidth: 340, margin: '0 auto 14px' }}>
@@ -351,7 +352,7 @@ export default function Page() {
               {sec > 0 && (
                 <div className="fade-up" style={{ padding: '28px 0 24px' }}>
                   <div style={{ fontFamily: M.mono, fontSize: 10, letterSpacing: 2.5, textTransform: 'uppercase', color: M.t4, marginBottom: 8 }}>Sekcja {sec + 1}</div>
-                  <h2 style={{ fontSize: 22, fontWeight: 800, letterSpacing: -0.3, color: M.t1 }}>{SECTIONS[sec]}</h2>
+                  <h2 style={{ fontSize: 22, fontWeight: 800, letterSpacing: -0.3, color: M.t1, textShadow: '0 0 20px rgba(255,255,255,.08)' }}>{SECTIONS[sec]}</h2>
                 </div>
               )}
 
@@ -446,7 +447,7 @@ export default function Page() {
               <Logo />
               <div style={{ marginTop: 32, marginBottom: 28 }}>
                 <div style={{ fontFamily: M.mono, fontSize: 10, letterSpacing: 2.5, textTransform: 'uppercase', color: M.t4, marginBottom: 10 }}>Twój Damage Score</div>
-                <div style={{ fontFamily: M.mono, fontSize: 80, fontWeight: 800, lineHeight: 1, color: scoreColor }}>{SC}</div>
+                <div style={{ fontFamily: M.mono, fontSize: 80, fontWeight: 800, lineHeight: 1, color: scoreColor, textShadow: `0 0 30px ${scoreColor}30` }}>{SC}</div>
                 <div style={{ fontFamily: M.mono, fontSize: 12, color: M.t4, marginTop: 6 }}>/100</div>
               </div>
 
@@ -455,7 +456,7 @@ export default function Page() {
                 <div style={{ fontFamily: M.mono, fontSize: 38, fontWeight: 800, color: M.gold }}>{C.total.toLocaleString('pl-PL')} zł</div>
               </div>
 
-              <h2 style={{ fontSize: 22, fontWeight: 800, lineHeight: 1.25, letterSpacing: -0.5, marginBottom: 14, color: M.t1 }}>
+              <h2 style={{ fontSize: 22, fontWeight: 800, lineHeight: 1.25, letterSpacing: -0.5, marginBottom: 14, color: M.t1, textShadow: '0 0 20px rgba(255,255,255,.1)' }}>
                 Podaj email żeby<br />zobaczyć pełną analizę
               </h2>
               <p style={{ fontSize: 14, color: M.t3, lineHeight: 1.6, marginBottom: 26, fontWeight: 400 }}>
@@ -486,103 +487,103 @@ export default function Page() {
 
         {/* ── RESULTS ── */}
         {phase === 'results' && (
-          <div className="fade-up" style={{ padding: '40px 16px 0' }}>
+          <div className="fade-up" style={{ padding: '32px 16px 20px', width: '100%', boxSizing: 'border-box' }}>
             {/* Header */}
-            <div style={{ textAlign: 'center', marginBottom: 36, paddingBottom: 24, borderBottom: `1px solid ${M.brd}` }}>
+            <div style={{ textAlign: 'center', marginBottom: 32, paddingBottom: 20, borderBottom: `1px solid ${M.brd}` }}>
               <Logo />
-              <div style={{ marginTop: 20 }}>
+              <div style={{ marginTop: 18 }}>
                 <div style={{ fontFamily: M.mono, fontSize: 10, letterSpacing: 3, textTransform: 'uppercase', color: M.t4, marginBottom: 6 }}>Wyniki</div>
-                <h2 style={{ fontSize: 24, fontWeight: 800, letterSpacing: -0.5, color: M.t1 }}>Twoja diagnoza</h2>
+                <h2 style={{ fontSize: 24, fontWeight: 800, letterSpacing: -0.5, color: M.t1, textShadow: `0 0 24px rgba(255,255,255,.1)` }}>Twoja diagnoza</h2>
               </div>
             </div>
 
             {/* Score ring */}
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', margin: '0 0 36px' }}>
-              <div style={{ position: 'relative', width: 160, height: 160 }}>
-                <svg width="160" height="160" style={{ transform: 'rotate(-90deg)' }}>
-                  <circle cx="80" cy="80" r="64" fill="none" stroke={M.s2} strokeWidth={8} />
-                  <circle cx="80" cy="80" r="64" fill="none" stroke={scoreColor} strokeWidth={8}
-                    strokeDasharray={circ} strokeDashoffset={offset} strokeLinecap="round"
-                    style={{ transition: 'stroke-dashoffset 1.2s cubic-bezier(.4,0,.2,1)' }} />
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', margin: '0 auto 32px', width: '100%' }}>
+              <div style={{ position: 'relative', width: 150, height: 150 }}>
+                <svg width="150" height="150" viewBox="0 0 150 150" style={{ transform: 'rotate(-90deg)', display: 'block' }}>
+                  <circle cx="75" cy="75" r="60" fill="none" stroke={M.s2} strokeWidth={7} />
+                  <circle cx="75" cy="75" r="60" fill="none" stroke={scoreColor} strokeWidth={7}
+                    strokeDasharray={2 * Math.PI * 60} strokeDashoffset={2 * Math.PI * 60 - (SC / 100) * 2 * Math.PI * 60} strokeLinecap="round"
+                    style={{ transition: 'stroke-dashoffset 1.2s cubic-bezier(.4,0,.2,1)', filter: `drop-shadow(0 0 6px ${scoreColor}40)` }} />
                 </svg>
                 <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-                  <span style={{ fontFamily: M.mono, fontSize: 36, fontWeight: 800, color: scoreColor, lineHeight: 1 }}>{SC}</span>
+                  <span style={{ fontFamily: M.mono, fontSize: 34, fontWeight: 800, color: scoreColor, lineHeight: 1, textShadow: `0 0 16px ${scoreColor}30` }}>{SC}</span>
                   <span style={{ fontFamily: M.mono, fontSize: 11, color: M.t4, letterSpacing: 1, marginTop: 2 }}>/100</span>
                 </div>
               </div>
-              <div style={{ fontSize: 14, fontWeight: 600, color: scoreColor, marginTop: 14 }}>
+              <div style={{ fontSize: 14, fontWeight: 600, color: scoreColor, marginTop: 12, textAlign: 'center', textShadow: `0 0 12px ${scoreColor}20` }}>
                 {SC >= 75 ? 'Pracujesz przeciwko sobie' : SC >= 50 ? 'Hormony i mózg pod presją' : SC >= 25 ? 'Twoje ciało już to czuje' : 'Niskie ryzyko - ale nie zero'}
               </div>
             </div>
 
             {/* Total - złota karta */}
-            <div style={{ background: `linear-gradient(135deg, ${M.gold}, ${M.goldMuted})`, textAlign: 'center', padding: '26px 20px 22px', position: 'relative', overflow: 'hidden', marginBottom: 24, borderRadius: 16 }}>
+            <div style={{ background: `linear-gradient(135deg, ${M.gold}, ${M.goldMuted})`, textAlign: 'center', padding: '24px 16px 20px', position: 'relative', overflow: 'hidden', marginBottom: 20, borderRadius: 14, width: '100%', boxSizing: 'border-box' }}>
               <div style={{ position: 'absolute', inset: 0, backgroundImage: 'repeating-linear-gradient(-45deg,transparent,transparent 4px,rgba(0,0,0,.06) 4px,rgba(0,0,0,.06) 8px)' }} />
               <div style={{ position: 'relative' }}>
-                <div style={{ fontFamily: M.mono, fontSize: 9, letterSpacing: 3.5, textTransform: 'uppercase', color: '#0a0a0a', opacity: .6, marginBottom: 8 }}>Tracisz w 6 miesięcy</div>
-                <div style={{ fontFamily: M.mono, fontSize: 42, fontWeight: 800, color: '#0a0a0a' }}>{C.total.toLocaleString('pl-PL')} zł</div>
-                <div style={{ fontFamily: M.mono, fontSize: 12, color: '#0a0a0a', opacity: .5, marginTop: 6 }}>= {Math.round(C.total / 6).toLocaleString('pl-PL')} zł / miesiąc</div>
+                <div style={{ fontFamily: M.mono, fontSize: 9, letterSpacing: 3.5, textTransform: 'uppercase', color: '#0a0a0a', opacity: .6, marginBottom: 6 }}>Tracisz w 6 miesięcy</div>
+                <div style={{ fontFamily: M.mono, fontSize: 38, fontWeight: 800, color: '#0a0a0a' }}>{C.total.toLocaleString('pl-PL')} zł</div>
+                <div style={{ fontFamily: M.mono, fontSize: 12, color: '#0a0a0a', opacity: .5, marginTop: 4 }}>= {Math.round(C.total / 6).toLocaleString('pl-PL')} zł / miesiąc</div>
               </div>
             </div>
 
             {/* Comparison text */}
             {comparisons.length > 0 && (
-              <div style={{ background: M.s1, border: `1px solid ${M.brd}`, padding: 18, marginBottom: 24, borderRadius: 14 }}>
-                <p style={{ fontSize: 14, color: M.t2, lineHeight: 1.55, fontWeight: 400 }}
+              <div style={{ background: M.s1, border: `1px solid ${M.brd}`, padding: '16px 14px', marginBottom: 20, borderRadius: 12, width: '100%', boxSizing: 'border-box' }}>
+                <p style={{ fontSize: 13.5, color: M.t2, lineHeight: 1.55, fontWeight: 400, textAlign: 'center' }}
                   dangerouslySetInnerHTML={{ __html: `Za <strong style="color:${M.gold};font-weight:600">${C.total.toLocaleString('pl-PL')} zł</strong> w pół roku mógłbyś mieć: ${comparisons.join(', ')}.` }} />
               </div>
             )}
 
             {/* Norm: Ty vs przeciętny */}
-            <div style={{ background: M.s1, border: `1px solid ${M.brd}`, padding: '22px 18px', marginBottom: 24, borderRadius: 14 }}>
-              <div style={{ fontFamily: M.mono, fontSize: 10, letterSpacing: 2.5, textTransform: 'uppercase', color: M.t4, marginBottom: 16 }}>Ty vs przeciętny facet 25-35</div>
+            <div style={{ background: M.s1, border: `1px solid ${M.brd}`, padding: '18px 14px', marginBottom: 20, borderRadius: 12, width: '100%', boxSizing: 'border-box' }}>
+              <div style={{ fontFamily: M.mono, fontSize: 10, letterSpacing: 2.5, textTransform: 'uppercase', color: M.t4, marginBottom: 14 }}>Ty vs przeciętny facet 25-35</div>
               {normData.map((n, i) => (
-                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: i < normData.length - 1 ? 12 : 0 }}>
-                  <span style={{ fontSize: 12, fontWeight: 500, color: i === 0 ? M.t1 : M.t3, width: 65, flexShrink: 0 }}>{n.label}</span>
-                  <div style={{ flex: 1, height: 8, background: M.s3, overflow: 'hidden', borderRadius: 4 }}>
+                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: i < normData.length - 1 ? 10 : 0 }}>
+                  <span style={{ fontSize: 11, fontWeight: 500, color: i === 0 ? M.t1 : M.t3, width: 58, flexShrink: 0 }}>{n.label}</span>
+                  <div style={{ flex: 1, height: 7, background: M.s3, overflow: 'hidden', borderRadius: 4, minWidth: 0 }}>
                     <div style={{ height: '100%', background: n.color, width: `${n.pct}%`, transition: 'width .8s ease', borderRadius: 4 }} />
                   </div>
-                  <span style={{ fontFamily: M.mono, fontSize: 11, fontWeight: 600, width: 65, flexShrink: 0, textAlign: 'right', color: n.color === M.gold ? M.gold : n.color === M.grn ? M.grn : M.t4 }}>
+                  <span style={{ fontFamily: M.mono, fontSize: 11, fontWeight: 600, width: 55, flexShrink: 0, textAlign: 'right', color: n.color === M.gold ? M.gold : n.color === M.grn ? M.grn : M.t4 }}>
                     {n.value >= 1000 ? `${(n.value / 1000).toFixed(1)}k` : n.value.toLocaleString('pl-PL')}
                   </span>
                 </div>
               ))}
-              <div style={{ marginTop: 12, fontSize: 12, color: M.t3, fontStyle: 'italic' }}>
-                &ldquo;Świadomy&rdquo; = żyje normalnie, ale rozumie mechanizmy i minimalizuje straty.
+              <div style={{ marginTop: 10, fontSize: 11, color: M.t4, fontStyle: 'italic', textAlign: 'center' }}>
+                &ldquo;Świadomy&rdquo; = żyje normalnie, ale rozumie mechanizmy.
               </div>
             </div>
 
             {/* Projection: kumulacja 6 mies */}
-            <div style={{ background: M.s1, border: `1px solid ${M.brd}`, padding: '22px 18px', marginBottom: 24, borderRadius: 14 }}>
-              <div style={{ fontFamily: M.mono, fontSize: 10, letterSpacing: 2.5, textTransform: 'uppercase', color: M.t4, marginBottom: 18 }}>Kumulacja strat: 6 miesięcy</div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', gap: 3, marginBottom: 10 }}>
+            <div style={{ background: M.s1, border: `1px solid ${M.brd}`, padding: '18px 14px', marginBottom: 20, borderRadius: 12, width: '100%', boxSizing: 'border-box' }}>
+              <div style={{ fontFamily: M.mono, fontSize: 10, letterSpacing: 2.5, textTransform: 'uppercase', color: M.t4, marginBottom: 16 }}>Kumulacja strat: 6 miesięcy</div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', gap: 2, marginBottom: 8 }}>
                 {projData.map((p, i) => (
-                  <div key={i} style={{ flex: 1, textAlign: 'center' }}>
-                    <div style={{ height: 60, display: 'flex', alignItems: 'flex-end', justifyContent: 'center', marginBottom: 6 }}>
-                      <div style={{ width: '100%', maxWidth: 28, background: `linear-gradient(180deg, ${M.gold}, ${M.goldDim})`, minHeight: 3, height: `${(p.v / projMax) * 55}px`, borderRadius: '5px 5px 0 0', transition: 'height .6s ease' }} />
+                  <div key={i} style={{ flex: 1, textAlign: 'center', minWidth: 0 }}>
+                    <div style={{ height: 55, display: 'flex', alignItems: 'flex-end', justifyContent: 'center', marginBottom: 4 }}>
+                      <div style={{ width: '80%', maxWidth: 26, background: `linear-gradient(180deg, ${M.gold}, ${M.goldDim})`, minHeight: 3, height: `${(p.v / projMax) * 50}px`, borderRadius: '4px 4px 0 0', transition: 'height .6s ease' }} />
                     </div>
-                    <div style={{ fontFamily: M.mono, fontSize: 10, color: M.t4 }}>M{p.m}</div>
-                    <div style={{ fontFamily: M.mono, fontSize: 10, color: M.t3, marginTop: 2, fontWeight: 500 }}>{(p.v / 1000).toFixed(1)}k</div>
+                    <div style={{ fontFamily: M.mono, fontSize: 9, color: M.t4 }}>M{p.m}</div>
+                    <div style={{ fontFamily: M.mono, fontSize: 9, color: M.t3, marginTop: 1, fontWeight: 500 }}>{(p.v / 1000).toFixed(1)}k</div>
                   </div>
                 ))}
               </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 14, paddingTop: 14, borderTop: `1px solid ${M.brd}` }}>
-                <span style={{ fontSize: 13, color: M.t3, fontWeight: 500 }}>Suma po 6 miesiącach</span>
-                <span style={{ fontFamily: M.mono, fontSize: 18, fontWeight: 700, color: M.gold }}>{C.total.toLocaleString('pl-PL')} zł</span>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 12, paddingTop: 12, borderTop: `1px solid ${M.brd}` }}>
+                <span style={{ fontSize: 12, color: M.t3, fontWeight: 500 }}>Suma po 6 mies.</span>
+                <span style={{ fontFamily: M.mono, fontSize: 17, fontWeight: 700, color: M.gold, textShadow: `0 0 12px ${M.gold}20` }}>{C.total.toLocaleString('pl-PL')} zł</span>
               </div>
             </div>
 
             {/* Podział strat - grid */}
             {catData.length > 0 && (
-              <div style={{ marginBottom: 24 }}>
-                <div style={{ fontFamily: M.mono, fontSize: 10, letterSpacing: 2.5, textTransform: 'uppercase', color: M.t4, marginBottom: 14 }}>Podział strat</div>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+              <div style={{ marginBottom: 20, width: '100%' }}>
+                <div style={{ fontFamily: M.mono, fontSize: 10, letterSpacing: 2.5, textTransform: 'uppercase', color: M.t4, marginBottom: 12 }}>Podział strat</div>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 6, width: '100%' }}>
                   {catData.map((c, i) => (
-                    <div key={i} style={{ background: M.s1, border: `1px solid ${M.brd}`, padding: '16px 14px', borderRadius: 12 }}>
-                      <div style={{ fontSize: 16, marginBottom: 6 }}>{c.ic}</div>
-                      <div style={{ fontFamily: M.mono, fontSize: 16, fontWeight: 700, color: M.gold }}>{c.v.toLocaleString('pl-PL')} zł</div>
-                      <div style={{ fontSize: 11, color: M.t4, textTransform: 'uppercase', letterSpacing: 1.2, marginTop: 3, fontWeight: 600 }}>{c.l}</div>
-                      <div style={{ height: 3, background: M.s3, marginTop: 10, borderRadius: 2 }}>
+                    <div key={i} style={{ background: M.s1, border: `1px solid ${M.brd}`, padding: '14px 12px', borderRadius: 10, minWidth: 0 }}>
+                      <div style={{ fontSize: 15, marginBottom: 4 }}>{c.ic}</div>
+                      <div style={{ fontFamily: M.mono, fontSize: 15, fontWeight: 700, color: M.gold, textShadow: `0 0 10px ${M.gold}15` }}>{c.v.toLocaleString('pl-PL')} zł</div>
+                      <div style={{ fontSize: 10, color: M.t4, textTransform: 'uppercase', letterSpacing: 1, marginTop: 2, fontWeight: 600 }}>{c.l}</div>
+                      <div style={{ height: 3, background: M.s3, marginTop: 8, borderRadius: 2, overflow: 'hidden' }}>
                         <div style={{ height: '100%', background: c.c, width: `${(c.v / maxC) * 100}%`, transition: 'width 1s ease .3s', borderRadius: 2 }} />
                       </div>
                     </div>
@@ -593,14 +594,14 @@ export default function Page() {
 
             {/* Hormony */}
             {hormones.length > 0 && (
-              <div style={{ background: M.s1, border: `1px solid ${M.brd}`, padding: '22px 18px', marginBottom: 24, borderRadius: 14 }}>
-                <div style={{ fontFamily: M.mono, fontSize: 10, letterSpacing: 2.5, textTransform: 'uppercase', color: M.t4, marginBottom: 16 }}>Wpływ na Twoje hormony</div>
+              <div style={{ background: M.s1, border: `1px solid ${M.brd}`, padding: '18px 14px', marginBottom: 20, borderRadius: 12, width: '100%', boxSizing: 'border-box' }}>
+                <div style={{ fontFamily: M.mono, fontSize: 10, letterSpacing: 2.5, textTransform: 'uppercase', color: M.t4, marginBottom: 14 }}>Wpływ na Twoje hormony</div>
                 {hormones.map((h, i) => (
-                  <div key={i} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 0', borderBottom: i < hormones.length - 1 ? `1px solid ${M.brd}` : 'none' }}>
-                    <span style={{ fontSize: 14, fontWeight: 500, color: M.t1, display: 'flex', alignItems: 'center', gap: 8 }}>
-                      <span style={{ fontSize: 16 }}>{h.a}</span> {h.n}
+                  <div key={i} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 0', borderBottom: i < hormones.length - 1 ? `1px solid ${M.brd}` : 'none', gap: 8 }}>
+                    <span style={{ fontSize: 13, fontWeight: 500, color: M.t1, display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
+                      <span style={{ fontSize: 14 }}>{h.a}</span> {h.n}
                     </span>
-                    <span style={{ fontFamily: M.mono, fontSize: 11, fontWeight: 500, padding: '4px 12px', letterSpacing: 0.5, color: h.c, border: `1px solid ${h.c}25`, borderRadius: 8, background: h.c + '08' }}>{h.i}</span>
+                    <span style={{ fontFamily: M.mono, fontSize: 10, fontWeight: 500, padding: '3px 8px', letterSpacing: 0.3, color: h.c, border: `1px solid ${h.c}25`, borderRadius: 6, background: h.c + '08', whiteSpace: 'nowrap', flexShrink: 0, textShadow: `0 0 8px ${h.c}15` }}>{h.i}</span>
                   </div>
                 ))}
               </div>
@@ -608,17 +609,17 @@ export default function Page() {
 
             {/* Timeline */}
             {timeline.length > 0 && (
-              <div style={{ marginBottom: 24 }}>
-                <div style={{ fontFamily: M.mono, fontSize: 10, letterSpacing: 2.5, textTransform: 'uppercase', color: M.t4, marginBottom: 18 }}>Co się dzieje w Twoim ciele</div>
+              <div style={{ marginBottom: 20, width: '100%' }}>
+                <div style={{ fontFamily: M.mono, fontSize: 10, letterSpacing: 2.5, textTransform: 'uppercase', color: M.t4, marginBottom: 16 }}>Co się dzieje w Twoim ciele</div>
                 {timeline.map((t, i) => (
-                  <div key={i} style={{ display: 'flex', gap: 14, marginBottom: 14 }}>
+                  <div key={i} style={{ display: 'flex', gap: 12, marginBottom: 12 }}>
                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flexShrink: 0, paddingTop: 2 }}>
-                      <div style={{ width: 10, height: 10, background: M.gold, borderRadius: 5, flexShrink: 0 }} />
-                      {i < timeline.length - 1 && <div style={{ width: 1, flex: 1, background: M.brd2, marginTop: 4, minHeight: 12 }} />}
+                      <div style={{ width: 8, height: 8, background: M.gold, borderRadius: 4, flexShrink: 0, boxShadow: `0 0 6px ${M.gold}30` }} />
+                      {i < timeline.length - 1 && <div style={{ width: 1, flex: 1, background: M.brd2, marginTop: 3, minHeight: 10 }} />}
                     </div>
-                    <div>
-                      <div style={{ fontFamily: M.mono, fontSize: 11, fontWeight: 600, color: M.gold, marginBottom: 4 }}>{t.period}</div>
-                      <p style={{ fontSize: 13.5, color: M.t3, fontWeight: 400, lineHeight: 1.5 }}
+                    <div style={{ minWidth: 0, flex: 1 }}>
+                      <div style={{ fontFamily: M.mono, fontSize: 10, fontWeight: 600, color: M.gold, marginBottom: 3 }}>{t.period}</div>
+                      <p style={{ fontSize: 13, color: M.t3, fontWeight: 400, lineHeight: 1.5, wordBreak: 'break-word' }}
                         dangerouslySetInnerHTML={{ __html: t.text.replace(/<b>/g, `<strong style="color:${M.t2};font-weight:500">`).replace(/<\/b>/g, '</strong>') }} />
                     </div>
                   </div>
@@ -628,10 +629,10 @@ export default function Page() {
 
             {/* Insights */}
             {insights.length > 0 && (
-              <div style={{ marginBottom: 24 }}>
+              <div style={{ marginBottom: 20, width: '100%' }}>
                 {insights.map((ins, i) => (
-                  <div key={i} style={{ padding: 16, borderLeft: `2px solid ${M.gold}`, background: M.s1, marginBottom: 6, borderRadius: '0 12px 12px 0' }}>
-                    <p style={{ fontSize: 13.5, color: M.t3, lineHeight: 1.55, fontWeight: 400 }}
+                  <div key={i} style={{ padding: '14px 12px', borderLeft: `2px solid ${M.gold}`, background: M.s1, marginBottom: 6, borderRadius: '0 10px 10px 0' }}>
+                    <p style={{ fontSize: 13, color: M.t3, lineHeight: 1.55, fontWeight: 400, wordBreak: 'break-word' }}
                       dangerouslySetInnerHTML={{ __html: ins.replace(/<b>/g, `<strong style="color:${M.t1};font-weight:600">`).replace(/<\/b>/g, '</strong>') }} />
                   </div>
                 ))}
@@ -639,8 +640,8 @@ export default function Page() {
             )}
 
             {/* Closing */}
-            <div style={{ textAlign: 'center', padding: '30px 18px', marginBottom: 24, border: `1px solid ${M.brd}`, background: M.s1, borderRadius: 16 }}>
-              <p style={{ fontSize: 15, color: M.t3, lineHeight: 1.7, fontWeight: 400 }}>
+            <div style={{ textAlign: 'center', padding: '24px 14px', marginBottom: 20, border: `1px solid ${M.brd}`, background: M.s1, borderRadius: 14, width: '100%', boxSizing: 'border-box' }}>
+              <p style={{ fontSize: 14, color: M.t3, lineHeight: 1.7, fontWeight: 400 }}>
                 Mechanika: hormony, mózg, metabolizm.<br />
                 Kiedy rozumiesz co się dzieje w środku,<br />
                 <strong style={{ color: M.gold, fontWeight: 600 }}>możesz żyć normalnie</strong> i nie płacić za to takiej ceny.
@@ -648,18 +649,19 @@ export default function Page() {
             </div>
 
             {/* CTA */}
-            <div style={{ background: M.s1, border: `1px solid ${M.brd2}`, padding: '26px 20px', marginBottom: 24, borderRadius: 16 }}>
-              <div style={{ fontFamily: M.mono, fontSize: 10, letterSpacing: 2.5, textTransform: 'uppercase', color: M.t4, marginBottom: 14 }}>Co dalej?</div>
-              <p style={{ fontSize: 15, color: M.t3, lineHeight: 1.65, fontWeight: 400, marginBottom: 22 }}>
+            <div style={{ background: M.s1, border: `1px solid ${M.brd2}`, padding: '22px 14px', marginBottom: 20, borderRadius: 14, width: '100%', boxSizing: 'border-box' }}>
+              <div style={{ fontFamily: M.mono, fontSize: 10, letterSpacing: 2.5, textTransform: 'uppercase', color: M.t4, marginBottom: 12 }}>Co dalej?</div>
+              <p style={{ fontSize: 14, color: M.t3, lineHeight: 1.6, fontWeight: 400, marginBottom: 18 }}>
                 Pracuję z ludźmi którzy żyją dokładnie tak jak Ty. Imprezy, praca, chaos.
                 Mimo to mają formę, energię i sprawny mózg. <strong style={{ color: M.t1, fontWeight: 600 }}>Bez rezygnowania z życia.</strong>
               </p>
               <a href="https://system.talerzihantle.com" target="_blank" rel="noopener noreferrer"
                 style={{
                   display: 'block', background: M.gold, color: '#0a0a0a',
-                  fontFamily: M.mono, fontSize: 11, fontWeight: 700, letterSpacing: 2.5,
-                  textTransform: 'uppercase', textDecoration: 'none', padding: 20,
-                  textAlign: 'center', marginBottom: 14, borderRadius: 12,
+                  fontFamily: M.mono, fontSize: 11, fontWeight: 700, letterSpacing: 2,
+                  textTransform: 'uppercase', textDecoration: 'none', padding: 18,
+                  textAlign: 'center', marginBottom: 12, borderRadius: 12,
+                  boxShadow: `0 0 16px ${M.gold}20`,
                 }}>
                 Sprawdź czy się kwalifikujesz →
               </a>
@@ -668,27 +670,27 @@ export default function Page() {
               </div>
               <a href="https://neurobiologia-formy.talerzihantle.com" target="_blank" rel="noopener noreferrer"
                 style={{
-                  display: 'block', textAlign: 'center', marginTop: 18, padding: '16px 20px',
+                  display: 'block', textAlign: 'center', marginTop: 16, padding: '14px 14px',
                   background: 'transparent', border: `1.5px solid ${M.gold}40`, color: M.gold,
-                  fontFamily: M.mono, fontSize: 10, fontWeight: 700, letterSpacing: 2.5,
+                  fontFamily: M.mono, fontSize: 10, fontWeight: 700, letterSpacing: 2,
                   textTransform: 'uppercase', textDecoration: 'none', borderRadius: 12,
                 }}>
                 Neurobiologia Formy - 49 zł →
               </a>
-              <p style={{ textAlign: 'center', fontSize: 11, color: M.t4, marginTop: 8, fontFamily: M.mono }}>
+              <p style={{ textAlign: 'center', fontSize: 11, color: M.t4, marginTop: 6, fontFamily: M.mono }}>
                 Nie jesteś gotowy na prowadzenie? Zacznij tutaj.
               </p>
             </div>
 
             {/* Źródła */}
-            <div style={{ padding: 18, background: M.s1, border: `1px solid ${M.brd}`, marginBottom: 32, borderRadius: 14 }}>
-              <div style={{ fontFamily: M.mono, fontSize: 10, letterSpacing: 2.5, textTransform: 'uppercase', color: M.t4, marginBottom: 12 }}>Skąd te liczby</div>
-              <div style={{ fontSize: 12, color: M.t3, lineHeight: 1.75 }}>
+            <div style={{ padding: '16px 12px', background: M.s1, border: `1px solid ${M.brd}`, marginBottom: 24, borderRadius: 12, width: '100%', boxSizing: 'border-box' }}>
+              <div style={{ fontFamily: M.mono, fontSize: 10, letterSpacing: 2.5, textTransform: 'uppercase', color: M.t4, marginBottom: 10 }}>Skąd te liczby</div>
+              <div style={{ fontSize: 11, color: M.t3, lineHeight: 1.7 }}>
                 {['Nutrition & Metabolism, 2014: alkohol >1.5g/kg = spadek T ~27% w 12h',
                   'J. Clin. Endocrinol. Metab.: 14+ drinków = -23% testosteronu następnego dnia',
                   'RAND Corporation, 2016: <6h snu = 13% wyższe ryzyko śmierci, 19-29% mniej produktywności',
                   'Expert Rev. Endocrinol. Metab., 2023: meta-analiza 21 badań, 10 199 osób',
-                ].map((s, i) => <span key={i} style={{ display: 'block', marginBottom: 4 }}>[{i + 1}] {s}</span>)}
+                ].map((s, i) => <span key={i} style={{ display: 'block', marginBottom: 3 }}>[{i + 1}] {s}</span>)}
               </div>
             </div>
           </div>
