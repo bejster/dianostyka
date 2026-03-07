@@ -47,11 +47,11 @@ function score(D: FD) {
 // Paleta: złoto + czerń, minimalizm
 const M = {
   bg: '#0a0a0a',
-  s1: '#111111',
-  s2: '#1a1a1a',
-  s3: '#222222',
-  brd: '#1e1e1e',
-  brd2: '#2a2a2a',
+  s1: '#131313',
+  s2: '#1c1c1c',
+  s3: '#252525',
+  brd: '#222222',
+  brd2: '#2e2e2e',
   gold: '#c8a84e',
   goldMuted: '#a08a3e',
   goldDim: '#8a7535',
@@ -269,8 +269,8 @@ export default function Page() {
         body{background:${M.bg};color:${M.t1};font-family:${M.sans};min-height:100vh;overflow-x:hidden;-webkit-font-smoothing:antialiased;width:100%}
         h1,h2,h3{text-shadow:0 0 20px rgba(255,255,255,.1),0 1px 2px rgba(0,0,0,.6)}
         p,span,div,label{text-shadow:0 1px 2px rgba(0,0,0,.4)}
-        body::before{content:'';position:fixed;inset:0;background:radial-gradient(600px circle at 20% 10%,${M.gold}08 0%,transparent 50%),radial-gradient(400px circle at 80% 60%,${M.gold}05 0%,transparent 50%),radial-gradient(300px circle at 50% 90%,${M.gold}04 0%,transparent 40%);pointer-events:none;z-index:0}
-        body::after{content:'';position:fixed;inset:0;background:url("data:image/svg+xml,%3Csvg width='100' height='100' xmlns='http://www.w3.org/2000/svg'%3E%3Cdefs%3E%3Cpattern id='g' width='100' height='100' patternUnits='userSpaceOnUse'%3E%3Cpath d='M100 0L50 86.6 0 0z' fill='none' stroke='%23c8a84e' stroke-opacity='0.025' stroke-width='0.5'/%3E%3Ccircle cx='50' cy='35' r='1' fill='%23c8a84e' fill-opacity='0.04'/%3E%3C/pattern%3E%3C/defs%3E%3Crect width='100' height='100' fill='url(%23g)'/%3E%3C/svg%3E");pointer-events:none;z-index:0}
+        body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse 80% 50% at 50% 0%,#141210 0%,transparent 60%);pointer-events:none;z-index:0}
+        body::after{content:'';position:fixed;inset:0;opacity:.35;background:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.03'/%3E%3C/svg%3E");pointer-events:none;z-index:0}
 
         input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:48px;background:transparent;cursor:pointer;margin:0;touch-action:none;-webkit-tap-highlight-color:transparent}
         input[type=range]::-webkit-slider-runnable-track{height:6px;background:transparent;border-radius:3px;cursor:pointer}
@@ -529,8 +529,8 @@ export default function Page() {
 
             {/* Comparison text */}
             {comparisons.length > 0 && (
-              <div style={{ background: M.s1, border: `1px solid ${M.brd}`, padding: '16px 14px', marginBottom: 20, borderRadius: 12, width: '100%', boxSizing: 'border-box' }}>
-                <p style={{ fontSize: 13.5, color: M.t2, lineHeight: 1.55, fontWeight: 400, textAlign: 'center' }}
+              <div style={{ background: M.s1, border: `1px solid ${M.brd}`, padding: '16px 16px', marginBottom: 20, borderRadius: 12, width: '100%', boxSizing: 'border-box' }}>
+                <p style={{ fontSize: 13, color: M.t2, lineHeight: 1.6, fontWeight: 400, textAlign: 'center' }}
                   dangerouslySetInnerHTML={{ __html: `Za <strong style="color:${M.gold};font-weight:600">${C.total.toLocaleString('pl-PL')} zł</strong> w pół roku mógłbyś mieć: ${comparisons.join(', ')}.` }} />
               </div>
             )}
@@ -619,8 +619,8 @@ export default function Page() {
                       {i < timeline.length - 1 && <div style={{ width: 1, flex: 1, background: M.brd2, marginTop: 3, minHeight: 10 }} />}
                     </div>
                     <div style={{ minWidth: 0, flex: 1 }}>
-                      <div style={{ fontFamily: M.mono, fontSize: 10, fontWeight: 600, color: M.gold, marginBottom: 3 }}>{t.period}</div>
-                      <p style={{ fontSize: 13, color: M.t3, fontWeight: 400, lineHeight: 1.5, wordBreak: 'break-word' }}
+                      <div style={{ fontFamily: M.mono, fontSize: 10, fontWeight: 600, color: M.gold, marginBottom: 4 }}>{t.period}</div>
+                      <p style={{ fontSize: 12.5, color: M.t3, fontWeight: 400, lineHeight: 1.6, wordBreak: 'break-word' }}
                         dangerouslySetInnerHTML={{ __html: t.text.replace(/<b>/g, `<strong style="color:${M.t2};font-weight:500">`).replace(/<\/b>/g, '</strong>') }} />
                     </div>
                   </div>
@@ -632,8 +632,8 @@ export default function Page() {
             {insights.length > 0 && (
               <div style={{ marginBottom: 20, width: '100%' }}>
                 {insights.map((ins, i) => (
-                  <div key={i} style={{ padding: '14px 12px', borderLeft: `2px solid ${M.gold}`, background: M.s1, marginBottom: 6, borderRadius: '0 10px 10px 0' }}>
-                    <p style={{ fontSize: 13, color: M.t3, lineHeight: 1.55, fontWeight: 400, wordBreak: 'break-word' }}
+                  <div key={i} style={{ padding: '14px 14px', borderLeft: `2px solid ${M.gold}`, background: M.s1, marginBottom: 8, borderRadius: '0 10px 10px 0' }}>
+                    <p style={{ fontSize: 12.5, color: M.t3, lineHeight: 1.65, fontWeight: 400, wordBreak: 'break-word' }}
                       dangerouslySetInnerHTML={{ __html: ins.replace(/<b>/g, `<strong style="color:${M.t1};font-weight:600">`).replace(/<\/b>/g, '</strong>') }} />
                   </div>
                 ))}
@@ -641,20 +641,20 @@ export default function Page() {
             )}
 
             {/* Closing */}
-            <div style={{ textAlign: 'center', padding: '24px 14px', marginBottom: 20, border: `1px solid ${M.brd}`, background: M.s1, borderRadius: 14, width: '100%', boxSizing: 'border-box' }}>
-              <p style={{ fontSize: 14, color: M.t3, lineHeight: 1.7, fontWeight: 400 }}>
+            <div style={{ textAlign: 'center', padding: '22px 18px', marginBottom: 20, border: `1px solid ${M.brd}`, background: M.s1, borderRadius: 14, width: '100%', boxSizing: 'border-box' }}>
+              <p style={{ fontSize: 13, color: M.t3, lineHeight: 1.75, fontWeight: 400 }}>
                 Mechanika: hormony, mózg, metabolizm.<br />
                 Kiedy rozumiesz co się dzieje w środku,<br />
-                <strong style={{ color: M.gold, fontWeight: 600 }}>możesz żyć normalnie</strong> i nie płacić za to takiej ceny.
+                <strong style={{ color: M.gold, fontWeight: 600 }}>możesz żyć normalnie</strong><br />i nie płacić za to takiej ceny.
               </p>
             </div>
 
             {/* CTA */}
-            <div style={{ background: M.s1, border: `1px solid ${M.brd2}`, padding: '22px 14px', marginBottom: 20, borderRadius: 14, width: '100%', boxSizing: 'border-box' }}>
-              <div style={{ fontFamily: M.mono, fontSize: 10, letterSpacing: 2.5, textTransform: 'uppercase', color: M.t4, marginBottom: 12 }}>Co dalej?</div>
-              <p style={{ fontSize: 14, color: M.t3, lineHeight: 1.6, fontWeight: 400, marginBottom: 18 }}>
-                Pracuję z ludźmi którzy żyją dokładnie tak jak Ty. Imprezy, praca, chaos.
-                Mimo to mają formę, energię i sprawny mózg. <strong style={{ color: M.t1, fontWeight: 600 }}>Bez rezygnowania z życia.</strong>
+            <div style={{ background: M.s1, border: `1px solid ${M.brd2}`, padding: '22px 16px', marginBottom: 20, borderRadius: 14, width: '100%', boxSizing: 'border-box' }}>
+              <div style={{ fontFamily: M.mono, fontSize: 10, letterSpacing: 2.5, textTransform: 'uppercase', color: M.t4, marginBottom: 14 }}>Co dalej?</div>
+              <p style={{ fontSize: 13, color: M.t3, lineHeight: 1.7, fontWeight: 400, marginBottom: 20 }}>
+                Pracuję z ludźmi którzy żyją dokładnie tak jak Ty.<br />Imprezy, praca, chaos.
+                Mimo to mają formę, energię i sprawny mózg.<br /><strong style={{ color: M.t1, fontWeight: 600 }}>Bez rezygnowania z życia.</strong>
               </p>
               <a href="https://system.talerzihantle.com" target="_blank" rel="noopener noreferrer"
                 style={{
