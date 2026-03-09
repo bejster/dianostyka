@@ -699,7 +699,7 @@ export default function Page() {
                       <div style={{ fontFamily: M.mono, fontSize: 10, letterSpacing: 2.5, textTransform: 'uppercase', color: M.t4 }}>Tracisz niewidocznie</div>
                       <div style={{ fontFamily: M.mono, fontSize: 13, fontWeight: 700, color: M.t3 }}>{C.hiddenTotal.toLocaleString('pl-PL')} zł</div>
                     </div>
-                    <div style={{ fontSize: 11, color: M.t4, fontStyle: 'italic', marginBottom: 10 }}>Szacunek na bazie badań naukowych — nie rachunki, ale realne koszty konsekwencji.</div>
+                    <div style={{ fontSize: 11, color: M.t4, fontStyle: 'italic', marginBottom: 10 }}>Szacunek na bazie badań naukowych. Nie rachunki, ale realne koszty konsekwencji.</div>
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 6, width: '100%' }}>
                       {catData.filter(x => x.type === 'hidden').map((c, i) => (
                         <div key={i} style={{ background: M.s1, border: `1px solid ${M.brd}`, padding: '14px 12px', borderRadius: 10, minWidth: 0 }}>
@@ -737,10 +737,10 @@ export default function Page() {
                   ))}
                 </div>
                 <div style={{ fontSize: 11, color: M.t4, fontFamily: M.mono, letterSpacing: 0.3 }}>
-                  {C.brakes}/5 hamulców aktywnych — {C.wastedPct}% wysiłku treningowego zmarnowane
+                  {C.brakes}/5 hamulców aktywnych. {C.wastedPct}% wysiłku treningowego zmarnowane.
                 </div>
                 <p style={{ fontSize: 11.5, color: M.t3, lineHeight: 1.6, marginTop: 10, fontWeight: 400 }}>
-                  Trenujesz, ale fundamenty (sen, dieta, stres) sabotują progres. Za 6 miesięcy będziesz w tym samym miejscu co teraz. <strong style={{ color: M.t1, fontWeight: 500 }}>Nie brak dyscypliny — zła kolejność.</strong>
+                  Trenujesz, ale fundamenty (sen, dieta, stres) sabotują progres. Za 6 miesięcy będziesz w tym samym miejscu co teraz. <strong style={{ color: M.t1, fontWeight: 500 }}>To nie brak dyscypliny. To zła kolejność.</strong>
                 </p>
               </div>
             )}
@@ -794,52 +794,66 @@ export default function Page() {
 
             {/* Closing */}
             <div style={{ textAlign: 'center', padding: '22px 18px', marginBottom: 20, border: `1px solid ${M.brd}`, background: M.s1, borderRadius: 14, width: '100%', boxSizing: 'border-box' }}>
-              <p style={{ fontSize: 13, color: M.t3, lineHeight: 1.75, fontWeight: 400 }}>
-                Mechanika: hormony, mózg, metabolizm.<br />
-                Kiedy rozumiesz co się dzieje w środku,<br />
-                <strong style={{ color: M.gold, fontWeight: 600 }}>możesz żyć normalnie</strong><br />i nie płacić za to takiej ceny.
+              <p style={{ fontSize: 13.5, color: M.t2, lineHeight: 1.75, fontWeight: 400 }}>
+                Te liczby nie znikną same.<br />
+                Za 6 miesięcy będą wyższe albo niższe.<br />
+                <strong style={{ color: M.gold, fontWeight: 600 }}>Zależy co zrobisz teraz.</strong>
+              </p>
+              <p style={{ fontSize: 12, color: M.t4, lineHeight: 1.6, fontWeight: 400, marginTop: 10 }}>
+                Hormony, mózg, metabolizm. Kiedy rozumiesz mechanikę, przestajesz tracić.
               </p>
             </div>
 
             {/* CTA */}
             <div style={{ background: M.s1, border: `1px solid ${M.brd2}`, padding: '22px 16px', marginBottom: 20, borderRadius: 14, width: '100%', boxSizing: 'border-box' }}>
               <div style={{ fontFamily: M.mono, fontSize: 10, letterSpacing: 2.5, textTransform: 'uppercase', color: M.t4, marginBottom: 14 }}>Co dalej?</div>
+              <p style={{ fontSize: 13.5, color: M.t3, lineHeight: 1.7, fontWeight: 400, marginBottom: 8 }}>
+                Pracuję z ludźmi którzy żyją dokładnie tak jak Ty. Imprezy, praca, chaos.
+              </p>
+              <p style={{ fontSize: 13.5, color: M.t2, lineHeight: 1.7, fontWeight: 500, marginBottom: 8 }}>
+                Mimo to mają formę, energię i sprawny mózg.
+              </p>
               <p style={{ fontSize: 13, color: M.t3, lineHeight: 1.7, fontWeight: 400, marginBottom: 20 }}>
-                Pracuję z ludźmi którzy żyją dokładnie tak jak Ty.<br />Imprezy, praca, chaos.
-                Mimo to mają formę, energię i sprawny mózg.<br /><strong style={{ color: M.t1, fontWeight: 600 }}>Bez rezygnowania z życia.</strong>
+                Różnica? Wiedzą <em>co</em> sabotuje ich ciało i mają plan który to naprawia. <strong style={{ color: M.t1, fontWeight: 600 }}>Bez rezygnowania z życia.</strong>
               </p>
               <a href="https://system.talerzihantle.com" target="_blank" rel="noopener noreferrer"
                 style={{
                   display: 'block', background: M.gold, color: '#0a0a0a',
-                  fontFamily: M.mono, fontSize: 11, fontWeight: 700, letterSpacing: 2,
+                  fontFamily: M.mono, fontSize: 12, fontWeight: 700, letterSpacing: 2,
                   textTransform: 'uppercase', textDecoration: 'none', padding: 18,
-                  textAlign: 'center', marginBottom: 12, borderRadius: 12,
-                  boxShadow: `0 0 16px ${M.gold}20`,
+                  textAlign: 'center', marginBottom: 10, borderRadius: 12,
+                  boxShadow: `0 0 20px ${M.gold}25`,
                 }}>
                 Sprawdź czy się kwalifikujesz →
               </a>
-              <div style={{ textAlign: 'center', fontSize: 12, color: M.t4, fontFamily: M.mono, letterSpacing: 0.5 }}>
+              <div style={{ textAlign: 'center', fontSize: 11, color: M.t4, fontFamily: M.mono, letterSpacing: 0.3, marginBottom: 18 }}>
                 lub napisz <strong style={{ color: M.gold }}>JAZDA</strong> w DM → @hantleitalerz
               </div>
+              <div style={{ height: 1, background: M.brd, margin: '0 20px 18px' }} />
+              <p style={{ textAlign: 'center', fontSize: 11.5, color: M.t4, marginBottom: 10 }}>
+                Nie jesteś jeszcze gotowy na prowadzenie?
+              </p>
               <a href="https://neurobiologia-formy.talerzihantle.com" target="_blank" rel="noopener noreferrer"
                 style={{
-                  display: 'block', textAlign: 'center', marginTop: 16, padding: '14px 14px',
+                  display: 'block', textAlign: 'center', padding: '14px 14px',
                   background: 'transparent', border: `1.5px solid ${M.gold}40`, color: M.gold,
                   fontFamily: M.mono, fontSize: 10, fontWeight: 700, letterSpacing: 2,
                   textTransform: 'uppercase', textDecoration: 'none', borderRadius: 12,
                 }}>
-                Neurobiologia Formy - 49 zł →
+                Neurobiologia Formy. 49 zł →
               </a>
-              <p style={{ textAlign: 'center', fontSize: 11, color: M.t4, marginTop: 6, fontFamily: M.mono }}>
-                Nie jesteś gotowy na prowadzenie? Zacznij tutaj.
+              <p style={{ textAlign: 'center', fontSize: 10.5, color: M.t4, marginTop: 6, fontFamily: M.mono }}>
+                Ebook który tłumaczy dlaczego Twoje ciało działa tak a nie inaczej.
               </p>
             </div>
 
             {/* DM notification */}
-            <div style={{ textAlign: 'center', padding: '18px 16px', marginBottom: 20, background: `${M.gold}08`, border: `1px solid ${M.gold}20`, borderRadius: 14, width: '100%', boxSizing: 'border-box' }}>
-              <p style={{ fontSize: 13, color: M.t2, lineHeight: 1.65, fontWeight: 400 }}>
-                Sprawdzam Twoje odpowiedzi.<br />
-                Napiszę do Ciebie w DM <strong style={{ color: M.gold, fontWeight: 600 }}>@hantleitalerz</strong> w ciągu 24h.
+            <div style={{ textAlign: 'center', padding: '20px 16px', marginBottom: 20, background: `${M.gold}08`, border: `1px solid ${M.gold}20`, borderRadius: 14, width: '100%', boxSizing: 'border-box' }}>
+              <p style={{ fontSize: 13.5, color: M.t2, lineHeight: 1.65, fontWeight: 500, marginBottom: 6 }}>
+                Analizuję Twoje odpowiedzi.
+              </p>
+              <p style={{ fontSize: 12.5, color: M.t3, lineHeight: 1.65, fontWeight: 400 }}>
+                Napiszę do Ciebie w DM <strong style={{ color: M.gold, fontWeight: 600 }}>@hantleitalerz</strong> w ciągu 24h z konkretnym feedbackiem co u Ciebie nie gra i od czego zacząć.
               </p>
             </div>
 
@@ -848,15 +862,15 @@ export default function Page() {
               <div style={{ fontFamily: M.mono, fontSize: 10, letterSpacing: 2.5, textTransform: 'uppercase', color: M.t4, marginBottom: 10 }}>📊 Źródła naukowe (9 badań)</div>
               <div style={{ fontSize: 10.5, color: M.t4, lineHeight: 1.8 }}>
                 {[
-                  'RAND Europe, 2016 — pracownicy śpiący <6h tracą ekwiwalent 2.4% PKB w produktywności',
-                  'Leproult & Van Cauter, JAMA 2011 — 1 tydzień 5h snu = 10-15% spadek testosteronu',
-                  'Parr et al., PLOS ONE 2014 — alkohol po treningu obniża syntezę białek mięśniowych o 24-37%',
-                  'Cappuccio et al., 2010 — meta-analiza: <6h snu = 12% wyższe ryzyko śmierci',
-                  'Hemp, Harvard Business Review 2004 — prezenteizm (praca w obniżonej formie) kosztuje 3× więcej niż absencja',
-                  'Vingren et al., 2013 — alkohol >1.5g/kg = spadek T o ~23% w ciągu 10-16h',
-                  'Halson, Sports Medicine 2014 — deficyt snu upośledza wydolność, układ odpornościowy i regenerację',
-                  'Schoenfeld et al., 2017 — progres wymaga progressive overload + regeneracja + dieta jednocześnie',
-                  'Expert Rev. Endocrinol. Metab., 2023 — meta-analiza 21 badań, 10 199 mężczyzn: styl życia > wiek',
+                  'RAND Europe, 2016: pracownicy śpiący <6h tracą ekwiwalent 2.4% PKB w produktywności',
+                  'Leproult & Van Cauter, JAMA 2011: 1 tydzień 5h snu = 10-15% spadek testosteronu',
+                  'Parr et al., PLOS ONE 2014: alkohol po treningu obniża syntezę białek mięśniowych o 24-37%',
+                  'Cappuccio et al., 2010: meta-analiza, <6h snu = 12% wyższe ryzyko śmierci',
+                  'Hemp, Harvard Business Review 2004: prezenteizm (praca w obniżonej formie) kosztuje 3× więcej niż absencja',
+                  'Vingren et al., 2013: alkohol >1.5g/kg = spadek T o ~23% w ciągu 10-16h',
+                  'Halson, Sports Medicine 2014: deficyt snu upośledza wydolność, układ odpornościowy i regenerację',
+                  'Schoenfeld et al., 2017: progres wymaga progressive overload + regeneracja + dieta jednocześnie',
+                  'Expert Rev. Endocrinol. Metab., 2023: meta-analiza 21 badań, 10 199 mężczyzn, styl życia > wiek',
                 ].map((s, i) => <span key={i} style={{ display: 'block', marginBottom: 4, paddingLeft: 16, textIndent: -16 }}>[{i + 1}] {s}</span>)}
               </div>
             </div>
