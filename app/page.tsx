@@ -251,12 +251,10 @@ export default function Page() {
     </div>
   );
 
-  // Logo komponent
+  // Logo komponent — okrągłe logo + tekst
   const Logo = () => (
-    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
-      <div style={{ width: 28, height: 28, border: `2px solid ${M.gold}`, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 6 }}>
-        <span style={{ fontFamily: M.mono, fontSize: 13, fontWeight: 800, color: M.gold, lineHeight: 1 }}>H</span>
-      </div>
+    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10 }}>
+      <img src="/logo-circle.png" alt="Hantle i Talerz" style={{ width: 32, height: 32, borderRadius: '50%', objectFit: 'cover' }} />
       <span style={{ fontFamily: M.mono, fontSize: 10, fontWeight: 700, letterSpacing: 3.5, textTransform: 'uppercase', color: M.t3 }}>Hantle i Talerz</span>
     </div>
   );
