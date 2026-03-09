@@ -71,7 +71,10 @@ export default function Page() {
   const [D, setD] = useState<FD>(INIT);
   const [sec, setSec] = useState(0);
   const [phase, setPhase] = useState<'form' | 'gate' | 'results'>('form');
+  const [igHandle, setIgHandle] = useState('');
   const [email, setEmail] = useState('');
+  const [imie, setImie] = useState('');
+  const [igErr, setIgErr] = useState('');
   const [emailErr, setEmailErr] = useState('');
   const [loading, setLoading] = useState(false);
   const topRef = useRef<HTMLDivElement>(null);
@@ -91,15 +94,44 @@ export default function Page() {
   const back = () => { setSec(s => s - 1); window.scrollTo({ top: 0, behavior: 'smooth' }); };
 
   const submit = async () => {
-    if (!email.includes('@')) { setEmailErr('Podaj poprawny email'); return; }
+    // Walidacja IG handle
+    const handle = igHandle.trim().replace(/^@/, '');
+    if (!handle) { setIgErr('Podaj nick na Instagramie'); return; }
+    // Walidacja email
+    if (!email.includes('@') || !email.includes('.')) { setEmailErr('Podaj poprawny email'); return; }
     setLoading(true);
     const c = costs(D); const sc = score(D);
+    const finalHandle = '@' + handle;
+    const odpowiedzi = {
+      sleep: D.sleep, sleepQ: D.sleepQ, screenBed: D.screenBed,
+      stress: D.stress, energy: D.energy, dopamine: D.dopamine,
+      dietChaos: D.dietChaos, junk: D.junk, binge: D.binge,
+      wknd: D.wknd, drinks: D.drinks, cash: D.cash, subs: D.subs,
+      lost: D.lost, plan: D.plan, miss: D.miss, gym: D.gym,
+      rate: D.rate, prodDrop: D.prodDrop, tags: Array.from(D.tags),
+    };
+    const biggest = catData.reduce((a, b) => a.v > b.v ? a : b, catData[0]);
+    const payload = {
+      instagram_handle: finalHandle,
+      email,
+      imie: imie.trim() || null,
+      wynik_kwota: String(c.total),
+      wynik_score: String(sc),
+      biggest_category: biggest?.l || '',
+      timestamp: new Date().toISOString(),
+      source: 'diagnostyka_hit',
+      odpowiedzi,
+    };
+    // Wyslij do API (MailerLite + webhook n8n)
     try {
       await fetch('/api/subscribe', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, score: sc, totalCost: c.total, fields: { diagnostyka_drinks: String(D.drinks), diagnostyka_sleep: String(D.sleep) } }),
+        body: JSON.stringify(payload),
       });
-    } catch {}
+    } catch {
+      // Fallback: zapisz w sessionStorage na retry
+      try { sessionStorage.setItem('diag_lead_retry', JSON.stringify(payload)); } catch {}
+    }
     setPhase('results');
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -277,9 +309,9 @@ export default function Page() {
         input[type=range]::-moz-range-thumb{width:22px;height:22px;background:${M.gold};border:none;border-radius:50%;cursor:grab;box-shadow:0 1px 4px rgba(0,0,0,.5),0 0 0 4px rgba(200,168,78,.12)}
         input[type=range]::-moz-range-track{background:transparent;height:6px;border:none;cursor:pointer}
 
-        input[type=email]{width:100%;padding:16px 18px;background:${M.s1};border:1.5px solid ${M.brd2};color:${M.t1};font-size:16px;font-weight:500;font-family:${M.sans};outline:none;border-radius:12px;transition:border-color .2s ease}
-        input[type=email]:focus{border-color:${M.gold}}
-        input[type=email]::placeholder{color:${M.t4}}
+        input[type=email],input[type=text]{width:100%;padding:16px 18px;background:${M.s1};border:1.5px solid ${M.brd2};color:${M.t1};font-size:16px;font-weight:500;font-family:${M.sans};outline:none;border-radius:12px;transition:border-color .2s ease}
+        input[type=email]:focus,input[type=text]:focus{border-color:${M.gold}}
+        input[type=email]::placeholder,input[type=text]::placeholder{color:${M.t4}}
 
         button{font-family:${M.sans};transition:all .2s ease}
         button:hover{opacity:.9}
@@ -439,47 +471,75 @@ export default function Page() {
           </>
         )}
 
-        {/* ── EMAIL GATE ── */}
+        {/* ── LEAD GATE ── */}
         {phase === 'gate' && (
           <div className="fade-up" style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '40px 16px', textAlign: 'center' }}>
             <div style={{ maxWidth: 400, width: '100%' }}>
               <Logo />
-              <div style={{ marginTop: 32, marginBottom: 28 }}>
+
+              {/* Czesciowy wynik — WOW moment */}
+              <div style={{ marginTop: 32, marginBottom: 12 }}>
                 <div style={{ fontFamily: M.mono, fontSize: 10, letterSpacing: 2.5, textTransform: 'uppercase', color: M.t4, marginBottom: 10 }}>Twój Damage Score</div>
-                <div style={{ fontFamily: M.mono, fontSize: 80, fontWeight: 800, lineHeight: 1, color: scoreColor, textShadow: `0 0 30px ${scoreColor}30` }}>{SC}</div>
+                <div style={{ fontFamily: M.mono, fontSize: 72, fontWeight: 800, lineHeight: 1, color: scoreColor, textShadow: `0 0 30px ${scoreColor}30` }}>{SC}</div>
                 <div style={{ fontFamily: M.mono, fontSize: 12, color: M.t4, marginTop: 6 }}>/100</div>
               </div>
 
-              <div style={{ background: M.s1, border: `1px solid ${M.gold}20`, padding: 18, marginBottom: 32, borderRadius: 14 }}>
-                <div style={{ fontFamily: M.mono, fontSize: 10, letterSpacing: 2.5, textTransform: 'uppercase', color: M.t4, marginBottom: 8 }}>Szacowane straty / 6 miesięcy</div>
-                <div style={{ fontFamily: M.mono, fontSize: 38, fontWeight: 800, color: M.gold }}>{C.total.toLocaleString('pl-PL')} zł</div>
+              <div style={{ background: M.s1, border: `1px solid ${M.gold}20`, padding: 18, marginBottom: 28, borderRadius: 14 }}>
+                <div style={{ fontFamily: M.mono, fontSize: 10, letterSpacing: 2.5, textTransform: 'uppercase', color: M.t4, marginBottom: 8 }}>Tracisz w 6 miesięcy</div>
+                <div style={{ fontFamily: M.mono, fontSize: 36, fontWeight: 800, color: M.gold }}>{C.total.toLocaleString('pl-PL')} zł</div>
+                <div style={{ fontFamily: M.mono, fontSize: 12, color: M.t4, marginTop: 4 }}>= {Math.round(C.total / 6).toLocaleString('pl-PL')} zł / miesiąc</div>
               </div>
 
-              <h2 style={{ fontSize: 22, fontWeight: 800, lineHeight: 1.25, letterSpacing: -0.5, marginBottom: 14, color: M.t1, textShadow: '0 0 20px rgba(255,255,255,.1)' }}>
-                Podaj email żeby<br />zobaczyć pełną analizę
+              {/* Gate — formularz */}
+              <h2 style={{ fontSize: 22, fontWeight: 800, lineHeight: 1.25, letterSpacing: -0.5, marginBottom: 10, color: M.t1, textShadow: '0 0 20px rgba(255,255,255,.1)' }}>
+                Twój wynik jest gotowy.
               </h2>
-              <p style={{ fontSize: 14, color: M.t3, lineHeight: 1.6, marginBottom: 26, fontWeight: 400 }}>
-                Breakdown hormonów, co się dzieje w Twoim ciele i konkretne wnioski.
+              <p style={{ fontSize: 14, color: M.t3, lineHeight: 1.6, marginBottom: 24, fontWeight: 400 }}>
+                Podaj dane, żebym mógł spojrzeć na Twój wynik i powiedzieć Ci co z tym zrobić.
               </p>
 
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                <input type="email" placeholder="twoj@email.com" value={email}
-                  onChange={e => { setEmail(e.target.value); setEmailErr(''); }}
-                  onKeyDown={e => e.key === 'Enter' && submit()}
-                  style={{ borderColor: emailErr ? M.red : undefined }} />
-                {emailErr && <div style={{ fontSize: 11, color: M.red, fontFamily: M.mono, textAlign: 'left' }}>{emailErr}</div>}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10, textAlign: 'left' }}>
+                {/* Instagram handle — wymagane */}
+                <div>
+                  <div style={{ fontSize: 11, color: M.t3, fontWeight: 600, marginBottom: 5, fontFamily: M.mono, letterSpacing: 0.5 }}>Nick na Instagramie *</div>
+                  <input type="text" placeholder="@twojnick" value={igHandle}
+                    onChange={e => { setIgHandle(e.target.value); setIgErr(''); }}
+                    style={{ borderColor: igErr ? M.red : undefined }} />
+                  {igErr && <div style={{ fontSize: 11, color: M.red, fontFamily: M.mono, marginTop: 4 }}>{igErr}</div>}
+                </div>
+
+                {/* Email — wymagane */}
+                <div>
+                  <div style={{ fontSize: 11, color: M.t3, fontWeight: 600, marginBottom: 5, fontFamily: M.mono, letterSpacing: 0.5 }}>Email *</div>
+                  <input type="email" placeholder="twoj@email.com" value={email}
+                    onChange={e => { setEmail(e.target.value); setEmailErr(''); }}
+                    style={{ borderColor: emailErr ? M.red : undefined }} />
+                  {emailErr && <div style={{ fontSize: 11, color: M.red, fontFamily: M.mono, marginTop: 4 }}>{emailErr}</div>}
+                </div>
+
+                {/* Imie — opcjonalne */}
+                <div>
+                  <div style={{ fontSize: 11, color: M.t4, fontWeight: 600, marginBottom: 5, fontFamily: M.mono, letterSpacing: 0.5 }}>Imię (opcjonalne)</div>
+                  <input type="text" placeholder="Jak masz na imię?" value={imie}
+                    onChange={e => setImie(e.target.value.slice(0, 50))} />
+                </div>
+
+                {/* CTA */}
                 <button onClick={submit} disabled={loading}
                   style={{
-                    width: '100%', padding: 18,
+                    width: '100%', padding: 18, marginTop: 6,
                     background: loading ? M.brd2 : M.gold,
                     color: loading ? M.t4 : '#0a0a0a',
-                    border: 'none', fontFamily: M.mono, fontSize: 11, fontWeight: 700, letterSpacing: 2.5,
+                    border: 'none', fontFamily: M.mono, fontSize: 12, fontWeight: 700, letterSpacing: 2.5,
                     textTransform: 'uppercase', cursor: loading ? 'not-allowed' : 'pointer', borderRadius: 12,
+                    boxShadow: loading ? 'none' : `0 0 16px ${M.gold}20`,
                   }}>
-                  {loading ? 'Wysyłam...' : 'Pokaż pełną analizę →'}
+                  {loading ? 'Ładuję wynik...' : 'Pokaż mój wynik →'}
                 </button>
               </div>
-              <p style={{ fontSize: 11, color: M.t4, marginTop: 16, fontFamily: M.mono, letterSpacing: 0.5 }}>Zero spamu. Wypis jednym kliknięciem.</p>
+              <p style={{ fontSize: 11, color: M.t4, marginTop: 16, fontFamily: M.mono, letterSpacing: 0.5, textAlign: 'center' }}>
+                Odezwę się do Ciebie w DM w ciągu 24h z konkretnym feedbackiem.
+              </p>
             </div>
           </div>
         )}
@@ -678,6 +738,14 @@ export default function Page() {
               </a>
               <p style={{ textAlign: 'center', fontSize: 11, color: M.t4, marginTop: 6, fontFamily: M.mono }}>
                 Nie jesteś gotowy na prowadzenie? Zacznij tutaj.
+              </p>
+            </div>
+
+            {/* DM notification */}
+            <div style={{ textAlign: 'center', padding: '18px 16px', marginBottom: 20, background: `${M.gold}08`, border: `1px solid ${M.gold}20`, borderRadius: 14, width: '100%', boxSizing: 'border-box' }}>
+              <p style={{ fontSize: 13, color: M.t2, lineHeight: 1.65, fontWeight: 400 }}>
+                Sprawdzam Twoje odpowiedzi.<br />
+                Napiszę do Ciebie w DM <strong style={{ color: M.gold, fontWeight: 600 }}>@hantleitalerz</strong> w ciągu 24h.
               </p>
             </div>
 
