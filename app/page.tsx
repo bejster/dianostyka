@@ -21,16 +21,42 @@ const INIT: FD = {
 const SECTIONS = ['Sen', 'Stres', 'Jedzenie', 'Weekend', 'Trening', 'Sygnały'];
 
 function costs(D: FD) {
-  const sleepCost = Math.round((Math.max((7.5 - D.sleep) * 7, 0) / 7.5) * 2500 * (D.sleepQ >= 3 ? 1.4 : 1));
-  const mentalCost = Math.round(((D.stress + D.energy) / 8) * 3500);
-  const foodCost = Math.round(D.junk * 4 * 6 + (D.dietChaos >= 3 ? 800 : 0) + (D.binge >= 3 ? 600 : 0));
+  // ── TWARDE KOSZTY — wydajesz wprost, weryfikowalne ──
   const wkndCost = Math.round((D.cash + D.subs) * D.wknd * 6);
-  const prodCost = D.rate > 0 ? Math.round(D.lost * 26 * D.rate) : Math.round((D.prodDrop / 4) * 3200);
-  const trainCost = Math.round(D.gym * 6 * (D.miss / 4));
-  const signalCost = Math.round(D.tags.size * 500);
-  const total = sleepCost + mentalCost + foodCost + wkndCost + prodCost + trainCost + signalCost;
+  const foodCost = Math.round(D.junk * 6 + (D.binge >= 3 ? 300 : 0));
+  const trainCost = D.plan > 0 ? Math.round(D.gym * 6 * Math.min(D.miss / D.plan, 1)) : 0;
+  // Sen: kompensacja deficytu — kawa, suplementy, gorsze decyzje zakupowe (Cappuccio 2010)
+  const sleepCost = D.sleep < 7 ? Math.round((7.5 - D.sleep) * 100 * 6) : 0;
+
+  // ── UKRYTE KOSZTY — szacunek oparty na badaniach naukowych ──
+  // Produktywność: mgła × stawka × 26 tyg. (RAND 2016: <6h snu = -2.4% GDP; Hemp HBR 2004: prezenteizm 3× droższy niż absencja)
+  const prodCost = Math.round(D.lost * 26 * D.rate);
+  // Stagnacja: treningi bez progresu bo fundamenty nie grają
+  // (Parr 2014: alkohol -24-37% synteza białek; Halson 2014: deficyt snu = upośledzona regeneracja;
+  //  Schoenfeld 2017: progres wymaga progressive overload + regeneracja + dieta jednocześnie)
+  const brakes = [
+    D.sleepQ >= 2 || D.sleep < 6.5,       // kiepski sen / za mało snu
+    D.dietChaos >= 2 || D.binge >= 2,      // chaos w diecie
+    D.stress >= 3 || D.energy >= 3,        // wysoki stres / wypalenie
+    D.drinks > 5 || D.subs > 0,           // alkohol / substancje
+    D.dopamine >= 3,                       // rozregulowana dopamina
+  ].filter(Boolean).length;
+  const wastedPct = Math.min(brakes * 12, 60);
+  const wastedSessions = D.plan > 0 ? Math.round(D.plan * 26 * wastedPct / 100) : 0;
+  const stagnationMonths = Math.round(brakes * 1.5 * 10) / 10;
+  const costPerSession = D.plan > 0 ? D.gym / (D.plan * 4) : 0;
+  const stagnationCost = Math.round(wastedSessions * (costPerSession + 1.25 * Math.max(D.rate * 0.2, 10)));
+  // Symptomy: suplementy, wizyty, kompensacja sygnałów ciała (180 zł / symptom / 6 mies.)
+  const signalCost = Math.round(D.tags.size * 180);
+
   const totalLostH = Math.round(D.lost * 26);
-  return { sleepCost, mentalCost, foodCost, wkndCost, prodCost, trainCost, signalCost, total, totalLostH };
+  const hardTotal = wkndCost + foodCost + trainCost + sleepCost;
+  const hiddenTotal = prodCost + stagnationCost + signalCost;
+  const total = hardTotal + hiddenTotal;
+
+  return { sleepCost, foodCost, wkndCost, trainCost, prodCost, stagnationCost, signalCost,
+           total, hardTotal, hiddenTotal, totalLostH,
+           brakes, wastedPct, wastedSessions, stagnationMonths };
 }
 
 function score(D: FD) {
@@ -143,10 +169,13 @@ export default function Page() {
   const offset = circ - (SC / 100) * circ;
 
   const catData = [
-    { ic: '😴', v: C.sleepCost, l: 'Sen', c: '#a08ae0' }, { ic: '🧠', v: C.mentalCost, l: 'Stres', c: '#5a8ad0' },
-    { ic: '🍔', v: C.foodCost, l: 'Jedzenie', c: M.org }, { ic: '🍺', v: C.wkndCost, l: 'Weekendy', c: M.gold },
-    { ic: '⏰', v: C.prodCost, l: 'Czas', c: '#4abace' }, { ic: '🏋️', v: C.trainCost, l: 'Trening', c: M.grn },
-    { ic: '⚡', v: C.signalCost, l: 'Sygnały', c: M.red },
+    { ic: '🍺', v: C.wkndCost, l: 'Weekendy', c: M.gold, type: 'hard' },
+    { ic: '🍔', v: C.foodCost, l: 'Jedzenie', c: M.org, type: 'hard' },
+    { ic: '🏋️', v: C.trainCost, l: 'Trening', c: M.grn, type: 'hard' },
+    { ic: '😴', v: C.sleepCost, l: 'Sen', c: '#a08ae0', type: 'hard' },
+    { ic: '⏰', v: C.prodCost, l: 'Produktywność', c: '#4abace', type: 'hidden' },
+    { ic: '📉', v: C.stagnationCost, l: 'Stagnacja', c: '#e05a7a', type: 'hidden' },
+    { ic: '⚡', v: C.signalCost, l: 'Symptomy', c: M.red, type: 'hidden' },
   ].filter(x => x.v > 0);
   const maxC = Math.max(...catData.map(x => x.v), 1);
 
@@ -166,19 +195,19 @@ export default function Page() {
   if (D.tags.has('libido') && (D.stress >= 3 || D.sleep < 6.5)) insights.push(`Niższe libido + ${D.stress >= 3 ? 'chroniczny stres' : 'kiepski sen'} = <b>klasyka spadku testosteronu</b>. Badania 10 199 mężczyzn: to styl życia, nie wiek.`);
   if (D.tags.has('belly') && (D.binge >= 2 || D.dietChaos >= 3)) insights.push(`Brzuch nie schodzi + objadanie = <b>insulinooporność w budowie</b>. Sam trening tego nie przebije.`);
   if (D.drinks > 10 && D.tags.has('libido')) insights.push(`${D.drinks} drinków regularnie + niższe libido. 14+ drinków tygodniowo = <b>~6.8% chroniczny spadek T</b>. Alkohol zamienia testosteron w estrogen.`);
-  if (C.total > 15000) insights.push(`<b>${C.total.toLocaleString('pl-PL')} zł w pół roku</b>. Na konsekwencje, nie na sam weekend.`);
+  if (C.total > 8000) insights.push(`<b>${C.total.toLocaleString('pl-PL')} zł w pół roku</b>. Na konsekwencje, nie na sam weekend.`);
 
   const comparisons: string[] = [];
-  if (C.total > 10000) comparisons.push('wakacje all-inclusive');
   if (C.total > 5000) comparisons.push('pół roku profesjonalnego prowadzenia');
-  if (C.total > 20000) comparisons.push('używany samochód');
-  if (C.total > 35000) comparisons.push('wkład własny na mieszkanie');
+  if (C.total > 8000) comparisons.push('wakacje all-inclusive');
+  if (C.total > 15000) comparisons.push('używany samochód');
+  if (C.total > 30000) comparisons.push('wkład własny na mieszkanie');
 
-  const normMax = Math.max(C.total, 30000);
+  const normMax = Math.max(C.total, 20000);
   const normData = [
     { label: 'Ty', value: C.total, color: M.gold, pct: (C.total / normMax) * 100 },
-    { label: 'Średnia', value: 12000, color: M.t4, pct: (12000 / normMax) * 100 },
-    { label: 'Świadomy', value: 4200, color: M.grn, pct: (4200 / normMax) * 100 },
+    { label: 'Średnia', value: 9500, color: M.t4, pct: (9500 / normMax) * 100 },
+    { label: 'Świadomy', value: 2800, color: M.grn, pct: (2800 / normMax) * 100 },
   ];
 
   const mo = Math.round(C.total / 6);
@@ -376,6 +405,7 @@ export default function Page() {
                     Przeliczam hormony, mózg i formę na złotówki. Na bazie badań, nie opinii.
                   </p>
                   <div style={{ fontFamily: M.mono, fontSize: 10, color: M.t4, letterSpacing: 1.5 }}>🔒 Zero danych · Tylko Ty to widzisz</div>
+                  <div style={{ fontFamily: M.mono, fontSize: 9.5, color: M.t4, letterSpacing: 1, marginTop: 8, opacity: 0.7 }}>📊 Kalkulacja oparta na 9 badaniach naukowych</div>
                 </div>
               )}
 
@@ -582,6 +612,11 @@ export default function Page() {
                 <div style={{ fontFamily: M.mono, fontSize: 9, letterSpacing: 3.5, textTransform: 'uppercase', color: '#0a0a0a', opacity: .6, marginBottom: 6 }}>Tracisz w 6 miesięcy</div>
                 <div style={{ fontFamily: M.mono, fontSize: 38, fontWeight: 800, color: '#0a0a0a' }}>{C.total.toLocaleString('pl-PL')} zł</div>
                 <div style={{ fontFamily: M.mono, fontSize: 12, color: '#0a0a0a', opacity: .5, marginTop: 4 }}>= {Math.round(C.total / 6).toLocaleString('pl-PL')} zł / miesiąc</div>
+                <div style={{ display: 'flex', justifyContent: 'center', gap: 14, marginTop: 10, fontFamily: M.mono, fontSize: 10 }}>
+                  <span style={{ color: '#0a0a0a', opacity: .7 }}>wprost: {C.hardTotal.toLocaleString('pl-PL')} zł</span>
+                  <span style={{ color: '#0a0a0a', opacity: .4 }}>|</span>
+                  <span style={{ color: '#0a0a0a', opacity: .7 }}>ukryte: {C.hiddenTotal.toLocaleString('pl-PL')} zł</span>
+                </div>
               </div>
             </div>
 
@@ -632,22 +667,81 @@ export default function Page() {
               </div>
             </div>
 
-            {/* Podział strat - grid */}
+            {/* Podział strat — split: twarde + ukryte */}
             {catData.length > 0 && (
               <div style={{ marginBottom: 20, width: '100%' }}>
-                <div style={{ fontFamily: M.mono, fontSize: 10, letterSpacing: 2.5, textTransform: 'uppercase', color: M.t4, marginBottom: 12 }}>Podział strat</div>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 6, width: '100%' }}>
-                  {catData.map((c, i) => (
-                    <div key={i} style={{ background: M.s1, border: `1px solid ${M.brd}`, padding: '14px 12px', borderRadius: 10, minWidth: 0 }}>
-                      <div style={{ fontSize: 15, marginBottom: 4 }}>{c.ic}</div>
-                      <div style={{ fontFamily: M.mono, fontSize: 15, fontWeight: 700, color: M.gold, textShadow: `0 0 10px ${M.gold}15` }}>{c.v.toLocaleString('pl-PL')} zł</div>
-                      <div style={{ fontSize: 10, color: M.t4, textTransform: 'uppercase', letterSpacing: 1, marginTop: 2, fontWeight: 600 }}>{c.l}</div>
-                      <div style={{ height: 3, background: M.s3, marginTop: 8, borderRadius: 2, overflow: 'hidden' }}>
-                        <div style={{ height: '100%', background: c.c, width: `${(c.v / maxC) * 100}%`, transition: 'width 1s ease .3s', borderRadius: 2 }} />
-                      </div>
+                {/* TWARDE — wydajesz wprost */}
+                {catData.filter(x => x.type === 'hard').length > 0 && (
+                  <>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 10 }}>
+                      <div style={{ fontFamily: M.mono, fontSize: 10, letterSpacing: 2.5, textTransform: 'uppercase', color: M.t4 }}>Wydajesz wprost</div>
+                      <div style={{ fontFamily: M.mono, fontSize: 13, fontWeight: 700, color: M.gold }}>{C.hardTotal.toLocaleString('pl-PL')} zł</div>
                     </div>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 6, width: '100%', marginBottom: 18 }}>
+                      {catData.filter(x => x.type === 'hard').map((c, i) => (
+                        <div key={i} style={{ background: M.s1, border: `1px solid ${M.brd}`, padding: '14px 12px', borderRadius: 10, minWidth: 0 }}>
+                          <div style={{ fontSize: 15, marginBottom: 4 }}>{c.ic}</div>
+                          <div style={{ fontFamily: M.mono, fontSize: 15, fontWeight: 700, color: M.gold, textShadow: `0 0 10px ${M.gold}15` }}>{c.v.toLocaleString('pl-PL')} zł</div>
+                          <div style={{ fontSize: 10, color: M.t4, textTransform: 'uppercase', letterSpacing: 1, marginTop: 2, fontWeight: 600 }}>{c.l}</div>
+                          <div style={{ height: 3, background: M.s3, marginTop: 8, borderRadius: 2, overflow: 'hidden' }}>
+                            <div style={{ height: '100%', background: c.c, width: `${(c.v / maxC) * 100}%`, transition: 'width 1s ease .3s', borderRadius: 2 }} />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </>
+                )}
+
+                {/* UKRYTE — tracisz niewidocznie */}
+                {catData.filter(x => x.type === 'hidden').length > 0 && (
+                  <>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 10 }}>
+                      <div style={{ fontFamily: M.mono, fontSize: 10, letterSpacing: 2.5, textTransform: 'uppercase', color: M.t4 }}>Tracisz niewidocznie</div>
+                      <div style={{ fontFamily: M.mono, fontSize: 13, fontWeight: 700, color: M.t3 }}>{C.hiddenTotal.toLocaleString('pl-PL')} zł</div>
+                    </div>
+                    <div style={{ fontSize: 11, color: M.t4, fontStyle: 'italic', marginBottom: 10 }}>Szacunek na bazie badań naukowych — nie rachunki, ale realne koszty konsekwencji.</div>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 6, width: '100%' }}>
+                      {catData.filter(x => x.type === 'hidden').map((c, i) => (
+                        <div key={i} style={{ background: M.s1, border: `1px solid ${M.brd}`, padding: '14px 12px', borderRadius: 10, minWidth: 0 }}>
+                          <div style={{ fontSize: 15, marginBottom: 4 }}>{c.ic}</div>
+                          <div style={{ fontFamily: M.mono, fontSize: 15, fontWeight: 700, color: M.t3, textShadow: `0 0 10px ${M.t4}10` }}>{c.v.toLocaleString('pl-PL')} zł</div>
+                          <div style={{ fontSize: 10, color: M.t4, textTransform: 'uppercase', letterSpacing: 1, marginTop: 2, fontWeight: 600 }}>{c.l}</div>
+                          <div style={{ height: 3, background: M.s3, marginTop: 8, borderRadius: 2, overflow: 'hidden' }}>
+                            <div style={{ height: '100%', background: c.c, width: `${(c.v / maxC) * 100}%`, transition: 'width 1s ease .3s', borderRadius: 2 }} />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
+
+            {/* 📉 Stagnacja — karta */}
+            {C.brakes > 0 && C.wastedSessions > 0 && (
+              <div style={{ background: M.s1, border: `1px solid ${M.brd}`, padding: '18px 14px', marginBottom: 20, borderRadius: 12, width: '100%', boxSizing: 'border-box' }}>
+                <div style={{ fontFamily: M.mono, fontSize: 10, letterSpacing: 2.5, textTransform: 'uppercase', color: M.t4, marginBottom: 14 }}>📉 Stanie w miejscu</div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 14 }}>
+                  <div style={{ textAlign: 'center', padding: '14px 8px', background: M.s2, borderRadius: 10 }}>
+                    <div style={{ fontFamily: M.mono, fontSize: 28, fontWeight: 800, color: M.red }}>{C.stagnationMonths}</div>
+                    <div style={{ fontSize: 10, color: M.t4, textTransform: 'uppercase', letterSpacing: 0.8, marginTop: 4, fontWeight: 600 }}>mies. bez progresu</div>
+                  </div>
+                  <div style={{ textAlign: 'center', padding: '14px 8px', background: M.s2, borderRadius: 10 }}>
+                    <div style={{ fontFamily: M.mono, fontSize: 28, fontWeight: 800, color: M.org }}>{C.wastedSessions}</div>
+                    <div style={{ fontSize: 10, color: M.t4, textTransform: 'uppercase', letterSpacing: 0.8, marginTop: 4, fontWeight: 600 }}>treningów na marne</div>
+                  </div>
+                </div>
+                <div style={{ display: 'flex', gap: 5, marginBottom: 10 }}>
+                  {[0,1,2,3,4].map(i => (
+                    <div key={i} style={{ flex: 1, height: 5, borderRadius: 3, background: i < C.brakes ? M.red : M.s3, transition: 'background .3s ease' }} />
                   ))}
                 </div>
+                <div style={{ fontSize: 11, color: M.t4, fontFamily: M.mono, letterSpacing: 0.3 }}>
+                  {C.brakes}/5 hamulców aktywnych — {C.wastedPct}% wysiłku treningowego zmarnowane
+                </div>
+                <p style={{ fontSize: 11.5, color: M.t3, lineHeight: 1.6, marginTop: 10, fontWeight: 400 }}>
+                  Trenujesz, ale fundamenty (sen, dieta, stres) sabotują progres. Za 6 miesięcy będziesz w tym samym miejscu co teraz. <strong style={{ color: M.t1, fontWeight: 500 }}>Nie brak dyscypliny — zła kolejność.</strong>
+                </p>
               </div>
             )}
 
@@ -751,13 +845,19 @@ export default function Page() {
 
             {/* Źródła */}
             <div style={{ padding: '16px 12px', background: M.s1, border: `1px solid ${M.brd}`, marginBottom: 24, borderRadius: 12, width: '100%', boxSizing: 'border-box' }}>
-              <div style={{ fontFamily: M.mono, fontSize: 10, letterSpacing: 2.5, textTransform: 'uppercase', color: M.t4, marginBottom: 10 }}>Skąd te liczby</div>
-              <div style={{ fontSize: 11, color: M.t3, lineHeight: 1.7 }}>
-                {['Nutrition & Metabolism, 2014: alkohol >1.5g/kg = spadek T ~27% w 12h',
-                  'J. Clin. Endocrinol. Metab.: 14+ drinków = -23% testosteronu następnego dnia',
-                  'RAND Corporation, 2016: <6h snu = 13% wyższe ryzyko śmierci, 19-29% mniej produktywności',
-                  'Expert Rev. Endocrinol. Metab., 2023: meta-analiza 21 badań, 10 199 osób',
-                ].map((s, i) => <span key={i} style={{ display: 'block', marginBottom: 3 }}>[{i + 1}] {s}</span>)}
+              <div style={{ fontFamily: M.mono, fontSize: 10, letterSpacing: 2.5, textTransform: 'uppercase', color: M.t4, marginBottom: 10 }}>📊 Źródła naukowe (9 badań)</div>
+              <div style={{ fontSize: 10.5, color: M.t4, lineHeight: 1.8 }}>
+                {[
+                  'RAND Europe, 2016 — pracownicy śpiący <6h tracą ekwiwalent 2.4% PKB w produktywności',
+                  'Leproult & Van Cauter, JAMA 2011 — 1 tydzień 5h snu = 10-15% spadek testosteronu',
+                  'Parr et al., PLOS ONE 2014 — alkohol po treningu obniża syntezę białek mięśniowych o 24-37%',
+                  'Cappuccio et al., 2010 — meta-analiza: <6h snu = 12% wyższe ryzyko śmierci',
+                  'Hemp, Harvard Business Review 2004 — prezenteizm (praca w obniżonej formie) kosztuje 3× więcej niż absencja',
+                  'Vingren et al., 2013 — alkohol >1.5g/kg = spadek T o ~23% w ciągu 10-16h',
+                  'Halson, Sports Medicine 2014 — deficyt snu upośledza wydolność, układ odpornościowy i regenerację',
+                  'Schoenfeld et al., 2017 — progres wymaga progressive overload + regeneracja + dieta jednocześnie',
+                  'Expert Rev. Endocrinol. Metab., 2023 — meta-analiza 21 badań, 10 199 mężczyzn: styl życia > wiek',
+                ].map((s, i) => <span key={i} style={{ display: 'block', marginBottom: 4, paddingLeft: 16, textIndent: -16 }}>[{i + 1}] {s}</span>)}
               </div>
             </div>
           </div>
