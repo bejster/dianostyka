@@ -103,6 +103,8 @@ export default function Page() {
   const [igErr, setIgErr] = useState('');
   const [emailErr, setEmailErr] = useState('');
   const [loading, setLoading] = useState(false);
+  const [rateMode, setRateMode] = useState<'hourly' | 'salary'>('hourly');
+  const [salaryInput, setSalaryInput] = useState(10000);
   const topRef = useRef<HTMLDivElement>(null);
 
   const upd = (k: keyof FD, v: number) => setD(p => ({ ...p, [k]: v }));
@@ -433,7 +435,49 @@ export default function Page() {
                   <SevField label="Energia i motywacja" sub="Jak często czujesz się wypalony?" k="energy" val={D.energy} />
                   <SevField label="Głód dopaminowy" sub="Szukasz ciągłej stymulacji, trudno skupić się na nudnym zadaniu?" k="dopamine" val={D.dopamine} />
                   <Slider label="Ile godzin dziennie tracisz przez mgłę / wolniejsze myślenie?" min={0} max={4} step={0.5} k="lost" val={D.lost} unit="h" />
-                  <Slider label="Twoja stawka godzinowa" min={0} max={300} step={10} k="rate" val={D.rate} unit=" zł" />
+                  {/* Toggle: stawka godzinowa / pensja */}
+                  <div style={{ marginBottom: 28 }}>
+                    <div style={{ display: 'flex', background: M.s1, border: `1.5px solid ${M.brd2}`, borderRadius: 10, overflow: 'hidden', marginBottom: 14 }}>
+                      {([['hourly', 'Stawka / godz.'], ['salary', 'Pensja / mies.']] as const).map(([mode, label]) => (
+                        <button key={mode} onClick={() => {
+                          setRateMode(mode);
+                          if (mode === 'salary') upd('rate', Math.round(salaryInput / 168));
+                          else upd('rate', 60);
+                        }} style={{
+                          flex: 1, padding: '12px 8px', border: 'none', cursor: 'pointer',
+                          background: rateMode === mode ? M.gold + '15' : 'transparent',
+                          borderBottom: rateMode === mode ? `2px solid ${M.gold}` : '2px solid transparent',
+                          fontFamily: M.mono, fontSize: 11, fontWeight: rateMode === mode ? 700 : 500,
+                          letterSpacing: 0.8, color: rateMode === mode ? M.gold : M.t4,
+                          transition: 'all .2s ease',
+                        }}>{label}</button>
+                      ))}
+                    </div>
+                    {rateMode === 'hourly' ? (
+                      <Slider label="Twoja stawka godzinowa" min={0} max={300} step={10} k="rate" val={D.rate} unit=" zł" />
+                    ) : (
+                      <div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 10 }}>
+                          <span style={{ fontSize: 15, color: M.t1, fontWeight: 500, lineHeight: 1.45 }}>Pensja netto (na rękę)</span>
+                          <span style={{ fontFamily: M.mono, fontSize: 17, fontWeight: 700, color: M.gold, minWidth: 80, textAlign: 'right' }}>{salaryInput.toLocaleString('pl-PL')} zł</span>
+                        </div>
+                        <div style={{ position: 'relative', height: 48, display: 'flex', alignItems: 'center' }}>
+                          <div style={{ position: 'absolute', left: 0, right: 0, height: 6, background: M.s3, borderRadius: 3, top: '50%', marginTop: -3 }} />
+                          <div style={{ position: 'absolute', left: 0, height: 6, width: `${((salaryInput - 3000) / (25000 - 3000)) * 100}%`, background: M.gold, borderRadius: 3, transition: 'width .2s cubic-bezier(.4,0,.2,1)', top: '50%', marginTop: -3, opacity: 0.8 }} />
+                          <input type="range" min={3000} max={25000} step={500} value={salaryInput}
+                            onChange={e => {
+                              const v = parseFloat(e.target.value);
+                              setSalaryInput(v);
+                              upd('rate', Math.round(v / 168));
+                            }}
+                            style={{ width: '100%', height: 48, WebkitAppearance: 'none', background: 'transparent', position: 'relative', zIndex: 2, cursor: 'pointer', margin: 0, padding: 0 }} />
+                        </div>
+                        <div style={{ textAlign: 'right', fontFamily: M.mono, fontSize: 11, color: M.t3, marginTop: 6 }}>
+                          = {D.rate} zł/godz. (168h pracy w miesiącu)
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 </div>
               )}
 
