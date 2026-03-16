@@ -891,7 +891,7 @@ export default function Page() {
                     <p style={{ color: M.t3, fontSize: 14.5, lineHeight: 1.65, fontWeight: 400, maxWidth: 340, margin: '0 auto 14px' }}>
                       Przeliczam hormony, mózg i formę na złotówki. Na bazie badań, nie opinii.
                     </p>
-                    <div style={{ fontFamily: M.mono, fontSize: 10, color: M.t4, letterSpacing: 1.5 }}>Zero danych &middot; Tylko Ty to widzisz</div>
+                    <div style={{ fontFamily: M.mono, fontSize: 10, color: M.t4, letterSpacing: 1.5 }}>🔒 Twoje odpowiedzi są anonimowe &middot; Żadne dane nie są zapisywane</div>
                     <div style={{ fontFamily: M.mono, fontSize: 9.5, color: M.t4, letterSpacing: 1, marginTop: 8, opacity: 0.7 }}>Kalkulacja oparta na 9 badaniach naukowych</div>
                   </div>
                 </div>
@@ -929,17 +929,17 @@ export default function Page() {
                     </div>
                     <div style={{ position: 'relative', height: 48, display: 'flex', alignItems: 'center' }}>
                       <div style={{ position: 'absolute', left: 0, right: 0, height: 6, background: M.s3, borderRadius: 3, top: '50%', marginTop: -3 }} />
-                      <div style={{ position: 'absolute', left: 0, height: 6, width: `${((salaryInput - 4000) / (30000 - 4000)) * 100}%`, background: M.gold, borderRadius: 3, transition: 'width .2s cubic-bezier(.4,0,.2,1)', top: '50%', marginTop: -3, opacity: 0.8 }} />
+                      <div style={{ position: 'absolute', left: 0, height: 6, width: `${((salaryInput - 4000) / (50000 - 4000)) * 100}%`, background: M.gold, borderRadius: 3, transition: 'width .2s cubic-bezier(.4,0,.2,1)', top: '50%', marginTop: -3, opacity: 0.8 }} />
                       <input
                         type="range"
                         min={4000}
-                        max={30000}
+                        max={50000}
                         step={500}
                         value={salaryInput}
                         aria-label="Średni przychód netto miesięcznie w złotych"
                         aria-valuenow={salaryInput}
                         aria-valuemin={4000}
-                        aria-valuemax={30000}
+                        aria-valuemax={50000}
                         onChange={e => {
                           const v = parseFloat(e.target.value);
                           setSalaryInput(v);
@@ -966,9 +966,24 @@ export default function Page() {
               {sec === 3 && (
                 <div className="fade-up">
                   <Slider label="Weekendy imprezowe w miesiącu" min={0} max={4} step={1} k="wknd" val={D.wknd} unit="" ariaLabel="Liczba imprezowych weekendów w miesiącu" />
-                  <Slider label="Drinki na imprezie (średnio)" min={0} max={20} step={1} k="drinks" val={D.drinks} unit="" note={D.drinks > 5 ? '5-6 piw = ~27% spadek testosteronu w 12h' : ''} ariaLabel="Średnia liczba drinków na imprezie" />
-                  <Slider label="Wydajesz na imprezie" min={0} max={500} step={50} k="cash" val={D.cash} unit=" zł" note={`Suma 6 mies.: ${(D.cash * D.wknd * 6).toLocaleString('pl-PL')} zł`} ariaLabel="Wydatki na imprezie w złotych" />
-                  <Slider label="Wydajesz na substancje" min={0} max={500} step={50} k="subs" val={D.subs} unit=" zł" ariaLabel="Miesięczne wydatki na substancje w złotych" />
+                  <Slider label="Drinki na imprezie (średnio)" min={0} max={20} step={1} k="drinks" val={D.drinks} unit="" note={D.drinks > 5 ? `${D.drinks} drinków = ~${Math.round(D.drinks * 3.4)}% spadek testosteronu w 12h (Vingren 2013)` : ''} ariaLabel="Średnia liczba drinków na imprezie" />
+                  <Slider label="Wydajesz na imprezie (alkohol, wyjścia)" min={0} max={800} step={50} k="cash" val={D.cash} unit=" zł" note={`Suma 6 mies.: ${(D.cash * D.wknd * 6).toLocaleString('pl-PL')} zł`} ariaLabel="Wydatki na imprezie w złotych" />
+                  <Slider label="Wydajesz na substancje" min={0} max={800} step={50} k="subs" val={D.subs} unit=" zł" ariaLabel="Miesięczne wydatki na substancje w złotych" />
+                  {D.subs > 0 && (
+                    <div style={{ padding: '12px 16px', background: M.s1, borderRadius: 12, border: `1px solid ${M.brd}`, marginTop: -12, marginBottom: 28 }}>
+                      <div style={{ fontSize: 11, color: M.t4, fontFamily: M.mono, letterSpacing: 0.5, marginBottom: 8 }}>CO TO OZNACZA DLA TWOJEGO CIAŁA:</div>
+                      <div style={{ fontSize: 12.5, color: M.t3, lineHeight: 1.7 }}>
+                        {D.subs > 0 && D.subs <= 200 && '• Okazjonalne użycie - serotonina potrzebuje 2-4 tyg. na regenerację. Przy regularnym cyklu okno regeneracji nigdy się nie zamyka.'}
+                        {D.subs > 200 && D.subs <= 500 && '• Regularne wydatki na substancje - deplecja serotoniny + dopaminy. Mózg zaczyna traktować baseline jako „za mało". Trening i dieta tracą na efektywności.'}
+                        {D.subs > 500 && '• Poważne wydatki - na tym poziomie układ nerwowy jest w trybie ciągłej kompensacji. Regeneracja po weekendzie zajmuje cały tydzień. Forma stoi w miejscu.'}
+                      </div>
+                    </div>
+                  )}
+                  {D.drinks > 10 && (
+                    <div style={{ fontSize: 11.5, color: M.org, fontStyle: 'italic', marginTop: -16, marginBottom: 24, lineHeight: 1.5 }}>
+                      {D.drinks}+ drinków regularnie. Wątroba potrzebuje ~72h na pełną regenerację. Przy 2+ weekendach - nigdy nie wraca do baseline.
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -988,7 +1003,7 @@ export default function Page() {
                     ['mood', 'Wahania nastroju, drażliwość'],
                     ['libido', 'Obniżone libido lub motywacja seksualna'],
                     ['belly', 'Brzuch który nie schodzi mimo treningu'],
-                    ['brain', 'Brain fog — mgła, problemy z koncentracją'],
+                    ['brain', 'Brain fog - mgła, problemy z koncentracją'],
                     ['anxiety', 'Niepokój, natrętne myśli'],
                     ['joints', 'Bóle stawów lub słaba regeneracja'],
                     ['skin', 'Pogorszona cera, wypryski'],
@@ -1196,7 +1211,7 @@ export default function Page() {
                   </div>
                 </div>
                 <div style={{ fontSize: 14, fontWeight: 600, color: scoreColor, marginTop: 14, textAlign: 'center', textShadow: `0 0 12px ${scoreColor}25` }}>
-                  {SC >= 75 ? 'Pracujesz przeciwko sobie' : SC >= 50 ? 'Hormony i mózg pod presją' : SC >= 25 ? 'Twoje ciało już to czuje' : SC > 5 ? 'Niskie ryzyko — ale nie zero' : 'Bazowy poziom — masz fundament pod formę'}
+                  {SC >= 75 ? 'Pracujesz przeciwko sobie' : SC >= 50 ? 'Hormony i mózg pod presją' : SC >= 25 ? 'Twoje ciało już to czuje' : SC > 5 ? 'Niskie ryzyko - ale nie zero' : 'Bazowy poziom - masz fundament pod formę'}
                 </div>
               </div>
             </Reveal>
@@ -1348,7 +1363,7 @@ export default function Page() {
                         <div style={{ fontFamily: M.mono, fontSize: 10, letterSpacing: 2.5, textTransform: 'uppercase', color: M.t4 }}>Tracisz niewidocznie</div>
                         <div style={{ fontFamily: M.mono, fontSize: 13, fontWeight: 700, color: M.t3 }}>{C.hiddenTotal.toLocaleString('pl-PL')} zł</div>
                       </div>
-                      <div style={{ fontSize: 11, color: M.t4, fontStyle: 'italic', marginBottom: 10 }}>Szacunek na bazie badań naukowych (RAND 2016, Hemp HBR 2004). Nie rachunki z banku — realne koszty konsekwencji, które tracisz niewidocznie każdego miesiąca.</div>
+                      <div style={{ fontSize: 11, color: M.t4, fontStyle: 'italic', marginBottom: 10 }}>Szacunek na bazie badań naukowych (RAND 2016, Hemp HBR 2004). Nie rachunki z banku - realne koszty konsekwencji, które tracisz niewidocznie każdego miesiąca.</div>
                       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 8, width: '100%' }}>
                         {catData.filter(x => x.type === 'hidden').map((c, i) => (
                           <div key={i} style={{
@@ -1604,7 +1619,7 @@ export default function Page() {
                     transition: 'all .2s ease', minHeight: 44,
                   }}
                 >
-                  {copied ? '✓ Link skopiowany' : 'Skopiuj link — wyślij diagnostykę znajomemu'}
+                  {copied ? '✓ Link skopiowany' : 'Skopiuj link - wyślij diagnostykę znajomemu'}
                 </button>
               </div>
             </Reveal>
