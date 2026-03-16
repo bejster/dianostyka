@@ -1861,7 +1861,7 @@ export default function Page() {
               </div>
             </Reveal>
 
-            {/* ── MEGA CTA — personalizowane na bazie wynikow ── */}
+            {/* ── MEGA CTA — perswazja + psychologia straty + imie + bonus ── */}
             <Reveal delay={140}>
               <div style={{
                 position: 'relative', overflow: 'hidden',
@@ -1875,144 +1875,194 @@ export default function Page() {
                 {/* Znak wodny */}
                 <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%) rotate(-25deg)', fontFamily: M.mono, fontSize: 52, fontWeight: 900, color: `${M.gold}04`, letterSpacing: 8, whiteSpace: 'nowrap', pointerEvents: 'none', userSelect: 'none' }}>HANTLE I TALERZ</div>
 
-                {/* Wstepna kwalifikacja */}
+                {/* Personalizowana kwalifikacja z imieniem */}
                 {SC >= 25 && (
                   <div style={{
-                    display: 'flex', alignItems: 'center', gap: 10, marginBottom: 18,
-                    padding: '12px 14px', background: `${M.gold}12`, border: `1px solid ${M.gold}25`,
-                    borderRadius: 10,
+                    display: 'flex', alignItems: 'flex-start', gap: 12, marginBottom: 20,
+                    padding: '16px 14px', background: `${M.gold}12`, border: `1px solid ${M.gold}30`,
+                    borderRadius: 12,
                   }}>
-                    <span style={{ fontSize: 22, flexShrink: 0 }}>✅</span>
+                    <span style={{ fontSize: 26, flexShrink: 0, marginTop: 2 }}>✅</span>
                     <div>
-                      <div style={{ fontSize: 14, fontWeight: 700, color: M.gold, marginBottom: 2 }}>
-                        {SC >= 50 ? 'Wstepnie pasujesz do wspolpracy' : 'Widzę potencjal do pracy z Toba'}
+                      <div style={{ fontSize: 16, fontWeight: 800, color: M.gold, marginBottom: 6, lineHeight: 1.3 }}>
+                        {imie.trim()
+                          ? `${imie.trim()}, wstepnie kwalifikujesz sie do wspolpracy`
+                          : 'Wstepnie kwalifikujesz sie do wspolpracy'
+                        }
                       </div>
-                      <div style={{ fontSize: 11.5, color: M.t3, lineHeight: 1.5 }}>
+                      <div style={{ fontSize: 12.5, color: M.t2, lineHeight: 1.6 }}>
                         {SC >= 50
-                          ? `Na bazie 150 wspolprac - Twoj profil (score ${SC}/100, ${D.tags.size} objawow, ${potential}% niewykorzystanego potencjalu) to dokladnie wzorzec ludzi z ktorymi pracuje i u ktorych widze najwieksze zmiany.`
-                          : `Twoje wyniki pokazuja ze sa konkretne rzeczy do naprawienia. Widzialem to wielokrotnie - przy odpowiednim podejsciu mozesz odzyskac ${Math.min(potential, 40)}% potencjalu w 3-6 miesiecy.`
+                          ? `Widzialem Twoj profil - ${SC}/100 pkt, ${D.tags.size} objawow, ${potential}% niewykorzystanego potencjalu. To dokladnie wzorzec ludzi z ktorymi pracuje i u ktorych widze najwieksze zmiany w ciagu 3-6 miesiecy.`
+                          : `Twoje wyniki (${SC}/100) pokazuja konkretne blokady. Widzialem to wielokrotnie - przy odpowiednim podejsciu mozesz odzyskac ${Math.min(potential, 40)}% potencjalu.`
                         }
                       </div>
                     </div>
                   </div>
                 )}
 
-                <div style={{ fontFamily: M.mono, fontSize: 10, letterSpacing: 2.5, textTransform: 'uppercase', color: M.gold, marginBottom: 16 }}>
-                  {SC >= 50 ? 'Nastepny krok' : 'Co mozesz zrobic teraz'}
+                {/* Personalizowany problem - co dokladnie naprawiamy */}
+                <div style={{ fontFamily: M.mono, fontSize: 10, letterSpacing: 2.5, textTransform: 'uppercase', color: M.gold, marginBottom: 14 }}>
+                  {imie.trim() ? `${imie.trim()}, dokladnie z tym pracuje` : 'Dokladnie z tym pracuje'}
                 </div>
 
-                <p style={{ fontSize: 15, color: M.t1, lineHeight: 1.75, fontWeight: 500, marginBottom: 6 }}>
-                  {SC >= 50
-                    ? 'Pracuje z facetami ktorzy zyja dokladnie tak jak Ty.'
-                    : 'Te liczby nie znikna same.'}
-                </p>
-                <p style={{ fontSize: 14, color: M.t2, lineHeight: 1.75, fontWeight: 400, marginBottom: 6 }}>
-                  {SC >= 50
-                    ? 'Imprezy, praca, chaos. Mimo to maja forme, energie i sprawny mozg.'
-                    : 'Za 6 miesiecy beda wyzsze albo nizsze. Zalezy co zrobisz teraz.'}
-                </p>
+                <div style={{ marginBottom: 18 }}>
+                  {/* Dynamiczna lista problemow na bazie wynikow */}
+                  {[
+                    D.sleep < 6.5 && { ic: '😴', t: `${D.sleep}h snu niszczy Ci regeneracje i hormony`, d: 'Naprawiam to w pierwszych 2 tygodniach. Bez tabletek, bez wstawania o 5 rano.' },
+                    D.drinks > 5 && { ic: '🍺', t: `${D.drinks} drinkow na impreze sabotuje Twoja forme`, d: 'Mam protokol ktory minimalizuje szkody bez rezygnowania z imprez. Zero moralizowania.' },
+                    D.subs > 0 && { ic: '💊', t: 'Substancje wyczerpuja Twoje neuroprzekazniki', d: 'Pracuje z facetami ktorzy uzywaja. Wiem jak odbudowac serotonine i dopamine miedzy sesjami.' },
+                    D.stress >= 2 && { ic: '😰', t: 'Chroniczny stres zjada Twoj testosteron', d: 'Kortyzol i testosteron biora sie z tego samego prekursora. Wiem jak przerzucic produkcje na Twoja korzysc.' },
+                    D.miss > 0 && { ic: '❌', t: `${D.miss} tracone treningi tygodniowo = zerowy progres`, d: 'Uklad treningowy dopasowany do Twojego chaosu. Nie musisz byc zdyscyplinowany - musisz miec system.' },
+                    D.tags.has('belly') && { ic: '🔥', t: 'Brzuch nie schodzi mimo treningu', d: 'To nie kwestia kalorii. To hormony i insulina. Naprawiam przyczyne, nie objaw.' },
+                    D.tags.has('libido') && { ic: '⬇️', t: 'Libido na dnie', d: 'W 80% przypadkow to sen + stres + alkohol. Kiedy naprawimy te 3 rzeczy, testosteron wraca sam.' },
+                    D.tags.has('brain') && { ic: '🧠', t: 'Mgla mozgowa i zerowa koncentracja', d: 'Neuroinflamacja z jelita, niedobory, rozregulowana dopamina. Wiem od czego zaczac.' },
+                    D.tags.has('fatigue') && { ic: '🔋', t: 'Chroniczne zmeczenie mimo snu', d: 'To nie lenistwo. To mitochondria, zelazo albo tarczyca. Diagnozuje to w pierwszym tygodniu.' },
+                  ].filter(Boolean).slice(0, 4).map((item, i) => item && (
+                    <div key={i} style={{
+                      display: 'flex', gap: 10, padding: '10px 0',
+                      borderBottom: `1px solid ${M.brd}`,
+                    }}>
+                      <span style={{ fontSize: 18, flexShrink: 0, marginTop: 2 }}>{item.ic}</span>
+                      <div>
+                        <div style={{ fontSize: 13, fontWeight: 600, color: M.t1, marginBottom: 3 }}>{item.t}</div>
+                        <div style={{ fontSize: 11.5, color: M.t3, lineHeight: 1.55 }}>{item.d}</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
 
-                {SC >= 50 && (
-                  <p style={{ fontSize: 13.5, color: M.t3, lineHeight: 1.7, fontWeight: 400, marginBottom: 6 }}>
-                    Roznica? Wiedza co sabotuje ich cialo i maja plan ktory to naprawia. <strong style={{ color: M.t1, fontWeight: 600 }}>Bez rezygnowania z zycia.</strong>
-                  </p>
-                )}
-
-                {SC >= 25 && (
+                {/* Psychologia straty - co tracisz BEZ systemu */}
+                {C.total > 3000 && (
                   <div style={{
-                    margin: '18px 0', padding: '16px 14px',
-                    background: 'rgba(10,10,10,0.6)',
-                    border: `1px solid ${M.brd2}`,
-                    borderRadius: 12,
+                    padding: '16px 14px', marginBottom: 18,
+                    background: `${M.red}0a`, border: `1px solid ${M.red}20`, borderRadius: 12,
                   }}>
-                    <div style={{ fontSize: 13, color: M.t2, lineHeight: 1.7, marginBottom: 4 }}>
-                      <strong style={{ color: M.gold }}>Na stronie opisuje dokladnie jak pomagam</strong> w takich przypadkach jak Twoj - {D.tags.size >= 4 ? `${D.tags.size} objawow, ` : ''}{D.drinks > 5 ? 'imprezy, ' : ''}{D.sleep < 6.5 ? 'deficyt snu, ' : ''}{D.stress >= 2 ? 'chroniczny stres, ' : ''}{D.miss > 0 ? 'tracone treningi' : 'brak progresu'}.
+                    <div style={{ fontFamily: M.mono, fontSize: 9, letterSpacing: 2, textTransform: 'uppercase', color: M.red, marginBottom: 10, display: 'flex', alignItems: 'center', gap: 6 }}>
+                      <span style={{ width: 6, height: 6, borderRadius: 3, background: M.red, display: 'inline-block' }} />
+                      {imie.trim() ? `${imie.trim()}, bez zmian tracisz` : 'Bez zmian tracisz'}
                     </div>
-                    <div style={{ fontSize: 12.5, color: M.t3, lineHeight: 1.65 }}>
-                      Przeczytaj jak to dziala, zobacz efekty i <strong style={{ color: M.t1 }}>wypelnij krotki formularz</strong> w srodku strony. Na tej podstawie ocenie czy i jak moge Ci pomoc.
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 12 }}>
+                      <div style={{ textAlign: 'center', padding: '10px 6px', background: 'rgba(10,10,10,0.5)', borderRadius: 8 }}>
+                        <div style={{ fontFamily: M.mono, fontSize: 22, fontWeight: 800, color: M.red }}>{C.total.toLocaleString('pl-PL')}</div>
+                        <div style={{ fontSize: 9, color: M.t4, textTransform: 'uppercase', letterSpacing: 0.8, marginTop: 3 }}>zl / 6 miesiecy</div>
+                      </div>
+                      <div style={{ textAlign: 'center', padding: '10px 6px', background: 'rgba(10,10,10,0.5)', borderRadius: 8 }}>
+                        <div style={{ fontFamily: M.mono, fontSize: 22, fontWeight: 800, color: M.org }}>{potential}%</div>
+                        <div style={{ fontSize: 9, color: M.t4, textTransform: 'uppercase', letterSpacing: 0.8, marginTop: 3 }}>potencjalu zmarnowane</div>
+                      </div>
                     </div>
+                    <p style={{ fontSize: 12, color: M.t3, lineHeight: 1.65, marginBottom: 0 }}>
+                      Kazdy tydzien bez systemu to kolejne <strong style={{ color: M.red }}>{Math.round(C.total / 26).toLocaleString('pl-PL')} zl</strong> stracone na konsekwencje i <strong style={{ color: M.red }}>{C.wastedSessions > 0 ? `${Math.round(C.wastedSessions / 26)} treningow` : 'progres'}</strong> wyrzucone w bloto.
+                      {C.total > 8000 && <> Wspolpraca kosztuje mniej niz to co tracisz w <strong style={{ color: M.t1 }}>{C.total > 12000 ? '1 miesiac' : '2 miesiace'}</strong>.</>}
+                    </p>
                   </div>
                 )}
 
-                {/* Glowny CTA - DUZY */}
+                {/* Co dostajesz - konkretnie */}
+                <div style={{
+                  padding: '16px 14px', marginBottom: 18,
+                  background: 'rgba(10,10,10,0.5)', border: `1px solid ${M.brd2}`, borderRadius: 12,
+                }}>
+                  <div style={{ fontFamily: M.mono, fontSize: 9, letterSpacing: 2, textTransform: 'uppercase', color: M.gold, marginBottom: 12 }}>
+                    Na stronie zobaczysz
+                  </div>
+                  {[
+                    'Jak wyglada wspolpraca - krok po kroku, bez sciem',
+                    'Efekty ludzi z podobnym profilem do Twojego',
+                    'Formularz kwalifikacyjny - wypelniasz, ja oceniam czy i jak moge pomoc',
+                  ].map((t, i) => (
+                    <div key={i} style={{ display: 'flex', gap: 8, marginBottom: 8, alignItems: 'flex-start' }}>
+                      <span style={{ color: M.gold, fontSize: 12, flexShrink: 0, marginTop: 1 }}>→</span>
+                      <span style={{ fontSize: 12.5, color: M.t2, lineHeight: 1.55 }}>{t}</span>
+                    </div>
+                  ))}
+                </div>
+
+                {/* BONUS - urgency */}
+                <div style={{
+                  padding: '14px 14px', marginBottom: 20,
+                  background: `linear-gradient(135deg, ${M.gold}15, ${M.gold}08)`,
+                  border: `1px solid ${M.gold}35`, borderRadius: 12,
+                  position: 'relative',
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+                    <span style={{ fontSize: 18 }}>🎁</span>
+                    <div style={{ fontFamily: M.mono, fontSize: 10, letterSpacing: 2, textTransform: 'uppercase', color: M.gold, fontWeight: 700 }}>
+                      Bonus za wypelnienie formularza
+                    </div>
+                  </div>
+                  <p style={{ fontSize: 12.5, color: M.t2, lineHeight: 1.65, marginBottom: 0 }}>
+                    {imie.trim()
+                      ? `${imie.trim()}, jesli wypelnisz formularz na stronie - dostaniesz ode mnie`
+                      : 'Jesli wypelnisz formularz na stronie - dostaniesz ode mnie'}
+                    {' '}<strong style={{ color: M.gold }}>spersonalizowany feedback</strong> na bazie Twoich wynikow z diagnostyki.
+                    Co dokladnie blokuje Twoj progres, od czego zaczac i czy wspolpraca ma w Twoim przypadku sens. <strong style={{ color: M.t1 }}>Za darmo, w DM, w ciagu 24h.</strong>
+                  </p>
+                </div>
+
+                {/* Glowny CTA - MEGA DUZY */}
                 <a
                   href="https://system.talerzihantle.com"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="shimmer-btn"
-                  aria-label="Zobacz jak pomagam i wypelnij formularz"
+                  aria-label="Wchodzę - pokaż jak pomagasz"
                   style={{
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    background: `linear-gradient(135deg, ${M.gold}, #d4b85a)`,
+                    display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                    background: `linear-gradient(135deg, ${M.gold}, #d4b85a, ${M.gold})`,
                     color: '#0a0a0a',
-                    fontFamily: M.mono, fontSize: 14, fontWeight: 800, letterSpacing: 2.5,
-                    textTransform: 'uppercase', textDecoration: 'none', padding: '22px 20px',
-                    textAlign: 'center', marginBottom: 8, borderRadius: 14,
-                    boxShadow: `0 4px 30px ${M.gold}35, 0 0 60px ${M.gold}15`,
-                    minHeight: 56,
-                    lineHeight: '1.2',
+                    fontFamily: M.mono, textDecoration: 'none', padding: '24px 20px',
+                    textAlign: 'center', marginBottom: 6, borderRadius: 14,
+                    boxShadow: `0 4px 30px ${M.gold}40, 0 0 80px ${M.gold}15`,
+                    minHeight: 64,
                   } as React.CSSProperties}
                 >
-                  {SC >= 50 ? 'Zobacz jak pomagam → wypelnij formularz' : 'Sprawdz czy moge Ci pomoc →'}
+                  <span style={{ fontSize: 15, fontWeight: 900, letterSpacing: 3, textTransform: 'uppercase', lineHeight: 1.3 }}>
+                    {imie.trim() ? `${imie.trim()}, wchodze →` : 'Wchodze - pokaz jak pomagasz →'}
+                  </span>
+                  <span style={{ fontSize: 10, fontWeight: 600, letterSpacing: 1, marginTop: 6, opacity: 0.7 }}>
+                    Przeczytaj + wypelnij formularz kwalifikacyjny
+                  </span>
                 </a>
 
-                <div style={{ textAlign: 'center', marginBottom: 16 }}>
-                  <div style={{ fontSize: 11, color: M.t4, fontFamily: M.mono, letterSpacing: 0.5, marginBottom: 4 }}>
+                <div style={{ textAlign: 'center', marginBottom: 14 }}>
+                  <div style={{ fontSize: 10, color: M.t4, fontFamily: M.mono, letterSpacing: 0.5 }}>
                     system.talerzihantle.com
-                  </div>
-                  <div style={{ fontSize: 10.5, color: M.t4, lineHeight: 1.5 }}>
-                    Na stronie jest formularz - wypelnij go, a odezwe sie z konkretnym feedbackiem
                   </div>
                 </div>
 
                 {/* Social proof */}
-                {SC >= 30 && (
-                  <div style={{
-                    display: 'flex', gap: 8, justifyContent: 'center', flexWrap: 'wrap', marginBottom: 16,
-                  }}>
-                    {[
-                      { n: '150+', l: 'wspolprac' },
-                      { n: '6', l: 'miesiecy' },
-                      { n: '100%', l: 'bez rezygnowania z zycia' },
-                    ].map((s, i) => (
-                      <div key={i} style={{
-                        padding: '8px 12px', background: 'rgba(10,10,10,0.5)',
-                        border: `1px solid ${M.brd}`, borderRadius: 8, textAlign: 'center',
-                      }}>
-                        <div style={{ fontFamily: M.mono, fontSize: 14, fontWeight: 700, color: M.gold }}>{s.n}</div>
-                        <div style={{ fontSize: 9, color: M.t4, textTransform: 'uppercase', letterSpacing: 0.8, marginTop: 2 }}>{s.l}</div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-
-                {/* Koszty vs wspolpraca */}
-                {C.total > 5000 && SC >= 30 && (
-                  <div style={{
-                    padding: '14px 14px', marginBottom: 16,
-                    background: `${M.red}08`, border: `1px solid ${M.red}15`, borderRadius: 10,
-                  }}>
-                    <p style={{ fontSize: 12, color: M.t3, lineHeight: 1.65, marginBottom: 0, textAlign: 'center' }}>
-                      Tracisz <strong style={{ color: M.red }}>{C.total.toLocaleString('pl-PL')} zl</strong> w pol roku na konsekwencje.<br />
-                      Wspolpraca kosztuje mniej niz to co tracisz w <strong style={{ color: M.t1 }}>{C.total > 12000 ? '1' : C.total > 6000 ? '2' : '3'} {C.total > 12000 ? 'miesiac' : 'miesiace'}</strong> obecnego stylu zycia.
-                    </p>
-                  </div>
-                )}
-
-                <div style={{ textAlign: 'center', fontSize: 11, color: M.t4, fontFamily: M.mono, letterSpacing: 0.3, marginBottom: 16 }}>
-                  lub napisz <strong style={{ color: M.gold }}>JAZDA</strong> w DM <a href="https://instagram.com/hantleitalerz" target="_blank" rel="noopener noreferrer" style={{ color: M.gold, textDecoration: 'none', fontWeight: 600 }}>@hantleitalerz</a>
+                <div style={{
+                  display: 'flex', gap: 6, justifyContent: 'center', flexWrap: 'wrap', marginBottom: 16,
+                }}>
+                  {[
+                    { n: '150+', l: 'podopiecznych' },
+                    { n: `${potential}%`, l: 'Twojego potencjalu do odblokowania' },
+                  ].map((s, i) => (
+                    <div key={i} style={{
+                      padding: '8px 14px', background: 'rgba(10,10,10,0.5)',
+                      border: `1px solid ${M.brd}`, borderRadius: 8, textAlign: 'center', flex: 1, minWidth: 100,
+                    }}>
+                      <div style={{ fontFamily: M.mono, fontSize: 16, fontWeight: 700, color: M.gold }}>{s.n}</div>
+                      <div style={{ fontSize: 8.5, color: M.t4, textTransform: 'uppercase', letterSpacing: 0.8, marginTop: 2 }}>{s.l}</div>
+                    </div>
+                  ))}
                 </div>
 
-                <div style={{ height: 1, background: M.brd, margin: '0 10px 18px' }} />
+                {/* Alternatywa - DM */}
+                <div style={{ textAlign: 'center', fontSize: 11, color: M.t4, fontFamily: M.mono, letterSpacing: 0.3, marginBottom: 16 }}>
+                  Wolisz pogadac najpierw? Napisz <strong style={{ color: M.gold }}>JAZDA</strong> w DM <a href="https://instagram.com/hantleitalerz" target="_blank" rel="noopener noreferrer" style={{ color: M.gold, textDecoration: 'none', fontWeight: 600 }}>@hantleitalerz</a>
+                </div>
 
-                <p style={{ textAlign: 'center', fontSize: 11.5, color: M.t4, marginBottom: 10 }}>
-                  Nie jestes jeszcze gotowy na wspolprace 1:1?
+                <div style={{ height: 1, background: M.brd, margin: '0 10px 16px' }} />
+
+                <p style={{ textAlign: 'center', fontSize: 11, color: M.t4, marginBottom: 10 }}>
+                  Nie jestes jeszcze gotowy?
                 </p>
                 <a
-                  href="https://neurobiologia-formy.talerzihantle.com"
+                  href={D.drinks > 5 || D.subs > 0 ? 'https://kontra.talerzihantle.com' : 'https://neurobiologia-formy.talerzihantle.com'}
                   target="_blank"
                   rel="noopener noreferrer"
-                  aria-label="Neurobiologia Formy - ebook za 99 zlotych"
                   style={{
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                     textAlign: 'center', padding: '14px 14px', minHeight: 44,
@@ -2021,15 +2071,17 @@ export default function Page() {
                     textTransform: 'uppercase', textDecoration: 'none', borderRadius: 12,
                   }}
                 >
-                  Neurobiologia Formy. 99 zl
+                  {D.drinks > 5 || D.subs > 0 ? 'KONTRA - protokol weekendowy. 99 zl' : 'Neurobiologia Formy. 99 zl'}
                 </a>
                 <p style={{ textAlign: 'center', fontSize: 10.5, color: M.t4, marginTop: 6, fontFamily: M.mono }}>
-                  Ebook ktory tlumaczy dlaczego Twoje cialo dziala tak a nie inaczej.
+                  {D.drinks > 5 || D.subs > 0
+                    ? 'Jak imprezowac i nie niszczyc progresu. Napisany dla Ciebie.'
+                    : 'Ebook ktory tlumaczy dlaczego Twoje cialo dziala tak a nie inaczej.'}
                 </p>
               </div>
             </Reveal>
 
-            {/* DM notification */}
+            {/* DM notification - personalizowany */}
             <Reveal delay={80}>
               <div style={{
                 textAlign: 'center', padding: '20px 16px', marginBottom: 20,
@@ -2038,10 +2090,11 @@ export default function Page() {
                 borderRadius: 14, width: '100%', boxSizing: 'border-box',
               }}>
                 <p style={{ fontSize: 13.5, color: M.t2, lineHeight: 1.65, fontWeight: 500, marginBottom: 6 }}>
-                  Analizuje Twoje odpowiedzi.
+                  {imie.trim() ? `${imie.trim()}, analizuje Twoje odpowiedzi.` : 'Analizuje Twoje odpowiedzi.'}
                 </p>
                 <p style={{ fontSize: 12.5, color: M.t3, lineHeight: 1.65, fontWeight: 400 }}>
-                  Napisze do Ciebie w DM <strong style={{ color: M.gold, fontWeight: 600 }}>@hantleitalerz</strong> w ciagu 24h z konkretnym feedbackiem co u Ciebie nie gra i od czego zaczac.
+                  Napisze do Ciebie w DM <strong style={{ color: M.gold, fontWeight: 600 }}>@hantleitalerz</strong> w ciagu 24h z konkretnym feedbackiem.
+                  {SC >= 40 && <> A jesli wypelnisz formularz na <strong style={{ color: M.gold }}>system.talerzihantle.com</strong> - dostaniesz pelna analize + plan dzialania.</>}
                 </p>
               </div>
             </Reveal>
