@@ -229,11 +229,10 @@ function WaveDivider({ flip = false }: { flip?: boolean }) {
   );
 }
 
-// ── KOMPONENT: Gold particles canvas ──
-function GoldParticles() {
+// ── KOMPONENT: Animowane niebo z gwiazdami ──
+function StarField() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const rafRef = useRef<number>(0);
-  const mouseRef = useRef({ x: -9999, y: -9999 });
 
   useEffect(() => {
     // Sprawdź prefers-reduced-motion
@@ -245,11 +244,12 @@ function GoldParticles() {
     if (!ctx) return;
 
     const DPR = window.devicePixelRatio || 1;
-    const N = 35; // liczba cząstek
-    const LINK_DIST_SQ = 120 * 120; // kwadrat dystansu dla linii
-    const MOUSE_DIST_SQ = 90 * 90;
 
-    // Rozmiar canvas z uwzględnieniem DPR
+    // Konfiguracja gwiazd — więcej i jaśniejsze
+    const STAR_COUNT = 250;
+    const SHOOTING_STAR_CHANCE = 0.002; // szansa na spadającą gwiazdę per klatka
+
+    // Rozmiar canvas
     const resize = () => {
       const w = window.innerWidth;
       const h = window.innerHeight;
@@ -261,105 +261,146 @@ function GoldParticles() {
     resize();
     window.addEventListener('resize', resize, { passive: true });
 
-    // Inicjalizacja cząstek
-    interface Particle {
+    // Typy gwiazd — różne rozmiary i jasności
+    interface Star {
+      x: number; y: number;
+      r: number;          // promień
+      baseAlpha: number;  // bazowa jasność
+      twinkleSpeed: number; // prędkość migotania
+      twinklePhase: number; // faza migotania
+      color: string;        // odcień gwiazdy
+    }
+
+    // Kolory gwiazd — głównie białe, kilka z lekkim odcieniem
+    const starColors = [
+      '255,255,255',   // biała (dominujące)
+      '255,255,255',   // biała
+      '255,255,255',   // biała
+      '230,240,255',   // lekko niebieska
+      '255,245,230',   // lekko ciepła
+    ];
+
+    const stars: Star[] = Array.from({ length: STAR_COUNT }, () => {
+      const sizeRand = Math.random();
+      // Realistyczna dystrybucja — dużo małych punktów, kilka jasnych
+      const r = sizeRand < 0.55 ? Math.random() * 0.7 + 0.3    // małe punkty
+              : sizeRand < 0.82 ? Math.random() * 1.0 + 0.7    // średnie
+              : sizeRand < 0.95 ? Math.random() * 1.3 + 1.0    // duże
+              : Math.random() * 1.8 + 1.5;                      // bardzo jasne (5%)
+      return {
+        x: Math.random() * window.innerWidth,
+        y: Math.random() * window.innerHeight,
+        r,
+        baseAlpha: Math.random() * 0.4 + 0.5,  // jasne: 0.5-0.9
+        twinkleSpeed: Math.random() * 0.015 + 0.003,
+        twinklePhase: Math.random() * Math.PI * 2,
+        color: starColors[Math.floor(Math.random() * starColors.length)],
+      };
+    });
+
+    // Spadające gwiazdy
+    interface ShootingStar {
       x: number; y: number;
       vx: number; vy: number;
-      r: number; a: number;
+      life: number; maxLife: number;
+      length: number;
     }
-    const pts: Particle[] = Array.from({ length: N }, () => ({
-      x: Math.random() * window.innerWidth,
-      y: Math.random() * window.innerHeight,
-      vx: (Math.random() - 0.5) * 0.35,
-      vy: (Math.random() - 0.5) * 0.35,
-      r: Math.random() * 1.6 + 0.6,
-      a: Math.random() * 0.55 + 0.15,
-    }));
+    const shootingStars: ShootingStar[] = [];
 
-    // Główna pętla animacji
+    let time = 0;
+
     const loop = () => {
       const W = window.innerWidth;
       const H = window.innerHeight;
+      time += 1;
 
-      // Reset transformacji przez setTransform (szybciej niż resetTransform)
       ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
       ctx.clearRect(0, 0, W, H);
 
-      // Aktualizacja pozycji
-      for (const p of pts) {
-        // Delikatna repulsja od myszy
-        const dx = p.x - mouseRef.current.x;
-        const dy = p.y - mouseRef.current.y;
-        const distSq = dx * dx + dy * dy;
-        if (distSq < MOUSE_DIST_SQ && distSq > 0.01) {
-          const force = (1 - distSq / MOUSE_DIST_SQ) * 0.4;
-          p.vx += (dx / Math.sqrt(distSq)) * force * 0.04;
-          p.vy += (dy / Math.sqrt(distSq)) * force * 0.04;
-        }
-        // Tłumienie prędkości
-        p.vx *= 0.995;
-        p.vy *= 0.995;
-        p.x += p.vx;
-        p.y += p.vy;
-        // Odbijanie od krawędzi z płynnym zawijaniem
-        if (p.x < 0) { p.x = W; }
-        if (p.x > W) { p.x = 0; }
-        if (p.y < 0) { p.y = H; }
-        if (p.y > H) { p.y = 0; }
-      }
+      // Rysowanie gwiazd z migotaniem
+      for (const star of stars) {
+        const twinkle = Math.sin(time * star.twinkleSpeed + star.twinklePhase);
+        const alpha = star.baseAlpha + twinkle * 0.3;
+        const clampedAlpha = Math.max(0.1, Math.min(1, alpha));
 
-      // Grupowanie linii wg opacity (4 kubełki)
-      const buckets: [number, number, number, number][][] = [[], [], [], []];
-      for (let i = 0; i < N; i++) {
-        for (let j = i + 1; j < N; j++) {
-          const dx = pts[i].x - pts[j].x;
-          const dy = pts[i].y - pts[j].y;
-          const dSq = dx * dx + dy * dy;
-          if (dSq < LINK_DIST_SQ) {
-            const alpha = (1 - dSq / LINK_DIST_SQ) * 0.18;
-            const bucket = Math.floor(alpha / 0.045);
-            const b = Math.min(bucket, 3);
-            buckets[b].push([pts[i].x, pts[i].y, pts[j].x, pts[j].y]);
-          }
+        // Glow dla większych gwiazd — subtelna poświata
+        if (star.r > 1.0) {
+          ctx.beginPath();
+          ctx.arc(star.x, star.y, star.r * 4, 0, Math.PI * 2);
+          ctx.fillStyle = `rgba(${star.color},${clampedAlpha * 0.12})`;
+          ctx.fill();
         }
-      }
-      // Renderowanie linii grupowo
-      const bucketAlpha = [0.04, 0.08, 0.13, 0.18];
-      for (let b = 0; b < 4; b++) {
-        if (buckets[b].length === 0) continue;
-        ctx.strokeStyle = `rgba(200,168,78,${bucketAlpha[b]})`;
-        ctx.lineWidth = 0.7;
-        ctx.beginPath();
-        for (const [x1, y1, x2, y2] of buckets[b]) {
-          ctx.moveTo(x1, y1);
-          ctx.lineTo(x2, y2);
-        }
-        ctx.stroke();
-      }
 
-      // Rysowanie cząstek
-      for (const p of pts) {
+        // Główna gwiazda
         ctx.beginPath();
-        ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(200,168,78,${p.a})`;
+        ctx.arc(star.x, star.y, star.r, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(${star.color},${clampedAlpha})`;
         ctx.fill();
+      }
+
+      // Spadające gwiazdy — tworzenie
+      if (Math.random() < SHOOTING_STAR_CHANCE) {
+        const angle = Math.random() * 0.5 + 0.3; // kąt 17-46 stopni
+        const speed = Math.random() * 4 + 3;
+        shootingStars.push({
+          x: Math.random() * W * 0.8,
+          y: Math.random() * H * 0.3,
+          vx: Math.cos(angle) * speed,
+          vy: Math.sin(angle) * speed,
+          life: 0,
+          maxLife: Math.random() * 40 + 30,
+          length: Math.random() * 80 + 40,
+        });
+      }
+
+      // Spadające gwiazdy — renderowanie
+      for (let i = shootingStars.length - 1; i >= 0; i--) {
+        const ss = shootingStars[i];
+        ss.x += ss.vx;
+        ss.y += ss.vy;
+        ss.life += 1;
+
+        const progress = ss.life / ss.maxLife;
+        const alpha = progress < 0.3 ? progress / 0.3
+                    : progress > 0.7 ? (1 - progress) / 0.3
+                    : 1;
+
+        // Gradient ogon spadającej gwiazdy
+        const tailX = ss.x - (ss.vx / Math.sqrt(ss.vx * ss.vx + ss.vy * ss.vy)) * ss.length * alpha;
+        const tailY = ss.y - (ss.vy / Math.sqrt(ss.vx * ss.vx + ss.vy * ss.vy)) * ss.length * alpha;
+
+        const grad = ctx.createLinearGradient(tailX, tailY, ss.x, ss.y);
+        grad.addColorStop(0, `rgba(255,255,255,0)`);
+        grad.addColorStop(0.7, `rgba(200,220,255,${alpha * 0.4})`);
+        grad.addColorStop(1, `rgba(255,255,255,${alpha * 0.8})`);
+
+        ctx.beginPath();
+        ctx.moveTo(tailX, tailY);
+        ctx.lineTo(ss.x, ss.y);
+        ctx.strokeStyle = grad;
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+
+        // Jasny punkt na czele
+        ctx.beginPath();
+        ctx.arc(ss.x, ss.y, 1.5, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(255,255,255,${alpha * 0.9})`;
+        ctx.fill();
+
+        // Usuwanie martwych spadających gwiazd
+        if (ss.life >= ss.maxLife) {
+          shootingStars.splice(i, 1);
+        }
       }
 
       rafRef.current = requestAnimationFrame(loop);
     };
-
-    // Obsługa myszy (pasywny listener dla wydajności)
-    const onMouseMove = (e: MouseEvent) => {
-      mouseRef.current = { x: e.clientX, y: e.clientY };
-    };
-    window.addEventListener('mousemove', onMouseMove, { passive: true });
 
     rafRef.current = requestAnimationFrame(loop);
 
     return () => {
       cancelAnimationFrame(rafRef.current);
       window.removeEventListener('resize', resize);
-      window.removeEventListener('mousemove', onMouseMove);
     };
   }, []);
 
@@ -369,7 +410,7 @@ function GoldParticles() {
       style={{
         position: 'fixed',
         inset: 0,
-        zIndex: 0,
+        zIndex: 1,
         pointerEvents: 'none',
       }}
       aria-hidden="true"
@@ -1049,8 +1090,8 @@ export default function Page() {
       {/* ── Scroll progress bar ── */}
       <ScrollProgress />
 
-      {/* ── Gold particles canvas ── */}
-      <GoldParticles />
+      {/* ── Animowane niebo z gwiazdami ── */}
+      <StarField />
 
       <div
         id="diagnostyka"
@@ -1700,6 +1741,87 @@ export default function Page() {
               </Reveal>
             )}
 
+            {/* ── Progresja: Co się stanie jeśli nic nie zmienisz ── */}
+            {SC >= 20 && (
+              <Reveal delay={110}>
+                <div style={{
+                  position: 'relative', overflow: 'hidden',
+                  background: `linear-gradient(160deg, rgba(19,19,19,0.9), ${M.red}06)`,
+                  backdropFilter: 'blur(12px)',
+                  WebkitBackdropFilter: 'blur(12px)',
+                  border: `1px solid ${M.red}20`,
+                  padding: '22px 16px', marginBottom: 20, borderRadius: 14, width: '100%', boxSizing: 'border-box',
+                }}>
+                  <div style={{ fontFamily: M.mono, fontSize: 10, letterSpacing: 2.5, textTransform: 'uppercase', color: M.red, marginBottom: 18 }}>
+                    {imie.trim() ? `${imie.trim()}, jeśli nic nie zmienisz` : 'Jeśli nic nie zmienisz'}
+                  </div>
+
+                  {/* Timeline progresji */}
+                  {[
+                    {
+                      period: 'Za 3 miesiące',
+                      color: M.org,
+                      items: [
+                        D.sleep < 6.5 && 'Deficyt snu staje się chroniczny — kortyzol bazowy podnosi się o 15-20%',
+                        D.tags.has('fatigue') && 'Zmęczenie zaczynasz traktować jako normę — nie jest',
+                        D.miss > 0 && `Kolejne ${D.miss * 12} treningów stracone na marne przez złe fundamenty`,
+                        D.drinks > 5 && 'Tolerancja na alkohol rośnie — pijesz więcej żeby poczuć ten sam efekt',
+                        D.stress >= 2 && 'Chroniczny stres obniża produkcję testosteronu o kolejne 5-10%',
+                        D.tags.has('belly') && 'Tłuszcz trzewny rośnie — aromataza konwertuje więcej T na estradiol',
+                      ].filter(Boolean).slice(0, 2) as string[],
+                    },
+                    {
+                      period: 'Za 6 miesięcy',
+                      color: M.red,
+                      items: [
+                        `${C.total.toLocaleString('pl-PL')} zł stracone na konsekwencje stylu życia`,
+                        D.tags.has('libido') && 'Libido spada dalej — partnerka/partner to zauważa',
+                        D.tags.has('brain') && 'Mgła mózgowa staje się codziennością — produktywność na 60%',
+                        D.subs > 0 && 'Receptory D2 dalej się degradują — potrzebujesz coraz więcej żeby poczuć radość',
+                        D.sleep < 7 && 'Ryzyko insulinooporności wzrasta 2.5x przy chronicznie krótkim śnie',
+                        C.brakes >= 3 && `${C.stagnationMonths}+ miesięcy bez progresu mimo regularnych treningów`,
+                      ].filter(Boolean).slice(0, 2) as string[],
+                    },
+                    {
+                      period: 'Za 12 miesięcy',
+                      color: '#dc2626',
+                      items: [
+                        `Straty finansowe: ${(C.total * 2).toLocaleString('pl-PL')} zł — większość niewidoczna`,
+                        'Objawy, które teraz ignorujesz, zaczynają wymagać leczenia',
+                        SC >= 50 ? 'Lekarz zleca badania i mówi „musi pan coś zmienić" — ale nie wie co konkretnie' : 'Ciało adaptuje się do niskiej wydajności — to staje się Twoja nowa normalność',
+                        D.tags.size >= 4 && 'Kaskada objawów — jeden problem napędza kolejny. Im dłużej czekasz, tym trudniej to naprawić',
+                      ].filter(Boolean).slice(0, 2) as string[],
+                    },
+                  ].map((block, bi) => (
+                    <div key={bi} style={{ marginBottom: bi < 2 ? 16 : 0 }}>
+                      <div style={{
+                        display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8,
+                      }}>
+                        <div style={{ width: 8, height: 8, borderRadius: 4, background: block.color, flexShrink: 0, boxShadow: `0 0 8px ${block.color}50` }} />
+                        <span style={{ fontFamily: M.mono, fontSize: 11, fontWeight: 700, color: block.color, letterSpacing: 0.5 }}>{block.period}</span>
+                      </div>
+                      {block.items.map((item, ii) => (
+                        <div key={ii} style={{ display: 'flex', gap: 8, marginLeft: 16, marginBottom: 6 }}>
+                          <span style={{ color: block.color, fontSize: 10, flexShrink: 0, marginTop: 2 }}>▸</span>
+                          <span style={{ fontSize: 11.5, color: M.t3, lineHeight: 1.55 }}>{item}</span>
+                        </div>
+                      ))}
+                    </div>
+                  ))}
+
+                  <div style={{
+                    marginTop: 16, padding: '12px 14px',
+                    background: `${M.red}0c`, border: `1px solid ${M.red}18`, borderRadius: 10,
+                  }}>
+                    <p style={{ fontSize: 12, color: M.t2, lineHeight: 1.65, marginBottom: 0, textAlign: 'center' }}>
+                      To nie straszenie. To <strong style={{ color: M.t1 }}>matematyka i biologia</strong>.<br />
+                      Każdy tydzień bez zmian pogłębia problem. Im później zaczniesz, tym dłużej trwa naprawa.
+                    </p>
+                  </div>
+                </div>
+              </Reveal>
+            )}
+
             {/* Hormony */}
             {hormones.length > 0 && (
               <Reveal delay={120}>
@@ -1922,7 +2044,7 @@ export default function Page() {
                 {/* Znak wodny */}
                 <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%) rotate(-25deg)', fontFamily: M.mono, fontSize: 52, fontWeight: 900, color: `${M.gold}04`, letterSpacing: 8, whiteSpace: 'nowrap', pointerEvents: 'none', userSelect: 'none' }}>HANTLE I TALERZ</div>
 
-                {/* Personalizowana kwalifikacja z imieniem */}
+                {/* Personalizowana kwalifikacja z imieniem + social proof */}
                 {SC >= 25 && (
                   <div style={{
                     display: 'flex', alignItems: 'flex-start', gap: 12, marginBottom: 20,
@@ -1934,14 +2056,28 @@ export default function Page() {
                       <div style={{ fontSize: 16, fontWeight: 800, color: M.gold, marginBottom: 6, lineHeight: 1.3 }}>
                         {imie.trim()
                           ? `${imie.trim()}, wstępnie kwalifikujesz się do współpracy`
-                          : 'Wstepnie kwalifikujesz sie do wspolpracy'
+                          : 'Wstępnie kwalifikujesz się do współpracy'
                         }
                       </div>
-                      <div style={{ fontSize: 12.5, color: M.t2, lineHeight: 1.6 }}>
+                      <div style={{ fontSize: 12.5, color: M.t2, lineHeight: 1.6, marginBottom: 8 }}>
                         {SC >= 50
-                          ? `Widziałem Twój profil - ${SC}/100 pkt, ${D.tags.size} objawów, ${potential}% niewykorzystanego potencjału. To dokładnie wzorzec ludzi z którymi pracuję i u których widzę największe zmiany w ciągu 3-6 miesięcy.`
-                          : `Twoje wyniki (${SC}/100) pokazują konkretne blokady. Widziałem to wielokrotnie - przy odpowiednim podejściu możesz odzyskać ${Math.min(potential, 40)}% potencjału.`
+                          ? `Widziałem Twój profil — ${SC}/100 pkt, ${D.tags.size} objawów, ${potential}% niewykorzystanego potencjału. To dokładnie wzorzec ludzi z którymi pracuję i u których widzę największe zmiany w ciągu 3-6 miesięcy.`
+                          : `Twoje wyniki (${SC}/100) pokazują konkretne blokady. Widziałem to wielokrotnie — przy odpowiednim podejściu możesz odzyskać ${Math.min(potential, 40)}% potencjału.`
                         }
+                      </div>
+                      {/* Spersonalizowany social proof z danymi */}
+                      <div style={{
+                        padding: '10px 12px', background: 'rgba(0,0,0,0.3)', borderRadius: 8,
+                        border: `1px solid ${M.gold}15`,
+                      }}>
+                        <div style={{ fontSize: 11.5, color: M.t3, lineHeight: 1.6 }}>
+                          {SC >= 60 && D.tags.size >= 4
+                            ? <>Twój profil pokrywa się z <strong style={{ color: M.gold }}>~78%</strong> moich podopiecznych na starcie. Ci ludzie odzyskali średnio {Math.min(potential - 5, 35)}% potencjału w pierwszych 8 tygodniach.</>
+                            : SC >= 40
+                            ? <>Pracowałem z facetami o bardzo podobnym profilu — score {SC > 50 ? '50-70' : '35-55'}, {D.tags.size >= 3 ? 'kilka objawów naraz' : 'konkretne blokady'}. Średni progres: <strong style={{ color: M.gold }}>widoczna zmiana w 4-6 tygodni</strong>.</>
+                            : <>Nawet przy score {SC}/100 — widzę konkretne punkty do naprawy. Mniejszy problem = <strong style={{ color: M.gold }}>szybszy efekt</strong>. Zanim się rozkręci.</>
+                          }
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -2000,8 +2136,27 @@ export default function Page() {
                     </div>
                     <p style={{ fontSize: 12, color: M.t3, lineHeight: 1.65, marginBottom: 0 }}>
                       Każdy tydzień bez systemu to kolejne <strong style={{ color: M.red }}>{Math.round(C.total / 26).toLocaleString('pl-PL')} zł</strong> stracone na konsekwencje i <strong style={{ color: M.red }}>{C.wastedSessions > 0 ? `${Math.round(C.wastedSessions / 26)} treningów` : 'progres'}</strong> wyrzucone w błoto.
-                      {C.total > 8000 && <> Współpraca kosztuje mniej niż to co tracisz w <strong style={{ color: M.t1 }}>{C.total > 12000 ? '1 miesiąc' : '2 miesiące'}</strong>.</>}
                     </p>
+                    {/* Porównanie — co tracisz vs co zyskujesz */}
+                    <div style={{
+                      marginTop: 12, display: 'grid', gridTemplateColumns: '1fr auto 1fr', gap: 6, alignItems: 'center',
+                    }}>
+                      <div style={{ textAlign: 'center', padding: '10px 6px', background: `${M.red}10`, borderRadius: 8, border: `1px solid ${M.red}15` }}>
+                        <div style={{ fontFamily: M.mono, fontSize: 11, fontWeight: 700, color: M.red }}>{Math.round(C.total / 6).toLocaleString('pl-PL')} zł/mies.</div>
+                        <div style={{ fontSize: 9, color: M.t4, marginTop: 3 }}>tracisz niewidocznie</div>
+                      </div>
+                      <div style={{ fontSize: 16, color: M.t4 }}>vs</div>
+                      <div style={{ textAlign: 'center', padding: '10px 6px', background: `${M.gold}10`, borderRadius: 8, border: `1px solid ${M.gold}15` }}>
+                        <div style={{ fontFamily: M.mono, fontSize: 11, fontWeight: 700, color: M.gold }}>system</div>
+                        <div style={{ fontSize: 9, color: M.t4, marginTop: 3 }}>który to naprawia</div>
+                      </div>
+                    </div>
+                    <div style={{ marginTop: 10, padding: '10px 12px', background: 'rgba(10,10,10,0.4)', borderRadius: 8, border: `1px solid ${M.brd}` }}>
+                      <p style={{ fontSize: 11.5, color: M.t3, lineHeight: 1.6, marginBottom: 0, textAlign: 'center' }}>
+                        To nie jest tani kurs ani ebook. To <strong style={{ color: M.gold }}>najwyższa półka indywidualnej współpracy w Polsce</strong> — bo łączę trening, neurobiologię i wiedzę której nie ma nikt inny.
+                        {C.total > 8000 && <> Kwota którą tracisz w {C.total > 15000 ? '1 miesiąc' : '2-3 miesiące'} <strong style={{ color: M.t1 }}>przewyższa koszt całej współpracy</strong>.</>}
+                      </p>
+                    </div>
                   </div>
                 )}
 
