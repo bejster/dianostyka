@@ -20,6 +20,40 @@ const INIT: FD = {
 
 const SECTIONS = ['Sen', 'Stres', 'Żywienie', 'Weekend', 'Trening', 'Sygnały'];
 
+// Wagi objawów — im poważniejszy symptom, tym wyższy wpływ na score i koszt
+// Koszt: szacunek konsekwencji finansowych na 6 miesięcy (suplementy, wizyty, utracona produktywność)
+// Waga score: wpływ na łączny wynik (1.0 = bazowy, 2.0 = podwójny)
+const TAG_WEIGHTS: Record<ChipKey, { cost: number; scoreW: number }> = {
+  fatigue:   { cost: 500, scoreW: 1.8 },   // chroniczne zmęczenie — wpływa na wszystko, dużo suplementów/kaw
+  mood:      { cost: 400, scoreW: 1.5 },   // wahania nastroju — wizyty psycholog, gorsze decyzje
+  libido:    { cost: 600, scoreW: 2.0 },   // spadek libido — mocny marker hormonalny, endokrynolog
+  belly:     { cost: 450, scoreW: 1.6 },   // brzuch nie schodzi — insulinooporność, diety, suplementy
+  brain:     { cost: 550, scoreW: 1.8 },   // mgła mózgowa — utracona produktywność, neurolog
+  anxiety:   { cost: 500, scoreW: 1.7 },   // lęki — psychiatra/psycholog, suplementy, CBD
+  joints:    { cost: 350, scoreW: 1.2 },   // bóle stawów — fizjoterapeuta, suplementy kolagen/MSM
+  skin:      { cost: 250, scoreW: 1.0 },   // skóra — dermatolog, kosmetyki, cynk
+  motivation:{ cost: 450, scoreW: 1.6 },   // brak motywacji — dopamina, utracone szanse
+  digest:    { cost: 350, scoreW: 1.3 },   // trawienie — gastroenterolog, probiotyki, dieta eliminacyjna
+  cravings:  { cost: 300, scoreW: 1.2 },   // głód na słodycze — insulinooporność, gorsze żywienie
+  recovery:  { cost: 400, scoreW: 1.4 },   // wolna regeneracja — zmarnowane treningi, suplementy
+  focus:     { cost: 500, scoreW: 1.7 },   // koncentracja — utracona produktywność, nootropiki
+  headaches: { cost: 400, scoreW: 1.3 },   // bóle głowy — leki, wizyty, absencja w pracy
+  sweating:  { cost: 300, scoreW: 1.2 },   // nocne poty — zaburzony sen, testy hormonalne
+  heartRate: { cost: 450, scoreW: 1.5 },   // podwyższone tętno — kardiolog, stres, substancje
+};
+
+// Oblicz ważony koszt sygnałów i ważony score sygnałów
+function tagCost(tags: Set<ChipKey>): number {
+  let total = 0;
+  tags.forEach(t => { total += TAG_WEIGHTS[t]?.cost || 350; });
+  return total;
+}
+function tagScoreWeighted(tags: Set<ChipKey>): number {
+  let total = 0;
+  tags.forEach(t => { total += TAG_WEIGHTS[t]?.scoreW || 1.0; });
+  return total;
+}
+
 function costs(D: FD) {
   // ── TWARDE KOSZTY — wydajesz wprost, weryfikowalne ──
   const wkndCost = Math.round((D.cash + D.subs) * D.wknd * 6);
@@ -32,8 +66,6 @@ function costs(D: FD) {
   // Produktywność: mgła × stawka × 26 tyg. (RAND 2016: <6h snu = -2.4% GDP; Hemp HBR 2004: prezenteizm 3× droższy niż absencja)
   const prodCost = Math.round(D.lost * 26 * D.rate);
   // Stagnacja: treningi bez progresu bo fundamenty nie grają
-  // (Parr 2014: alkohol -24-37% synteza białek; Halson 2014: deficyt snu = upośledzona regeneracja;
-  //  Schoenfeld 2017: progres wymaga progressive overload + regeneracja + jadłospis jednocześnie)
   const brakes = [
     D.sleepQ >= 2 || D.sleep < 6.5,       // kiepski sen / za mało snu
     D.dietChaos >= 2 || D.binge >= 2,      // chaos w żywieniu
@@ -46,8 +78,8 @@ function costs(D: FD) {
   const stagnationMonths = Math.round(brakes * 1.5 * 10) / 10;
   const costPerSession = D.plan > 0 ? D.gym / (D.plan * 4) : 0;
   const stagnationCost = Math.round(wastedSessions * (costPerSession + 1.25 * Math.max(D.rate * 0.2, 10)));
-  // Symptomy: suplementy, wizyty, kompensacja sygnałów ciała (350 zł / symptom / 6 mies.)
-  const signalCost = Math.round(D.tags.size * 350);
+  // Symptomy: ważony koszt — każdy objaw ma inną wagę (250-600 zł / 6 mies.)
+  const signalCost = Math.round(tagCost(D.tags));
 
   const totalLostH = Math.round(D.lost * 26);
   const hardTotal = wkndCost + foodCost + trainCost + sleepCost;
@@ -60,12 +92,14 @@ function costs(D: FD) {
 }
 
 function score(D: FD) {
+  // Ważony score sygnałów — libido/brain/fatigue ważą więcej niż skin/cravings
+  const tagScore = tagScoreWeighted(D.tags);
   const s = Math.min(((D.sleepQ + D.screenBed) / 8 + (7.5 - Math.min(D.sleep, 7.5)) / 2) * 15, 15)
     + Math.min(((D.stress + D.energy + D.dopamine) / 10) * 20, 20)
     + Math.min(((D.dietChaos + D.binge) / 8) * 12, 12)
     + Math.min((D.drinks / 15) * 12 + (D.subs > 0 ? 8 : 0), 20)
     + Math.min((D.miss / 3) * 15, 15)
-    + Math.min((D.tags.size / 8) * 18, 18);
+    + Math.min((tagScore / 12) * 18, 18);
   return Math.min(Math.round(s), 100);
 }
 
