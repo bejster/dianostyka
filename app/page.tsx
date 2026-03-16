@@ -730,10 +730,12 @@ export default function Page() {
   const totalBoostMax = tips.reduce((s, t) => s + parseInt(t.boost.replace('+','').split('-')[1] || t.boost.replace('+','').split('-')[0]), 0);
 
   const comparisons: string[] = [];
-  if (C.total > 5000) comparisons.push('pół roku współpracy 1:1');
-  if (C.total > 8000) comparisons.push('wakacje all-inclusive');
-  if (C.total > 15000) comparisons.push('używany samochód');
-  if (C.total > 30000) comparisons.push('wkład własny na mieszkanie');
+  if (C.total > 3000) comparisons.push(`${Math.round(C.total / 99)} ebooków o zdrowiu`);
+  if (C.total > 5000) comparisons.push('roczną kartę na najlepszą siłownię w mieście');
+  if (C.total > 8000) comparisons.push('pełny panel badań krwi co 3 miesiące przez rok');
+  if (C.total > 12000) comparisons.push('rok suplementacji dobranej pod Ciebie');
+  if (C.total > 18000) comparisons.push('6 miesięcy pracy z trenerem personalnym');
+  if (C.total > 30000) comparisons.push('rok indywidualnej opieki dietetyka + trenera');
 
   const normMax = Math.max(C.total, 20000);
   const normData = [
@@ -1448,36 +1450,37 @@ export default function Page() {
 
             <WaveDivider />
 
-            {/* Total - zlota karta z licznikiem */}
+            {/* Total - ciemna karta ze zlotym akcentem */}
             <Reveal delay={80}>
               <div style={{
-                background: `linear-gradient(135deg, ${M.gold}, ${M.goldMuted})`,
-                textAlign: 'center', padding: '24px 16px 20px',
+                background: `linear-gradient(160deg, #0e0e0e, #151510)`,
+                textAlign: 'center', padding: '28px 18px 24px',
                 position: 'relative', overflow: 'hidden', marginBottom: 20, borderRadius: 16, width: '100%',
                 boxSizing: 'border-box',
-                boxShadow: `0 8px 40px ${M.gold}20, 0 0 0 1px ${M.gold}30`,
+                border: `2px solid ${M.gold}40`,
+                boxShadow: `0 8px 40px ${M.gold}15, inset 0 1px 0 ${M.gold}15`,
               }} className="float-el">
-                <div style={{ position: 'absolute', inset: 0, backgroundImage: 'repeating-linear-gradient(-45deg,transparent,transparent 4px,rgba(0,0,0,.06) 4px,rgba(0,0,0,.06) 8px)' }} />
+                <div style={{ position: 'absolute', inset: 0, backgroundImage: 'repeating-linear-gradient(-45deg,transparent,transparent 4px,rgba(200,168,78,.03) 4px,rgba(200,168,78,.03) 8px)' }} />
                 <div style={{ position: 'relative' }}>
-                  <div style={{ fontFamily: M.mono, fontSize: 9, letterSpacing: 3.5, textTransform: 'uppercase', color: '#0a0a0a', opacity: .6, marginBottom: 6 }}>Tracisz w 6 miesięcy</div>
-                  <div style={{ fontFamily: M.mono, fontSize: 40, fontWeight: 800, color: '#0a0a0a', lineHeight: 1.1 }}>
+                  <div style={{ fontFamily: M.mono, fontSize: 9, letterSpacing: 3.5, textTransform: 'uppercase', color: M.t4, marginBottom: 8 }}>Tracisz w 6 miesięcy</div>
+                  <div style={{ fontFamily: M.mono, fontSize: 44, fontWeight: 800, color: M.gold, lineHeight: 1.1, textShadow: `0 0 30px ${M.gold}30` }}>
                     {countersActive ? animTotal.toLocaleString('pl-PL') : C.total.toLocaleString('pl-PL')} zł
                   </div>
-                  <div style={{ fontFamily: M.mono, fontSize: 12, color: '#0a0a0a', opacity: .55, marginTop: 4 }}>= {Math.round(C.total / 6).toLocaleString('pl-PL')} zł / miesiąc</div>
-                  <div style={{ display: 'flex', justifyContent: 'center', gap: 14, marginTop: 10, fontFamily: M.mono, fontSize: 10 }}>
-                    <span style={{ color: '#0a0a0a', opacity: .7 }}>
-                      wprost: {countersActive ? animHard.toLocaleString('pl-PL') : C.hardTotal.toLocaleString('pl-PL')} zł
+                  <div style={{ fontFamily: M.mono, fontSize: 13, color: M.t3, marginTop: 6 }}>= {Math.round(C.total / 6).toLocaleString('pl-PL')} zł / miesiąc</div>
+                  <div style={{ display: 'flex', justifyContent: 'center', gap: 16, marginTop: 12, fontFamily: M.mono, fontSize: 10.5 }}>
+                    <span style={{ color: M.t3 }}>
+                      wprost: <strong style={{ color: M.t1 }}>{countersActive ? animHard.toLocaleString('pl-PL') : C.hardTotal.toLocaleString('pl-PL')} zł</strong>
                     </span>
-                    <span style={{ color: '#0a0a0a', opacity: .4 }}>|</span>
-                    <span style={{ color: '#0a0a0a', opacity: .7 }}>
-                      ukryte: {countersActive ? animHidden.toLocaleString('pl-PL') : C.hiddenTotal.toLocaleString('pl-PL')} zł
+                    <span style={{ color: M.brd2 }}>|</span>
+                    <span style={{ color: M.t3 }}>
+                      ukryte: <strong style={{ color: M.org }}>{countersActive ? animHidden.toLocaleString('pl-PL') : C.hiddenTotal.toLocaleString('pl-PL')} zł</strong>
                     </span>
                   </div>
                 </div>
               </div>
             </Reveal>
 
-            {/* Comparison text */}
+            {/* Co moglbys miec zamiast */}
             {comparisons.length > 0 && (
               <Reveal delay={120}>
                 <div style={{
@@ -1485,10 +1488,20 @@ export default function Page() {
                   backdropFilter: 'blur(10px)',
                   WebkitBackdropFilter: 'blur(10px)',
                   border: `1px solid ${M.brd}`,
-                  padding: '16px 16px', marginBottom: 20, borderRadius: 12, width: '100%', boxSizing: 'border-box',
+                  padding: '18px 16px', marginBottom: 20, borderRadius: 12, width: '100%', boxSizing: 'border-box',
                 }}>
-                  <p style={{ fontSize: 13, color: M.t2, lineHeight: 1.6, fontWeight: 400, textAlign: 'center' }}
-                    dangerouslySetInnerHTML={{ __html: `Za <strong style="color:${M.gold};font-weight:600">${C.total.toLocaleString('pl-PL')} zł</strong> w pół roku mógłbyś mieć: ${comparisons.join(', ')}.` }} />
+                  <div style={{ fontFamily: M.mono, fontSize: 9, letterSpacing: 2, textTransform: 'uppercase', color: M.t4, marginBottom: 12 }}>
+                    Za te pieniądze mógłbyś mieć
+                  </div>
+                  {comparisons.slice(0, 4).map((c, i) => (
+                    <div key={i} style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 8 }}>
+                      <span style={{ color: M.gold, fontSize: 11, flexShrink: 0 }}>✓</span>
+                      <span style={{ fontSize: 12.5, color: M.t2, lineHeight: 1.5 }}>{c}</span>
+                    </div>
+                  ))}
+                  <p style={{ fontSize: 11.5, color: M.t4, textAlign: 'center', marginTop: 12, marginBottom: 0, lineHeight: 1.5 }}>
+                    Zamiast tego tracisz <strong style={{ color: M.red }}>{C.total.toLocaleString('pl-PL')} zł</strong> na konsekwencje, których nawet nie widzisz.
+                  </p>
                 </div>
               </Reveal>
             )}
@@ -1886,14 +1899,14 @@ export default function Page() {
                     <div>
                       <div style={{ fontSize: 16, fontWeight: 800, color: M.gold, marginBottom: 6, lineHeight: 1.3 }}>
                         {imie.trim()
-                          ? `${imie.trim()}, wstepnie kwalifikujesz sie do wspolpracy`
+                          ? `${imie.trim()}, wstępnie kwalifikujesz się do współpracy`
                           : 'Wstepnie kwalifikujesz sie do wspolpracy'
                         }
                       </div>
                       <div style={{ fontSize: 12.5, color: M.t2, lineHeight: 1.6 }}>
                         {SC >= 50
-                          ? `Widzialem Twoj profil - ${SC}/100 pkt, ${D.tags.size} objawow, ${potential}% niewykorzystanego potencjalu. To dokladnie wzorzec ludzi z ktorymi pracuje i u ktorych widze najwieksze zmiany w ciagu 3-6 miesiecy.`
-                          : `Twoje wyniki (${SC}/100) pokazuja konkretne blokady. Widzialem to wielokrotnie - przy odpowiednim podejsciu mozesz odzyskac ${Math.min(potential, 40)}% potencjalu.`
+                          ? `Widziałem Twój profil - ${SC}/100 pkt, ${D.tags.size} objawów, ${potential}% niewykorzystanego potencjału. To dokładnie wzorzec ludzi z którymi pracuję i u których widzę największe zmiany w ciągu 3-6 miesięcy.`
+                          : `Twoje wyniki (${SC}/100) pokazują konkretne blokady. Widziałem to wielokrotnie - przy odpowiednim podejściu możesz odzyskać ${Math.min(potential, 40)}% potencjału.`
                         }
                       </div>
                     </div>
@@ -1902,21 +1915,21 @@ export default function Page() {
 
                 {/* Personalizowany problem - co dokladnie naprawiamy */}
                 <div style={{ fontFamily: M.mono, fontSize: 10, letterSpacing: 2.5, textTransform: 'uppercase', color: M.gold, marginBottom: 14 }}>
-                  {imie.trim() ? `${imie.trim()}, dokladnie z tym pracuje` : 'Dokladnie z tym pracuje'}
+                  {imie.trim() ? `${imie.trim()}, dokładnie z tym pracuję` : 'Dokładnie z tym pracuję'}
                 </div>
 
                 <div style={{ marginBottom: 18 }}>
                   {/* Dynamiczna lista problemow na bazie wynikow */}
                   {[
-                    D.sleep < 6.5 && { ic: '😴', t: `${D.sleep}h snu niszczy Ci regeneracje i hormony`, d: 'Naprawiam to w pierwszych 2 tygodniach. Bez tabletek, bez wstawania o 5 rano.' },
-                    D.drinks > 5 && { ic: '🍺', t: `${D.drinks} drinkow na impreze sabotuje Twoja forme`, d: 'Mam protokol ktory minimalizuje szkody bez rezygnowania z imprez. Zero moralizowania.' },
-                    D.subs > 0 && { ic: '💊', t: 'Substancje wyczerpuja Twoje neuroprzekazniki', d: 'Pracuje z facetami ktorzy uzywaja. Wiem jak odbudowac serotonine i dopamine miedzy sesjami.' },
-                    D.stress >= 2 && { ic: '😰', t: 'Chroniczny stres zjada Twoj testosteron', d: 'Kortyzol i testosteron biora sie z tego samego prekursora. Wiem jak przerzucic produkcje na Twoja korzysc.' },
-                    D.miss > 0 && { ic: '❌', t: `${D.miss} tracone treningi tygodniowo = zerowy progres`, d: 'Uklad treningowy dopasowany do Twojego chaosu. Nie musisz byc zdyscyplinowany - musisz miec system.' },
-                    D.tags.has('belly') && { ic: '🔥', t: 'Brzuch nie schodzi mimo treningu', d: 'To nie kwestia kalorii. To hormony i insulina. Naprawiam przyczyne, nie objaw.' },
-                    D.tags.has('libido') && { ic: '⬇️', t: 'Libido na dnie', d: 'W 80% przypadkow to sen + stres + alkohol. Kiedy naprawimy te 3 rzeczy, testosteron wraca sam.' },
-                    D.tags.has('brain') && { ic: '🧠', t: 'Mgla mozgowa i zerowa koncentracja', d: 'Neuroinflamacja z jelita, niedobory, rozregulowana dopamina. Wiem od czego zaczac.' },
-                    D.tags.has('fatigue') && { ic: '🔋', t: 'Chroniczne zmeczenie mimo snu', d: 'To nie lenistwo. To mitochondria, zelazo albo tarczyca. Diagnozuje to w pierwszym tygodniu.' },
+                    D.sleep < 6.5 && { ic: '😴', t: `${D.sleep}h snu niszczy Ci regenerację i hormony`, d: 'Naprawiam to w pierwszych 2 tygodniach. Bez tabletek, bez wstawania o 5 rano.' },
+                    D.drinks > 5 && { ic: '🍺', t: `${D.drinks} drinków na imprezę sabotuje Twoją formę`, d: 'Mam protokół który minimalizuje szkody bez rezygnowania z imprez. Zero moralizowania.' },
+                    D.subs > 0 && { ic: '💊', t: 'Substancje wyczerpują Twoje neuroprzekaźniki', d: 'Pracuję z facetami którzy używają. Wiem jak odbudować serotoninę i dopaminę między sesjami.' },
+                    D.stress >= 2 && { ic: '😰', t: 'Chroniczny stres zjada Twój testosteron', d: 'Kortyzol i testosteron biorą się z tego samego prekursora. Wiem jak przerzucić produkcję na Twoją korzyść.' },
+                    D.miss > 0 && { ic: '❌', t: `${D.miss} tracone treningi tygodniowo = zerowy progres`, d: 'Układ treningowy dopasowany do Twojego chaosu. Nie musisz być zdyscyplinowany - musisz mieć system.' },
+                    D.tags.has('belly') && { ic: '🔥', t: 'Brzuch nie schodzi mimo treningu', d: 'To nie kwestia kalorii. To hormony i insulina. Naprawiam przyczynę, nie objaw.' },
+                    D.tags.has('libido') && { ic: '⬇️', t: 'Libido na dnie', d: 'W 80% przypadków to sen + stres + alkohol. Kiedy naprawimy te 3 rzeczy, testosteron wraca sam.' },
+                    D.tags.has('brain') && { ic: '🧠', t: 'Mgła mózgowa i zerowa koncentracja', d: 'Neuroinflamacja z jelita, niedobory, rozregulowana dopamina. Wiem od czego zacząć.' },
+                    D.tags.has('fatigue') && { ic: '🔋', t: 'Chroniczne zmęczenie mimo snu', d: 'To nie lenistwo. To mitochondria, żelazo albo tarczyca. Diagnozuję to w pierwszym tygodniu.' },
                   ].filter(Boolean).slice(0, 4).map((item, i) => item && (
                     <div key={i} style={{
                       display: 'flex', gap: 10, padding: '10px 0',
@@ -1939,21 +1952,21 @@ export default function Page() {
                   }}>
                     <div style={{ fontFamily: M.mono, fontSize: 9, letterSpacing: 2, textTransform: 'uppercase', color: M.red, marginBottom: 10, display: 'flex', alignItems: 'center', gap: 6 }}>
                       <span style={{ width: 6, height: 6, borderRadius: 3, background: M.red, display: 'inline-block' }} />
-                      {imie.trim() ? `${imie.trim()}, bez zmian tracisz` : 'Bez zmian tracisz'}
+                      {imie.trim() ? `${imie.trim()}, bez zmian dalej tracisz` : 'Bez zmian dalej tracisz'}
                     </div>
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 12 }}>
                       <div style={{ textAlign: 'center', padding: '10px 6px', background: 'rgba(10,10,10,0.5)', borderRadius: 8 }}>
                         <div style={{ fontFamily: M.mono, fontSize: 22, fontWeight: 800, color: M.red }}>{C.total.toLocaleString('pl-PL')}</div>
-                        <div style={{ fontSize: 9, color: M.t4, textTransform: 'uppercase', letterSpacing: 0.8, marginTop: 3 }}>zl / 6 miesiecy</div>
+                        <div style={{ fontSize: 9, color: M.t4, textTransform: 'uppercase', letterSpacing: 0.8, marginTop: 3 }}>zł / 6 miesięcy</div>
                       </div>
                       <div style={{ textAlign: 'center', padding: '10px 6px', background: 'rgba(10,10,10,0.5)', borderRadius: 8 }}>
                         <div style={{ fontFamily: M.mono, fontSize: 22, fontWeight: 800, color: M.org }}>{potential}%</div>
-                        <div style={{ fontSize: 9, color: M.t4, textTransform: 'uppercase', letterSpacing: 0.8, marginTop: 3 }}>potencjalu zmarnowane</div>
+                        <div style={{ fontSize: 9, color: M.t4, textTransform: 'uppercase', letterSpacing: 0.8, marginTop: 3 }}>potencjału zmarnowane</div>
                       </div>
                     </div>
                     <p style={{ fontSize: 12, color: M.t3, lineHeight: 1.65, marginBottom: 0 }}>
-                      Kazdy tydzien bez systemu to kolejne <strong style={{ color: M.red }}>{Math.round(C.total / 26).toLocaleString('pl-PL')} zl</strong> stracone na konsekwencje i <strong style={{ color: M.red }}>{C.wastedSessions > 0 ? `${Math.round(C.wastedSessions / 26)} treningow` : 'progres'}</strong> wyrzucone w bloto.
-                      {C.total > 8000 && <> Wspolpraca kosztuje mniej niz to co tracisz w <strong style={{ color: M.t1 }}>{C.total > 12000 ? '1 miesiac' : '2 miesiace'}</strong>.</>}
+                      Każdy tydzień bez systemu to kolejne <strong style={{ color: M.red }}>{Math.round(C.total / 26).toLocaleString('pl-PL')} zł</strong> stracone na konsekwencje i <strong style={{ color: M.red }}>{C.wastedSessions > 0 ? `${Math.round(C.wastedSessions / 26)} treningów` : 'progres'}</strong> wyrzucone w błoto.
+                      {C.total > 8000 && <> Współpraca kosztuje mniej niż to co tracisz w <strong style={{ color: M.t1 }}>{C.total > 12000 ? '1 miesiąc' : '2 miesiące'}</strong>.</>}
                     </p>
                   </div>
                 )}
@@ -1967,9 +1980,9 @@ export default function Page() {
                     Na stronie zobaczysz
                   </div>
                   {[
-                    'Jak wyglada wspolpraca - krok po kroku, bez sciem',
+                    'Jak wygląda współpraca - krok po kroku, bez ściemy',
                     'Efekty ludzi z podobnym profilem do Twojego',
-                    'Formularz kwalifikacyjny - wypelniasz, ja oceniam czy i jak moge pomoc',
+                    'Formularz kwalifikacyjny - wypełniasz, ja oceniam czy i jak mogę pomóc',
                   ].map((t, i) => (
                     <div key={i} style={{ display: 'flex', gap: 8, marginBottom: 8, alignItems: 'flex-start' }}>
                       <span style={{ color: M.gold, fontSize: 12, flexShrink: 0, marginTop: 1 }}>→</span>
@@ -1988,15 +2001,15 @@ export default function Page() {
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
                     <span style={{ fontSize: 18 }}>🎁</span>
                     <div style={{ fontFamily: M.mono, fontSize: 10, letterSpacing: 2, textTransform: 'uppercase', color: M.gold, fontWeight: 700 }}>
-                      Bonus za wypelnienie formularza
+                      Bonus za wypełnienie formularza
                     </div>
                   </div>
                   <p style={{ fontSize: 12.5, color: M.t2, lineHeight: 1.65, marginBottom: 0 }}>
                     {imie.trim()
-                      ? `${imie.trim()}, jesli wypelnisz formularz na stronie - dostaniesz ode mnie`
-                      : 'Jesli wypelnisz formularz na stronie - dostaniesz ode mnie'}
-                    {' '}<strong style={{ color: M.gold }}>spersonalizowany feedback</strong> na bazie Twoich wynikow z diagnostyki.
-                    Co dokladnie blokuje Twoj progres, od czego zaczac i czy wspolpraca ma w Twoim przypadku sens. <strong style={{ color: M.t1 }}>Za darmo, w DM, w ciagu 24h.</strong>
+                      ? `${imie.trim()}, jeśli wypełnisz formularz na stronie - dostaniesz ode mnie`
+                      : 'Jeśli wypełnisz formularz na stronie - dostaniesz ode mnie'}
+                    {' '}<strong style={{ color: M.gold }}>spersonalizowany feedback</strong> na bazie Twoich wyników z diagnostyki.
+                    Co dokładnie blokuje Twój progres, od czego zacząć i czy współpraca ma w Twoim przypadku sens. <strong style={{ color: M.t1 }}>Za darmo, w DM, w ciągu 24h.</strong>
                   </p>
                 </div>
 
@@ -2018,10 +2031,10 @@ export default function Page() {
                   } as React.CSSProperties}
                 >
                   <span style={{ fontSize: 15, fontWeight: 900, letterSpacing: 3, textTransform: 'uppercase', lineHeight: 1.3 }}>
-                    {imie.trim() ? `${imie.trim()}, wchodze →` : 'Wchodze - pokaz jak pomagasz →'}
+                    {imie.trim() ? `${imie.trim()}, wchodzę →` : 'Wchodzę - pokaż jak pomagasz →'}
                   </span>
                   <span style={{ fontSize: 10, fontWeight: 600, letterSpacing: 1, marginTop: 6, opacity: 0.7 }}>
-                    Przeczytaj + wypelnij formularz kwalifikacyjny
+                    Przeczytaj + wypełnij formularz kwalifikacyjny
                   </span>
                 </a>
 
@@ -2037,7 +2050,7 @@ export default function Page() {
                 }}>
                   {[
                     { n: '150+', l: 'podopiecznych' },
-                    { n: `${potential}%`, l: 'Twojego potencjalu do odblokowania' },
+                    { n: `${potential}%`, l: 'Twojego potencjału do odblokowania' },
                   ].map((s, i) => (
                     <div key={i} style={{
                       padding: '8px 14px', background: 'rgba(10,10,10,0.5)',
@@ -2051,13 +2064,13 @@ export default function Page() {
 
                 {/* Alternatywa - DM */}
                 <div style={{ textAlign: 'center', fontSize: 11, color: M.t4, fontFamily: M.mono, letterSpacing: 0.3, marginBottom: 16 }}>
-                  Wolisz pogadac najpierw? Napisz <strong style={{ color: M.gold }}>JAZDA</strong> w DM <a href="https://instagram.com/hantleitalerz" target="_blank" rel="noopener noreferrer" style={{ color: M.gold, textDecoration: 'none', fontWeight: 600 }}>@hantleitalerz</a>
+                  Wolisz pogadać najpierw? Napisz <strong style={{ color: M.gold }}>JAZDA</strong> w DM <a href="https://instagram.com/hantleitalerz" target="_blank" rel="noopener noreferrer" style={{ color: M.gold, textDecoration: 'none', fontWeight: 600 }}>@hantleitalerz</a>
                 </div>
 
                 <div style={{ height: 1, background: M.brd, margin: '0 10px 16px' }} />
 
                 <p style={{ textAlign: 'center', fontSize: 11, color: M.t4, marginBottom: 10 }}>
-                  Nie jestes jeszcze gotowy?
+                  Nie jesteś jeszcze gotowy?
                 </p>
                 <a
                   href={D.drinks > 5 || D.subs > 0 ? 'https://kontra.talerzihantle.com' : 'https://neurobiologia-formy.talerzihantle.com'}
@@ -2075,8 +2088,8 @@ export default function Page() {
                 </a>
                 <p style={{ textAlign: 'center', fontSize: 10.5, color: M.t4, marginTop: 6, fontFamily: M.mono }}>
                   {D.drinks > 5 || D.subs > 0
-                    ? 'Jak imprezowac i nie niszczyc progresu. Napisany dla Ciebie.'
-                    : 'Ebook ktory tlumaczy dlaczego Twoje cialo dziala tak a nie inaczej.'}
+                    ? 'Jak imprezować i nie niszczyć progresu. Napisany dla Ciebie.'
+                    : 'Ebook który tłumaczy dlaczego Twoje ciało działa tak a nie inaczej.'}
                 </p>
               </div>
             </Reveal>
@@ -2090,11 +2103,11 @@ export default function Page() {
                 borderRadius: 14, width: '100%', boxSizing: 'border-box',
               }}>
                 <p style={{ fontSize: 13.5, color: M.t2, lineHeight: 1.65, fontWeight: 500, marginBottom: 6 }}>
-                  {imie.trim() ? `${imie.trim()}, analizuje Twoje odpowiedzi.` : 'Analizuje Twoje odpowiedzi.'}
+                  {imie.trim() ? `${imie.trim()}, analizuję Twoje odpowiedzi.` : 'Analizuję Twoje odpowiedzi.'}
                 </p>
                 <p style={{ fontSize: 12.5, color: M.t3, lineHeight: 1.65, fontWeight: 400 }}>
-                  Napisze do Ciebie w DM <strong style={{ color: M.gold, fontWeight: 600 }}>@hantleitalerz</strong> w ciagu 24h z konkretnym feedbackiem.
-                  {SC >= 40 && <> A jesli wypelnisz formularz na <strong style={{ color: M.gold }}>system.talerzihantle.com</strong> - dostaniesz pelna analize + plan dzialania.</>}
+                  Napiszę do Ciebie w DM <strong style={{ color: M.gold, fontWeight: 600 }}>@hantleitalerz</strong> w ciągu 24h z konkretnym feedbackiem.
+                  {SC >= 40 && <> A jeśli wypełnisz formularz na <strong style={{ color: M.gold }}>system.talerzihantle.com</strong> - dostaniesz pełną analizę + plan działania.</>}
                 </p>
               </div>
             </Reveal>
