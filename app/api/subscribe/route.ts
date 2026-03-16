@@ -80,50 +80,7 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // 3. Telegram - powiadomienie z danymi leada do domykania
-    const tgToken = process.env.TELEGRAM_BOT_TOKEN;
-    const tgChatId = process.env.TELEGRAM_CHAT_ID;
-    if (tgToken && tgChatId) {
-      try {
-        const finalScore = wynik_score ?? score ?? '?';
-        const finalCost = wynik_kwota ?? totalCost ?? '?';
-        const ig = instagram_handle || 'brak';
-        const name = imie || 'brak';
-        const topCat = biggest_category || '?';
-        const odp = odpowiedzi || {};
-
-        // Buduj czytelna wiadomosc
-        let msg = `🔔 NOWY LEAD - DIAGNOSTYKA\n\n`;
-        msg += `👤 ${name}\n`;
-        msg += `📧 ${email}\n`;
-        msg += `📱 IG: @${ig.replace('@', '')}\n\n`;
-        msg += `📊 Score: ${finalScore}/100\n`;
-        msg += `💰 Koszt: ${Number(finalCost).toLocaleString('pl-PL')} zł / 6 mies.\n`;
-        msg += `🏷 Top kategoria: ${topCat}\n\n`;
-
-        // Kluczowe odpowiedzi do domykania
-        if (odp.sleep) msg += `😴 Sen: ${odp.sleep}h\n`;
-        if (odp.drinks) msg += `🍺 Drinki: ${odp.drinks}\n`;
-        if (odp.subs > 0) msg += `💊 Substancje: ${odp.subs} zł/mies.\n`;
-        if (odp.wknd) msg += `🎉 Weekendy: ${odp.wknd}/mies.\n`;
-        if (odp.plan) msg += `🏋️ Treningi: ${odp.plan}/tyg. (miss: ${odp.miss || 0})\n`;
-        if (odp.tags && odp.tags.length > 0) msg += `⚠️ Sygnały: ${odp.tags.join(', ')}\n`;
-
-        msg += `\n⏰ ${new Date().toLocaleString('pl-PL', { timeZone: 'Europe/Warsaw' })}`;
-
-        await fetch(`https://api.telegram.org/bot${tgToken}/sendMessage`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            chat_id: tgChatId,
-            text: msg,
-            parse_mode: 'HTML',
-          }),
-        });
-      } catch (tgErr) {
-        console.error('Telegram error:', tgErr);
-      }
-    }
+    // 3. Telegram idzie przez n8n workflow (node "Powiadomienie Telegram")
 
     return NextResponse.json({ ok: true });
   } catch (e) {
