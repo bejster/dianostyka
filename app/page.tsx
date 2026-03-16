@@ -499,6 +499,83 @@ export default function Page() {
   if (D.tags.has('headaches') && D.sleep < 6.5) insights.push(`Bóle głowy + deficyt snu = <b>przewlekły stan zapalny</b>. Ibuprofen to plaster, nie rozwiązanie.`);
   if (C.total > 8000) insights.push(`<b>${C.total.toLocaleString('pl-PL')} zł w pół roku</b>. Na konsekwencje, nie na sam weekend.`);
 
+  // Potencjal - ile % wykorzystujesz (odwrotnosc score)
+  const potential = Math.max(100 - SC, 15);
+  const potentialUsed = 100 - potential;
+
+  // 3 personalne tipy na podstawie odpowiedzi
+  const tips: { icon: string; title: string; desc: string; boost: string }[] = [];
+
+  // Tip 1 - zawsze najwazniejszy problem
+  if (D.sleep < 6.5 || D.sleepQ >= 2) {
+    tips.push({
+      icon: '🛏',
+      title: 'Napraw sen',
+      desc: D.sleep < 6 ? `${D.sleep}h to za malo. Docel 7h - sam ten ruch zmieni poziom kortyzolu, testosteronu i regeneracji.`
+        : `Jakosc snu jest wazniejsza niz dlugosc. Ekran 60 min przed snem zamien na ksiazke lub stretching.`,
+      boost: '+3-5%',
+    });
+  }
+
+  if (D.drinks > 5 || D.subs > 0) {
+    tips.push({
+      icon: '🍺',
+      title: D.subs > 0 ? 'Zredukuj substancje' : 'Ogranicz alkohol',
+      desc: D.subs > 0 ? `Kazde uzycie resetuje serotonine na 2-4 tyg. Jeden wolny miesiac i zobaczysz roznice w energii, libido i motywacji.`
+        : `${D.drinks} drinkow to ~${Math.round(D.drinks * 3.4)}% spadek T w 12h. Zmniejsz o polowe - cialo odczuje to w ciagu 2 tyg.`,
+      boost: D.subs > 0 ? '+5-8%' : '+3-5%',
+    });
+  }
+
+  if (D.stress >= 2 || D.energy >= 2) {
+    tips.push({
+      icon: '🧠',
+      title: 'Zarządzaj stresem',
+      desc: `Chroniczny stres podnosi kortyzol non-stop. 10 min dziennie: spacer bez telefonu, oddech 4-7-8, cold exposure. Maly nawyk, duzy efekt.`,
+      boost: '+2-4%',
+    });
+  }
+
+  if (D.miss > 0 && tips.length < 3) {
+    tips.push({
+      icon: '🏋',
+      title: 'Przestań tracić treningi',
+      desc: `${D.miss} opuszczone treningi/tyg to ${D.miss * 4 * 6} straconych sesji w pol roku. Planuj trening na poniedzialek rano - najmniejsze ryzyko odwolania.`,
+      boost: '+2-3%',
+    });
+  }
+
+  if (D.dietChaos >= 2 && tips.length < 3) {
+    tips.push({
+      icon: '🍽',
+      title: 'Ogarnij bazowe zywienie',
+      desc: `Nie potrzebujesz diety. Potrzebujesz 3 posilki dziennie z bialkiem. Meal prep w niedziele = caly tydzien ogarnienty.`,
+      boost: '+2-4%',
+    });
+  }
+
+  if (D.dopamine >= 2 && tips.length < 3) {
+    tips.push({
+      icon: '📱',
+      title: 'Reset dopaminy',
+      desc: `Ciagla stymulacja (scrolling, jedzenie, substancje) obniza baseline dopaminy. 1 dzien w tyg. bez telefonu zmienia perspektywe.`,
+      boost: '+2-3%',
+    });
+  }
+
+  // Fallback jesli mniej niz 3 tipy
+  if (tips.length < 3) {
+    tips.push({
+      icon: '💧',
+      title: 'Nawodnienie + elektrolity',
+      desc: `2% odwodnienia = 10% spadek wydolnosci kognitywnej. Zacznij dzien od 500ml wody z solą i cytryną.`,
+      boost: '+1-2%',
+    });
+  }
+
+  const totalBoostMin = tips.reduce((s, t) => s + parseInt(t.boost.replace('+','').split('-')[0]), 0);
+  const totalBoostMax = tips.reduce((s, t) => s + parseInt(t.boost.replace('+','').split('-')[1] || t.boost.replace('+','').split('-')[0]), 0);
+
   const comparisons: string[] = [];
   if (C.total > 5000) comparisons.push('pół roku współpracy 1:1');
   if (C.total > 8000) comparisons.push('wakacje all-inclusive');
@@ -1492,8 +1569,77 @@ export default function Page() {
               </Reveal>
             )}
 
-            {/* Closing */}
+            {/* Potencjal */}
+            <Reveal delay={100}>
+              <div style={{
+                padding: '24px 18px', marginBottom: 20,
+                border: `1px solid ${M.gold}30`,
+                background: `linear-gradient(135deg, ${M.gold}08, transparent)`,
+                backdropFilter: 'blur(12px)',
+                WebkitBackdropFilter: 'blur(12px)',
+                borderRadius: 14, width: '100%', boxSizing: 'border-box',
+              }}>
+                <div style={{ fontFamily: M.mono, fontSize: 10, letterSpacing: 2.5, textTransform: 'uppercase', color: M.gold, marginBottom: 16 }}>Twoj potencjal</div>
+                <div style={{ textAlign: 'center', marginBottom: 16 }}>
+                  <div style={{ fontSize: 48, fontWeight: 800, fontFamily: M.mono, color: M.gold, lineHeight: 1 }}>{potentialUsed}%</div>
+                  <div style={{ fontSize: 12, color: M.t3, marginTop: 6 }}>tyle wykorzystujesz ze swojego ciala</div>
+                </div>
+                <div style={{ position: 'relative', height: 8, background: M.s3, borderRadius: 4, overflow: 'hidden', marginBottom: 16 }}>
+                  <div style={{ position: 'absolute', left: 0, height: '100%', width: `${potentialUsed}%`, background: `linear-gradient(90deg, ${M.red}, ${M.org})`, borderRadius: 4, transition: 'width 1.5s ease' }} />
+                  <div style={{ position: 'absolute', left: `${potentialUsed}%`, height: '100%', width: `${potential}%`, background: `linear-gradient(90deg, ${M.gold}40, ${M.gold})`, borderRadius: '0 4px 4px 0', opacity: 0.4 }} />
+                </div>
+                <p style={{ fontSize: 13, color: M.t2, lineHeight: 1.7, textAlign: 'center', marginBottom: 0 }}>
+                  Na podstawie {'>'}120 wspolprac i badan naukowych - Twoj organizm ma <strong style={{ color: M.gold }}>{potential}% niewykorzystanego potencjalu</strong>.
+                  {potential > 30 && <><br />To energia, sila, regeneracja i ostrość umyslu, ktore masz w sobie ale ktore teraz blokujesz swoim stylem zycia.</>}
+                </p>
+              </div>
+            </Reveal>
+
+            {/* 3 personalne tipy */}
             <Reveal delay={120}>
+              <div style={{
+                padding: '22px 16px', marginBottom: 20,
+                border: `1px solid ${M.brd}`,
+                background: 'rgba(19,19,19,0.78)',
+                backdropFilter: 'blur(12px)',
+                WebkitBackdropFilter: 'blur(12px)',
+                borderRadius: 14, width: '100%', boxSizing: 'border-box',
+              }}>
+                <div style={{ fontFamily: M.mono, fontSize: 10, letterSpacing: 2.5, textTransform: 'uppercase', color: M.t4, marginBottom: 6 }}>3 rzeczy ktore mozesz zrobic juz jutro</div>
+                <div style={{ fontSize: 11, color: M.gold, fontFamily: M.mono, marginBottom: 18 }}>+{totalBoostMin}-{totalBoostMax}% potencjalu w ciagu 30 dni</div>
+
+                {tips.slice(0, 3).map((tip, i) => (
+                  <div key={i} style={{
+                    display: 'flex', gap: 14, padding: '14px 0',
+                    borderTop: i > 0 ? `1px solid ${M.brd}` : 'none',
+                  }}>
+                    <div style={{ fontSize: 24, lineHeight: 1, flexShrink: 0, marginTop: 2 }}>{tip.icon}</div>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 4 }}>
+                        <div style={{ fontSize: 14, fontWeight: 700, color: M.t1 }}>{tip.title}</div>
+                        <div style={{ fontFamily: M.mono, fontSize: 11, color: M.grn, fontWeight: 600 }}>{tip.boost}</div>
+                      </div>
+                      <div style={{ fontSize: 12, color: M.t3, lineHeight: 1.6 }}>{tip.desc}</div>
+                    </div>
+                  </div>
+                ))}
+
+                <div style={{
+                  marginTop: 18, padding: '14px 16px',
+                  background: `${M.gold}0a`, border: `1px solid ${M.gold}20`,
+                  borderRadius: 10, textAlign: 'center',
+                }}>
+                  <p style={{ fontSize: 12.5, color: M.t2, lineHeight: 1.65, marginBottom: 0 }}>
+                    Te tipy to <strong style={{ color: M.t1 }}>+{totalBoostMin}-{totalBoostMax}%</strong>. Sam, bez nadzoru.<br />
+                    Chcesz wyciagnac <strong style={{ color: M.gold }}>100%</strong> ze swojego organizmu?<br />
+                    <span style={{ fontSize: 11.5, color: M.t4 }}>Napisz <strong style={{ color: M.gold }}>JAZDA</strong> w DM @hantleitalerz</span>
+                  </p>
+                </div>
+              </div>
+            </Reveal>
+
+            {/* Closing */}
+            <Reveal delay={140}>
               <div style={{
                 textAlign: 'center', padding: '22px 18px', marginBottom: 20,
                 border: `1px solid ${M.brd}`,
@@ -1503,12 +1649,12 @@ export default function Page() {
                 borderRadius: 14, width: '100%', boxSizing: 'border-box',
               }}>
                 <p style={{ fontSize: 13.5, color: M.t2, lineHeight: 1.75, fontWeight: 400 }}>
-                  Te liczby nie znikną same.<br />
-                  Za 6 miesięcy będą wyższe albo niższe.<br />
-                  <strong style={{ color: M.gold, fontWeight: 600 }}>Zależy co zrobisz teraz.</strong>
+                  Te liczby nie znikna same.<br />
+                  Za 6 miesiecy beda wyzsze albo nizsze.<br />
+                  <strong style={{ color: M.gold, fontWeight: 600 }}>Zalezy co zrobisz teraz.</strong>
                 </p>
                 <p style={{ fontSize: 12, color: M.t4, lineHeight: 1.6, fontWeight: 400, marginTop: 10 }}>
-                  Hormony, mózg, metabolizm. Kiedy rozumiesz mechanikę, przestajesz tracić.
+                  Hormony, mozg, metabolizm. Kiedy rozumiesz mechanike, przestajesz tracic.
                 </p>
               </div>
             </Reveal>
