@@ -544,7 +544,7 @@ export default function Page() {
   };
 
   const C = costs(D); const SC = score(D);
-  const pct = Math.round((sec / SECTIONS.length) * 100);
+  const pct = Math.round(((sec + 1) / SECTIONS.length) * 100);
   const scoreColor = SC >= 75 ? M.red : SC >= 50 ? M.org : SC >= 25 ? M.yel : M.grn;
 
   const catData = [
@@ -572,121 +572,121 @@ export default function Page() {
   const badania: { nazwa: string; dlaczego: string; priorytet: 'wysoki' | 'sredni' }[] = [];
 
   // Zawsze podstawa
-  badania.push({ nazwa: 'Morfologia z rozmazem', dlaczego: 'Bazowy obraz zdrowia - stan zapalny, anemia, odpornosc', priorytet: 'wysoki' });
-  badania.push({ nazwa: 'Testosteron calkowity + wolny', dlaczego: 'Kluczowy hormon meskiej formy - masa, libido, energia, motywacja', priorytet: 'wysoki' });
-  badania.push({ nazwa: 'SHBG', dlaczego: 'Okresla ile testosteronu jest faktycznie aktywne biologicznie', priorytet: 'wysoki' });
+  badania.push({ nazwa: 'Morfologia z rozmazem', dlaczego: 'Bazowy obraz zdrowia — stan zapalny, anemia, odporność', priorytet: 'wysoki' });
+  badania.push({ nazwa: 'Testosteron całkowity + wolny', dlaczego: 'Kluczowy hormon męskiej formy — masa, libido, energia, motywacja', priorytet: 'wysoki' });
+  badania.push({ nazwa: 'SHBG', dlaczego: 'Określa ile testosteronu jest faktycznie aktywne biologicznie', priorytet: 'wysoki' });
 
   // Sen
   if (D.sleep < 6.5 || D.sleepQ >= 2) {
-    badania.push({ nazwa: 'Kortyzol (poranny, godz. 8:00)', dlaczego: 'Deficyt snu = podwyższony kortyzol, ktory sabotuje regeneracje i testosterone', priorytet: 'wysoki' });
-    badania.push({ nazwa: 'Magnez (Mg) w surowicy', dlaczego: 'Niedobor magnezu = gorszy sen, skurcze, wyzszy kortyzol. 80% mezczyzn ma niedobor', priorytet: 'sredni' });
-    badania.push({ nazwa: 'Prolaktyna', dlaczego: 'Zaburzenia snu moga podnosic prolaktynecialo, ktora hamuje testosteron', priorytet: 'sredni' });
+    badania.push({ nazwa: 'Kortyzol (poranny, godz. 8:00)', dlaczego: 'Deficyt snu = podwyższony kortyzol, który sabotuje regenerację i testosteron', priorytet: 'wysoki' });
+    badania.push({ nazwa: 'Magnez (Mg) w surowicy', dlaczego: 'Niedobór magnezu = gorszy sen, skurcze, wyższy kortyzol. 80% mężczyzn ma niedobór', priorytet: 'sredni' });
+    badania.push({ nazwa: 'Prolaktyna', dlaczego: 'Zaburzenia snu mogą podnosić prolaktynę, która hamuje testosteron', priorytet: 'sredni' });
   }
 
   // Stres / energia / wypalenie
   if (D.stress >= 2 || D.energy >= 2) {
-    badania.push({ nazwa: 'TSH + fT3 + fT4', dlaczego: 'Tarczyca reguluje metabolizm i energie. Stres ja hamuje - subkliniczne niedoczynnosci sa czeste', priorytet: 'wysoki' });
-    badania.push({ nazwa: 'Ferrytyna', dlaczego: 'Niedobor zelaza = zmeczenie, mgla, slaba regeneracja. Norma "ok" to nie norma optymalna', priorytet: 'wysoki' });
-    badania.push({ nazwa: 'DHEA-S', dlaczego: 'Hormon anty-stresowy - jesli niski, cialo przegrywa z kortyzolem', priorytet: 'sredni' });
+    badania.push({ nazwa: 'TSH + fT3 + fT4', dlaczego: 'Tarczyca reguluje metabolizm i energię. Stres ją hamuje — subkliniczne niedoczynności są częste', priorytet: 'wysoki' });
+    badania.push({ nazwa: 'Ferrytyna', dlaczego: 'Niedobór żelaza = zmęczenie, mgła, słaba regeneracja. Norma "ok" to nie norma optymalna', priorytet: 'wysoki' });
+    badania.push({ nazwa: 'DHEA-S', dlaczego: 'Hormon anty-stresowy — jeśli niski, ciało przegrywa z kortyzolem', priorytet: 'sredni' });
     if (!badania.some(b => b.nazwa.includes('Kortyzol'))) {
-      badania.push({ nazwa: 'Kortyzol (poranny, godz. 8:00)', dlaczego: 'Chroniczny stres = os HPA rozregulowana. Kortyzol powinien byc wysoki rano i niski wieczorem', priorytet: 'wysoki' });
+      badania.push({ nazwa: 'Kortyzol (poranny, godz. 8:00)', dlaczego: 'Chroniczny stres = oś HPA rozregulowana. Kortyzol powinien być wysoki rano i niski wieczorem', priorytet: 'wysoki' });
     }
   }
 
   // Alkohol / substancje
   if (D.drinks > 5 || D.subs > 0) {
-    badania.push({ nazwa: 'AST + ALT + GGTP', dlaczego: `${D.drinks > 10 ? D.drinks + ' drinkow' : D.subs > 0 ? 'Substancje' : 'Alkohol'} obciaza watrobe. GGTP najbardziej czuly marker uszkodzenia alkoholowego`, priorytet: 'wysoki' });
-    badania.push({ nazwa: 'Bilirubina calkowita', dlaczego: 'Marker wydolnosci watroby - podwyzszona przy przeciazeniu toksynami', priorytet: 'sredni' });
-    badania.push({ nazwa: 'Estradiol (E2)', dlaczego: 'Alkohol zwieksza aromatyzacje testosteronu do estrogenow. Wiecej E2 = mniej T', priorytet: 'wysoki' });
+    badania.push({ nazwa: 'AST + ALT + GGTP', dlaczego: `${D.drinks > 10 ? D.drinks + ' drinków' : D.subs > 0 ? 'Substancje' : 'Alkohol'} obciąża wątrobę. GGTP — najbardziej czuły marker uszkodzenia alkoholowego`, priorytet: 'wysoki' });
+    badania.push({ nazwa: 'Bilirubina całkowita', dlaczego: 'Marker wydolności wątroby — podwyższona przy przeciążeniu toksynami', priorytet: 'sredni' });
+    badania.push({ nazwa: 'Estradiol (E2)', dlaczego: 'Alkohol zwiększa aromatyzację testosteronu do estrogenów. Więcej E2 = mniej T', priorytet: 'wysoki' });
     if (D.subs > 0) {
-      badania.push({ nazwa: 'Serotonina w surowicy', dlaczego: 'Substancje wyczerpuja zapas serotoniny. Niski poziom = wahania nastroju, leki, bezsennosc', priorytet: 'sredni' });
-      badania.push({ nazwa: 'Witamina B12 + kwas foliowy', dlaczego: 'Substancje i alkohol niszcza zapasy wit. B - kluczowe dla ukladu nerwowego i energii', priorytet: 'wysoki' });
+      badania.push({ nazwa: 'Serotonina w surowicy', dlaczego: 'Substancje wyczerpują zapas serotoniny. Niski poziom = wahania nastroju, lęki, bezsenność', priorytet: 'sredni' });
+      badania.push({ nazwa: 'Witamina B12 + kwas foliowy', dlaczego: 'Substancje i alkohol niszczą zapasy wit. B — kluczowe dla układu nerwowego i energii', priorytet: 'wysoki' });
     }
   }
 
   // Libido / problemy hormonalne
   if (D.tags.has('libido')) {
     if (!badania.some(b => b.nazwa.includes('Estradiol'))) {
-      badania.push({ nazwa: 'Estradiol (E2)', dlaczego: 'Zaburzony stosunek T/E2 to czesta przyczyna spadku libido u mezczyzn', priorytet: 'wysoki' });
+      badania.push({ nazwa: 'Estradiol (E2)', dlaczego: 'Zaburzony stosunek T/E2 to częsta przyczyna spadku libido u mężczyzn', priorytet: 'wysoki' });
     }
-    badania.push({ nazwa: 'LH + FSH', dlaczego: 'Sprawdzaja czy problem z testosteronem jest na poziomie jadra czy mozg (przysadka)', priorytet: 'wysoki' });
+    badania.push({ nazwa: 'LH + FSH', dlaczego: 'Sprawdzają czy problem z testosteronem jest na poziomie jąder czy mózgu (przysadka)', priorytet: 'wysoki' });
     if (!badania.some(b => b.nazwa.includes('Prolaktyna'))) {
-      badania.push({ nazwa: 'Prolaktyna', dlaczego: 'Podwyzszona prolaktyna hamuje libido i erekcje niezaleznie od poziomu T', priorytet: 'wysoki' });
+      badania.push({ nazwa: 'Prolaktyna', dlaczego: 'Podwyższona prolaktyna hamuje libido i erekcję niezależnie od poziomu T', priorytet: 'wysoki' });
     }
   }
 
-  // Brzuch / dieta / insulinoopornocs
+  // Brzuch / dieta / insulinooporność
   if (D.tags.has('belly') || D.binge >= 2 || D.dietChaos >= 3) {
-    badania.push({ nazwa: 'Insulina na czczo + glukoza', dlaczego: 'Obliczenie HOMA-IR - wczesny marker insulinoopornosci, zanim cukier bedzie "za wysoki"', priorytet: 'wysoki' });
-    badania.push({ nazwa: 'HbA1c (hemoglobina glikowana)', dlaczego: 'Sredni poziom cukru z ostatnich 3 miesiecy - lepszy obraz niz jednorazowa glukoza', priorytet: 'sredni' });
-    badania.push({ nazwa: 'Lipidogram rozszerzony', dlaczego: 'Cholesterol, triglicerydy, LDL/HDL - pelen obraz ryzyka metabolicznego', priorytet: 'sredni' });
+    badania.push({ nazwa: 'Insulina na czczo + glukoza', dlaczego: 'Obliczenie HOMA-IR — wczesny marker insulinooporności, zanim cukier będzie "za wysoki"', priorytet: 'wysoki' });
+    badania.push({ nazwa: 'HbA1c (hemoglobina glikowana)', dlaczego: 'Średni poziom cukru z ostatnich 3 miesięcy — lepszy obraz niż jednorazowa glukoza', priorytet: 'sredni' });
+    badania.push({ nazwa: 'Lipidogram rozszerzony', dlaczego: 'Cholesterol, triglicerydy, LDL/HDL — pełen obraz ryzyka metabolicznego', priorytet: 'sredni' });
   }
 
-  // Mgla mozgowa / koncentracja
+  // Mgła mózgowa / koncentracja
   if (D.tags.has('brain') || D.tags.has('focus')) {
     if (!badania.some(b => b.nazwa.includes('Ferrytyna'))) {
-      badania.push({ nazwa: 'Ferrytyna', dlaczego: 'Niedobor zelaza to najczestsza przyczyna "mgly mozgowej" u mezczyzn. Optymalna: 80-150 ng/ml', priorytet: 'wysoki' });
+      badania.push({ nazwa: 'Ferrytyna', dlaczego: 'Niedobór żelaza to najczęstsza przyczyna „mgły mózgowej" u mężczyzn. Optymalna: 80-150 ng/ml', priorytet: 'wysoki' });
     }
-    badania.push({ nazwa: 'Witamina D3 (25-OH)', dlaczego: 'Niedobor wit. D = gorsze funkcje kognitywne, spadek nastroju, slabsza odpornosc. 80% Polakow ma niedobor', priorytet: 'wysoki' });
-    badania.push({ nazwa: 'hsCRP (bialko C-reaktywne)', dlaczego: 'Marker przewleklego stanu zapalnego - neuroinflamacja wplywa na koncentracje i energie', priorytet: 'sredni' });
-    badania.push({ nazwa: 'Homocysteina', dlaczego: 'Podwyzszona uszkadza naczynia i neurony. Czesto wysoka przy niedoborze B12 i kwasu foliowego', priorytet: 'sredni' });
+    badania.push({ nazwa: 'Witamina D3 (25-OH)', dlaczego: 'Niedobór wit. D = gorsze funkcje kognitywne, spadek nastroju, słabsza odporność. 80% Polaków ma niedobór', priorytet: 'wysoki' });
+    badania.push({ nazwa: 'hsCRP (białko C-reaktywne)', dlaczego: 'Marker przewlekłego stanu zapalnego — neuroinflamacja wpływa na koncentrację i energię', priorytet: 'sredni' });
+    badania.push({ nazwa: 'Homocysteina', dlaczego: 'Podwyższona uszkadza naczynia i neurony. Często wysoka przy niedoborze B12 i kwasu foliowego', priorytet: 'sredni' });
   }
 
   // Stawy / regeneracja
   if (D.tags.has('joints') || D.tags.has('recovery')) {
     if (!badania.some(b => b.nazwa.includes('Witamina D3'))) {
-      badania.push({ nazwa: 'Witamina D3 (25-OH)', dlaczego: 'Niedobor wit. D = slabsze kosci, stawy, wolniejsza regeneracja. Optymalna: 50-80 ng/ml', priorytet: 'wysoki' });
+      badania.push({ nazwa: 'Witamina D3 (25-OH)', dlaczego: 'Niedobór wit. D = słabsze kości, stawy, wolniejsza regeneracja. Optymalna: 50-80 ng/ml', priorytet: 'wysoki' });
     }
     if (!badania.some(b => b.nazwa.includes('hsCRP'))) {
-      badania.push({ nazwa: 'hsCRP (bialko C-reaktywne)', dlaczego: 'Stan zapalny = wolniejsza regeneracja, bole stawow, przewlekle zmeczenie', priorytet: 'sredni' });
+      badania.push({ nazwa: 'hsCRP (białko C-reaktywne)', dlaczego: 'Stan zapalny = wolniejsza regeneracja, bóle stawów, przewlekłe zmęczenie', priorytet: 'sredni' });
     }
-    badania.push({ nazwa: 'Wapn (Ca) calkowity', dlaczego: 'Kluczowy dla kosci, stawow i prawidlowej pracy miesni', priorytet: 'sredni' });
+    badania.push({ nazwa: 'Wapń (Ca) całkowity', dlaczego: 'Kluczowy dla kości, stawów i prawidłowej pracy mięśni', priorytet: 'sredni' });
   }
 
-  // Skora
+  // Skóra
   if (D.tags.has('skin')) {
-    badania.push({ nazwa: 'Cynk (Zn) w surowicy', dlaczego: 'Niedobor cynku = tradzik, wolne gojenie, spadek T. Trening i alkohol wyczerpuja cynk', priorytet: 'sredni' });
+    badania.push({ nazwa: 'Cynk (Zn) w surowicy', dlaczego: 'Niedobór cynku = trądzik, wolne gojenie, spadek T. Trening i alkohol wyczerpują cynk', priorytet: 'sredni' });
     if (!badania.some(b => b.nazwa.includes('fT3'))) {
-      badania.push({ nazwa: 'TSH + fT3 + fT4', dlaczego: 'Problemy ze skora moga wskazywac na niedoczynnosc tarczycy', priorytet: 'sredni' });
+      badania.push({ nazwa: 'TSH + fT3 + fT4', dlaczego: 'Problemy ze skórą mogą wskazywać na niedoczynność tarczycy', priorytet: 'sredni' });
     }
   }
 
-  // Pocenie / tetno
+  // Pocenie / tętno
   if (D.tags.has('sweating') || D.tags.has('heartRate')) {
     if (!badania.some(b => b.nazwa.includes('fT3'))) {
-      badania.push({ nazwa: 'TSH + fT3 + fT4', dlaczego: 'Nadczynnosc tarczycy = pocenie, szybkie tetno, utrata masy. Trzeba wykluczyc', priorytet: 'wysoki' });
+      badania.push({ nazwa: 'TSH + fT3 + fT4', dlaczego: 'Nadczynność tarczycy = pocenie, szybkie tętno, utrata masy. Trzeba wykluczyć', priorytet: 'wysoki' });
     }
-    badania.push({ nazwa: 'Sod (Na) + Potas (K)', dlaczego: 'Zaburzenia elektrolitow = arytmie, skurcze, nadmierne pocenie', priorytet: 'sredni' });
+    badania.push({ nazwa: 'Sód (Na) + Potas (K)', dlaczego: 'Zaburzenia elektrolitów = arytmie, skurcze, nadmierne pocenie', priorytet: 'sredni' });
   }
 
-  // Glod na slodycze
+  // Głód na słodycze
   if (D.tags.has('cravings')) {
-    badania.push({ nazwa: 'Chrom (Cr) w surowicy', dlaczego: 'Niedobor chromu = nasilony glod na slodycze i weglowodany proste', priorytet: 'sredni' });
+    badania.push({ nazwa: 'Chrom (Cr) w surowicy', dlaczego: 'Niedobór chromu = nasilony głód na słodycze i węglowodany proste', priorytet: 'sredni' });
     if (!badania.some(b => b.nazwa.includes('Insulina'))) {
-      badania.push({ nazwa: 'Insulina na czczo + glukoza', dlaczego: 'Glod na slodycze czesto = reaktywna hipoglikemia lub poczatkowa insulinoopornosc', priorytet: 'wysoki' });
+      badania.push({ nazwa: 'Insulina na czczo + glukoza', dlaczego: 'Głód na słodycze często = reaktywna hipoglikemia lub początkowa insulinooporność', priorytet: 'wysoki' });
     }
   }
 
-  // Bole glowy
+  // Bóle głowy
   if (D.tags.has('headaches')) {
     if (!badania.some(b => b.nazwa.includes('Magnez'))) {
-      badania.push({ nazwa: 'Magnez (Mg) w surowicy', dlaczego: 'Niedobor magnezu to czesta przyczyna boli glowy i migren. Suplementacja Mg zmniejsza czestotliwosc o 40%', priorytet: 'wysoki' });
+      badania.push({ nazwa: 'Magnez (Mg) w surowicy', dlaczego: 'Niedobór magnezu to częsta przyczyna bólów głowy i migren. Suplementacja Mg zmniejsza częstotliwość o 40%', priorytet: 'wysoki' });
     }
     if (!badania.some(b => b.nazwa.includes('hsCRP'))) {
-      badania.push({ nazwa: 'hsCRP (bialko C-reaktywne)', dlaczego: 'Przewlekly stan zapalny moze powodowac nawracajace bole glowy', priorytet: 'sredni' });
+      badania.push({ nazwa: 'hsCRP (białko C-reaktywne)', dlaczego: 'Przewlekły stan zapalny może powodować nawracające bóle głowy', priorytet: 'sredni' });
     }
   }
 
-  // Leki / anxiety
+  // Lęki / niepokój
   if (D.tags.has('anxiety')) {
     if (!badania.some(b => b.nazwa.includes('Magnez'))) {
-      badania.push({ nazwa: 'Magnez (Mg) w surowicy', dlaczego: 'Magnez to naturalny regulator ukladu nerwowego. Niedobor = leki, napięcie, bezsennosc', priorytet: 'wysoki' });
+      badania.push({ nazwa: 'Magnez (Mg) w surowicy', dlaczego: 'Magnez to naturalny regulator układu nerwowego. Niedobór = lęki, napięcie, bezsenność', priorytet: 'wysoki' });
     }
     if (!badania.some(b => b.nazwa.includes('Witamina D3'))) {
-      badania.push({ nazwa: 'Witamina D3 (25-OH)', dlaczego: 'Niski poziom wit. D silnie koreluje z lekami i depresja u mezczyzn 25-40', priorytet: 'sredni' });
+      badania.push({ nazwa: 'Witamina D3 (25-OH)', dlaczego: 'Niski poziom wit. D silnie koreluje z lękami i depresją u mężczyzn 25-40', priorytet: 'sredni' });
     }
     if (!badania.some(b => b.nazwa.includes('fT3'))) {
-      badania.push({ nazwa: 'TSH + fT3 + fT4', dlaczego: 'Zaburzenia tarczycy moga nasilac leki - trzeba wykluczyc', priorytet: 'sredni' });
+      badania.push({ nazwa: 'TSH + fT3 + fT4', dlaczego: 'Zaburzenia tarczycy mogą nasilać lęki — trzeba wykluczyć', priorytet: 'sredni' });
     }
   }
 
@@ -718,10 +718,10 @@ export default function Page() {
   if (D.sleep < 6.5 || D.sleepQ >= 2) {
     tips.push({
       icon: '🌙',
-      title: D.sleep < 6 ? 'Twoja glimfatyka nie dziala' : 'Architektura snu jest zaburzona',
+      title: D.sleep < 6 ? 'Twoja glimfatyka nie działa' : 'Architektura snu jest zaburzona',
       desc: D.sleep < 6
-        ? `Przy ${D.sleep}h mozg nie konczy cyklu oczyszczania (system glimfatyczny). Toksyny metaboliczne, w tym beta-amyloid, zostaja w tkance mozgowej. Efekt? Mgla, zmeczenie, spadek pamieci roboczej. Nie chodzi o "wiecej snu" - chodzi o to, ze Twoj mozg dosłownie nie zdaza sie umyc.`
-        : `Jakosc snu decyduje o proporcji faz. Faza 3 (gleboki sen) to 80% wydzielania hormonu wzrostu. Ekran przed snem skraca te faze o 20-30 min. Jeden zabieg: temperatura sypialni 18°C + brak swiatla niebieskiego 90 min przed snem. Wiekszosc moich podopiecznych widzi efekt po 5 dniach.`,
+        ? `Przy ${D.sleep}h mózg nie kończy cyklu oczyszczania (system glimfatyczny). Toksyny metaboliczne, w tym beta-amyloid, zostają w tkance mózgowej. Efekt? Mgła, zmęczenie, spadek pamięci roboczej. Nie chodzi o „więcej snu" — chodzi o to, że Twój mózg dosłownie nie zdąży się umyć.`
+        : `Jakość snu decyduje o proporcji faz. Faza 3 (głęboki sen) to 80% wydzielania hormonu wzrostu. Ekran przed snem skraca tę fazę o 20-30 min. Jeden zabieg: temperatura sypialni 18°C + brak światła niebieskiego 90 min przed snem. Większość moich podopiecznych widzi efekt po 5 dniach.`,
       boost: '+4-6%',
     });
   }
@@ -729,10 +729,10 @@ export default function Page() {
   if (D.drinks > 5 || D.subs > 0) {
     tips.push({
       icon: '⚗️',
-      title: D.subs > 0 ? 'Deplecja neuroprzekaznikow' : 'Acetaldehyd sabotuje regeneracje',
+      title: D.subs > 0 ? 'Deplecja neuroprzekaźników' : 'Acetaldehyd sabotuje regenerację',
       desc: D.subs > 0
-        ? `Substancje nie "uszkadzaja mozg" - one wyczerpuja zapas prekursorow serotoniny (tryptofan, 5-HTP) i dopaminy (tyrozyna, L-DOPA). Bez tych cegiełek mozg nie produkuje motywacji ani dobrego nastroju przez 2-4 tygodnie. Kluczowe: uzupelnienie tyrozyny i tryptofanu z diety przyspiesza odbudowe o 40%.`
-        : `Alkohol rozkłada sie do acetaldehydu - substancji 30x bardziej toksycznej niz sam alkohol. ${D.drinks} drinkow = Twoja watroba potrzebuje 12-18h na oczyszczenie. W tym czasie synteza bialek miesniowych jest zatrzymana, kortyzol podwyższony, a jelita przepuszczaja toksyny do krwi (zespol nieszczelnego jelita). Jeden trik: N-acetylocysteina 600mg przed imprezą zmniejsza uszkodzenia o ~30%.`,
+        ? `Substancje nie „uszkadzają mózg" — one wyczerpują zapas prekursorów serotoniny (tryptofan, 5-HTP) i dopaminy (tyrozyna, L-DOPA). Bez tych cegiełek mózg nie produkuje motywacji ani dobrego nastroju przez 2-4 tygodnie. Kluczowe: uzupełnienie tyrozyny i tryptofanu z diety przyspiesza odbudowę o 40%.`
+        : `Alkohol rozkłada się do acetaldehydu — substancji 30x bardziej toksycznej niż sam alkohol. ${D.drinks} drinków = Twoja wątroba potrzebuje 12-18h na oczyszczenie. W tym czasie synteza białek mięśniowych jest zatrzymana, kortyzol podwyższony, a jelita przepuszczają toksyny do krwi (zespół nieszczelnego jelita). N-acetylocysteina 600mg przed imprezą zmniejsza uszkodzenia o ~30%.`,
       boost: D.subs > 0 ? '+6-10%' : '+3-6%',
     });
   }
@@ -740,8 +740,8 @@ export default function Page() {
   if (D.stress >= 2 || D.energy >= 2) {
     tips.push({
       icon: '🫀',
-      title: 'Uklad nerwowy utknal w trybie walki',
-      desc: `Chroniczny stres to nie "za duzo pracy" - to dominacja ukladu sympatycznego nad parasympatycznym. Twoje cialo produkuje kortyzol zamiast testosteronu (wspolny prekursor - pregnenolon). Najskuteczniejsza interwencja z moich 150 wspolprac: 5 min oddechu przeponowego (wydech 2x dluzszy niz wdech) zaraz po przebudzeniu. Obniza kortyzol o 23% w 14 dni.`,
+      title: 'Układ nerwowy utknął w trybie walki',
+      desc: `Chroniczny stres to nie „za dużo pracy" — to dominacja układu sympatycznego nad parasympatycznym. Twoje ciało produkuje kortyzol zamiast testosteronu (wspólny prekursor — pregnenolon). Najskuteczniejsza interwencja z moich 150 współprac: 5 min oddechu przeponowego (wydech 2x dłuższy niż wdech) zaraz po przebudzeniu. Obniża kortyzol o 23% w 14 dni.`,
       boost: '+3-5%',
     });
   }
@@ -750,7 +750,7 @@ export default function Page() {
     tips.push({
       icon: '🔬',
       title: 'Tracisz efekt superkompensacji',
-      desc: `Miesien rosnie nie na treningu - rosnie 48-72h po nim, w fazie superkompensacji. ${D.miss} opuszczone sesje/tyg to nie ${D.miss * 4 * 6} straconych treningow - to ${D.miss * 4 * 6} utraconych okien anabolicznych. Cialo wraca do poziomu wyjsciowego zamiast budowac. Uklad z moimi podopiecznymi: trening w poniedzialek i czwartek rano (8:00) - statystycznie najnizszy wskaznik odwolan.`,
+      desc: `Mięsień rośnie nie na treningu — rośnie 48-72h po nim, w fazie superkompensacji. ${D.miss} opuszczone sesje/tyg to nie ${D.miss * 4 * 6} straconych treningów — to ${D.miss * 4 * 6} utraconych okien anabolicznych. Ciało wraca do poziomu wyjściowego zamiast budować. Układ z moimi podopiecznymi: trening w poniedziałek i czwartek rano (8:00) — statystycznie najniższy wskaźnik odwołań.`,
       boost: '+3-4%',
     });
   }
@@ -758,8 +758,8 @@ export default function Page() {
   if (D.dietChaos >= 2 && tips.length < 3) {
     tips.push({
       icon: '🧬',
-      title: 'Insulina blokuje lipolize',
-      desc: `Chaotyczne jedzenie powoduje skoki insuliny co 2-3h. Dopoki insulina jest podwyzszona, Twoje cialo chemicznie NIE MOZE spalac tluszczu (insulina hamuje lipaze hormonowrazliwa). Nie chodzi o kalorie - chodzi o okna metaboliczne. 3 posilki w stalych porach (bez przekasek) otwieraja 4-5h okno spalania miedzy posilkami. 80% moich podopiecznych traci tluszch brzuszny w 4-6 tygodni tylko ta zmiana.`,
+      title: 'Insulina blokuje lipolizę',
+      desc: `Chaotyczne jedzenie powoduje skoki insuliny co 2-3h. Dopóki insulina jest podwyższona, Twoje ciało chemicznie NIE MOŻE spalać tłuszczu (insulina hamuje lipazę hormonowrażliwą). Nie chodzi o kalorie — chodzi o okna metaboliczne. 3 posiłki w stałych porach (bez przekąsek) otwierają 4-5h okno spalania między posiłkami. 80% moich podopiecznych traci tłuszcz brzuszny w 4-6 tygodni tylko tą zmianą.`,
       boost: '+3-5%',
     });
   }
@@ -767,8 +767,8 @@ export default function Page() {
   if (D.dopamine >= 2 && tips.length < 3) {
     tips.push({
       icon: '🧪',
-      title: 'Receptory D2 sa zregulowane w dol',
-      desc: `Ciagla stymulacja (scrollowanie, jedzenie, substancje) powoduje downregulacje receptorow dopaminowych D2. Efekt: potrzebujesz coraz wiecej bodzca zeby poczuc cokolwiek. To ten sam mechanizm co tolerancja na uzywki. Interwencja: 90 min bez telefonu po przebudzeniu. Pozwala na naturalny szczyt dopaminy porannej. Moi podopieczni reportuja wzrost motywacji po 7-10 dniach.`,
+      title: 'Receptory D2 są zregulowane w dół',
+      desc: `Ciągła stymulacja (scrollowanie, jedzenie, substancje) powoduje obniżenie wrażliwości receptorów dopaminowych D2. Efekt: potrzebujesz coraz więcej bodźca żeby poczuć cokolwiek. To ten sam mechanizm co tolerancja na używki. Interwencja: 90 min bez telefonu po przebudzeniu. Pozwala na naturalny szczyt dopaminy porannej. Moi podopieczni zgłaszają wzrost motywacji po 7-10 dniach.`,
       boost: '+2-4%',
     });
   }
@@ -777,7 +777,7 @@ export default function Page() {
     tips.push({
       icon: '🔥',
       title: 'Tłuszcz trzewny produkuje estrogen',
-      desc: `Tluszcz na brzuchu to nie kwestia estetyki. Tkanka tluszczowa trzewna zawiera enzym aromataze, ktory przeksztalca testosteron w estradiol. Im wiecej tluszczu brzusznego, tym mniej testosteronu. To petla sprzezenia zwrotnego: mniej T = wiecej tluszczu = jeszcze mniej T. Przerwanie cyklu: trening silowy 3x/tyg + 3 posilki bialkowo-tluszczowe dziennie.`,
+      desc: `Tłuszcz na brzuchu to nie kwestia estetyki. Tkanka tłuszczowa trzewna zawiera enzym aromatazę, który przekształca testosteron w estradiol. Im więcej tłuszczu brzusznego, tym mniej testosteronu. To pętla sprzężenia zwrotnego: mniej T = więcej tłuszczu = jeszcze mniej T. Przerwanie cyklu: trening siłowy 3x/tyg + 3 posiłki białkowo-tłuszczowe dziennie.`,
       boost: '+3-5%',
     });
   }
@@ -785,18 +785,18 @@ export default function Page() {
   if (D.tags.has('brain') && tips.length < 3) {
     tips.push({
       icon: '🧠',
-      title: 'Neuroinflamacja obniza wydajnosc',
-      desc: `Mgla mozgowa to nie zmeczenie. To przewlekly stan zapalny w osrodkowym ukladzie nerwowym - neuroinflamacja. Glowne zrodla: nieszczelne jelito (alkohol, stres), niedobor snu, niedobor kwasow omega-3. Suplementacja omega-3 (2g EPA dziennie) + probiotyk wieloszczepowy przez 30 dni. 70% moich podopiecznych z mgla reportuje poprawe po 3 tygodniach.`,
+      title: 'Neuroinflamacja obniża wydajność',
+      desc: `Mgła mózgowa to nie zmęczenie. To przewlekły stan zapalny w ośrodkowym układzie nerwowym — neuroinflamacja. Główne źródła: nieszczelne jelito (alkohol, stres), niedobór snu, niedobór kwasów omega-3. Suplementacja omega-3 (2g EPA dziennie) + probiotyk wieloszczepowy przez 30 dni. 70% moich podopiecznych z mgłą zgłasza poprawę po 3 tygodniach.`,
       boost: '+2-4%',
     });
   }
 
-  // Fallback jesli mniej niz 3 tipy
+  // Uzupełnienie jeśli mniej niż 3 wskazówki
   if (tips.length < 3) {
     tips.push({
       icon: '🩸',
-      title: 'Niedobor magnezu blokuje 300 enzymow',
-      desc: `80% mezczyzn ma subkliniczny niedobor magnezu - nie na tyle niski zeby wyszedl w badaniach, ale na tyle zeby uposledzal sen, regeneracje i prace nerwow. Magnez uczestniczy w 300+ reakcjach enzymatycznych. Forma ma znaczenie: cytrynian lub glicynian (nie tlenek). 400mg przed snem. Efekt po 10-14 dniach: lepszy sen, mniej skurczow, nizszy kortyzol.`,
+      title: 'Niedobór magnezu blokuje 300 enzymów',
+      desc: `80% mężczyzn ma subkliniczny niedobór magnezu — nie na tyle niski żeby wyszedł w badaniach, ale na tyle żeby upośledzał sen, regenerację i pracę nerwów. Magnez uczestniczy w 300+ reakcjach enzymatycznych. Forma ma znaczenie: cytrynian lub glicynian (nie tlenek). 400mg przed snem. Efekt po 10-14 dniach: lepszy sen, mniej skurczów, niższy kortyzol.`,
       boost: '+2-3%',
     });
   }
@@ -1198,7 +1198,7 @@ export default function Page() {
                     <p style={{ color: M.t3, fontSize: 14.5, lineHeight: 1.65, fontWeight: 400, maxWidth: 340, margin: '0 auto 14px' }}>
                       Przeliczam hormony, mózg i formę na złotówki. Na bazie badań, nie opinii.
                     </p>
-                    <div style={{ fontFamily: M.mono, fontSize: 10, color: M.t4, letterSpacing: 1.5 }}>🔒 Twoje odpowiedzi są anonimowe &middot; Żadne dane nie są zapisywane</div>
+                    <div style={{ fontFamily: M.mono, fontSize: 10, color: M.t4, letterSpacing: 1.5 }}>🔒 Twoje odpowiedzi są poufne &middot; Używam ich tylko do analizy Twoich wyników</div>
                     <div style={{ fontFamily: M.mono, fontSize: 9.5, color: M.t4, letterSpacing: 1, marginTop: 8, opacity: 0.7 }}>Kalkulacja oparta na 9 badaniach naukowych</div>
                   </div>
                 </div>
@@ -1864,14 +1864,14 @@ export default function Page() {
                     <div style={{ fontFamily: M.mono, fontSize: 10, letterSpacing: 2.5, textTransform: 'uppercase', color: M.gold }}>Zalecane badania krwi</div>
                   </div>
                   <div style={{ fontSize: 11, color: M.t4, marginBottom: 16, lineHeight: 1.5 }}>
-                    Personalizowana lista na bazie Twoich odpowiedzi. Badania, ktore lekarz Ci nie zleci - bo nie zna Twojego stylu zycia.
+                    Personalizowana lista na bazie Twoich odpowiedzi. Badania, które lekarz Ci nie zleci — bo nie zna Twojego stylu życia.
                   </div>
 
                   {badaniaWysoki.length > 0 && (
                     <>
                       <div style={{ fontFamily: M.mono, fontSize: 9, letterSpacing: 2, textTransform: 'uppercase', color: M.red, marginBottom: 10, display: 'flex', alignItems: 'center', gap: 6 }}>
                         <span style={{ width: 6, height: 6, borderRadius: 3, background: M.red, display: 'inline-block' }} />
-                        Priorytet - zrob jak najszybciej ({badaniaWysoki.length})
+                        Priorytet — zrób jak najszybciej ({badaniaWysoki.length})
                       </div>
                       {badaniaWysoki.map((b, i) => (
                         <div key={`w-${i}`} style={{ padding: '10px 0', borderBottom: `1px solid ${M.brd}` }}>
@@ -1886,7 +1886,7 @@ export default function Page() {
                     <>
                       <div style={{ fontFamily: M.mono, fontSize: 9, letterSpacing: 2, textTransform: 'uppercase', color: M.org, marginTop: 16, marginBottom: 10, display: 'flex', alignItems: 'center', gap: 6 }}>
                         <span style={{ width: 6, height: 6, borderRadius: 3, background: M.org, display: 'inline-block' }} />
-                        Warto sprawdzic ({badaniaSredni.length})
+                        Warto sprawdzić ({badaniaSredni.length})
                       </div>
                       {badaniaSredni.map((b, i) => (
                         <div key={`s-${i}`} style={{ padding: '10px 0', borderBottom: `1px solid ${M.brd}` }}>
@@ -1899,12 +1899,12 @@ export default function Page() {
 
                   <div style={{ marginTop: 16, padding: '12px 14px', background: `${M.gold}08`, border: `1px solid ${M.gold}15`, borderRadius: 10 }}>
                     <p style={{ fontSize: 11, color: M.t3, lineHeight: 1.6, marginBottom: 0 }}>
-                      💡 <strong style={{ color: M.t1 }}>Wskazowka:</strong> Badania rób na czczo, rano (7:00-9:00). Wyniki "w normie" nie znacza "optymalne". Zakres referencyj jest dla ogolu populacji, nie dla mezczyzny ktory trenuje i chce miec forme. Potrzebujesz interpretacji? <strong style={{ color: M.gold }}>Napisz w DM @hantleitalerz</strong>
+                      💡 <strong style={{ color: M.t1 }}>Wskazówka:</strong> Badania rób na czczo, rano (7:00-9:00). Wyniki „w normie" nie znaczą „optymalne". Zakres referncyjny jest dla ogółu populacji, nie dla mężczyzny który trenuje i chce mieć formę. Potrzebujesz interpretacji? <strong style={{ color: M.gold }}>Napisz w DM @hantleitalerz</strong>
                     </p>
                   </div>
 
                   <div style={{ fontSize: 10, color: M.t4, fontFamily: M.mono, textAlign: 'center', marginTop: 14, letterSpacing: 0.5, opacity: 0.6 }}>
-                    Lista na bazie {'>'}150 wspolprac i aktualnych wytycznych endokrynologicznych
+                    Lista na bazie {'>'}150 współprac i aktualnych wytycznych endokrynologicznych
                   </div>
                 </div>
               </Reveal>
@@ -1969,18 +1969,18 @@ export default function Page() {
               }}>
                 {/* Znak wodny */}
                 <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%) rotate(-30deg)', fontFamily: M.mono, fontSize: 44, fontWeight: 900, color: `${M.gold}05`, letterSpacing: 6, whiteSpace: 'nowrap', pointerEvents: 'none', userSelect: 'none' }}>DIAGNOSTYKA HiT</div>
-                <div style={{ fontFamily: M.mono, fontSize: 10, letterSpacing: 2.5, textTransform: 'uppercase', color: M.gold, marginBottom: 16 }}>Twoj potencjal</div>
+                <div style={{ fontFamily: M.mono, fontSize: 10, letterSpacing: 2.5, textTransform: 'uppercase', color: M.gold, marginBottom: 16 }}>Twój potencjał</div>
                 <div style={{ textAlign: 'center', marginBottom: 16 }}>
                   <div style={{ fontSize: 48, fontWeight: 800, fontFamily: M.mono, color: M.gold, lineHeight: 1 }}>{potentialUsed}%</div>
-                  <div style={{ fontSize: 12, color: M.t3, marginTop: 6 }}>tyle wykorzystujesz ze swojego ciala</div>
+                  <div style={{ fontSize: 12, color: M.t3, marginTop: 6 }}>tyle wykorzystujesz ze swojego ciała</div>
                 </div>
                 <div style={{ position: 'relative', height: 8, background: M.s3, borderRadius: 4, overflow: 'hidden', marginBottom: 16 }}>
                   <div style={{ position: 'absolute', left: 0, height: '100%', width: `${potentialUsed}%`, background: `linear-gradient(90deg, ${M.red}, ${M.org})`, borderRadius: 4, transition: 'width 1.5s ease' }} />
                   <div style={{ position: 'absolute', left: `${potentialUsed}%`, height: '100%', width: `${potential}%`, background: `linear-gradient(90deg, ${M.gold}40, ${M.gold})`, borderRadius: '0 4px 4px 0', opacity: 0.4 }} />
                 </div>
                 <p style={{ fontSize: 13, color: M.t2, lineHeight: 1.7, textAlign: 'center', marginBottom: 0 }}>
-                  Na podstawie {'>'}150 wspolprac i badan naukowych - Twoj organizm ma <strong style={{ color: M.gold }}>{potential}% niewykorzystanego potencjalu</strong>.
-                  {potential > 30 && <><br />To energia, sila, regeneracja i ostrość umyslu, ktore masz w sobie ale ktore teraz blokujesz swoim stylem zycia.</>}
+                  Na podstawie {'>'}150 współprac i badań naukowych — Twój organizm ma <strong style={{ color: M.gold }}>{potential}% niewykorzystanego potencjału</strong>.
+                  {potential > 30 && <><br />To energia, siła, regeneracja i ostrość umysłu, które masz w sobie ale które teraz blokujesz swoim stylem życia.</>}
                 </p>
               </div>
             </Reveal>
@@ -1998,7 +1998,7 @@ export default function Page() {
               }}>
                 {/* Znak wodny */}
                 <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%) rotate(-20deg)', fontFamily: M.mono, fontSize: 48, fontWeight: 900, color: `${M.gold}04`, letterSpacing: 6, whiteSpace: 'nowrap', pointerEvents: 'none', userSelect: 'none' }}>HANTLE I TALERZ</div>
-                <div style={{ fontFamily: M.mono, fontSize: 10, letterSpacing: 2.5, textTransform: 'uppercase', color: M.t4, marginBottom: 6 }}>3 rzeczy ktore mozesz zrobic juz jutro</div>
+                <div style={{ fontFamily: M.mono, fontSize: 10, letterSpacing: 2.5, textTransform: 'uppercase', color: M.t4, marginBottom: 6 }}>3 rzeczy które możesz zrobić już jutro</div>
                 <div style={{ fontSize: 11, color: M.gold, fontFamily: M.mono, marginBottom: 18 }}>+{totalBoostMin}-{totalBoostMax}% potencjalu w ciagu 30 dni</div>
 
                 {tips.slice(0, 3).map((tip, i) => (
@@ -2024,7 +2024,7 @@ export default function Page() {
                 }}>
                   <p style={{ fontSize: 12.5, color: M.t2, lineHeight: 1.65, marginBottom: 0 }}>
                     Te tipy to <strong style={{ color: M.t1 }}>+{totalBoostMin}-{totalBoostMax}%</strong>. Sam, bez nadzoru.<br />
-                    Chcesz wyciagnac <strong style={{ color: M.gold }}>100%</strong>? Ponizej sprawdz jak moge Ci w tym pomoc.
+                    Chcesz wyciągnąć <strong style={{ color: M.gold }}>100%</strong>? Poniżej sprawdź jak mogę Ci w tym pomóc.
                   </p>
                 </div>
               </div>
@@ -2273,7 +2273,7 @@ export default function Page() {
                     textTransform: 'uppercase', textDecoration: 'none', borderRadius: 12,
                   }}
                 >
-                  {D.drinks > 5 || D.subs > 0 ? 'KONTRA - protokol weekendowy. 99 zl' : 'Neurobiologia Formy. 99 zl'}
+                  {D.drinks > 5 || D.subs > 0 ? 'KONTRA — protokół weekendowy. 99 zł' : 'Neurobiologia Formy. 99 zł'}
                 </a>
                 <p style={{ textAlign: 'center', fontSize: 10.5, color: M.t4, marginTop: 6, fontFamily: M.mono }}>
                   {D.drinks > 5 || D.subs > 0
