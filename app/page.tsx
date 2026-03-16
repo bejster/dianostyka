@@ -1855,87 +1855,164 @@ export default function Page() {
                 }}>
                   <p style={{ fontSize: 12.5, color: M.t2, lineHeight: 1.65, marginBottom: 0 }}>
                     Te tipy to <strong style={{ color: M.t1 }}>+{totalBoostMin}-{totalBoostMax}%</strong>. Sam, bez nadzoru.<br />
-                    Chcesz wyciagnac <strong style={{ color: M.gold }}>100%</strong> ze swojego organizmu?<br />
-                    <span style={{ fontSize: 11.5, color: M.t4 }}>Napisz <strong style={{ color: M.gold }}>JAZDA</strong> w DM @hantleitalerz</span>
+                    Chcesz wyciagnac <strong style={{ color: M.gold }}>100%</strong>? Ponizej sprawdz jak moge Ci w tym pomoc.
                   </p>
                 </div>
               </div>
             </Reveal>
 
-            {/* Closing */}
+            {/* ── MEGA CTA — personalizowane na bazie wynikow ── */}
             <Reveal delay={140}>
               <div style={{
-                textAlign: 'center', padding: '22px 18px', marginBottom: 20,
-                border: `1px solid ${M.brd}`,
-                background: 'rgba(19,19,19,0.78)',
-                backdropFilter: 'blur(12px)',
-                WebkitBackdropFilter: 'blur(12px)',
-                borderRadius: 14, width: '100%', boxSizing: 'border-box',
+                position: 'relative', overflow: 'hidden',
+                background: `linear-gradient(160deg, rgba(19,19,19,0.95), rgba(200,168,78,0.08))`,
+                backdropFilter: 'blur(16px)',
+                WebkitBackdropFilter: 'blur(16px)',
+                border: `2px solid ${M.gold}40`,
+                padding: '28px 20px', marginBottom: 20, borderRadius: 18, width: '100%', boxSizing: 'border-box',
+                boxShadow: `0 0 40px ${M.gold}10, inset 0 1px 0 ${M.gold}15`,
               }}>
-                <p style={{ fontSize: 13.5, color: M.t2, lineHeight: 1.75, fontWeight: 400 }}>
-                  Te liczby nie znikna same.<br />
-                  Za 6 miesiecy beda wyzsze albo nizsze.<br />
-                  <strong style={{ color: M.gold, fontWeight: 600 }}>Zalezy co zrobisz teraz.</strong>
-                </p>
-                <p style={{ fontSize: 12, color: M.t4, lineHeight: 1.6, fontWeight: 400, marginTop: 10 }}>
-                  Hormony, mozg, metabolizm. Kiedy rozumiesz mechanike, przestajesz tracic.
-                </p>
-              </div>
-            </Reveal>
+                {/* Znak wodny */}
+                <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%) rotate(-25deg)', fontFamily: M.mono, fontSize: 52, fontWeight: 900, color: `${M.gold}04`, letterSpacing: 8, whiteSpace: 'nowrap', pointerEvents: 'none', userSelect: 'none' }}>HANTLE I TALERZ</div>
 
-            <WaveDivider flip />
+                {/* Wstepna kwalifikacja */}
+                {SC >= 25 && (
+                  <div style={{
+                    display: 'flex', alignItems: 'center', gap: 10, marginBottom: 18,
+                    padding: '12px 14px', background: `${M.gold}12`, border: `1px solid ${M.gold}25`,
+                    borderRadius: 10,
+                  }}>
+                    <span style={{ fontSize: 22, flexShrink: 0 }}>✅</span>
+                    <div>
+                      <div style={{ fontSize: 14, fontWeight: 700, color: M.gold, marginBottom: 2 }}>
+                        {SC >= 50 ? 'Wstepnie pasujesz do wspolpracy' : 'Widzę potencjal do pracy z Toba'}
+                      </div>
+                      <div style={{ fontSize: 11.5, color: M.t3, lineHeight: 1.5 }}>
+                        {SC >= 50
+                          ? `Na bazie 150 wspolprac - Twoj profil (score ${SC}/100, ${D.tags.size} objawow, ${potential}% niewykorzystanego potencjalu) to dokladnie wzorzec ludzi z ktorymi pracuje i u ktorych widze najwieksze zmiany.`
+                          : `Twoje wyniki pokazuja ze sa konkretne rzeczy do naprawienia. Widzialem to wielokrotnie - przy odpowiednim podejsciu mozesz odzyskac ${Math.min(potential, 40)}% potencjalu w 3-6 miesiecy.`
+                        }
+                      </div>
+                    </div>
+                  </div>
+                )}
 
-            {/* CTA */}
-            <Reveal delay={80}>
-              <div style={{
-                background: 'rgba(19,19,19,0.82)',
-                backdropFilter: 'blur(14px)',
-                WebkitBackdropFilter: 'blur(14px)',
-                border: `1px solid ${M.brd2}`,
-                padding: '22px 16px', marginBottom: 20, borderRadius: 16, width: '100%', boxSizing: 'border-box',
-              }}>
-                <div style={{ fontFamily: M.mono, fontSize: 10, letterSpacing: 2.5, textTransform: 'uppercase', color: M.t4, marginBottom: 14 }}>Co dalej?</div>
-                <p style={{ fontSize: 13.5, color: M.t3, lineHeight: 1.7, fontWeight: 400, marginBottom: 8 }}>
-                  Pracuję z facetami którzy żyją dokładnie tak jak Ty. Imprezy, praca, chaos.
+                <div style={{ fontFamily: M.mono, fontSize: 10, letterSpacing: 2.5, textTransform: 'uppercase', color: M.gold, marginBottom: 16 }}>
+                  {SC >= 50 ? 'Nastepny krok' : 'Co mozesz zrobic teraz'}
+                </div>
+
+                <p style={{ fontSize: 15, color: M.t1, lineHeight: 1.75, fontWeight: 500, marginBottom: 6 }}>
+                  {SC >= 50
+                    ? 'Pracuje z facetami ktorzy zyja dokladnie tak jak Ty.'
+                    : 'Te liczby nie znikna same.'}
                 </p>
-                <p style={{ fontSize: 13.5, color: M.t2, lineHeight: 1.7, fontWeight: 500, marginBottom: 8 }}>
-                  Mimo to mają formę, energię i sprawny mózg.
+                <p style={{ fontSize: 14, color: M.t2, lineHeight: 1.75, fontWeight: 400, marginBottom: 6 }}>
+                  {SC >= 50
+                    ? 'Imprezy, praca, chaos. Mimo to maja forme, energie i sprawny mozg.'
+                    : 'Za 6 miesiecy beda wyzsze albo nizsze. Zalezy co zrobisz teraz.'}
                 </p>
-                <p style={{ fontSize: 13, color: M.t3, lineHeight: 1.7, fontWeight: 400, marginBottom: 20 }}>
-                  Różnica? Wiedzą <em>co</em> sabotuje ich ciało i mają plan który to naprawia. <strong style={{ color: M.t1, fontWeight: 600 }}>Bez rezygnowania z życia.</strong>
-                </p>
+
+                {SC >= 50 && (
+                  <p style={{ fontSize: 13.5, color: M.t3, lineHeight: 1.7, fontWeight: 400, marginBottom: 6 }}>
+                    Roznica? Wiedza co sabotuje ich cialo i maja plan ktory to naprawia. <strong style={{ color: M.t1, fontWeight: 600 }}>Bez rezygnowania z zycia.</strong>
+                  </p>
+                )}
+
+                {SC >= 25 && (
+                  <div style={{
+                    margin: '18px 0', padding: '16px 14px',
+                    background: 'rgba(10,10,10,0.6)',
+                    border: `1px solid ${M.brd2}`,
+                    borderRadius: 12,
+                  }}>
+                    <div style={{ fontSize: 13, color: M.t2, lineHeight: 1.7, marginBottom: 4 }}>
+                      <strong style={{ color: M.gold }}>Na stronie opisuje dokladnie jak pomagam</strong> w takich przypadkach jak Twoj - {D.tags.size >= 4 ? `${D.tags.size} objawow, ` : ''}{D.drinks > 5 ? 'imprezy, ' : ''}{D.sleep < 6.5 ? 'deficyt snu, ' : ''}{D.stress >= 2 ? 'chroniczny stres, ' : ''}{D.miss > 0 ? 'tracone treningi' : 'brak progresu'}.
+                    </div>
+                    <div style={{ fontSize: 12.5, color: M.t3, lineHeight: 1.65 }}>
+                      Przeczytaj jak to dziala, zobacz efekty i <strong style={{ color: M.t1 }}>wypelnij krotki formularz</strong> w srodku strony. Na tej podstawie ocenie czy i jak moge Ci pomoc.
+                    </div>
+                  </div>
+                )}
+
+                {/* Glowny CTA - DUZY */}
                 <a
                   href="https://system.talerzihantle.com"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="shimmer-btn"
-                  aria-label="Sprawdź czy się kwalifikujesz do współpracy"
+                  aria-label="Zobacz jak pomagam i wypelnij formularz"
                   style={{
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    background: M.gold,
+                    background: `linear-gradient(135deg, ${M.gold}, #d4b85a)`,
                     color: '#0a0a0a',
-                    fontFamily: M.mono, fontSize: 12, fontWeight: 700, letterSpacing: 2,
-                    textTransform: 'uppercase', textDecoration: 'none', padding: 18,
-                    textAlign: 'center', marginBottom: 10, borderRadius: 12,
-                    boxShadow: `0 0 24px ${M.gold}30`,
-                    minHeight: 44,
-                    lineHeight: '1',
+                    fontFamily: M.mono, fontSize: 14, fontWeight: 800, letterSpacing: 2.5,
+                    textTransform: 'uppercase', textDecoration: 'none', padding: '22px 20px',
+                    textAlign: 'center', marginBottom: 8, borderRadius: 14,
+                    boxShadow: `0 4px 30px ${M.gold}35, 0 0 60px ${M.gold}15`,
+                    minHeight: 56,
+                    lineHeight: '1.2',
                   } as React.CSSProperties}
                 >
-                  Sprawdź czy się kwalifikujesz →
+                  {SC >= 50 ? 'Zobacz jak pomagam → wypelnij formularz' : 'Sprawdz czy moge Ci pomoc →'}
                 </a>
-                <div style={{ textAlign: 'center', fontSize: 11, color: M.t4, fontFamily: M.mono, letterSpacing: 0.3, marginBottom: 18 }}>
-                  lub napisz <strong style={{ color: M.gold }}>JAZDA</strong> w DM @hantleitalerz
+
+                <div style={{ textAlign: 'center', marginBottom: 16 }}>
+                  <div style={{ fontSize: 11, color: M.t4, fontFamily: M.mono, letterSpacing: 0.5, marginBottom: 4 }}>
+                    system.talerzihantle.com
+                  </div>
+                  <div style={{ fontSize: 10.5, color: M.t4, lineHeight: 1.5 }}>
+                    Na stronie jest formularz - wypelnij go, a odezwe sie z konkretnym feedbackiem
+                  </div>
                 </div>
-                <div style={{ height: 1, background: M.brd, margin: '0 20px 18px' }} />
+
+                {/* Social proof */}
+                {SC >= 30 && (
+                  <div style={{
+                    display: 'flex', gap: 8, justifyContent: 'center', flexWrap: 'wrap', marginBottom: 16,
+                  }}>
+                    {[
+                      { n: '150+', l: 'wspolprac' },
+                      { n: '6', l: 'miesiecy' },
+                      { n: '100%', l: 'bez rezygnowania z zycia' },
+                    ].map((s, i) => (
+                      <div key={i} style={{
+                        padding: '8px 12px', background: 'rgba(10,10,10,0.5)',
+                        border: `1px solid ${M.brd}`, borderRadius: 8, textAlign: 'center',
+                      }}>
+                        <div style={{ fontFamily: M.mono, fontSize: 14, fontWeight: 700, color: M.gold }}>{s.n}</div>
+                        <div style={{ fontSize: 9, color: M.t4, textTransform: 'uppercase', letterSpacing: 0.8, marginTop: 2 }}>{s.l}</div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Koszty vs wspolpraca */}
+                {C.total > 5000 && SC >= 30 && (
+                  <div style={{
+                    padding: '14px 14px', marginBottom: 16,
+                    background: `${M.red}08`, border: `1px solid ${M.red}15`, borderRadius: 10,
+                  }}>
+                    <p style={{ fontSize: 12, color: M.t3, lineHeight: 1.65, marginBottom: 0, textAlign: 'center' }}>
+                      Tracisz <strong style={{ color: M.red }}>{C.total.toLocaleString('pl-PL')} zl</strong> w pol roku na konsekwencje.<br />
+                      Wspolpraca kosztuje mniej niz to co tracisz w <strong style={{ color: M.t1 }}>{C.total > 12000 ? '1' : C.total > 6000 ? '2' : '3'} {C.total > 12000 ? 'miesiac' : 'miesiace'}</strong> obecnego stylu zycia.
+                    </p>
+                  </div>
+                )}
+
+                <div style={{ textAlign: 'center', fontSize: 11, color: M.t4, fontFamily: M.mono, letterSpacing: 0.3, marginBottom: 16 }}>
+                  lub napisz <strong style={{ color: M.gold }}>JAZDA</strong> w DM <a href="https://instagram.com/hantleitalerz" target="_blank" rel="noopener noreferrer" style={{ color: M.gold, textDecoration: 'none', fontWeight: 600 }}>@hantleitalerz</a>
+                </div>
+
+                <div style={{ height: 1, background: M.brd, margin: '0 10px 18px' }} />
+
                 <p style={{ textAlign: 'center', fontSize: 11.5, color: M.t4, marginBottom: 10 }}>
-                  Nie jesteś jeszcze gotowy na współpracę 1:1?
+                  Nie jestes jeszcze gotowy na wspolprace 1:1?
                 </p>
                 <a
                   href="https://neurobiologia-formy.talerzihantle.com"
                   target="_blank"
                   rel="noopener noreferrer"
-                  aria-label="Neurobiologia Formy - ebook za 99 złotych"
+                  aria-label="Neurobiologia Formy - ebook za 99 zlotych"
                   style={{
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                     textAlign: 'center', padding: '14px 14px', minHeight: 44,
@@ -1944,10 +2021,10 @@ export default function Page() {
                     textTransform: 'uppercase', textDecoration: 'none', borderRadius: 12,
                   }}
                 >
-                  Neurobiologia Formy. 99 zł
+                  Neurobiologia Formy. 99 zl
                 </a>
                 <p style={{ textAlign: 'center', fontSize: 10.5, color: M.t4, marginTop: 6, fontFamily: M.mono }}>
-                  Ebook który tłumaczy dlaczego Twoje ciało działa tak a nie inaczej.
+                  Ebook ktory tlumaczy dlaczego Twoje cialo dziala tak a nie inaczej.
                 </p>
               </div>
             </Reveal>
@@ -1961,10 +2038,10 @@ export default function Page() {
                 borderRadius: 14, width: '100%', boxSizing: 'border-box',
               }}>
                 <p style={{ fontSize: 13.5, color: M.t2, lineHeight: 1.65, fontWeight: 500, marginBottom: 6 }}>
-                  Analizuję Twoje odpowiedzi.
+                  Analizuje Twoje odpowiedzi.
                 </p>
                 <p style={{ fontSize: 12.5, color: M.t3, lineHeight: 1.65, fontWeight: 400 }}>
-                  Napiszę do Ciebie w DM <strong style={{ color: M.gold, fontWeight: 600 }}>@hantleitalerz</strong> w ciągu 24h z konkretnym feedbackiem co u Ciebie nie gra i od czego zacząć.
+                  Napisze do Ciebie w DM <strong style={{ color: M.gold, fontWeight: 600 }}>@hantleitalerz</strong> w ciagu 24h z konkretnym feedbackiem co u Ciebie nie gra i od czego zaczac.
                 </p>
               </div>
             </Reveal>
