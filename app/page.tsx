@@ -245,9 +245,9 @@ function StarField() {
 
     const DPR = window.devicePixelRatio || 1;
 
-    // Konfiguracja gwiazd — więcej i jaśniejsze
-    const STAR_COUNT = 250;
-    const SHOOTING_STAR_CHANCE = 0.002; // szansa na spadającą gwiazdę per klatka
+    // Konfiguracja gwiazd — subtelne, ledwo widoczne w tle
+    const STAR_COUNT = 120;
+    const SHOOTING_STAR_CHANCE = 0.0005; // rzadkie spadające gwiazdy
 
     // Rozmiar canvas
     const resize = () => {
@@ -282,16 +282,16 @@ function StarField() {
 
     const stars: Star[] = Array.from({ length: STAR_COUNT }, () => {
       const sizeRand = Math.random();
-      // Realistyczna dystrybucja — dużo małych punktów, kilka jasnych
-      const r = sizeRand < 0.55 ? Math.random() * 0.7 + 0.3    // małe punkty
-              : sizeRand < 0.82 ? Math.random() * 1.0 + 0.7    // średnie
-              : sizeRand < 0.95 ? Math.random() * 1.3 + 1.0    // duże
-              : Math.random() * 1.8 + 1.5;                      // bardzo jasne (5%)
+      // Normalne rozmiary, ale przyciemnione — subtelne tło
+      const r = sizeRand < 0.55 ? Math.random() * 0.7 + 0.3
+              : sizeRand < 0.82 ? Math.random() * 1.0 + 0.7
+              : sizeRand < 0.95 ? Math.random() * 1.3 + 1.0
+              : Math.random() * 1.8 + 1.5;
       return {
         x: Math.random() * window.innerWidth,
         y: Math.random() * window.innerHeight,
         r,
-        baseAlpha: Math.random() * 0.4 + 0.5,  // jasne: 0.5-0.9
+        baseAlpha: Math.random() * 0.12 + 0.06,  // subtelne: 0.06-0.18
         twinkleSpeed: Math.random() * 0.015 + 0.003,
         twinklePhase: Math.random() * Math.PI * 2,
         color: starColors[Math.floor(Math.random() * starColors.length)],
@@ -320,14 +320,14 @@ function StarField() {
       // Rysowanie gwiazd z migotaniem
       for (const star of stars) {
         const twinkle = Math.sin(time * star.twinkleSpeed + star.twinklePhase);
-        const alpha = star.baseAlpha + twinkle * 0.3;
-        const clampedAlpha = Math.max(0.1, Math.min(1, alpha));
+        const alpha = star.baseAlpha + twinkle * 0.06;
+        const clampedAlpha = Math.max(0.03, Math.min(0.25, alpha));
 
-        // Glow dla większych gwiazd — subtelna poświata
-        if (star.r > 1.0) {
+        // Delikatny glow tylko dla największych
+        if (star.r > 1.5) {
           ctx.beginPath();
-          ctx.arc(star.x, star.y, star.r * 4, 0, Math.PI * 2);
-          ctx.fillStyle = `rgba(${star.color},${clampedAlpha * 0.12})`;
+          ctx.arc(star.x, star.y, star.r * 3, 0, Math.PI * 2);
+          ctx.fillStyle = `rgba(${star.color},${clampedAlpha * 0.06})`;
           ctx.fill();
         }
 
@@ -371,20 +371,20 @@ function StarField() {
 
         const grad = ctx.createLinearGradient(tailX, tailY, ss.x, ss.y);
         grad.addColorStop(0, `rgba(255,255,255,0)`);
-        grad.addColorStop(0.7, `rgba(200,220,255,${alpha * 0.4})`);
-        grad.addColorStop(1, `rgba(255,255,255,${alpha * 0.8})`);
+        grad.addColorStop(0.7, `rgba(200,220,255,${alpha * 0.15})`);
+        grad.addColorStop(1, `rgba(255,255,255,${alpha * 0.3})`);
 
         ctx.beginPath();
         ctx.moveTo(tailX, tailY);
         ctx.lineTo(ss.x, ss.y);
         ctx.strokeStyle = grad;
-        ctx.lineWidth = 1.5;
+        ctx.lineWidth = 1;
         ctx.stroke();
 
         // Jasny punkt na czele
         ctx.beginPath();
-        ctx.arc(ss.x, ss.y, 1.5, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(255,255,255,${alpha * 0.9})`;
+        ctx.arc(ss.x, ss.y, 1, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(255,255,255,${alpha * 0.3})`;
         ctx.fill();
 
         // Usuwanie martwych spadających gwiazd
