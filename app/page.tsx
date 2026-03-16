@@ -2191,7 +2191,7 @@ export default function Page() {
               Instagram
             </a>
           </div>
-          <span style={{ fontFamily: M.mono, fontSize: 9.5, color: M.t4, letterSpacing: 1 }}>Diagnostyka v7 &copy; 2026</span>
+          <span style={{ fontFamily: M.mono, fontSize: 9.5, color: M.t4, letterSpacing: 1 }}>Diagnostyka &copy; 2026</span>
         </footer>
 
       </div>
