@@ -604,9 +604,9 @@ export default function Page() {
   const badania: { nazwa: string; dlaczego: string; priorytet: 'wysoki' | 'sredni' }[] = [];
 
   // Zawsze podstawa
-  badania.push({ nazwa: 'Morfologia z rozmazem', dlaczego: 'Bazowy obraz zdrowia — stan zapalny, anemia, odporność', priorytet: 'wysoki' });
-  badania.push({ nazwa: 'Testosteron całkowity + wolny', dlaczego: 'Kluczowy hormon męskiej formy — masa, libido, energia, motywacja', priorytet: 'wysoki' });
-  badania.push({ nazwa: 'SHBG', dlaczego: 'Określa ile testosteronu jest faktycznie aktywne biologicznie', priorytet: 'wysoki' });
+  badania.push({ nazwa: 'Morfologia z rozmazem', dlaczego: 'Bazowy obraz zdrowia: stan zapalny, anemia, odporność. Bez tego nie wiesz od czego zacząć.', priorytet: 'wysoki' });
+  badania.push({ nazwa: 'Testosteron całkowity + wolny', dlaczego: 'Kluczowy hormon męskiej formy. Reguluje masę mięśniową, libido, energię i motywację. Bez niego stoisz w miejscu.', priorytet: 'wysoki' });
+  badania.push({ nazwa: 'SHBG', dlaczego: 'Określa ile testosteronu jest faktycznie aktywne biologicznie. Wysoki SHBG = masz T ale ciało go nie używa.', priorytet: 'wysoki' });
 
   // Sen
   if (D.sleep < 6.5 || D.sleepQ >= 2) {
@@ -1342,7 +1342,7 @@ export default function Page() {
                     ['mood', 'Wahania nastroju, drażliwość'],
                     ['libido', 'Obniżone libido lub motywacja seksualna'],
                     ['belly', 'Brzuch który nie schodzi mimo treningu'],
-                    ['brain', 'Mgła mózgowa - problemy z koncentracją'],
+                    ['brain', 'Mgła mózgowa, problemy z koncentracją'],
                     ['anxiety', 'Niepokój, natrętne myśli'],
                     ['joints', 'Bóle stawów lub słaba regeneracja'],
                     ['skin', 'Pogorszona cera, wypryski'],
@@ -1794,12 +1794,12 @@ export default function Page() {
                       period: 'Za 3 miesiące',
                       color: M.org,
                       items: [
-                        D.sleep < 6.5 && 'Deficyt snu staje się chroniczny — kortyzol bazowy podnosi się o 15-20%',
-                        D.tags.has('fatigue') && 'Zmęczenie zaczynasz traktować jako normę — nie jest',
+                        D.sleep < 6.5 && 'Deficyt snu staje się chroniczny. Kortyzol bazowy podnosi się o 15-20%',
+                        D.tags.has('fatigue') && 'Zmęczenie zaczynasz traktować jako normę. Nie jest.',
                         D.miss > 0 && `Kolejne ${D.miss * 12} treningów stracone na marne przez złe fundamenty`,
-                        D.drinks > 5 && 'Tolerancja na alkohol rośnie — pijesz więcej żeby poczuć ten sam efekt',
+                        D.drinks > 5 && 'Tolerancja na alkohol rośnie. Pijesz więcej żeby poczuć ten sam efekt',
                         D.stress >= 2 && 'Chroniczny stres obniża produkcję testosteronu o kolejne 5-10%',
-                        D.tags.has('belly') && 'Tłuszcz trzewny rośnie — aromataza konwertuje więcej T na estradiol',
+                        D.tags.has('belly') && 'Tłuszcz trzewny rośnie. Aromataza konwertuje więcej T na estradiol',
                       ].filter(Boolean).slice(0, 2) as string[],
                     },
                     {
@@ -1807,9 +1807,9 @@ export default function Page() {
                       color: M.red,
                       items: [
                         `${C.total.toLocaleString('pl-PL')} zł stracone na konsekwencje stylu życia`,
-                        D.tags.has('libido') && 'Libido spada dalej — partnerka/partner to zauważa',
-                        D.tags.has('brain') && 'Mgła mózgowa staje się codziennością — produktywność na 60%',
-                        D.subs > 0 && 'Receptory D2 dalej się degradują — potrzebujesz coraz więcej żeby poczuć radość',
+                        D.tags.has('libido') && 'Libido spada dalej. Partnerka/partner to zauważa',
+                        D.tags.has('brain') && 'Mgła mózgowa staje się codziennością. Produktywność na 60%',
+                        D.subs > 0 && 'Receptory D2 dalej się degradują. Potrzebujesz coraz więcej żeby poczuć radość',
                         D.sleep < 7 && 'Ryzyko insulinooporności wzrasta 2.5x przy chronicznie krótkim śnie',
                         C.brakes >= 3 && `${C.stagnationMonths}+ miesięcy bez progresu mimo regularnych treningów`,
                       ].filter(Boolean).slice(0, 2) as string[],
@@ -1818,10 +1818,10 @@ export default function Page() {
                       period: 'Za 12 miesięcy',
                       color: '#dc2626',
                       items: [
-                        `Straty finansowe: ${(C.total * 2).toLocaleString('pl-PL')} zł — większość niewidoczna`,
+                        `Straty finansowe: ${(C.total * 2).toLocaleString('pl-PL')} zł. Większość niewidoczna`,
                         'Objawy, które teraz ignorujesz, zaczynają wymagać leczenia',
-                        SC >= 50 ? 'Lekarz zleca badania i mówi „musi pan coś zmienić" — ale nie wie co konkretnie' : 'Ciało adaptuje się do niskiej wydajności — to staje się Twoja nowa normalność',
-                        D.tags.size >= 4 && 'Kaskada objawów — jeden problem napędza kolejny. Im dłużej czekasz, tym trudniej to naprawić',
+                        SC >= 50 ? 'Lekarz zleca badania i mówi „musi pan coś zmienić". Ale nie wie co konkretnie' : 'Ciało adaptuje się do niskiej wydajności. To staje się Twoja nowa normalność',
+                        D.tags.size >= 4 && 'Kaskada objawów: jeden problem napędza kolejny. Im dłużej czekasz, tym trudniej to naprawić',
                       ].filter(Boolean).slice(0, 2) as string[],
                     },
                   ].map((block, bi) => (
@@ -1896,26 +1896,31 @@ export default function Page() {
                     <div style={{ fontFamily: M.mono, fontSize: 10, letterSpacing: 2.5, textTransform: 'uppercase', color: M.gold }}>Zalecane badania krwi</div>
                   </div>
                   <div style={{ fontSize: 11, color: M.t4, marginBottom: 16, lineHeight: 1.5 }}>
-                    Personalizowana lista na bazie Twoich odpowiedzi. Badania, które lekarz Ci nie zleci — bo nie zna Twojego stylu życia.
+                    Personalizowana lista na bazie Twoich odpowiedzi. Badania, które lekarz Ci nie zleci. Bo nie zna Twojego stylu życia.
                   </div>
 
                   {badaniaWysoki.length > 0 && (
                     <>
                       <div style={{ fontFamily: M.mono, fontSize: 9, letterSpacing: 2, textTransform: 'uppercase', color: M.red, marginBottom: 10, display: 'flex', alignItems: 'center', gap: 6 }}>
                         <span style={{ width: 6, height: 6, borderRadius: 3, background: M.red, display: 'inline-block' }} />
-                        Priorytet — zrób jak najszybciej ({badaniaWysoki.length})
+                        Priorytet: zrób jak najszybciej ({badaniaWysoki.length})
                       </div>
                       {badaniaWysoki.map((b, i) => (
                         <div key={`w-${i}`} style={{ padding: '10px 0', borderBottom: `1px solid ${M.brd}` }}>
                           <div style={{ fontSize: 13, fontWeight: 600, color: M.t1, marginBottom: 3 }}>{b.nazwa}</div>
-                          <div style={{ position: 'relative', marginTop: 4 }}>
-                            <div style={{ fontSize: 11, color: M.t4, lineHeight: 1.5, filter: 'blur(4px)', userSelect: 'none', pointerEvents: 'none' }}>{b.dlaczego}</div>
-                            <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                              <span style={{ fontFamily: M.mono, fontSize: 9, letterSpacing: 1.2, textTransform: 'uppercase', color: M.gold, padding: '4px 10px', background: 'rgba(10,10,10,0.8)', border: '1px solid ' + M.gold + '30', borderRadius: 6 }}>
-                                Interpretacja wyników → napisz DM @hantleitalerz
-                              </span>
+                          {/* Pierwsze 2 interpretacje widoczne jako teaser, reszta zamazana */}
+                          {i < 2 ? (
+                            <div style={{ fontSize: 11, color: M.t3, lineHeight: 1.55, marginTop: 4 }}>{b.dlaczego}</div>
+                          ) : (
+                            <div style={{ position: 'relative', marginTop: 4 }}>
+                              <div style={{ fontSize: 11, color: M.t4, lineHeight: 1.5, filter: 'blur(4px)', userSelect: 'none', pointerEvents: 'none' }}>{b.dlaczego}</div>
+                              <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                <span style={{ fontFamily: M.mono, fontSize: 9, letterSpacing: 1.2, textTransform: 'uppercase', color: M.gold, padding: '4px 10px', background: 'rgba(10,10,10,0.8)', border: '1px solid ' + M.gold + '30', borderRadius: 6 }}>
+                                  Pełna interpretacja → napisz DM @hantleitalerz
+                                </span>
+                              </div>
                             </div>
-                          </div>
+                          )}
                         </div>
                       ))}
                     </>
@@ -2025,7 +2030,7 @@ export default function Page() {
                   <div style={{ position: 'absolute', left: `${blocked}%`, height: '100%', width: `${usable}%`, background: `linear-gradient(90deg, ${M.gold}40, ${M.gold})`, borderRadius: '0 4px 4px 0', opacity: 0.4 }} />
                 </div>
                 <p style={{ fontSize: 13, color: M.t2, lineHeight: 1.7, textAlign: 'center', marginBottom: 0 }}>
-                  Na podstawie {'>'}150 współprac i badań naukowych — Twój organizm ma <strong style={{ color: M.gold }}>{blocked}% niewykorzystanego potencjału</strong>.
+                  Na podstawie {'>'}150 współprac i badań naukowych, Twój organizm ma <strong style={{ color: M.gold }}>{blocked}% niewykorzystanego potencjału</strong>.
                   {blocked > 30 && <><br />To energia, siła, regeneracja i ostrość umysłu, które masz w sobie ale które teraz blokujesz swoim stylem życia.</>}
                 </p>
               </div>
@@ -2058,15 +2063,15 @@ export default function Page() {
                         <div style={{ fontSize: 14, fontWeight: 700, color: M.t1 }}>{tip.title}</div>
                         <div style={{ fontFamily: M.mono, fontSize: 11, color: M.grn, fontWeight: 600 }}>{tip.boost}</div>
                       </div>
-                      {/* Pierwsze zdanie widoczne */}
+                      {/* Pierwsze 2 zdania widoczne — mocniejszy teaser */}
                       <div style={{ fontSize: 12, color: M.t3, lineHeight: 1.6 }}>
-                        {tip.desc.split('. ')[0]}.
+                        {tip.desc.split('. ').slice(0, 2).join('. ')}.
                       </div>
                       {/* Reszta zamazana z paywall overlay */}
-                      {tip.desc.split('. ').length > 1 && (
+                      {tip.desc.split('. ').length > 2 && (
                         <div style={{ position: 'relative', marginTop: 6 }}>
                           <div style={{ fontSize: 12, color: M.t4, lineHeight: 1.6, filter: 'blur(4px)', userSelect: 'none', pointerEvents: 'none' }}>
-                            {tip.desc.split('. ').slice(1).join('. ')}
+                            {tip.desc.split('. ').slice(2).join('. ')}
                           </div>
                           <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                             <span style={{ fontFamily: M.mono, fontSize: 10, letterSpacing: 1.5, textTransform: 'uppercase', color: M.gold, padding: '6px 14px', background: 'rgba(10,10,10,0.8)', border: '1px solid ' + M.gold + '30', borderRadius: 8 }}>
