@@ -498,8 +498,8 @@ export default function Page() {
     // Walidacja IG handle
     const handle = igHandle.trim().replace(/^@/, '');
     if (!handle) { setIgErr('Podaj nick na Instagramie'); return; }
-    // Walidacja email
-    if (!email.includes('@') || !email.includes('.')) { setEmailErr('Podaj poprawny email'); return; }
+    // Walidacja email — RFC 5322 uproszczony
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) { setEmailErr('Podaj poprawny email'); return; }
     setLoading(true);
     const c = costs(D); const sc = score(D);
     const finalHandle = '@' + handle;
@@ -529,19 +529,51 @@ export default function Page() {
       source: 'diagnostyka_hit',
       odpowiedzi,
     };
-    // Wysyłka do API (MailerLite + webhook n8n)
-    try {
-      await fetch('/api/subscribe', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      });
-    } catch {
-      // Fallback: zapisz w sessionStorage na retry
-      try { sessionStorage.setItem('diag_lead_retry', JSON.stringify(payload)); } catch {}
-    }
+    // Wysyłka do API (MailerLite + webhook n8n) z retry
+    const sendPayload = async (data: typeof payload, retryCount = 0): Promise<boolean> => {
+      try {
+        const res = await fetch('/api/subscribe', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data),
+        });
+        if (res.ok) {
+          // Wyczyść ewentualny retry z sessionStorage
+          try { sessionStorage.removeItem('diag_lead_retry'); } catch {}
+          return true;
+        }
+        throw new Error(`HTTP ${res.status}`);
+      } catch {
+        if (retryCount < 2) {
+          // Retry po 1.5s — max 2 próby
+          await new Promise(r => setTimeout(r, 1500));
+          return sendPayload(data, retryCount + 1);
+        }
+        // Po 3 nieudanych próbach — zapisz do sessionStorage
+        try { sessionStorage.setItem('diag_lead_retry', JSON.stringify(data)); } catch {}
+        return false;
+      }
+    };
+    await sendPayload(payload);
+    // Zawsze pokaż wyniki — lead jest zapisany w sessionStorage na wypadek retry
     setPhase('results');
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
+
+  // Retry nieudanych wysyłek z poprzedniej sesji
+  useEffect(() => {
+    try {
+      const retry = sessionStorage.getItem('diag_lead_retry');
+      if (retry) {
+        const data = JSON.parse(retry);
+        fetch('/api/subscribe', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data),
+        }).then(res => {
+          if (res.ok) sessionStorage.removeItem('diag_lead_retry');
+        }).catch(() => {});
+      }
+    } catch {}
+  }, []);
 
   const C = costs(D); const SC = score(D);
   const pct = Math.round(((sec + 1) / SECTIONS.length) * 100);
