@@ -512,15 +512,15 @@ export default function Page() {
       rate: D.rate, tags: Array.from(D.tags),
     };
     const biggest = catData.reduce((a, b) => a.v > b.v ? a : b, catData[0]);
-    const potential = Math.max(100 - sc, 15);
+    const payloadBlocked = Math.min(sc, 85);
     const payload = {
       instagram_handle: finalHandle,
       email,
       imie: imie.trim() || null,
       wynik_kwota: String(c.total),
       wynik_score: String(sc),
-      wynik_potencjal: String(100 - potential),
-      wynik_niewykorzystany: String(potential),
+      wynik_potencjal: String(payloadBlocked),
+      wynik_niewykorzystany: String(Math.max(100 - sc, 15)),
       wynik_hamulce: String(c.brakes),
       wynik_badania_count: String(badaniaUnique.length),
       wynik_badania_priorytet: badaniaWysoki.map(b => b.nazwa).join(', '),
@@ -707,9 +707,9 @@ export default function Page() {
   if (D.tags.has('headaches') && D.sleep < 6.5) insights.push(`Bóle głowy + deficyt snu = <b>przewlekły stan zapalny</b>. Ibuprofen to plaster, nie rozwiązanie.`);
   if (C.total > 8000) insights.push(`<b>${C.total.toLocaleString('pl-PL')} zł w pół roku</b>. Na konsekwencje, nie na sam weekend.`);
 
-  // Potencjal - ile % wykorzystujesz (odwrotnosc score)
-  const potential = Math.max(100 - SC, 15);
-  const potentialUsed = 100 - potential;
+  // Potencjal - ile % blokujesz stylem zycia vs ile wykorzystujesz
+  const blocked = Math.min(SC, 85); // ile % potencjalu blokujesz stylem zycia
+  const usable = Math.max(100 - SC, 15); // ile % potencjalu wykorzystujesz
 
   // 3 personalne tipy - zaawansowane, nieoczywiste, na bazie 150 wspolprac
   const tips: { icon: string; title: string; desc: string; boost: string }[] = [];
@@ -1096,7 +1096,7 @@ export default function Page() {
       <div
         id="diagnostyka"
         ref={topRef}
-        style={{ maxWidth: 440, width: '100%', margin: '0 auto', padding: '0 0 60px', position: 'relative', zIndex: 1 }}
+        style={{ maxWidth: 440, width: '100%', margin: '0 auto', padding: '0 0 60px', position: 'relative', zIndex: 1, overflow: 'hidden' }}
       >
 
         {/* ── FORM ── */}
@@ -1310,7 +1310,7 @@ export default function Page() {
                     ['mood', 'Wahania nastroju, drażliwość'],
                     ['libido', 'Obniżone libido lub motywacja seksualna'],
                     ['belly', 'Brzuch który nie schodzi mimo treningu'],
-                    ['brain', 'Brain fog - mgła, problemy z koncentracją'],
+                    ['brain', 'Mgła mózgowa - problemy z koncentracją'],
                     ['anxiety', 'Niepokój, natrętne myśli'],
                     ['joints', 'Bóle stawów lub słaba regeneracja'],
                     ['skin', 'Pogorszona cera, wypryski'],
@@ -1369,7 +1369,7 @@ export default function Page() {
 
               {/* Częściowy wynik - WOW moment */}
               <div style={{ marginTop: 32, marginBottom: 12 }}>
-                <div style={{ fontFamily: M.mono, fontSize: 10, letterSpacing: 2.5, textTransform: 'uppercase', color: M.t4, marginBottom: 10 }}>Twój Damage Score</div>
+                <div style={{ fontFamily: M.mono, fontSize: 10, letterSpacing: 2.5, textTransform: 'uppercase', color: M.t4, marginBottom: 10 }}>Twój Wynik</div>
                 <div style={{ fontFamily: M.mono, fontSize: 72, fontWeight: 800, lineHeight: 1, color: scoreColor, textShadow: `0 0 30px ${scoreColor}30` }}>{SC}</div>
                 <div style={{ fontFamily: M.mono, fontSize: 12, color: M.t4, marginTop: 6 }}>/100</div>
               </div>
@@ -1468,7 +1468,7 @@ export default function Page() {
               </div>
 
               <p style={{ fontSize: 11, color: M.t4, marginTop: 16, fontFamily: M.mono, letterSpacing: 0.5, textAlign: 'center' }}>
-                Odezwę się do Ciebie w DM w ciągu 24h z konkretnym feedbackiem.
+                Odezwę się do Ciebie w DM w ciągu 24h z konkretną informacją zwrotną.
               </p>
             </div>
           </div>
@@ -1876,7 +1876,14 @@ export default function Page() {
                       {badaniaWysoki.map((b, i) => (
                         <div key={`w-${i}`} style={{ padding: '10px 0', borderBottom: `1px solid ${M.brd}` }}>
                           <div style={{ fontSize: 13, fontWeight: 600, color: M.t1, marginBottom: 3 }}>{b.nazwa}</div>
-                          <div style={{ fontSize: 11, color: M.t4, lineHeight: 1.5 }}>{b.dlaczego}</div>
+                          <div style={{ position: 'relative', marginTop: 4 }}>
+                            <div style={{ fontSize: 11, color: M.t4, lineHeight: 1.5, filter: 'blur(4px)', userSelect: 'none', pointerEvents: 'none' }}>{b.dlaczego}</div>
+                            <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                              <span style={{ fontFamily: M.mono, fontSize: 9, letterSpacing: 1.2, textTransform: 'uppercase', color: M.gold, padding: '4px 10px', background: 'rgba(10,10,10,0.8)', border: '1px solid ' + M.gold + '30', borderRadius: 6 }}>
+                                Interpretacja wyników → napisz DM @hantleitalerz
+                              </span>
+                            </div>
+                          </div>
                         </div>
                       ))}
                     </>
@@ -1891,7 +1898,14 @@ export default function Page() {
                       {badaniaSredni.map((b, i) => (
                         <div key={`s-${i}`} style={{ padding: '10px 0', borderBottom: `1px solid ${M.brd}` }}>
                           <div style={{ fontSize: 13, fontWeight: 600, color: M.t1, marginBottom: 3 }}>{b.nazwa}</div>
-                          <div style={{ fontSize: 11, color: M.t4, lineHeight: 1.5 }}>{b.dlaczego}</div>
+                          <div style={{ position: 'relative', marginTop: 4 }}>
+                            <div style={{ fontSize: 11, color: M.t4, lineHeight: 1.5, filter: 'blur(4px)', userSelect: 'none', pointerEvents: 'none' }}>{b.dlaczego}</div>
+                            <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                              <span style={{ fontFamily: M.mono, fontSize: 9, letterSpacing: 1.2, textTransform: 'uppercase', color: M.gold, padding: '4px 10px', background: 'rgba(10,10,10,0.8)', border: '1px solid ' + M.gold + '30', borderRadius: 6 }}>
+                                Interpretacja wyników → napisz DM @hantleitalerz
+                              </span>
+                            </div>
+                          </div>
                         </div>
                       ))}
                     </>
@@ -1899,7 +1913,7 @@ export default function Page() {
 
                   <div style={{ marginTop: 16, padding: '12px 14px', background: `${M.gold}08`, border: `1px solid ${M.gold}15`, borderRadius: 10 }}>
                     <p style={{ fontSize: 11, color: M.t3, lineHeight: 1.6, marginBottom: 0 }}>
-                      💡 <strong style={{ color: M.t1 }}>Wskazówka:</strong> Badania rób na czczo, rano (7:00-9:00). Wyniki „w normie" nie znaczą „optymalne". Zakres referncyjny jest dla ogółu populacji, nie dla mężczyzny który trenuje i chce mieć formę. Potrzebujesz interpretacji? <strong style={{ color: M.gold }}>Napisz w DM @hantleitalerz</strong>
+                      💡 <strong style={{ color: M.t1 }}>Wskazówka:</strong> Badania rób na czczo, rano (7:00-9:00). Wyniki „w normie" nie znaczą „optymalne". Zakres referencyjny jest dla ogółu populacji, nie dla mężczyzny który trenuje i chce mieć formę. Potrzebujesz interpretacji? <strong style={{ color: M.gold }}>Napisz w DM @hantleitalerz</strong>
                     </p>
                   </div>
 
@@ -1971,16 +1985,16 @@ export default function Page() {
                 <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%) rotate(-30deg)', fontFamily: M.mono, fontSize: 44, fontWeight: 900, color: `${M.gold}05`, letterSpacing: 6, whiteSpace: 'nowrap', pointerEvents: 'none', userSelect: 'none' }}>DIAGNOSTYKA HiT</div>
                 <div style={{ fontFamily: M.mono, fontSize: 10, letterSpacing: 2.5, textTransform: 'uppercase', color: M.gold, marginBottom: 16 }}>Twój potencjał</div>
                 <div style={{ textAlign: 'center', marginBottom: 16 }}>
-                  <div style={{ fontSize: 48, fontWeight: 800, fontFamily: M.mono, color: M.gold, lineHeight: 1 }}>{potentialUsed}%</div>
+                  <div style={{ fontSize: 48, fontWeight: 800, fontFamily: M.mono, color: M.gold, lineHeight: 1 }}>{usable}%</div>
                   <div style={{ fontSize: 12, color: M.t3, marginTop: 6 }}>tyle wykorzystujesz ze swojego ciała</div>
                 </div>
                 <div style={{ position: 'relative', height: 8, background: M.s3, borderRadius: 4, overflow: 'hidden', marginBottom: 16 }}>
-                  <div style={{ position: 'absolute', left: 0, height: '100%', width: `${potentialUsed}%`, background: `linear-gradient(90deg, ${M.red}, ${M.org})`, borderRadius: 4, transition: 'width 1.5s ease' }} />
-                  <div style={{ position: 'absolute', left: `${potentialUsed}%`, height: '100%', width: `${potential}%`, background: `linear-gradient(90deg, ${M.gold}40, ${M.gold})`, borderRadius: '0 4px 4px 0', opacity: 0.4 }} />
+                  <div style={{ position: 'absolute', left: 0, height: '100%', width: `${blocked}%`, background: `linear-gradient(90deg, ${M.red}, ${M.org})`, borderRadius: 4, transition: 'width 1.5s ease' }} />
+                  <div style={{ position: 'absolute', left: `${blocked}%`, height: '100%', width: `${usable}%`, background: `linear-gradient(90deg, ${M.gold}40, ${M.gold})`, borderRadius: '0 4px 4px 0', opacity: 0.4 }} />
                 </div>
                 <p style={{ fontSize: 13, color: M.t2, lineHeight: 1.7, textAlign: 'center', marginBottom: 0 }}>
-                  Na podstawie {'>'}150 współprac i badań naukowych — Twój organizm ma <strong style={{ color: M.gold }}>{potential}% niewykorzystanego potencjału</strong>.
-                  {potential > 30 && <><br />To energia, siła, regeneracja i ostrość umysłu, które masz w sobie ale które teraz blokujesz swoim stylem życia.</>}
+                  Na podstawie {'>'}150 współprac i badań naukowych — Twój organizm ma <strong style={{ color: M.gold }}>{blocked}% niewykorzystanego potencjału</strong>.
+                  {blocked > 30 && <><br />To energia, siła, regeneracja i ostrość umysłu, które masz w sobie ale które teraz blokujesz swoim stylem życia.</>}
                 </p>
               </div>
             </Reveal>
@@ -1999,7 +2013,7 @@ export default function Page() {
                 {/* Znak wodny */}
                 <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%) rotate(-20deg)', fontFamily: M.mono, fontSize: 48, fontWeight: 900, color: `${M.gold}04`, letterSpacing: 6, whiteSpace: 'nowrap', pointerEvents: 'none', userSelect: 'none' }}>HANTLE I TALERZ</div>
                 <div style={{ fontFamily: M.mono, fontSize: 10, letterSpacing: 2.5, textTransform: 'uppercase', color: M.t4, marginBottom: 6 }}>3 rzeczy które możesz zrobić już jutro</div>
-                <div style={{ fontSize: 11, color: M.gold, fontFamily: M.mono, marginBottom: 18 }}>+{totalBoostMin}-{totalBoostMax}% potencjalu w ciagu 30 dni</div>
+                <div style={{ fontSize: 11, color: M.gold, fontFamily: M.mono, marginBottom: 18 }}>od +{totalBoostMin}% do +{totalBoostMax}% potencjału w ciągu 30 dni</div>
 
                 {tips.slice(0, 3).map((tip, i) => (
                   <div key={i} style={{
@@ -2012,7 +2026,23 @@ export default function Page() {
                         <div style={{ fontSize: 14, fontWeight: 700, color: M.t1 }}>{tip.title}</div>
                         <div style={{ fontFamily: M.mono, fontSize: 11, color: M.grn, fontWeight: 600 }}>{tip.boost}</div>
                       </div>
-                      <div style={{ fontSize: 12, color: M.t3, lineHeight: 1.6 }}>{tip.desc}</div>
+                      {/* Pierwsze zdanie widoczne */}
+                      <div style={{ fontSize: 12, color: M.t3, lineHeight: 1.6 }}>
+                        {tip.desc.split('. ')[0]}.
+                      </div>
+                      {/* Reszta zamazana z paywall overlay */}
+                      {tip.desc.split('. ').length > 1 && (
+                        <div style={{ position: 'relative', marginTop: 6 }}>
+                          <div style={{ fontSize: 12, color: M.t4, lineHeight: 1.6, filter: 'blur(4px)', userSelect: 'none', pointerEvents: 'none' }}>
+                            {tip.desc.split('. ').slice(1).join('. ')}
+                          </div>
+                          <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                            <span style={{ fontFamily: M.mono, fontSize: 10, letterSpacing: 1.5, textTransform: 'uppercase', color: M.gold, padding: '6px 14px', background: 'rgba(10,10,10,0.8)', border: '1px solid ' + M.gold + '30', borderRadius: 8 }}>
+                              🔒 Pełny protokół we współpracy
+                            </span>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </div>
                 ))}
@@ -2023,7 +2053,7 @@ export default function Page() {
                   borderRadius: 10, textAlign: 'center',
                 }}>
                   <p style={{ fontSize: 12.5, color: M.t2, lineHeight: 1.65, marginBottom: 0 }}>
-                    Te tipy to <strong style={{ color: M.t1 }}>+{totalBoostMin}-{totalBoostMax}%</strong>. Sam, bez nadzoru.<br />
+                    Te wskazówki to <strong style={{ color: M.t1 }}>od +{totalBoostMin}% do +{totalBoostMax}%</strong>. Sam, bez nadzoru.<br />
                     Chcesz wyciągnąć <strong style={{ color: M.gold }}>100%</strong>? Poniżej sprawdź jak mogę Ci w tym pomóc.
                   </p>
                 </div>
@@ -2061,8 +2091,8 @@ export default function Page() {
                       </div>
                       <div style={{ fontSize: 12.5, color: M.t2, lineHeight: 1.6, marginBottom: 8 }}>
                         {SC >= 50
-                          ? `Widziałem Twój profil — ${SC}/100 pkt, ${D.tags.size} objawów, ${potential}% niewykorzystanego potencjału. To dokładnie wzorzec ludzi z którymi pracuję i u których widzę największe zmiany w ciągu 3-6 miesięcy.`
-                          : `Twoje wyniki (${SC}/100) pokazują konkretne blokady. Widziałem to wielokrotnie — przy odpowiednim podejściu możesz odzyskać ${Math.min(potential, 40)}% potencjału.`
+                          ? `Widziałem Twój profil — ${SC}/100 pkt, ${D.tags.size} objawów, ${blocked}% niewykorzystanego potencjału. To dokładnie wzorzec ludzi z którymi pracuję i u których widzę największe zmiany w ciągu 3-6 miesięcy.`
+                          : `Twoje wyniki (${SC}/100) pokazują konkretne blokady. Widziałem to wielokrotnie — przy odpowiednim podejściu możesz odzyskać ${Math.min(blocked, 40)}% potencjału.`
                         }
                       </div>
                       {/* Spersonalizowany social proof z danymi */}
@@ -2072,7 +2102,7 @@ export default function Page() {
                       }}>
                         <div style={{ fontSize: 11.5, color: M.t3, lineHeight: 1.6 }}>
                           {SC >= 60 && D.tags.size >= 4
-                            ? <>Twój profil pokrywa się z <strong style={{ color: M.gold }}>~78%</strong> moich podopiecznych na starcie. Ci ludzie odzyskali średnio {Math.min(potential - 5, 35)}% potencjału w pierwszych 8 tygodniach.</>
+                            ? <>Twój profil pokrywa się z <strong style={{ color: M.gold }}>~78%</strong> moich podopiecznych na starcie. Ci ludzie odzyskali średnio {Math.min(blocked - 5, 35)}% potencjału w pierwszych 8 tygodniach.</>
                             : SC >= 40
                             ? <>Pracowałem z facetami o bardzo podobnym profilu — score {SC > 50 ? '50-70' : '35-55'}, {D.tags.size >= 3 ? 'kilka objawów naraz' : 'konkretne blokady'}. Średni progres: <strong style={{ color: M.gold }}>widoczna zmiana w 4-6 tygodni</strong>.</>
                             : <>Nawet przy score {SC}/100 — widzę konkretne punkty do naprawy. Mniejszy problem = <strong style={{ color: M.gold }}>szybszy efekt</strong>. Zanim się rozkręci.</>
@@ -2130,7 +2160,7 @@ export default function Page() {
                         <div style={{ fontSize: 9, color: M.t4, textTransform: 'uppercase', letterSpacing: 0.8, marginTop: 3 }}>zł / 6 miesięcy</div>
                       </div>
                       <div style={{ textAlign: 'center', padding: '10px 6px', background: 'rgba(10,10,10,0.5)', borderRadius: 8 }}>
-                        <div style={{ fontFamily: M.mono, fontSize: 22, fontWeight: 800, color: M.org }}>{potential}%</div>
+                        <div style={{ fontFamily: M.mono, fontSize: 22, fontWeight: 800, color: M.org }}>{blocked}%</div>
                         <div style={{ fontSize: 9, color: M.t4, textTransform: 'uppercase', letterSpacing: 0.8, marginTop: 3 }}>potencjału zmarnowane</div>
                       </div>
                     </div>
@@ -2197,7 +2227,7 @@ export default function Page() {
                     {imie.trim()
                       ? `${imie.trim()}, jeśli wypełnisz formularz na stronie - dostaniesz ode mnie`
                       : 'Jeśli wypełnisz formularz na stronie - dostaniesz ode mnie'}
-                    {' '}<strong style={{ color: M.gold }}>spersonalizowany feedback</strong> na bazie Twoich wyników z diagnostyki.
+                    {' '}<strong style={{ color: M.gold }}>spersonalizowaną analizę</strong> na bazie Twoich wyników z diagnostyki.
                     Co dokładnie blokuje Twój progres, od czego zacząć i czy współpraca ma w Twoim przypadku sens. <strong style={{ color: M.t1 }}>Za darmo, w DM, w ciągu 24h.</strong>
                   </p>
                 </div>
@@ -2239,7 +2269,7 @@ export default function Page() {
                 }}>
                   {[
                     { n: '150+', l: 'podopiecznych' },
-                    { n: `${potential}%`, l: 'Twojego potencjału do odblokowania' },
+                    { n: `${blocked}%`, l: 'Twojego potencjału do odblokowania' },
                   ].map((s, i) => (
                     <div key={i} style={{
                       padding: '8px 14px', background: 'rgba(10,10,10,0.5)',
@@ -2262,7 +2292,7 @@ export default function Page() {
                   Nie jesteś jeszcze gotowy?
                 </p>
                 <a
-                  href={D.drinks > 5 || D.subs > 0 ? 'https://kontra.talerzihantle.com' : 'https://neurobiologia-formy.talerzihantle.com'}
+                  href={D.drinks > 5 || D.subs > 0 ? 'https://easycart.pl/checkout/2fe7f473' : 'https://easycart.pl/checkout/b362a2c7'}
                   target="_blank"
                   rel="noopener noreferrer"
                   style={{
@@ -2295,7 +2325,7 @@ export default function Page() {
                   {imie.trim() ? `${imie.trim()}, analizuję Twoje odpowiedzi.` : 'Analizuję Twoje odpowiedzi.'}
                 </p>
                 <p style={{ fontSize: 12.5, color: M.t3, lineHeight: 1.65, fontWeight: 400 }}>
-                  Napiszę do Ciebie w DM <strong style={{ color: M.gold, fontWeight: 600 }}>@hantleitalerz</strong> w ciągu 24h z konkretnym feedbackiem.
+                  Napiszę do Ciebie w DM <strong style={{ color: M.gold, fontWeight: 600 }}>@hantleitalerz</strong> w ciągu 24h z konkretną informacją zwrotną.
                   {SC >= 40 && <> A jeśli wypełnisz formularz na <strong style={{ color: M.gold }}>system.talerzihantle.com</strong> - dostaniesz pełną analizę + plan działania.</>}
                 </p>
               </div>
@@ -2353,7 +2383,7 @@ export default function Page() {
           <Logo />
           <div style={{ display: 'flex', gap: 16, alignItems: 'center', flexWrap: 'wrap', justifyContent: 'center' }}>
             <a
-              href="https://kontra.talerzihantle.com"
+              href="https://easycart.pl/checkout/2fe7f473"
               target="_blank"
               rel="noopener noreferrer"
               style={{ fontFamily: M.mono, fontSize: 9, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', color: M.t4, textDecoration: 'none' }}
@@ -2362,7 +2392,7 @@ export default function Page() {
             </a>
             <span style={{ color: M.brd2 }}>|</span>
             <a
-              href="https://bramka.talerzihantle.com"
+              href="https://easycart.pl/checkout/729ec3ec"
               target="_blank"
               rel="noopener noreferrer"
               style={{ fontFamily: M.mono, fontSize: 9, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', color: M.t4, textDecoration: 'none' }}

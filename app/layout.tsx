@@ -4,6 +4,40 @@ import './globals.css';
 export const metadata: Metadata = {
   title: 'Ile Cię kosztuje to jak żyjesz? | Hantle i Talerz',
   description: 'Przelicz hormony, mózg i formę na złotówki. 2 minuty, zero oceniania.',
+  openGraph: {
+    title: 'Ile Cię kosztuje to jak żyjesz? | Hantle i Talerz',
+    description: 'Przelicz hormony, mózg i formę na złotówki. 2 minuty, zero oceniania.',
+    url: 'https://diagnostyka.talerzihantle.com',
+    siteName: 'Diagnostyka | Hantle i Talerz',
+    images: [
+      {
+        url: 'https://diagnostyka.talerzihantle.com/og.png',
+        width: 1200,
+        height: 630,
+      },
+    ],
+    locale: 'pl_PL',
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Ile Cię kosztuje to jak żyjesz? | Hantle i Talerz',
+    description: 'Przelicz hormony, mózg i formę na złotówki. 2 minuty, zero oceniania.',
+    images: ['https://diagnostyka.talerzihantle.com/og.png'],
+  },
+  icons: {
+    icon: '/favicon.png',
+    apple: '/favicon.png',
+  },
+  other: {
+    'theme-color': '#0a0a0a',
+  },
+};
+
+export const viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  themeColor: '#0a0a0a',
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
