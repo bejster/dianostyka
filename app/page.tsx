@@ -471,6 +471,40 @@ export default function Page() {
     return () => clearTimeout(t);
   }, []);
 
+  // Autosave formularza — restore stanu z localStorage (TTL 7 dni)
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem('diag_form_state');
+      if (!raw) return;
+      const saved = JSON.parse(raw);
+      const TTL = 7 * 24 * 60 * 60 * 1000; // 7 dni
+      if (!saved.savedAt || Date.now() - saved.savedAt > TTL) {
+        localStorage.removeItem('diag_form_state');
+        return;
+      }
+      // Restore tylko jeśli jesteśmy w fazie form (nie nadpisuj wyników)
+      if (saved.D) {
+        setD({ ...saved.D, tags: new Set(saved.D.tags || []) });
+      }
+      if (typeof saved.sec === 'number') setSec(saved.sec);
+      if (typeof saved.salary === 'number') setSalaryInput(saved.salary);
+    } catch {}
+  }, []);
+
+  // Autosave formularza — zapisz przy każdej zmianie stanu (tylko w fazie form)
+  useEffect(() => {
+    if (phase !== 'form') return;
+    try {
+      const payload = {
+        D: { ...D, tags: Array.from(D.tags) },
+        sec,
+        salary: salaryInput,
+        savedAt: Date.now(),
+      };
+      localStorage.setItem('diag_form_state', JSON.stringify(payload));
+    } catch {}
+  }, [D, sec, salaryInput, phase]);
+
   // Uruchom liczniki animowane przy przejściu do wyników
   useEffect(() => {
     if (phase === 'results') {
@@ -513,6 +547,21 @@ export default function Page() {
     };
     const biggest = catData.reduce((a, b) => a.v > b.v ? a : b, catData[0]);
     const payloadBlocked = Math.min(sc, 85);
+
+    // Priority lead formula — kwalifikacja serious lead na bazie commitment + budget proxies
+    // triedBefore proxy: D.plan > 0 = próbował (1), D.plan >= 3 i miss === 0 = systematyczny (2)
+    const triedBefore = D.plan >= 3 && D.miss === 0 ? 2 : D.plan > 0 ? 1 : 0;
+    // frustration proxy: 0 = wysoka frustracja (4+ tagów lub niska energia), 1 = niska
+    const frustration = (D.tags.size >= 4 || D.energy >= 3) ? 0 : 1;
+    const commitmentProxy =
+      (triedBefore === 2 ? 2 : triedBefore === 1 ? 1 : 0) +
+      (D.tags.size >= 4 ? 1 : 0) +
+      (frustration === 0 ? 1 : 0);
+    const budgetProxy =
+      D.rate >= 90 ? 3 : D.rate >= 50 ? 2 : 1;
+    const isPriorityLead = sc >= 60 && commitmentProxy >= 2 && budgetProxy >= 2;
+    // path obliczone na poziomie komponentu (reuse w results UI)
+
     const payload = {
       instagram_handle: finalHandle,
       email,
@@ -525,6 +574,10 @@ export default function Page() {
       wynik_badania_count: String(badaniaUnique.length),
       wynik_badania_priorytet: badaniaWysoki.map(b => b.nazwa).join(', '),
       biggest_category: biggest?.l || '',
+      priority_lead: isPriorityLead ? '1' : '0',
+      commitment_proxy: String(commitmentProxy),
+      budget_proxy: String(budgetProxy),
+      path,
       timestamp: new Date().toISOString(),
       source: 'diagnostyka_hit',
       odpowiedzi,
@@ -554,6 +607,8 @@ export default function Page() {
       }
     };
     await sendPayload(payload);
+    // Po submit — wyczyść autosave (formularz wypełniony)
+    try { localStorage.removeItem('diag_form_state'); } catch {}
     // Zawsze pokaż wyniki — lead jest zapisany w sessionStorage na wypadek retry
     setPhase('results');
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -578,6 +633,34 @@ export default function Page() {
   const C = costs(D); const SC = score(D);
   const pct = Math.round(((sec + 1) / SECTIONS.length) * 100);
   const scoreColor = SC >= 75 ? M.red : SC >= 50 ? M.org : SC >= 25 ? M.yel : M.grn;
+
+  // Path routing — używane w submit() oraz w results UI dla downsell
+  const path: 'weekendowa' | 'mozgowa' | 'ciala' | 'general' =
+    (D.drinks > 5 || D.subs > 0 || D.wknd >= 2) ? 'weekendowa' :
+    (D.dopamine >= 2 || D.tags.has('focus') || D.tags.has('motivation') || D.screenBed >= 2) ? 'mozgowa' :
+    (D.tags.has('libido') || D.tags.has('belly') || D.tags.has('recovery')) ? 'ciala' :
+    'general';
+
+  // Downsell config per path — używany w results UI
+  const downsellMap: Record<typeof path, { url: string; label: string; tagline: string } | null> = {
+    weekendowa: {
+      url: 'https://kontra.talerzihantle.com',
+      label: 'KONTRA — protokół weekendowy. 49 zł',
+      tagline: 'Jak imprezować i nie niszczyć progresu. Napisany dla Ciebie.',
+    },
+    mozgowa: {
+      url: 'https://neurobiologia-formy.talerzihantle.com',
+      label: 'Neurobiologia Formy. 99 zł',
+      tagline: 'Materiał który tłumaczy dlaczego Twój mózg działa tak a nie inaczej.',
+    },
+    ciala: {
+      url: 'https://krew-i-hormony.talerzihantle.com',
+      label: 'Krew i Hormony. 99 zł',
+      tagline: 'Interpretacja badań pod sylwetkę. Wartości referencyjne nie wystarczą.',
+    },
+    general: null,
+  };
+  const downsell = downsellMap[path];
 
   const catData = [
     { ic: '🍺', v: C.wkndCost, l: 'Weekendy', c: M.gold, type: 'hard' },
@@ -1207,7 +1290,7 @@ export default function Page() {
                       color: M.gold, border: `1px solid ${M.gold}25`, padding: '7px 18px', marginBottom: 22,
                       background: M.gold + '08', borderRadius: 20, fontWeight: 600,
                     }} className="border-glow">
-                      2 minuty
+                      5 minut &middot; 7 sekcji
                     </div>
                     <h1 style={{
                       fontSize: 28, fontWeight: 800, lineHeight: 1.18, letterSpacing: -0.5, marginBottom: 16,
@@ -1227,8 +1310,8 @@ export default function Page() {
                       </em>{' '}
                       Cię kosztuje<br />to jak teraz żyjesz?
                     </h1>
-                    <p style={{ color: M.t3, fontSize: 14.5, lineHeight: 1.65, fontWeight: 400, maxWidth: 340, margin: '0 auto 14px' }}>
-                      Przeliczam hormony, mózg i formę na złotówki. Na bazie badań, nie opinii.
+                    <p style={{ color: M.t3, fontSize: 14.5, lineHeight: 1.65, fontWeight: 400, maxWidth: 360, margin: '0 auto 14px' }}>
+                      Jedyna diagnostyka po której dostaniesz badania krwi spersonalizowane do Twoich odpowiedzi. Endokrynolog tego nie zrobi.
                     </p>
                     <div style={{ fontFamily: M.mono, fontSize: 10, color: M.t4, letterSpacing: 1.5 }}>🔒 Twoje odpowiedzi są poufne &middot; Używam ich tylko do analizy Twoich wyników</div>
                     <div style={{ fontFamily: M.mono, fontSize: 9.5, color: M.t4, letterSpacing: 1, marginTop: 8, opacity: 0.7 }}>Kalkulacja oparta na 9 badaniach naukowych</div>
@@ -1305,23 +1388,81 @@ export default function Page() {
               {sec === 3 && (
                 <div className="fade-up">
                   <Slider label="Weekendy imprezowe w miesiącu" min={0} max={4} step={1} k="wknd" val={D.wknd} unit="" ariaLabel="Liczba imprezowych weekendów w miesiącu" />
-                  <Slider label="Drinki na imprezie (średnio)" min={0} max={20} step={1} k="drinks" val={D.drinks} unit="" note={D.drinks > 5 ? `${D.drinks} drinków = ~${Math.round(D.drinks * 3.4)}% spadek testosteronu w 12h (Vingren 2013)` : ''} ariaLabel="Średnia liczba drinków na imprezie" />
-                  <Slider label="Wydajesz na imprezie (alkohol, wyjścia)" min={0} max={800} step={50} k="cash" val={D.cash} unit=" zł" note={`Suma 6 mies.: ${(D.cash * D.wknd * 6).toLocaleString('pl-PL')} zł`} ariaLabel="Wydatki na imprezie w złotych" />
-                  <Slider label="Wydajesz na substancje" min={0} max={800} step={50} k="subs" val={D.subs} unit=" zł" ariaLabel="Miesięczne wydatki na substancje w złotych" />
-                  {D.subs > 0 && (
-                    <div style={{ padding: '12px 16px', background: M.s1, borderRadius: 12, border: `1px solid ${M.brd}`, marginTop: -12, marginBottom: 28 }}>
-                      <div style={{ fontSize: 11, color: M.t4, fontFamily: M.mono, letterSpacing: 0.5, marginBottom: 8 }}>CO TO OZNACZA DLA TWOJEGO CIAŁA:</div>
-                      <div style={{ fontSize: 12.5, color: M.t3, lineHeight: 1.7 }}>
-                        {D.subs > 0 && D.subs <= 200 && '• Okazjonalne użycie - serotonina potrzebuje 2-4 tyg. na regenerację. Przy regularnym cyklu okno regeneracji nigdy się nie zamyka.'}
-                        {D.subs > 200 && D.subs <= 500 && '• Regularne wydatki na substancje - deplecja serotoniny + dopaminy. Mózg zaczyna traktować baseline jako „za mało". Trening i dieta tracą na efektywności.'}
-                        {D.subs > 500 && '• Poważne wydatki - na tym poziomie układ nerwowy jest w trybie ciągłej kompensacji. Regeneracja po weekendzie zajmuje cały tydzień. Forma stoi w miejscu.'}
+
+                  {/* Conditional: jeśli wknd=0 — pomijamy 5 pól weekendowych */}
+                  {D.wknd === 0 ? (
+                    <div style={{
+                      padding: '18px 16px', marginTop: 8, marginBottom: 24,
+                      background: `${M.grn}08`, border: `1px solid ${M.grn}25`,
+                      borderRadius: 12,
+                    }}>
+                      <div style={{ fontFamily: M.mono, fontSize: 10, letterSpacing: 2, textTransform: 'uppercase', color: M.grn, marginBottom: 8 }}>
+                        Zero imprez = jeden problem mniej
                       </div>
+                      <p style={{ fontSize: 13, color: M.t2, lineHeight: 1.6, marginBottom: 0 }}>
+                        Pomijam dalsze pytania o weekend. Przejdziemy od razu do treningu.
+                      </p>
                     </div>
-                  )}
-                  {D.drinks > 10 && (
-                    <div style={{ fontSize: 11.5, color: M.org, fontStyle: 'italic', marginTop: -16, marginBottom: 24, lineHeight: 1.5 }}>
-                      {D.drinks}+ drinków regularnie. Wątroba potrzebuje ~72h na pełną regenerację. Przy 2+ weekendach - nigdy nie wraca do baseline.
-                    </div>
+                  ) : (
+                    <>
+                      <Slider label="Drinki na imprezie (średnio)" min={0} max={20} step={1} k="drinks" val={D.drinks} unit="" note={D.drinks > 5 ? `${D.drinks} drinków = ~${Math.round(D.drinks * 3.4)}% spadek testosteronu w 12h (Vingren 2013)` : ''} ariaLabel="Średnia liczba drinków na imprezie" />
+                      <Slider label="Wydajesz na imprezie (alkohol, wyjścia)" min={0} max={800} step={50} k="cash" val={D.cash} unit=" zł" note={`Suma 6 mies.: ${(D.cash * D.wknd * 6).toLocaleString('pl-PL')} zł`} ariaLabel="Wydatki na imprezie w złotych" />
+
+                      {/* Substancje — chipy zamiast slidera PLN */}
+                      <div style={{ marginBottom: 28 }}>
+                        <div style={{ fontSize: 15, color: M.t1, fontWeight: 500, marginBottom: 12, lineHeight: 1.45 }}>
+                          Substancje (mefedron / kokaina)
+                        </div>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 6 }}>
+                          {[
+                            { v: 0, l: 'Nie' },
+                            { v: 150, l: 'Sporadycznie' },
+                            { v: 400, l: 'Regularnie' },
+                            { v: 100, l: 'Wolę nie odp.' },
+                          ].map((opt, i) => {
+                            const on = D.subs === opt.v;
+                            return (
+                              <button
+                                key={i}
+                                onClick={() => upd('subs', opt.v)}
+                                role="switch"
+                                aria-checked={on}
+                                aria-label={`Substancje: ${opt.l}`}
+                                style={{
+                                  padding: '14px 8px', textAlign: 'center',
+                                  border: `1.5px solid ${on ? M.gold : M.brd2}`,
+                                  background: on ? M.gold + '12' : M.s1,
+                                  cursor: 'pointer', borderRadius: 10,
+                                  transition: 'all .2s ease',
+                                  transform: on ? 'scale(1.02)' : 'scale(1)',
+                                  minHeight: 44,
+                                  color: on ? M.gold : M.t2,
+                                  fontSize: 12.5, fontWeight: 600,
+                                }}
+                              >
+                                {opt.l}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+
+                      {D.subs > 0 && (
+                        <div style={{ padding: '12px 16px', background: M.s1, borderRadius: 12, border: `1px solid ${M.brd}`, marginTop: -12, marginBottom: 28 }}>
+                          <div style={{ fontSize: 11, color: M.t4, fontFamily: M.mono, letterSpacing: 0.5, marginBottom: 8 }}>CO TO OZNACZA DLA TWOJEGO CIAŁA:</div>
+                          <div style={{ fontSize: 12.5, color: M.t3, lineHeight: 1.7 }}>
+                            {D.subs > 0 && D.subs <= 200 && '• Okazjonalne użycie - serotonina potrzebuje 2-4 tyg. na regenerację. Przy regularnym cyklu okno regeneracji nigdy się nie zamyka.'}
+                            {D.subs > 200 && D.subs <= 500 && '• Regularne wydatki na substancje - deplecja serotoniny + dopaminy. Mózg zaczyna traktować baseline jako „za mało". Trening i dieta tracą na efektywności.'}
+                            {D.subs > 500 && '• Poważne wydatki - na tym poziomie układ nerwowy jest w trybie ciągłej kompensacji. Regeneracja po weekendzie zajmuje cały tydzień. Forma stoi w miejscu.'}
+                          </div>
+                        </div>
+                      )}
+                      {D.drinks > 10 && (
+                        <div style={{ fontSize: 11.5, color: M.org, fontStyle: 'italic', marginTop: -16, marginBottom: 24, lineHeight: 1.5 }}>
+                          {D.drinks}+ drinków regularnie. Wątroba potrzebuje ~72h na pełną regenerację. Przy 2+ weekendach - nigdy nie wraca do baseline.
+                        </div>
+                      )}
+                    </>
                   )}
                 </div>
               )}
@@ -1344,16 +1485,9 @@ export default function Page() {
                     ['belly', 'Brzuch który nie schodzi mimo treningu'],
                     ['brain', 'Mgła mózgowa, problemy z koncentracją'],
                     ['anxiety', 'Niepokój, natrętne myśli'],
-                    ['joints', 'Bóle stawów lub słaba regeneracja'],
-                    ['skin', 'Pogorszona cera, wypryski'],
                     ['motivation', 'Brak motywacji, apatia'],
-                    ['digest', 'Problemy trawienne, wzdęcia'],
-                    ['cravings', 'Nagły głód na słodycze lub fast food'],
                     ['recovery', 'Wolna regeneracja po treningu (3+ dni)'],
                     ['focus', 'Nie możesz się skupić dłużej niż 20 minut'],
-                    ['headaches', 'Częste bóle głowy lub migreny'],
-                    ['sweating', 'Nocne poty lub budzenie się zlany potem'],
-                    ['heartRate', 'Podwyższone tętno spoczynkowe'],
                   ] as [ChipKey, string][]).map(([k, l]) => <Chip key={k} t={k} label={l} />)}
                 </div>
               )}
@@ -2323,30 +2457,33 @@ export default function Page() {
                   Wolisz pogadać najpierw? Napisz <strong style={{ color: M.gold }}>JAZDA</strong> w DM <a href="https://instagram.com/hantleitalerz" target="_blank" rel="noopener noreferrer" style={{ color: M.gold, textDecoration: 'none', fontWeight: 600 }}>@hantleitalerz</a>
                 </div>
 
-                <div style={{ height: 1, background: M.brd, margin: '0 10px 16px' }} />
+                {/* Downsell per path — pokazuje się tylko gdy path ma dopasowany produkt */}
+                {downsell && (
+                  <>
+                    <div style={{ height: 1, background: M.brd, margin: '0 10px 16px' }} />
 
-                <p style={{ textAlign: 'center', fontSize: 11, color: M.t4, marginBottom: 10 }}>
-                  Nie jesteś jeszcze gotowy?
-                </p>
-                <a
-                  href={D.drinks > 5 || D.subs > 0 ? 'https://easycart.pl/checkout/2fe7f473' : 'https://easycart.pl/checkout/b362a2c7'}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  style={{
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    textAlign: 'center', padding: '14px 14px', minHeight: 44,
-                    background: 'transparent', border: `1.5px solid ${M.gold}40`, color: M.gold,
-                    fontFamily: M.mono, fontSize: 10, fontWeight: 700, letterSpacing: 2,
-                    textTransform: 'uppercase', textDecoration: 'none', borderRadius: 12,
-                  }}
-                >
-                  {D.drinks > 5 || D.subs > 0 ? 'KONTRA — protokół weekendowy. 99 zł' : 'Neurobiologia Formy. 99 zł'}
-                </a>
-                <p style={{ textAlign: 'center', fontSize: 10.5, color: M.t4, marginTop: 6, fontFamily: M.mono }}>
-                  {D.drinks > 5 || D.subs > 0
-                    ? 'Jak imprezować i nie niszczyć progresu. Napisany dla Ciebie.'
-                    : 'Ebook który tłumaczy dlaczego Twoje ciało działa tak a nie inaczej.'}
-                </p>
+                    <p style={{ textAlign: 'center', fontSize: 11, color: M.t4, marginBottom: 10 }}>
+                      Nie jesteś jeszcze gotowy?
+                    </p>
+                    <a
+                      href={downsell.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        textAlign: 'center', padding: '14px 14px', minHeight: 44,
+                        background: 'transparent', border: `1.5px solid ${M.gold}40`, color: M.gold,
+                        fontFamily: M.mono, fontSize: 10, fontWeight: 700, letterSpacing: 2,
+                        textTransform: 'uppercase', textDecoration: 'none', borderRadius: 12,
+                      }}
+                    >
+                      {downsell.label}
+                    </a>
+                    <p style={{ textAlign: 'center', fontSize: 10.5, color: M.t4, marginTop: 6, fontFamily: M.mono }}>
+                      {downsell.tagline}
+                    </p>
+                  </>
+                )}
               </div>
             </Reveal>
 
@@ -2365,6 +2502,43 @@ export default function Page() {
                   Napiszę do Ciebie w DM <strong style={{ color: M.gold, fontWeight: 600 }}>@hantleitalerz</strong> w ciągu 24h z konkretną informacją zwrotną.
                   {SC >= 40 && <> A jeśli wypełnisz formularz na <strong style={{ color: M.gold }}>system.talerzihantle.com</strong> - dostaniesz pełną analizę + plan działania.</>}
                 </p>
+              </div>
+            </Reveal>
+
+            {/* DM pre-fill — szybki kontakt z gotowym tekstem */}
+            <Reveal delay={50}>
+              <div style={{ textAlign: 'center', marginBottom: 12, width: '100%' }}>
+                <a
+                  href={`https://ig.me/m/hantleitalerz?text=${encodeURIComponent(`Diagnostyka ${SC}/100, priorytet: ${path}`)}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={() => {
+                    // Track event — diag_dm_prefill
+                    try {
+                      const w = window as unknown as { dataLayer?: Array<Record<string, unknown>> };
+                      if (w.dataLayer) {
+                        w.dataLayer.push({ event: 'diag_dm_prefill', score: SC, path });
+                      }
+                    } catch {}
+                  }}
+                  style={{
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    width: '100%', padding: 16, textDecoration: 'none',
+                    background: `linear-gradient(135deg, ${M.gold}18, ${M.gold}08)`,
+                    border: `1.5px solid ${M.gold}40`,
+                    color: M.gold,
+                    fontFamily: M.mono, fontSize: 11, fontWeight: 700,
+                    letterSpacing: 1.8, textTransform: 'uppercase', borderRadius: 12,
+                    transition: 'all .2s ease', minHeight: 44,
+                    boxShadow: `0 0 16px ${M.gold}10`,
+                  }}
+                  aria-label="Napisz w DM z gotową wiadomością"
+                >
+                  Napisz mi w DM — wynik już wpisany →
+                </a>
+                <div style={{ fontSize: 10, color: M.t4, fontFamily: M.mono, marginTop: 6, letterSpacing: 0.5 }}>
+                  @hantleitalerz &middot; otwiera Instagram z gotowym tekstem
+                </div>
               </div>
             </Reveal>
 
