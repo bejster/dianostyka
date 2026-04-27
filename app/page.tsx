@@ -20,26 +20,26 @@ const INIT: FD = {
 
 const SECTIONS = ['Sen', 'Stres', 'Żywienie', 'Weekend', 'Trening', 'Sygnały'];
 
-// Wagi objawów — im poważniejszy symptom, tym wyższy wpływ na score i koszt
+// Wagi objawów: im poważniejszy symptom, tym wyższy wpływ na score i koszt
 // Koszt: szacunek konsekwencji finansowych na 6 miesięcy (suplementy, wizyty, utracona produktywność)
 // Waga score: wpływ na łączny wynik (1.0 = bazowy, 2.0 = podwójny)
 const TAG_WEIGHTS: Record<ChipKey, { cost: number; scoreW: number }> = {
-  fatigue:   { cost: 500, scoreW: 1.8 },   // chroniczne zmęczenie — wpływa na wszystko, dużo suplementów/kaw
-  mood:      { cost: 400, scoreW: 1.5 },   // wahania nastroju — wizyty psycholog, gorsze decyzje
-  libido:    { cost: 600, scoreW: 2.0 },   // spadek libido — mocny marker hormonalny, endokrynolog
-  belly:     { cost: 450, scoreW: 1.6 },   // brzuch nie schodzi — insulinooporność, diety, suplementy
-  brain:     { cost: 550, scoreW: 1.8 },   // mgła mózgowa — utracona produktywność, neurolog
-  anxiety:   { cost: 500, scoreW: 1.7 },   // lęki — psychiatra/psycholog, suplementy, CBD
-  joints:    { cost: 350, scoreW: 1.2 },   // bóle stawów — fizjoterapeuta, suplementy kolagen/MSM
-  skin:      { cost: 250, scoreW: 1.0 },   // skóra — dermatolog, kosmetyki, cynk
-  motivation:{ cost: 450, scoreW: 1.6 },   // brak motywacji — dopamina, utracone szanse
-  digest:    { cost: 350, scoreW: 1.3 },   // trawienie — gastroenterolog, probiotyki, dieta eliminacyjna
-  cravings:  { cost: 300, scoreW: 1.2 },   // głód na słodycze — insulinooporność, gorsze żywienie
-  recovery:  { cost: 400, scoreW: 1.4 },   // wolna regeneracja — zmarnowane treningi, suplementy
-  focus:     { cost: 500, scoreW: 1.7 },   // koncentracja — utracona produktywność, nootropiki
-  headaches: { cost: 400, scoreW: 1.3 },   // bóle głowy — leki, wizyty, absencja w pracy
-  sweating:  { cost: 300, scoreW: 1.2 },   // nocne poty — zaburzony sen, testy hormonalne
-  heartRate: { cost: 450, scoreW: 1.5 },   // podwyższone tętno — kardiolog, stres, substancje
+  fatigue:   { cost: 500, scoreW: 1.8 },   // chroniczne zmęczenie, wpływa na wszystko, dużo suplementów/kaw
+  mood:      { cost: 400, scoreW: 1.5 },   // wahania nastroju, wizyty psycholog, gorsze decyzje
+  libido:    { cost: 600, scoreW: 2.0 },   // spadek libido, mocny marker hormonalny, endokrynolog
+  belly:     { cost: 450, scoreW: 1.6 },   // brzuch nie schodzi, insulinooporność, diety, suplementy
+  brain:     { cost: 550, scoreW: 1.8 },   // mgła mózgowa, utracona produktywność, neurolog
+  anxiety:   { cost: 500, scoreW: 1.7 },   // lęki, psychiatra/psycholog, suplementy, CBD
+  joints:    { cost: 350, scoreW: 1.2 },   // bóle stawów, fizjoterapeuta, suplementy kolagen/MSM
+  skin:      { cost: 250, scoreW: 1.0 },   // skóra, dermatolog, kosmetyki, cynk
+  motivation:{ cost: 450, scoreW: 1.6 },   // brak motywacji, dopamina, utracone szanse
+  digest:    { cost: 350, scoreW: 1.3 },   // trawienie, gastroenterolog, probiotyki, dieta eliminacyjna
+  cravings:  { cost: 300, scoreW: 1.2 },   // głód na słodycze, insulinooporność, gorsze żywienie
+  recovery:  { cost: 400, scoreW: 1.4 },   // wolna regeneracja, zmarnowane treningi, suplementy
+  focus:     { cost: 500, scoreW: 1.7 },   // koncentracja, utracona produktywność, nootropiki
+  headaches: { cost: 400, scoreW: 1.3 },   // bóle głowy, leki, wizyty, absencja w pracy
+  sweating:  { cost: 300, scoreW: 1.2 },   // nocne poty, zaburzony sen, testy hormonalne
+  heartRate: { cost: 450, scoreW: 1.5 },   // podwyższone tętno, kardiolog, stres, substancje
 };
 
 // Oblicz ważony koszt sygnałów i ważony score sygnałów
@@ -55,14 +55,14 @@ function tagScoreWeighted(tags: Set<ChipKey>): number {
 }
 
 function costs(D: FD) {
-  // ── TWARDE KOSZTY — wydajesz wprost, weryfikowalne ──
+  // === TWARDE KOSZTY: wydajesz wprost, weryfikowalne ===
   const wkndCost = Math.round((D.cash + D.subs) * D.wknd * 6);
   const foodCost = Math.round(D.junk * 6 + (D.binge >= 3 ? 300 : 0));
   const trainCost = D.plan > 0 ? Math.round(D.gym * 6 * Math.min(D.miss / D.plan, 1)) : 0;
-  // Sen: kompensacja deficytu — kawa, suplementy, gorsze decyzje zakupowe (Cappuccio 2010)
+  // Sen: kompensacja deficytu, kawa, suplementy, gorsze decyzje zakupowe (Cappuccio 2010)
   const sleepCost = D.sleep < 7 ? Math.round((7.5 - D.sleep) * 140 * 6) : 0;
 
-  // ── UKRYTE KOSZTY — szacunek oparty na badaniach naukowych ──
+  // === UKRYTE KOSZTY: szacunek oparty na badaniach naukowych ===
   // Produktywność: mgła × stawka × 26 tyg. (RAND 2016: <6h snu = -2.4% GDP; Hemp HBR 2004: prezenteizm 3× droższy niż absencja)
   const prodCost = Math.round(D.lost * 26 * D.rate);
   // Stagnacja: treningi bez progresu bo fundamenty nie grają
@@ -78,7 +78,7 @@ function costs(D: FD) {
   const stagnationMonths = Math.round(brakes * 1.5 * 10) / 10;
   const costPerSession = D.plan > 0 ? D.gym / (D.plan * 4) : 0;
   const stagnationCost = Math.round(wastedSessions * (costPerSession + 1.25 * Math.max(D.rate * 0.2, 10)));
-  // Symptomy: ważony koszt — każdy objaw ma inną wagę (250-600 zł / 6 mies.)
+  // Symptomy: ważony koszt, każdy objaw ma inną wagę (250-600 zł / 6 mies.)
   const signalCost = Math.round(tagCost(D.tags));
 
   const totalLostH = Math.round(D.lost * 26);
@@ -92,7 +92,7 @@ function costs(D: FD) {
 }
 
 function score(D: FD) {
-  // Ważony score sygnałów — libido/brain/fatigue ważą więcej niż skin/cravings
+  // Ważony score sygnałów: libido/brain/fatigue ważą więcej niż skin/cravings
   const tagScore = tagScoreWeighted(D.tags);
   const s = Math.min(((D.sleepQ + D.screenBed) / 8 + (7.5 - Math.min(D.sleep, 7.5)) / 2) * 15, 15)
     + Math.min(((D.stress + D.energy + D.dopamine) / 10) * 20, 20)
@@ -127,7 +127,7 @@ const M = {
   sans: "'Inter', system-ui, -apple-system, sans-serif",
 };
 
-// ── HOOK: scroll progress bar ──
+// === HOOK: scroll progress bar ===
 function useScrollProgress() {
   const [progress, setProgress] = useState(0);
   useEffect(() => {
@@ -143,7 +143,7 @@ function useScrollProgress() {
   return progress;
 }
 
-// ── HOOK: scroll reveal dla sekcji wyników ──
+// === HOOK: scroll reveal dla sekcji wyników ===
 function useScrollReveal() {
   const ref = useRef<HTMLDivElement>(null);
   const [visible, setVisible] = useState(false);
@@ -160,7 +160,7 @@ function useScrollReveal() {
   return { ref, visible };
 }
 
-// ── HOOK: animowany licznik ──
+// === HOOK: animowany licznik ===
 function useCounter(target: number, duration = 1200, active = false) {
   const [val, setVal] = useState(0);
   useEffect(() => {
@@ -182,7 +182,7 @@ function useCounter(target: number, duration = 1200, active = false) {
   return val;
 }
 
-// ── KOMPONENT: Reveal wrapper z animacją wejścia ──
+// === KOMPONENT: Reveal wrapper z animacją wejścia ===
 function Reveal({ children, delay = 0 }: { children: React.ReactNode; delay?: number }) {
   const { ref, visible } = useScrollReveal();
   return (
@@ -200,7 +200,7 @@ function Reveal({ children, delay = 0 }: { children: React.ReactNode; delay?: nu
   );
 }
 
-// ── KOMPONENT: Wave divider między sekcjami ──
+// === KOMPONENT: Wave divider między sekcjami ===
 function WaveDivider({ flip = false }: { flip?: boolean }) {
   return (
     <div style={{
@@ -229,7 +229,7 @@ function WaveDivider({ flip = false }: { flip?: boolean }) {
   );
 }
 
-// ── KOMPONENT: Animowane niebo z gwiazdami ──
+// === KOMPONENT: Animowane niebo z gwiazdami ===
 function StarField() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const rafRef = useRef<number>(0);
@@ -245,7 +245,7 @@ function StarField() {
 
     const DPR = window.devicePixelRatio || 1;
 
-    // Konfiguracja gwiazd — subtelne, ledwo widoczne w tle
+    // Konfiguracja gwiazd: subtelne, ledwo widoczne w tle
     const STAR_COUNT = 120;
     const SHOOTING_STAR_CHANCE = 0.0005; // rzadkie spadające gwiazdy
 
@@ -261,7 +261,7 @@ function StarField() {
     resize();
     window.addEventListener('resize', resize, { passive: true });
 
-    // Typy gwiazd — różne rozmiary i jasności
+    // Typy gwiazd: różne rozmiary i jasności
     interface Star {
       x: number; y: number;
       r: number;          // promień
@@ -271,7 +271,7 @@ function StarField() {
       color: string;        // odcień gwiazdy
     }
 
-    // Kolory gwiazd — głównie białe, kilka z lekkim odcieniem
+    // Kolory gwiazd: głównie białe, kilka z lekkim odcieniem
     const starColors = [
       '255,255,255',   // biała (dominujące)
       '255,255,255',   // biała
@@ -282,7 +282,7 @@ function StarField() {
 
     const stars: Star[] = Array.from({ length: STAR_COUNT }, () => {
       const sizeRand = Math.random();
-      // Normalne rozmiary, ale przyciemnione — subtelne tło
+      // Normalne rozmiary, ale przyciemnione (subtelne tło)
       const r = sizeRand < 0.55 ? Math.random() * 0.7 + 0.3
               : sizeRand < 0.82 ? Math.random() * 1.0 + 0.7
               : sizeRand < 0.95 ? Math.random() * 1.3 + 1.0
@@ -338,7 +338,7 @@ function StarField() {
         ctx.fill();
       }
 
-      // Spadające gwiazdy — tworzenie
+      // Spadające gwiazdy: tworzenie
       if (Math.random() < SHOOTING_STAR_CHANCE) {
         const angle = Math.random() * 0.5 + 0.3; // kąt 17-46 stopni
         const speed = Math.random() * 4 + 3;
@@ -353,7 +353,7 @@ function StarField() {
         });
       }
 
-      // Spadające gwiazdy — renderowanie
+      // Spadające gwiazdy: renderowanie
       for (let i = shootingStars.length - 1; i >= 0; i--) {
         const ss = shootingStars[i];
         ss.x += ss.vx;
@@ -418,7 +418,7 @@ function StarField() {
   );
 }
 
-// ── KOMPONENT: Scroll progress bar ──
+// === KOMPONENT: Scroll progress bar ===
 function ScrollProgress() {
   const progress = useScrollProgress();
   return (
@@ -471,7 +471,7 @@ export default function Page() {
     return () => clearTimeout(t);
   }, []);
 
-  // Autosave formularza — restore stanu z localStorage (TTL 7 dni)
+  // Autosave formularza: restore stanu z localStorage (TTL 7 dni)
   useEffect(() => {
     try {
       const raw = localStorage.getItem('diag_form_state');
@@ -491,7 +491,7 @@ export default function Page() {
     } catch {}
   }, []);
 
-  // Autosave formularza — zapisz przy każdej zmianie stanu (tylko w fazie form)
+  // Autosave formularza: zapisz przy każdej zmianie stanu (tylko w fazie form)
   useEffect(() => {
     if (phase !== 'form') return;
     try {
@@ -532,7 +532,7 @@ export default function Page() {
     // Walidacja IG handle
     const handle = igHandle.trim().replace(/^@/, '');
     if (!handle) { setIgErr('Podaj nick na Instagramie'); return; }
-    // Walidacja email — RFC 5322 uproszczony
+    // Walidacja email: RFC 5322 uproszczony
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) { setEmailErr('Podaj poprawny email'); return; }
     setLoading(true);
     const c = costs(D); const sc = score(D);
@@ -548,7 +548,7 @@ export default function Page() {
     const biggest = catData.reduce((a, b) => a.v > b.v ? a : b, catData[0]);
     const payloadBlocked = Math.min(sc, 85);
 
-    // Priority lead formula — kwalifikacja serious lead na bazie commitment + budget proxies
+    // Priority lead formula: kwalifikacja serious lead na bazie commitment + budget proxies
     // triedBefore proxy: D.plan > 0 = próbował (1), D.plan >= 3 i miss === 0 = systematyczny (2)
     const triedBefore = D.plan >= 3 && D.miss === 0 ? 2 : D.plan > 0 ? 1 : 0;
     // frustration proxy: 0 = wysoka frustracja (4+ tagów lub niska energia), 1 = niska
@@ -597,19 +597,19 @@ export default function Page() {
         throw new Error(`HTTP ${res.status}`);
       } catch {
         if (retryCount < 2) {
-          // Retry po 1.5s — max 2 próby
+          // Retry po 1.5s, max 2 próby
           await new Promise(r => setTimeout(r, 1500));
           return sendPayload(data, retryCount + 1);
         }
-        // Po 3 nieudanych próbach — zapisz do sessionStorage
+        // Po 3 nieudanych próbach: zapisz do sessionStorage
         try { sessionStorage.setItem('diag_lead_retry', JSON.stringify(data)); } catch {}
         return false;
       }
     };
     await sendPayload(payload);
-    // Po submit — wyczyść autosave (formularz wypełniony)
+    // Po submit: wyczyść autosave (formularz wypełniony)
     try { localStorage.removeItem('diag_form_state'); } catch {}
-    // Zawsze pokaż wyniki — lead jest zapisany w sessionStorage na wypadek retry
+    // Zawsze pokaż wyniki: lead jest zapisany w sessionStorage na wypadek retry
     setPhase('results');
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -634,18 +634,18 @@ export default function Page() {
   const pct = Math.round(((sec + 1) / SECTIONS.length) * 100);
   const scoreColor = SC >= 75 ? M.red : SC >= 50 ? M.org : SC >= 25 ? M.yel : M.grn;
 
-  // Path routing — używane w submit() oraz w results UI dla downsell
+  // Path routing: używane w submit() oraz w results UI dla downsell
   const path: 'weekendowa' | 'mozgowa' | 'ciala' | 'general' =
     (D.drinks > 5 || D.subs > 0 || D.wknd >= 2) ? 'weekendowa' :
     (D.dopamine >= 2 || D.tags.has('focus') || D.tags.has('motivation') || D.screenBed >= 2) ? 'mozgowa' :
     (D.tags.has('libido') || D.tags.has('belly') || D.tags.has('recovery')) ? 'ciala' :
     'general';
 
-  // Downsell config per path — używany w results UI
+  // Downsell config per path: używany w results UI
   const downsellMap: Record<typeof path, { url: string; label: string; tagline: string } | null> = {
     weekendowa: {
       url: 'https://kontra.talerzihantle.com',
-      label: 'KONTRA — protokół weekendowy. 49 zł',
+      label: 'KONTRA: protokół weekendowy. 49 zł',
       tagline: 'Jak imprezować i nie niszczyć progresu. Napisany dla Ciebie.',
     },
     mozgowa: {
@@ -700,9 +700,9 @@ export default function Page() {
 
   // Stres / energia / wypalenie
   if (D.stress >= 2 || D.energy >= 2) {
-    badania.push({ nazwa: 'TSH + fT3 + fT4', dlaczego: 'Tarczyca reguluje metabolizm i energię. Stres ją hamuje — subkliniczne niedoczynności są częste', priorytet: 'wysoki' });
+    badania.push({ nazwa: 'TSH + fT3 + fT4', dlaczego: 'Tarczyca reguluje metabolizm i energię. Stres ją hamuje, subkliniczne niedoczynności są częste', priorytet: 'wysoki' });
     badania.push({ nazwa: 'Ferrytyna', dlaczego: 'Niedobór żelaza = zmęczenie, mgła, słaba regeneracja. Norma "ok" to nie norma optymalna', priorytet: 'wysoki' });
-    badania.push({ nazwa: 'DHEA-S', dlaczego: 'Hormon anty-stresowy — jeśli niski, ciało przegrywa z kortyzolem', priorytet: 'sredni' });
+    badania.push({ nazwa: 'DHEA-S', dlaczego: 'Hormon anty-stresowy. Jeśli niski, ciało przegrywa z kortyzolem', priorytet: 'sredni' });
     if (!badania.some(b => b.nazwa.includes('Kortyzol'))) {
       badania.push({ nazwa: 'Kortyzol (poranny, godz. 8:00)', dlaczego: 'Chroniczny stres = oś HPA rozregulowana. Kortyzol powinien być wysoki rano i niski wieczorem', priorytet: 'wysoki' });
     }
@@ -710,12 +710,12 @@ export default function Page() {
 
   // Alkohol / substancje
   if (D.drinks > 5 || D.subs > 0) {
-    badania.push({ nazwa: 'AST + ALT + GGTP', dlaczego: `${D.drinks > 10 ? D.drinks + ' drinków' : D.subs > 0 ? 'Substancje' : 'Alkohol'} obciąża wątrobę. GGTP — najbardziej czuły marker uszkodzenia alkoholowego`, priorytet: 'wysoki' });
-    badania.push({ nazwa: 'Bilirubina całkowita', dlaczego: 'Marker wydolności wątroby — podwyższona przy przeciążeniu toksynami', priorytet: 'sredni' });
+    badania.push({ nazwa: 'AST + ALT + GGTP', dlaczego: `${D.drinks > 10 ? D.drinks + ' drinków' : D.subs > 0 ? 'Substancje' : 'Alkohol'} obciąża wątrobę. GGTP to najbardziej czuły marker uszkodzenia alkoholowego`, priorytet: 'wysoki' });
+    badania.push({ nazwa: 'Bilirubina całkowita', dlaczego: 'Marker wydolności wątroby, podwyższona przy przeciążeniu toksynami', priorytet: 'sredni' });
     badania.push({ nazwa: 'Estradiol (E2)', dlaczego: 'Alkohol zwiększa aromatyzację testosteronu do estrogenów. Więcej E2 = mniej T', priorytet: 'wysoki' });
     if (D.subs > 0) {
       badania.push({ nazwa: 'Serotonina w surowicy', dlaczego: 'Substancje wyczerpują zapas serotoniny. Niski poziom = wahania nastroju, lęki, bezsenność', priorytet: 'sredni' });
-      badania.push({ nazwa: 'Witamina B12 + kwas foliowy', dlaczego: 'Substancje i alkohol niszczą zapasy wit. B — kluczowe dla układu nerwowego i energii', priorytet: 'wysoki' });
+      badania.push({ nazwa: 'Witamina B12 + kwas foliowy', dlaczego: 'Substancje i alkohol niszczą zapasy wit. B, kluczowe dla układu nerwowego i energii', priorytet: 'wysoki' });
     }
   }
 
@@ -732,9 +732,9 @@ export default function Page() {
 
   // Brzuch / dieta / insulinooporność
   if (D.tags.has('belly') || D.binge >= 2 || D.dietChaos >= 3) {
-    badania.push({ nazwa: 'Insulina na czczo + glukoza', dlaczego: 'Obliczenie HOMA-IR — wczesny marker insulinooporności, zanim cukier będzie "za wysoki"', priorytet: 'wysoki' });
-    badania.push({ nazwa: 'HbA1c (hemoglobina glikowana)', dlaczego: 'Średni poziom cukru z ostatnich 3 miesięcy — lepszy obraz niż jednorazowa glukoza', priorytet: 'sredni' });
-    badania.push({ nazwa: 'Lipidogram rozszerzony', dlaczego: 'Cholesterol, triglicerydy, LDL/HDL — pełen obraz ryzyka metabolicznego', priorytet: 'sredni' });
+    badania.push({ nazwa: 'Insulina na czczo + glukoza', dlaczego: 'Obliczenie HOMA-IR, wczesny marker insulinooporności, zanim cukier będzie "za wysoki"', priorytet: 'wysoki' });
+    badania.push({ nazwa: 'HbA1c (hemoglobina glikowana)', dlaczego: 'Średni poziom cukru z ostatnich 3 miesięcy, lepszy obraz niż jednorazowa glukoza', priorytet: 'sredni' });
+    badania.push({ nazwa: 'Lipidogram rozszerzony', dlaczego: 'Cholesterol, triglicerydy, LDL/HDL: pełen obraz ryzyka metabolicznego', priorytet: 'sredni' });
   }
 
   // Mgła mózgowa / koncentracja
@@ -743,7 +743,7 @@ export default function Page() {
       badania.push({ nazwa: 'Ferrytyna', dlaczego: 'Niedobór żelaza to najczęstsza przyczyna „mgły mózgowej" u mężczyzn. Optymalna: 80-150 ng/ml', priorytet: 'wysoki' });
     }
     badania.push({ nazwa: 'Witamina D3 (25-OH)', dlaczego: 'Niedobór wit. D = gorsze funkcje kognitywne, spadek nastroju, słabsza odporność. 80% Polaków ma niedobór', priorytet: 'wysoki' });
-    badania.push({ nazwa: 'hsCRP (białko C-reaktywne)', dlaczego: 'Marker przewlekłego stanu zapalnego — neuroinflamacja wpływa na koncentrację i energię', priorytet: 'sredni' });
+    badania.push({ nazwa: 'hsCRP (białko C-reaktywne)', dlaczego: 'Marker przewlekłego stanu zapalnego, neuroinflamacja wpływa na koncentrację i energię', priorytet: 'sredni' });
     badania.push({ nazwa: 'Homocysteina', dlaczego: 'Podwyższona uszkadza naczynia i neurony. Często wysoka przy niedoborze B12 i kwasu foliowego', priorytet: 'sredni' });
   }
 
@@ -801,7 +801,7 @@ export default function Page() {
       badania.push({ nazwa: 'Witamina D3 (25-OH)', dlaczego: 'Niski poziom wit. D silnie koreluje z lękami i depresją u mężczyzn 25-40', priorytet: 'sredni' });
     }
     if (!badania.some(b => b.nazwa.includes('fT3'))) {
-      badania.push({ nazwa: 'TSH + fT3 + fT4', dlaczego: 'Zaburzenia tarczycy mogą nasilać lęki — trzeba wykluczyć', priorytet: 'sredni' });
+      badania.push({ nazwa: 'TSH + fT3 + fT4', dlaczego: 'Zaburzenia tarczycy mogą nasilać lęki, trzeba wykluczyć', priorytet: 'sredni' });
     }
   }
 
@@ -829,13 +829,13 @@ export default function Page() {
   // 3 personalne tipy - zaawansowane, nieoczywiste, na bazie 150 wspolprac
   const tips: { icon: string; title: string; desc: string; boost: string }[] = [];
 
-  // Tip 1 - najwazniejszy problem — ukryte mechanizmy
+  // Tip 1 - najwazniejszy problem: ukryte mechanizmy
   if (D.sleep < 6.5 || D.sleepQ >= 2) {
     tips.push({
       icon: '🌙',
       title: D.sleep < 6 ? 'Twoja glimfatyka nie działa' : 'Architektura snu jest zaburzona',
       desc: D.sleep < 6
-        ? `Przy ${D.sleep}h mózg nie kończy cyklu oczyszczania (system glimfatyczny). Toksyny metaboliczne, w tym beta-amyloid, zostają w tkance mózgowej. Efekt? Mgła, zmęczenie, spadek pamięci roboczej. Nie chodzi o „więcej snu" — chodzi o to, że Twój mózg dosłownie nie zdąży się umyć.`
+        ? `Przy ${D.sleep}h mózg nie kończy cyklu oczyszczania (system glimfatyczny). Toksyny metaboliczne, w tym beta-amyloid, zostają w tkance mózgowej. Efekt? Mgła, zmęczenie, spadek pamięci roboczej. Nie chodzi o „więcej snu". Chodzi o to, że Twój mózg dosłownie nie zdąży się umyć.`
         : `Jakość snu decyduje o proporcji faz. Faza 3 (głęboki sen) to 80% wydzielania hormonu wzrostu. Ekran przed snem skraca tę fazę o 20-30 min. Jeden zabieg: temperatura sypialni 18°C + brak światła niebieskiego 90 min przed snem. Większość moich podopiecznych widzi efekt po 5 dniach.`,
       boost: '+4-6%',
     });
@@ -846,8 +846,8 @@ export default function Page() {
       icon: '⚗️',
       title: D.subs > 0 ? 'Deplecja neuroprzekaźników' : 'Acetaldehyd sabotuje regenerację',
       desc: D.subs > 0
-        ? `Substancje nie „uszkadzają mózg" — one wyczerpują zapas prekursorów serotoniny (tryptofan, 5-HTP) i dopaminy (tyrozyna, L-DOPA). Bez tych cegiełek mózg nie produkuje motywacji ani dobrego nastroju przez 2-4 tygodnie. Kluczowe: uzupełnienie tyrozyny i tryptofanu z diety przyspiesza odbudowę o 40%.`
-        : `Alkohol rozkłada się do acetaldehydu — substancji 30x bardziej toksycznej niż sam alkohol. ${D.drinks} drinków = Twoja wątroba potrzebuje 12-18h na oczyszczenie. W tym czasie synteza białek mięśniowych jest zatrzymana, kortyzol podwyższony, a jelita przepuszczają toksyny do krwi (zespół nieszczelnego jelita). N-acetylocysteina 600mg przed imprezą zmniejsza uszkodzenia o ~30%.`,
+        ? `Substancje nie „uszkadzają mózg". One wyczerpują zapas prekursorów serotoniny (tryptofan, 5-HTP) i dopaminy (tyrozyna, L-DOPA). Bez tych cegiełek mózg nie produkuje motywacji ani dobrego nastroju przez 2-4 tygodnie. Kluczowe: uzupełnienie tyrozyny i tryptofanu z diety przyspiesza odbudowę o 40%.`
+        : `Alkohol rozkłada się do acetaldehydu, substancji 30x bardziej toksycznej niż sam alkohol. ${D.drinks} drinków = Twoja wątroba potrzebuje 12-18h na oczyszczenie. W tym czasie synteza białek mięśniowych jest zatrzymana, kortyzol podwyższony, a jelita przepuszczają toksyny do krwi (zespół nieszczelnego jelita). N-acetylocysteina 600mg przed imprezą zmniejsza uszkodzenia o ~30%.`,
       boost: D.subs > 0 ? '+6-10%' : '+3-6%',
     });
   }
@@ -856,7 +856,7 @@ export default function Page() {
     tips.push({
       icon: '🫀',
       title: 'Układ nerwowy utknął w trybie walki',
-      desc: `Chroniczny stres to nie „za dużo pracy" — to dominacja układu sympatycznego nad parasympatycznym. Twoje ciało produkuje kortyzol zamiast testosteronu (wspólny prekursor — pregnenolon). Najskuteczniejsza interwencja z moich 150 współprac: 5 min oddechu przeponowego (wydech 2x dłuższy niż wdech) zaraz po przebudzeniu. Obniża kortyzol o 23% w 14 dni.`,
+      desc: `Chroniczny stres to nie „za dużo pracy". To dominacja układu sympatycznego nad parasympatycznym. Twoje ciało produkuje kortyzol zamiast testosteronu (wspólny prekursor: pregnenolon). Najskuteczniejsza interwencja z moich 150 współprac: 5 min oddechu przeponowego (wydech 2x dłuższy niż wdech) zaraz po przebudzeniu. Obniża kortyzol o 23% w 14 dni.`,
       boost: '+3-5%',
     });
   }
@@ -865,7 +865,7 @@ export default function Page() {
     tips.push({
       icon: '🔬',
       title: 'Tracisz efekt superkompensacji',
-      desc: `Mięsień rośnie nie na treningu — rośnie 48-72h po nim, w fazie superkompensacji. ${D.miss} opuszczone sesje/tyg to nie ${D.miss * 4 * 6} straconych treningów — to ${D.miss * 4 * 6} utraconych okien anabolicznych. Ciało wraca do poziomu wyjściowego zamiast budować. Układ z moimi podopiecznymi: trening w poniedziałek i czwartek rano (8:00) — statystycznie najniższy wskaźnik odwołań.`,
+      desc: `Mięsień rośnie nie na treningu, rośnie 48-72h po nim, w fazie superkompensacji. ${D.miss} opuszczone sesje/tyg to nie ${D.miss * 4 * 6} straconych treningów, to ${D.miss * 4 * 6} utraconych okien anabolicznych. Ciało wraca do poziomu wyjściowego zamiast budować. Układ z moimi podopiecznymi: trening w poniedziałek i czwartek rano (8:00), statystycznie najniższy wskaźnik odwołań.`,
       boost: '+3-4%',
     });
   }
@@ -874,7 +874,7 @@ export default function Page() {
     tips.push({
       icon: '🧬',
       title: 'Insulina blokuje lipolizę',
-      desc: `Chaotyczne jedzenie powoduje skoki insuliny co 2-3h. Dopóki insulina jest podwyższona, Twoje ciało chemicznie NIE MOŻE spalać tłuszczu (insulina hamuje lipazę hormonowrażliwą). Nie chodzi o kalorie — chodzi o okna metaboliczne. 3 posiłki w stałych porach (bez przekąsek) otwierają 4-5h okno spalania między posiłkami. 80% moich podopiecznych traci tłuszcz brzuszny w 4-6 tygodni tylko tą zmianą.`,
+      desc: `Chaotyczne jedzenie powoduje skoki insuliny co 2-3h. Dopóki insulina jest podwyższona, Twoje ciało chemicznie NIE MOŻE spalać tłuszczu (insulina hamuje lipazę hormonowrażliwą). Nie chodzi o kalorie, chodzi o okna metaboliczne. 3 posiłki w stałych porach (bez przekąsek) otwierają 4-5h okno spalania między posiłkami. 80% moich podopiecznych traci tłuszcz brzuszny w 4-6 tygodni tylko tą zmianą.`,
       boost: '+3-5%',
     });
   }
@@ -901,7 +901,7 @@ export default function Page() {
     tips.push({
       icon: '🧠',
       title: 'Neuroinflamacja obniża wydajność',
-      desc: `Mgła mózgowa to nie zmęczenie. To przewlekły stan zapalny w ośrodkowym układzie nerwowym — neuroinflamacja. Główne źródła: nieszczelne jelito (alkohol, stres), niedobór snu, niedobór kwasów omega-3. Suplementacja omega-3 (2g EPA dziennie) + probiotyk wieloszczepowy przez 30 dni. 70% moich podopiecznych z mgłą zgłasza poprawę po 3 tygodniach.`,
+      desc: `Mgła mózgowa to nie zmęczenie. To przewlekły stan zapalny w ośrodkowym układzie nerwowym, neuroinflamacja. Główne źródła: nieszczelne jelito (alkohol, stres), niedobór snu, niedobór kwasów omega-3. Suplementacja omega-3 (2g EPA dziennie) + probiotyk wieloszczepowy przez 30 dni. 70% moich podopiecznych z mgłą zgłasza poprawę po 3 tygodniach.`,
       boost: '+2-4%',
     });
   }
@@ -911,7 +911,7 @@ export default function Page() {
     tips.push({
       icon: '🩸',
       title: 'Niedobór magnezu blokuje 300 enzymów',
-      desc: `80% mężczyzn ma subkliniczny niedobór magnezu — nie na tyle niski żeby wyszedł w badaniach, ale na tyle żeby upośledzał sen, regenerację i pracę nerwów. Magnez uczestniczy w 300+ reakcjach enzymatycznych. Forma ma znaczenie: cytrynian lub glicynian (nie tlenek). 400mg przed snem. Efekt po 10-14 dniach: lepszy sen, mniej skurczów, niższy kortyzol.`,
+      desc: `80% mężczyzn ma subkliniczny niedobór magnezu, nie na tyle niski żeby wyszedł w badaniach, ale na tyle żeby upośledzał sen, regenerację i pracę nerwów. Magnez uczestniczy w 300+ reakcjach enzymatycznych. Forma ma znaczenie: cytrynian lub glicynian (nie tlenek). 400mg przed snem. Efekt po 10-14 dniach: lepszy sen, mniej skurczów, niższy kortyzol.`,
       boost: '+2-3%',
     });
   }
@@ -1118,7 +1118,7 @@ export default function Page() {
         a{transition:opacity .2s ease}
         a:hover{opacity:.85}
 
-        /* ── Keyframes premium ── */
+        /* === Keyframes premium === */
         @keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
         .fade-up{animation:fadeUp .5s ease both}
 
@@ -1178,7 +1178,7 @@ export default function Page() {
         }
       `}</style>
 
-      {/* ── Skip-to-content dla dostępności ── */}
+      {/* === Skip-to-content dla dostępności === */}
       <a
         href="#diagnostyka"
         style={{
@@ -1202,10 +1202,10 @@ export default function Page() {
         Przejdź do diagnostyki
       </a>
 
-      {/* ── Scroll progress bar ── */}
+      {/* === Scroll progress bar === */}
       <ScrollProgress />
 
-      {/* ── Animowane niebo z gwiazdami ── */}
+      {/* === Animowane niebo z gwiazdami === */}
       <StarField />
 
       <div
@@ -1214,7 +1214,7 @@ export default function Page() {
         style={{ maxWidth: 440, width: '100%', margin: '0 auto', padding: '0 0 60px', position: 'relative', zIndex: 1, overflow: 'hidden' }}
       >
 
-        {/* ── FORM ── */}
+        {/* === FORM === */}
         {phase === 'form' && (
           <>
             {/* Top bar z logo + progress */}
@@ -1389,7 +1389,7 @@ export default function Page() {
                 <div className="fade-up">
                   <Slider label="Weekendy imprezowe w miesiącu" min={0} max={4} step={1} k="wknd" val={D.wknd} unit="" ariaLabel="Liczba imprezowych weekendów w miesiącu" />
 
-                  {/* Conditional: jeśli wknd=0 — pomijamy 5 pól weekendowych */}
+                  {/* Conditional: jeśli wknd=0, pomijamy 5 pól weekendowych */}
                   {D.wknd === 0 ? (
                     <div style={{
                       padding: '18px 16px', marginTop: 8, marginBottom: 24,
@@ -1408,7 +1408,7 @@ export default function Page() {
                       <Slider label="Drinki na imprezie (średnio)" min={0} max={20} step={1} k="drinks" val={D.drinks} unit="" note={D.drinks > 5 ? `${D.drinks} drinków = ~${Math.round(D.drinks * 3.4)}% spadek testosteronu w 12h (Vingren 2013)` : ''} ariaLabel="Średnia liczba drinków na imprezie" />
                       <Slider label="Wydajesz na imprezie (alkohol, wyjścia)" min={0} max={800} step={50} k="cash" val={D.cash} unit=" zł" note={`Suma 6 mies.: ${(D.cash * D.wknd * 6).toLocaleString('pl-PL')} zł`} ariaLabel="Wydatki na imprezie w złotych" />
 
-                      {/* Substancje — chipy zamiast slidera PLN */}
+                      {/* Substancje: chipy zamiast slidera PLN */}
                       <div style={{ marginBottom: 28 }}>
                         <div style={{ fontSize: 15, color: M.t1, fontWeight: 500, marginBottom: 12, lineHeight: 1.45 }}>
                           Substancje (mefedron / kokaina)
@@ -1527,7 +1527,7 @@ export default function Page() {
           </>
         )}
 
-        {/* ── LEAD GATE ── */}
+        {/* === LEAD GATE === */}
         {phase === 'gate' && (
           <div className="fade-up" style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '40px 16px', textAlign: 'center' }}>
             <div style={{ maxWidth: 400, width: '100%' }}>
@@ -1640,7 +1640,7 @@ export default function Page() {
           </div>
         )}
 
-        {/* ── RESULTS ── */}
+        {/* === RESULTS === */}
         {phase === 'results' && (
           <div className="fade-up" style={{ padding: '32px 16px 20px', width: '100%', boxSizing: 'border-box' }}>
 
@@ -1747,7 +1747,7 @@ export default function Page() {
               </Reveal>
             )}
 
-            {/* Norm: Ty vs przeciętny — pokaż tylko przy istotnym wyniku */}
+            {/* Norm: Ty vs przeciętny, pokaż tylko przy istotnym wyniku */}
             {C.total > 3500 && (
               <Reveal delay={160}>
                 <div style={{
@@ -1907,7 +1907,7 @@ export default function Page() {
               </Reveal>
             )}
 
-            {/* ── Progresja: Co się stanie jeśli nic nie zmienisz ── */}
+            {/* === Progresja: Co się stanie jeśli nic nie zmienisz === */}
             {SC >= 20 && (
               <Reveal delay={110}>
                 <div style={{
@@ -2197,7 +2197,7 @@ export default function Page() {
                         <div style={{ fontSize: 14, fontWeight: 700, color: M.t1 }}>{tip.title}</div>
                         <div style={{ fontFamily: M.mono, fontSize: 11, color: M.grn, fontWeight: 600 }}>{tip.boost}</div>
                       </div>
-                      {/* Pierwsze 2 zdania widoczne — mocniejszy teaser */}
+                      {/* Pierwsze 2 zdania widoczne: mocniejszy teaser */}
                       <div style={{ fontSize: 12, color: M.t3, lineHeight: 1.6 }}>
                         {tip.desc.split('. ').slice(0, 2).join('. ')}.
                       </div>
@@ -2231,7 +2231,7 @@ export default function Page() {
               </div>
             </Reveal>
 
-            {/* ── MEGA CTA — perswazja + psychologia straty + imie + bonus ── */}
+            {/* === MEGA CTA: perswazja + psychologia straty + imie + bonus === */}
             <Reveal delay={140}>
               <div style={{
                 position: 'relative', overflow: 'hidden',
@@ -2262,8 +2262,8 @@ export default function Page() {
                       </div>
                       <div style={{ fontSize: 12.5, color: M.t2, lineHeight: 1.6, marginBottom: 8 }}>
                         {SC >= 50
-                          ? `Widziałem Twój profil — ${SC}/100 pkt, ${D.tags.size} objawów, ${blocked}% niewykorzystanego potencjału. To dokładnie wzorzec ludzi z którymi pracuję i u których widzę największe zmiany w ciągu 3-6 miesięcy.`
-                          : `Twoje wyniki (${SC}/100) pokazują konkretne blokady. Widziałem to wielokrotnie — przy odpowiednim podejściu możesz odzyskać ${Math.min(blocked, 40)}% potencjału.`
+                          ? `Widziałem Twój profil: ${SC}/100 pkt, ${D.tags.size} objawów, ${blocked}% niewykorzystanego potencjału. To dokładnie wzorzec ludzi z którymi pracuję i u których widzę największe zmiany w ciągu 3-6 miesięcy.`
+                          : `Twoje wyniki (${SC}/100) pokazują konkretne blokady. Widziałem to wielokrotnie. Przy odpowiednim podejściu możesz odzyskać ${Math.min(blocked, 40)}% potencjału.`
                         }
                       </div>
                       {/* Spersonalizowany social proof z danymi */}
@@ -2275,8 +2275,8 @@ export default function Page() {
                           {SC >= 60 && D.tags.size >= 4
                             ? <>Twój profil pokrywa się z <strong style={{ color: M.gold }}>~78%</strong> moich podopiecznych na starcie. Ci ludzie odzyskali średnio {Math.min(blocked - 5, 35)}% potencjału w pierwszych 8 tygodniach.</>
                             : SC >= 40
-                            ? <>Pracowałem z facetami o bardzo podobnym profilu — score {SC > 50 ? '50-70' : '35-55'}, {D.tags.size >= 3 ? 'kilka objawów naraz' : 'konkretne blokady'}. Średni progres: <strong style={{ color: M.gold }}>widoczna zmiana w 4-6 tygodni</strong>.</>
-                            : <>Nawet przy score {SC}/100 — widzę konkretne punkty do naprawy. Mniejszy problem = <strong style={{ color: M.gold }}>szybszy efekt</strong>. Zanim się rozkręci.</>
+                            ? <>Pracowałem z facetami o bardzo podobnym profilu: score {SC > 50 ? '50-70' : '35-55'}, {D.tags.size >= 3 ? 'kilka objawów naraz' : 'konkretne blokady'}. Średni progres: <strong style={{ color: M.gold }}>widoczna zmiana w 4-6 tygodni</strong>.</>
+                            : <>Nawet przy score {SC}/100 widzę konkretne punkty do naprawy. Mniejszy problem = <strong style={{ color: M.gold }}>szybszy efekt</strong>. Zanim się rozkręci.</>
                           }
                         </div>
                       </div>
@@ -2338,7 +2338,7 @@ export default function Page() {
                     <p style={{ fontSize: 12, color: M.t3, lineHeight: 1.65, marginBottom: 0 }}>
                       Każdy tydzień bez systemu to kolejne <strong style={{ color: M.red }}>{Math.round(C.total / 26).toLocaleString('pl-PL')} zł</strong> stracone na konsekwencje i <strong style={{ color: M.red }}>{C.wastedSessions > 0 ? `${Math.round(C.wastedSessions / 26)} treningów` : 'progres'}</strong> wyrzucone w błoto.
                     </p>
-                    {/* Porównanie — co tracisz vs co zyskujesz */}
+                    {/* Porównanie: co tracisz vs co zyskujesz */}
                     <div style={{
                       marginTop: 12, display: 'grid', gridTemplateColumns: '1fr auto 1fr', gap: 6, alignItems: 'center',
                     }}>
@@ -2354,7 +2354,7 @@ export default function Page() {
                     </div>
                     <div style={{ marginTop: 10, padding: '10px 12px', background: 'rgba(10,10,10,0.4)', borderRadius: 8, border: `1px solid ${M.brd}` }}>
                       <p style={{ fontSize: 11.5, color: M.t3, lineHeight: 1.6, marginBottom: 0, textAlign: 'center' }}>
-                        To nie jest tani kurs ani ebook. To <strong style={{ color: M.gold }}>najwyższa półka indywidualnej współpracy w Polsce</strong> — bo łączę trening, neurobiologię i wiedzę której nie ma nikt inny.
+                        To nie jest tani kurs ani ebook. To <strong style={{ color: M.gold }}>najwyższa półka indywidualnej współpracy w Polsce</strong>, bo łączę trening, neurobiologię i wiedzę której nie ma nikt inny.
                         {C.total > 8000 && <> Kwota którą tracisz w {C.total > 15000 ? '1 miesiąc' : '2-3 miesiące'} <strong style={{ color: M.t1 }}>przewyższa koszt całej współpracy</strong>.</>}
                       </p>
                     </div>
@@ -2457,7 +2457,7 @@ export default function Page() {
                   Wolisz pogadać najpierw? Napisz <strong style={{ color: M.gold }}>JAZDA</strong> w DM <a href="https://instagram.com/hantleitalerz" target="_blank" rel="noopener noreferrer" style={{ color: M.gold, textDecoration: 'none', fontWeight: 600 }}>@hantleitalerz</a>
                 </div>
 
-                {/* Downsell per path — pokazuje się tylko gdy path ma dopasowany produkt */}
+                {/* Downsell per path: pokazuje się tylko gdy path ma dopasowany produkt */}
                 {downsell && (
                   <>
                     <div style={{ height: 1, background: M.brd, margin: '0 10px 16px' }} />
@@ -2505,7 +2505,7 @@ export default function Page() {
               </div>
             </Reveal>
 
-            {/* DM pre-fill — szybki kontakt z gotowym tekstem */}
+            {/* DM pre-fill: szybki kontakt z gotowym tekstem */}
             <Reveal delay={50}>
               <div style={{ textAlign: 'center', marginBottom: 12, width: '100%' }}>
                 <a
@@ -2513,7 +2513,7 @@ export default function Page() {
                   target="_blank"
                   rel="noopener noreferrer"
                   onClick={() => {
-                    // Track event — diag_dm_prefill
+                    // Track event: diag_dm_prefill
                     try {
                       const w = window as unknown as { dataLayer?: Array<Record<string, unknown>> };
                       if (w.dataLayer) {
@@ -2534,7 +2534,7 @@ export default function Page() {
                   }}
                   aria-label="Napisz w DM z gotową wiadomością"
                 >
-                  Napisz mi w DM — wynik już wpisany →
+                  Napisz mi w DM, wynik już wpisany →
                 </a>
                 <div style={{ fontSize: 10, color: M.t4, fontFamily: M.mono, marginTop: 6, letterSpacing: 0.5 }}>
                   @hantleitalerz &middot; otwiera Instagram z gotowym tekstem
@@ -2542,7 +2542,7 @@ export default function Page() {
               </div>
             </Reveal>
 
-            {/* Share — skopiuj link */}
+            {/* Share: skopiuj link */}
             <Reveal delay={60}>
               <div style={{ textAlign: 'center', marginBottom: 20, width: '100%' }}>
                 <button
@@ -2589,7 +2589,7 @@ export default function Page() {
           </div>
         )}
 
-        {/* ── FOOTER ── */}
+        {/* === FOOTER === */}
         <footer style={{ textAlign: 'center', padding: '24px 16px 32px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12, borderTop: `1px solid ${M.brd}` }}>
           <Logo />
           <div style={{ display: 'flex', gap: 16, alignItems: 'center', flexWrap: 'wrap', justifyContent: 'center' }}>
