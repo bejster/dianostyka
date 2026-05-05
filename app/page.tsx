@@ -2460,11 +2460,11 @@ export default function Page() {
                         return (
                           <>
                             <a
-                              href="https://nabor.talerzihantle.com?utm_source=diagnostyka"
+                              href="https://forma.talerzihantle.com?utm_source=diagnostyka"
                               target="_blank"
                               rel="noopener noreferrer"
                               className="shimmer-btn"
-                              onClick={() => { trackEvent('diag_cta_click', { target: 'nabor_primary', score: SC, category: topCatLabel }); fbqTrack('AddToCart', { content_name: 'nabor_aplikacja', content_category: 'high_ticket', value: SC, currency: 'PLN' }); }}
+                              onClick={() => { trackEvent('diag_cta_click', { target: 'forma_primary', score: SC, category: topCatLabel }); fbqTrack('AddToCart', { content_name: 'forma_aplikacja', content_category: 'high_ticket', value: SC, currency: 'PLN' }); }}
                               style={{
                                 display: 'block', textAlign: 'center',
                                 background: `linear-gradient(135deg, ${M.gold}, #a08a3e)`,
@@ -2524,10 +2524,10 @@ export default function Page() {
                 background: 'linear-gradient(to top, rgba(10,10,10,0.95), rgba(10,10,10,0.8), transparent)',
               }}>
                 <a
-                  href="https://nabor.talerzihantle.com?utm_source=diagnostyka_sticky"
+                  href="https://forma.talerzihantle.com?utm_source=diagnostyka_sticky"
                   target="_blank"
                   rel="noopener noreferrer"
-                  onClick={() => { trackEvent('diag_cta_click', { target: 'nabor_sticky', score: SC }); fbqTrack('InitiateCheckout', { content_name: 'nabor_sticky', content_category: 'high_ticket', value: SC, currency: 'PLN' }); }}
+                  onClick={() => { trackEvent('diag_cta_click', { target: 'forma_sticky', score: SC }); fbqTrack('InitiateCheckout', { content_name: 'forma_sticky', content_category: 'high_ticket', value: SC, currency: 'PLN' }); }}
                   style={{
                     display: 'block', width: '100%', maxWidth: 520, margin: '0 auto',
                     padding: '14px', textAlign: 'center', borderRadius: 12,
@@ -2554,7 +2554,7 @@ export default function Page() {
               rel="noopener noreferrer"
               style={{ fontFamily: M.mono, fontSize: 9, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', color: M.t4, textDecoration: 'none' }}
             >
-              Współpraca 1:1
+              Prowadzenie 1:1
             </a>
             <span style={{ color: M.brd2 }}>|</span>
             <a
