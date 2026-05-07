@@ -2599,17 +2599,43 @@ export default function Page() {
                         </div>
                       </div>
 
-                      <p style={{ fontSize: 14.5, color: M.t2, lineHeight: 1.65, marginBottom: 12 }}>
-                        U mnie robota wygląda tak: <strong style={{ color: M.t1 }}>panel krwi + Twoje odpowiedzi + plan pod Twoje życie</strong>.
-                      </p>
-                      <p style={{ fontSize: 14.5, color: M.t2, lineHeight: 1.65, marginBottom: 12 }}>
-                        U mnie robota wygląda tak: <strong style={{ color: M.t1 }}>panel krwi + Twoje odpowiedzi + plan pod Twoje życie</strong>.
-                      </p>
-                      <p style={{ fontSize: 14.5, color: M.t2, lineHeight: 1.65, marginBottom: 12 }}>
-                        Piszesz na DM jak do ziomka. Odpisuję w ciągu dnia.
-                      </p>
-                      <p style={{ fontSize: 14, color: M.t3, lineHeight: 1.65, marginBottom: 22 }}>
-                        30 dni: czujesz różnicę. 5 miesięcy: organizm trzyma to sam, bez Twojego pilnowania.
+                      {/* RESULT-FIRST: TY dostaniesz X. Konkrety. Bez 'co u mnie'. */}
+                      <div style={{ marginBottom: 16 }}>
+                        <div style={{ fontFamily: M.mono, fontSize: 11, letterSpacing: 2, textTransform: 'uppercase', color: M.gold, fontWeight: 700, marginBottom: 10 }}>
+                          Po 30 dniach
+                        </div>
+                        <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 16px', display: 'flex', flexDirection: 'column', gap: 7 }}>
+                          {[
+                            'Sen głębszy, rano wstajesz przed alarmem',
+                            'Energia ciągnie do 19:00 bez kawy o 14:00',
+                            'Weekend kosztuje 1 dzień, nie 3',
+                          ].map((b, i) => (
+                            <li key={i} style={{ fontSize: 14, color: M.t2, lineHeight: 1.55, paddingLeft: 18, position: 'relative' }}>
+                              <span style={{ position: 'absolute', left: 0, top: 0, color: M.gold, fontWeight: 700 }}>·</span>
+                              {b}
+                            </li>
+                          ))}
+                        </ul>
+
+                        <div style={{ fontFamily: M.mono, fontSize: 11, letterSpacing: 2, textTransform: 'uppercase', color: M.gold, fontWeight: 700, marginBottom: 10 }}>
+                          Po 6 miesiącach
+                        </div>
+                        <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 16px', display: 'flex', flexDirection: 'column', gap: 7 }}>
+                          {[
+                            'Brzuch chodzi w lustrze',
+                            'Libido wraca, panel krwi w normie',
+                            'Rytm tygodnia trzyma się sam, bez pilnowania',
+                          ].map((b, i) => (
+                            <li key={i} style={{ fontSize: 14, color: M.t1, lineHeight: 1.55, paddingLeft: 18, position: 'relative', fontWeight: 500 }}>
+                              <span style={{ position: 'absolute', left: 0, top: 0, color: M.gold, fontWeight: 700 }}>·</span>
+                              {b}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+
+                      <p style={{ fontSize: 13.5, color: M.t3, lineHeight: 1.6, marginBottom: 18, fontStyle: 'italic' }}>
+                        180+ facetów już tam doszło. Z Twoich odpowiedzi widzę, że Ty też zobaczysz swoje liczby tam, gdzie chcesz.
                       </p>
 
                       <div style={{ padding: '14px 16px', marginBottom: 22, background: `${M.gold}08`, borderRadius: 12, borderLeft: `3px solid ${M.gold}` }}>
