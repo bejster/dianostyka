@@ -1295,7 +1295,7 @@ export default function Page() {
   if (D.tags.has('sweating') && D.drinks > 5) insights.push(`Nocne poty + alkohol = <b>kortyzol nocą nie schodzi</b>. Organizm próbuje się detoksyfikować zamiast regenerować.`);
   if (D.tags.has('heartRate') && (D.stress >= 2 || D.subs > 0)) insights.push(`Podwyższone tętno spoczynkowe = <b>układ sympatyczny na stałym gazie</b>. ${D.subs > 0 ? 'Substancje to potęgują.' : 'Stres chroniczny tego nie odpuści sam.'}`);
   if (D.tags.has('headaches') && D.sleep < 6.5) insights.push(`Bóle głowy + deficyt snu = <b>przewlekły stan zapalny</b>. Ibuprofen to plaster, nie rozwiązanie.`);
-  if (D.tags.has('procrastination') && D.dopamine >= 2) insights.push(`Prokrastynacja + głód dopaminowy = <b>mózg wybiera natychmiastową nagrodę</b>. Scrollujesz zamiast robić, bo dopamina bazowa jest za niska.`);
+  if (D.tags.has('procrastination') && D.dopamine >= 2) insights.push(`Prokrastynacja + głód dopaminowy = <b>mózg wybiera natychmiastową nagrodę</b>. Sięgasz po telefon zamiast robić, bo dopamina bazowa jest za niska.`);
   if (D.tags.has('memory') && D.sleep < 7) insights.push(`Słabsza pamięć + deficyt snu = <b>hipokamp nie konsoliduje wspomnień</b>. Sen poniżej 7h blokuje przenoszenie informacji z pamięci krótkotrwałej do długotrwałej.`);
   if (D.tags.has('confidence') && D.trainHappy >= 1) insights.push(`Mniejsza pewność siebie + niezadowolenie z wyników. <b>Testosteron i pewność siebie korelują bezpośrednio</b>. To nie psychologia, to biochemia.`);
   if (D.tags.has('impatience') && D.dopamine >= 2) insights.push(`Brak cierpliwości + rozregulowana dopamina = <b>mózg przyzwyczajony do szybkich nagród</b>. Dlatego trudno wytrwać przy planie który wymaga tygodni.`);
@@ -1948,7 +1948,7 @@ export default function Page() {
                   <div style={{ fontSize: 14, color: M.t3, fontWeight: 400, paddingLeft: 38, marginBottom: 28 }}>Leżysz 8h, ale ile z tego to prawdziwy sen?</div>
                   <Slider label="Ile godzin faktycznie śpisz" min={3} max={9} step={0.5} k="sleep" val={D.sleep} unit="h" note={`Deficyt vs 7.5h: ${Math.max((7.5 - D.sleep) * 7, 0).toFixed(0)}h / tydzień`} ariaLabel="Średni czas snu w nocy w godzinach" />
                   <SevField label="Budzisz się w nocy, kręcisz, płytki sen?" sub="Nie chodzi o to ile śpisz. Chodzi o to czy sen Cię regeneruje." k="sleepQ" val={D.sleepQ} />
-                  <SevField label="Scrollujesz w łóżku?" sub="Ekran tłumi melatoninę o 50% na 90 minut." k="screenBed" val={D.screenBed} />
+                  <SevField label="Leżysz z telefonem przed snem?" sub="Ekran tłumi melatoninę o 50% na 90 minut." k="screenBed" val={D.screenBed} />
                   <Slider label="O której wstajesz w tygodniu?" min={4} max={10} step={0.5} k="wakeTime" val={D.wakeTime} unit=":00" ariaLabel="Godzina wstawania w tygodniu" />
                   {/* Budzik czy sam */}
                   <div style={{ marginBottom: 26 }}>
@@ -2415,7 +2415,7 @@ export default function Page() {
                 borderRadius: 16,
               }}>
                 <h2 style={{ fontSize: 22, fontWeight: 800, lineHeight: 1.25, letterSpacing: -0.5, marginBottom: 10, color: M.t1, textShadow: '0 0 20px rgba(255,255,255,.1)' }}>
-                  {SC >= 60 ? 'Wynik wyższy niż u 80% facetów po 30.' : SC >= 40 ? 'Średnio. Ale widzę punkt, który ciągnie resztę.' : 'Niski wynik. I tu zaczyna się ciekawie.'}
+                  {SC >= 60 ? 'Twój wynik plasuje Cię niżej niż 4 z 5 facetów Twojego pokolenia.' : SC >= 40 ? 'Średnia. Czyli każdy rok kosztuje Cię tyle samo co kolegów obok.' : 'Wynik niski. 1-2 zmiany dadzą Ci jakość życia, której koledzy nigdy nie poczują.'}
                 </h2>
                 <p style={{ fontSize: 14, color: M.t3, lineHeight: 1.6, marginBottom: 24, fontWeight: 400 }}>
                   Pełny raport ma <strong style={{ color: M.t1 }}>wiek biologiczny, sprawność mózgu, hormony do sprawdzenia i priorytet nr 1</strong>. Pokazuję od razu na ekranie. Email zostaje u mnie, żebym wracał w DM z konkretną ofertą prowadzenia 1:1, jeśli widzę że pasujemy.
