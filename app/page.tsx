@@ -94,6 +94,12 @@ const TAG_WEIGHTS: Record<ChipKey, { cost: number; scoreW: number }> = {
   confidence: { cost: 400, scoreW: 1.5 },      // mniejsza pewność siebie - gorsze decyzje zawodowe
 };
 
+// Capitalize first letter (poprawia imię wpisane mała literą)
+function capName(s: string): string {
+  if (!s) return s;
+  return s.charAt(0).toUpperCase() + s.slice(1).toLowerCase();
+}
+
 // Oblicz ważony koszt sygnałów i ważony score sygnałów
 function tagCost(tags: Set<ChipKey>): number {
   let total = 0;
@@ -516,6 +522,161 @@ function ScrollProgress() {
   );
 }
 
+// ── SECTION DIVIDER: subtle rytm "rozdzialow" miedzy sekcjami ──
+function SectionDivider({ num, label }: { num: string; label: string }) {
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 14, margin: '32px 0 18px', maxWidth: 480, marginLeft: 'auto', marginRight: 'auto' }}>
+      <div style={{ flex: 1, height: 1, background: 'linear-gradient(to right, transparent, rgba(212,168,83,.25), rgba(212,168,83,.4))' }} />
+      <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, whiteSpace: 'nowrap' }}>
+        <span style={{ fontFamily: '"JetBrains Mono", monospace', fontSize: 14, fontWeight: 700, color: '#D4A853', letterSpacing: '-0.01em' }}>{num}</span>
+        <span style={{ fontFamily: '"JetBrains Mono", monospace', fontSize: 10, fontWeight: 700, color: '#999', letterSpacing: 2.5, textTransform: 'uppercase' }}>{label}</span>
+      </div>
+      <div style={{ flex: 1, height: 1, background: 'linear-gradient(to left, transparent, rgba(212,168,83,.25), rgba(212,168,83,.4))' }} />
+    </div>
+  );
+}
+
+// ── SHAREABLE PNG: 1080x1080 z wiekiem mozgu (council Expansionist: viral mechanic) ──
+async function genBrainAgeShareCard({ name, brainAge, age, bioAge }: { name: string; brainAge: number; age: number; bioAge: number }): Promise<Blob | null> {
+  if (typeof document === 'undefined') return null;
+  const canvas = document.createElement('canvas');
+  canvas.width = 1080;
+  canvas.height = 1080;
+  const ctx = canvas.getContext('2d');
+  if (!ctx) return null;
+
+  // Background gradient
+  const grad = ctx.createLinearGradient(0, 0, 0, 1080);
+  grad.addColorStop(0, '#0f0e0a');
+  grad.addColorStop(0.5, '#070707');
+  grad.addColorStop(1, '#0a0a0a');
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, 1080, 1080);
+
+  // Subtle gold orb top-right
+  const orb = ctx.createRadialGradient(900, 180, 0, 900, 180, 480);
+  orb.addColorStop(0, 'rgba(212,168,83,0.18)');
+  orb.addColorStop(1, 'rgba(212,168,83,0)');
+  ctx.fillStyle = orb;
+  ctx.fillRect(0, 0, 1080, 1080);
+
+  // Brand wordmark
+  ctx.fillStyle = '#D4A853';
+  ctx.font = '700 30px "JetBrains Mono", monospace';
+  ctx.textAlign = 'center';
+  ctx.fillText('HANTLE I TALERZ', 540, 110);
+
+  // Gold divider
+  ctx.fillStyle = '#D4A853';
+  ctx.fillRect(490, 130, 100, 2);
+
+  // Top label
+  ctx.fillStyle = '#888';
+  ctx.font = '700 30px "Inter", sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText('WIEK MOJEGO MÓZGU', 540, 380);
+
+  // Big gold number
+  ctx.fillStyle = '#D4A853';
+  ctx.font = '900 280px "Inter", sans-serif';
+  ctx.fillText(String(brainAge), 540, 640);
+
+  // Pulsing glow under number
+  const numGlow = ctx.createRadialGradient(540, 600, 0, 540, 600, 320);
+  numGlow.addColorStop(0, 'rgba(212,168,83,0.12)');
+  numGlow.addColorStop(1, 'rgba(212,168,83,0)');
+  ctx.fillStyle = numGlow;
+  ctx.fillRect(0, 0, 1080, 1080);
+
+  // Re-draw number on top of glow
+  ctx.fillStyle = '#D4A853';
+  ctx.font = '900 280px "Inter", sans-serif';
+  ctx.fillText(String(brainAge), 540, 640);
+
+  // Sub stats line
+  ctx.fillStyle = '#ddd';
+  ctx.font = '500 36px "Inter", sans-serif';
+  const subText = name ? `${name}, mam ${age}. Mózg ${brainAge}. Organizm ${Math.round(bioAge)}.` : `Mam ${age}. Mózg ${brainAge}. Organizm ${Math.round(bioAge)}.`;
+  ctx.fillText(subText, 540, 770);
+
+  // Bottom divider
+  ctx.fillStyle = '#D4A85333';
+  ctx.fillRect(390, 870, 300, 1);
+
+  // Bottom CTA prompt
+  ctx.fillStyle = '#888';
+  ctx.font = '500 26px "Inter", sans-serif';
+  ctx.fillText('Sprawdź swój wiek mózgu:', 540, 930);
+
+  ctx.fillStyle = '#D4A853';
+  ctx.font = '700 32px "Inter", sans-serif';
+  ctx.fillText('diagnostyka.talerzihantle.com', 540, 980);
+
+  return new Promise<Blob | null>(resolve => canvas.toBlob(blob => resolve(blob), 'image/png', 0.95));
+}
+
+// ── STICKY CTA BAR: scroll progress + dual button (forma + DM) ──
+function StickyCtaBar({ SC, potential, brainAge, userAge, topCatLabel }: { SC: number; potential: number; brainAge: number; userAge: number; topCatLabel: string }) {
+  const progress = useScrollProgress();
+  const dmText = `${topCatLabel.toLowerCase()} ciągnie, mózg ma ${Math.round(brainAge)} lat przy moich ${userAge}. gadamy?`;
+  const dmHref = `https://ig.me/m/hantleitalerz?text=${encodeURIComponent(dmText)}`;
+  return (
+    <div style={{
+      position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 50,
+      paddingBottom: 'max(10px, env(safe-area-inset-bottom))',
+      background: 'linear-gradient(to top, rgba(10,10,10,0.96) 0%, rgba(10,10,10,0.88) 60%, rgba(10,10,10,0.4) 90%, transparent 100%)',
+    }}>
+      {/* Progress bar */}
+      <div style={{ width: '100%', height: 2, background: 'rgba(200,168,78,0.08)', overflow: 'hidden', marginBottom: 10 }}>
+        <div style={{
+          height: '100%',
+          width: `${Math.min(100, progress)}%`,
+          background: `linear-gradient(90deg, ${M.goldDim}, ${M.gold}, #e8cc80)`,
+          transition: 'width 0.15s linear',
+          boxShadow: `0 0 8px ${M.gold}60`,
+        }} />
+      </div>
+
+      {/* Dual CTA */}
+      <div style={{ padding: '0 16px', maxWidth: 520, margin: '0 auto', display: 'grid', gridTemplateColumns: '1fr auto', gap: 8 }}>
+        <a
+          href="https://forma.talerzihantle.com?utm_source=diagnostyka_sticky"
+          target="_blank"
+          rel="noopener noreferrer"
+          onClick={() => { trackEvent('diag_cta_click', { target: 'forma_sticky', score: SC }); fbqTrack('InitiateCheckout', { content_name: 'forma_sticky', content_category: 'high_ticket', value: SC, currency: 'PLN' }); }}
+          style={{
+            display: 'block', textAlign: 'center', padding: '12px 14px', borderRadius: 10,
+            background: `linear-gradient(135deg, ${M.gold}, #a08a3e)`,
+            color: M.bg, fontWeight: 800, fontSize: 13, textDecoration: 'none',
+            letterSpacing: 1, lineHeight: 1.2,
+            boxShadow: '0 4px 18px rgba(200,168,78,0.32)',
+          }}
+        >
+          WYPEŁNIJ APLIKACJĘ
+        </a>
+        <a
+          href={dmHref}
+          target="_blank"
+          rel="noopener noreferrer"
+          onClick={() => trackEvent('diag_cta_click', { target: 'dm_sticky', score: SC })}
+          aria-label="Napisz w DM"
+          style={{
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            padding: '12px 14px', borderRadius: 10,
+            background: 'transparent',
+            border: `1px solid ${M.gold}55`,
+            color: M.gold, fontWeight: 700, fontSize: 12, textDecoration: 'none',
+            letterSpacing: 0.5, lineHeight: 1.2,
+            minWidth: 50,
+          }}
+        >
+          DM
+        </a>
+      </div>
+    </div>
+  );
+}
+
 export default function Page() {
   const [D, setD] = useState<FD>(INIT);
   const [sec, setSec] = useState(0);
@@ -580,8 +741,16 @@ export default function Page() {
     return { ...p, tags };
   });
 
+  // Soft scroll: tylko gdy user jest pod formularzem (rect.top < 0). Instant, bez smooth-jumpa.
+  const softScrollToForm = () => {
+    if (typeof window === 'undefined' || !topRef.current) return;
+    const rect = topRef.current.getBoundingClientRect();
+    if (rect.top < -20) {
+      topRef.current.scrollIntoView({ behavior: 'auto', block: 'start' });
+    }
+  };
+
   const go = () => {
-    window.scrollTo({ top: 0, behavior: 'smooth' });
     if (sec < SECTIONS.length - 1) {
       setSecTransition('out-left');
       setTimeout(() => {
@@ -589,6 +758,7 @@ export default function Page() {
         trackEvent('diag_section', { section: SECTIONS[nextSec], step: nextSec + 1 });
         setSec(nextSec);
         setSecTransition('in');
+        softScrollToForm();
         setTimeout(() => setSecTransition('idle'), 400);
       }, 250);
     } else {
@@ -602,7 +772,7 @@ export default function Page() {
     setSecTransition('out-right');
     setTimeout(() => {
       setSec(s => s - 1);
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      softScrollToForm();
       setSecTransition('in');
       setTimeout(() => setSecTransition('idle'), 400);
     }, 250);
@@ -851,15 +1021,108 @@ export default function Page() {
   const optimizedCost = Math.round(C.total * 0.3);
   const savings = C.total - optimizedCost;
 
-  // Priorytet #1 - poglebia problem, nie daje rozwiazan. Pokazuje DLACZEGO sam tego nie naprawisz.
+  // Priorytet #1 - lead + 3 bullety (zamiast wall-of-text 80 slow). Treść neuro zachowana, scanowalność wzrasta.
   const priority = (() => {
     const areas = [
-      { area: 'Sen', score: (D.sleepQ + D.screenBed + Math.max(0, 7.5 - D.sleep) * 1.5), action: D.sleep < 6 ? `Śpisz ${D.sleep}h. Mózg nie ma czasu na oczyszczanie z toksyn metabolicznych, beta-amyloidu, produktów zapalnych. Rano rozbity, po południu zjazd, wieczorem scrollujesz, bo dopamina nie doszła do normy. Samego snu nie wydłużysz, dopóki nie ruszysz trzech rzeczy naraz: światła rano, ekranu przed spaniem i kortyzolu w ciągu dnia.` : `${D.sleep}h w łóżku nie znaczy ${D.sleep}h snu. Architektura snu zmienia proporcje faz. Głęboki sen odpowiada za 80% wydzielania hormonu wzrostu. Kortyzol, ekrany, alkohol skracają tę fazę nawet przy 8h w pościeli. Jesteś w łóżku, regeneracja zatrzymuje się w połowie.`, impact: 'Każda noc pogarsza parametry' },
-      { area: 'Stres', score: (D.stress * 2 + D.energy + (D.workHours > 9 ? 2 : 0) + (D.mondayFeel >= 2 ? 1 : 0)), action: `Chroniczny kortyzol nie spada sam. Organizm przyzwyczaił się do tego poziomu i traktuje go jako bazę. Kortyzol i testosteron walczą o ten sam prekursor, pregnenolon. Kortyzol wygrywa, testosteron leci w dół. Mniej masy, gorsze libido, wolniejsza regeneracja. Ruszysz sam stres i zobaczysz, że sen się nie dogania, bo osie hormonalne są ze sobą spięte.`, impact: 'Sabotuje resztę parametrów' },
-      { area: 'Alkohol', score: (D.drinks / 2 + (D.subs > 0 ? 4 : 0)), action: D.drinks > 8 ? `${D.drinks} drinków = 12-18h detoksyfikacji wątroby. W tym czasie synteza białek mięśniowych stoi, kortyzol jest podwyższony, jelita przepuszczają endotoksyny do krwi. Następny weekend przychodzi zanim organizm wrócił do normy. Samego picia nie odstawisz na zero, potrzebujesz protokołu osłonowego przed, w trakcie i po.` : `Nawet umiarkowane picie obniża testosteron na 72h i niszczy fazę REM. Aromataza w tkance tłuszczowej szybciej przekształca testosteron w estradiol pod wpływem alkoholu. Mniej T, więcej E2, gorsze proporcje. W lustrze nie widzisz, widzisz za 6 miesięcy.`, impact: 'Cofasz się co tydzień' },
-      { area: 'Żywienie', score: (D.dietChaos * 1.5 + D.binge + (D.meals <= 1 ? 2 : 0)), action: `Jedzenie bez rytmu powoduje skoki insuliny co 2-3h. Przy podwyższonej insulinie enzym lipaza jest zablokowany, organizm nie spala tłuszczu. Greliny i leptyny tracą synchronizację, mózg przestaje odróżniać głód od nudy. Jesz nie za dużo, jesz na złym zegarze.`, impact: 'Blokuje spalanie i hormony' },
-      { area: 'Dopamina', score: (D.dopamine * 2 + (D.screenBed >= 2 ? 1 : 0)), action: `Receptory D2 są zregulowane w dół. Scrollowanie, substancje, jedzenie dają coraz mniej kopa. Ten sam mechanizm co tolerancja na używki. Dopamina napędza motywację do treningu, dyscyplinę przy jedzeniu, jakość snu. Kiedy jest wypalona, sypie się wszystko naraz. Samego detoksu dopaminowego nie starczy, potrzeba jednoczesnej korekty snu, kortyzolu i aktywności.`, impact: 'Niszczy motywację i dyscyplinę' },
-      { area: 'Trening', score: (D.miss * 2 + (D.trainHappy >= 1 ? 1 : 0) + (D.trainPlan >= 1 ? 1 : 0)), action: D.miss >= 2 ? `Opuszczasz treningi, bo organizm nie ma z czego regenerować. Przy rozjechanym kortyzolu, niedoborze snu i wypalonej dopaminie każdy trening bierze więcej, niż daje. Efekt: trenujesz, nic nie widzisz, motywacja leci, siłownia odpada. Lepszy plan treningowy tego nie ruszy. Pracuje się nad godzinami między treningami.` : `Trenujesz regularnie, a wyników brak. Trening to 4-5h tygodniowo. Pozostałe 163h decydują, czy cokolwiek z tej pracy zostanie. Kortyzol, sen, żywienie, regeneracja hormonalna. Bez tego trenujesz na 30-40% efektywności. Nie potrzebujesz nowego planu, potrzebujesz naprawić godziny poza siłownią.`, impact: 'Wysiłek bez efektów' },
+      {
+        area: 'Sen',
+        score: (D.sleepQ + D.screenBed + Math.max(0, 7.5 - D.sleep) * 1.5),
+        action: D.sleep < 6 ? {
+          lead: `Śpisz ${D.sleep}h. Mózg nie kończy oczyszczania, toksyny zostają.`,
+          bullets: [
+            'Rano rozbity, po południu zjazd',
+            'Wieczorem telefon do 1:00 bo dopamina nie wróciła do bazy',
+            'Bez ruszenia kortyzolu i światła rano sam tego nie wydłużysz',
+          ],
+        } : {
+          lead: `${D.sleep}h w łóżku nie znaczy ${D.sleep}h snu. Fazy się rozjeżdżają.`,
+          bullets: [
+            'Głęboki sen = 80% wydzielania hormonu wzrostu',
+            'Kortyzol, ekrany, alkohol tną tę fazę nawet przy 8h w pościeli',
+            'Jesteś w łóżku, regeneracja zatrzymuje się w połowie',
+          ],
+        },
+        impact: 'Każda noc pogarsza parametry',
+      },
+      {
+        area: 'Stres',
+        score: (D.stress * 2 + D.energy + (D.workHours > 9 ? 2 : 0) + (D.mondayFeel >= 2 ? 1 : 0)),
+        action: {
+          lead: 'Chroniczny kortyzol nie spada sam. Organizm traktuje go jako normę.',
+          bullets: [
+            'Walczy z testosteronem o pregnenolon. Kortyzol wygrywa, testo leci',
+            'Mniej masy, gorsze libido, wolniejsza regeneracja',
+            'Sam stresu nie ruszysz - osie hormonalne są spięte ze snem i jedzeniem',
+          ],
+        },
+        impact: 'Sabotuje resztę parametrów',
+      },
+      {
+        area: 'Alkohol',
+        score: (D.drinks / 2 + (D.subs > 0 ? 4 : 0)),
+        action: D.drinks > 8 ? {
+          lead: `${D.drinks} drinków = 12-18h detoksyfikacji wątroby.`,
+          bullets: [
+            'Synteza białek stoi, kortyzol w górze, jelita przepuszczają endotoksyny',
+            'Następny weekend przychodzi zanim organizm wrócił do normy',
+            'Trzy weekendy z rzędu zżerają miesiąc progresu z siłowni',
+          ],
+        } : {
+          lead: 'Nawet umiarkowane picie obniża testo na 72h i niszczy fazę REM.',
+          bullets: [
+            'Aromataza w tkance tłuszczowej szybciej przerabia testo w estradiol',
+            'Mniej T, więcej E2, gorsze proporcje',
+            'W lustrze nie widzisz. Widzisz za 6 miesięcy',
+          ],
+        },
+        impact: 'Trzy weekendy zżerają miesiąc progresu',
+      },
+      {
+        area: 'Żywienie',
+        score: (D.dietChaos * 1.5 + D.binge + (D.meals <= 1 ? 2 : 0)),
+        action: {
+          lead: 'Jedzenie bez rytmu = skoki insuliny co 2-3h.',
+          bullets: [
+            'Lipaza zablokowana, organizm nie spala tłuszczu',
+            'Greliny i leptyny rozjechane, mózg myli głód z nudą',
+            'Jesz nie za dużo. Jesz na złym zegarze',
+          ],
+        },
+        impact: 'Blokuje spalanie i hormony',
+      },
+      {
+        area: 'Dopamina',
+        score: (D.dopamine * 2 + (D.screenBed >= 2 ? 1 : 0)),
+        action: {
+          lead: 'Receptory D2 zregulowane w dół. Telefon, substancje, jedzenie - coraz mniej kopa.',
+          bullets: [
+            'Mechanizm jak tolerancja na używki',
+            'Dopamina napędza trening, dyscyplinę, sen - leży wszystko naraz',
+            'Sam detoks dopaminowy nie wystarczy bez korekty snu i kortyzolu',
+          ],
+        },
+        impact: 'Niszczy motywację i dyscyplinę',
+      },
+      {
+        area: 'Trening',
+        score: (D.miss * 2 + (D.trainHappy >= 1 ? 1 : 0) + (D.trainPlan >= 1 ? 1 : 0)),
+        action: D.miss >= 2 ? {
+          lead: 'Opuszczasz treningi bo organizm nie ma z czego regenerować.',
+          bullets: [
+            'Rozjechany kortyzol + brak snu + wypalona dopamina = każdy trening bierze więcej niż daje',
+            'Trenujesz, nic nie widzisz, motywacja leci, siłownia odpada',
+            'Lepszy plan tego nie ruszy. Robi się to w godzinach między treningami',
+          ],
+        } : {
+          lead: 'Trenujesz regularnie a wyników brak. Trening to 4-5h, reszta tygodnia 163h.',
+          bullets: [
+            'Kortyzol, sen, żywienie, regeneracja - bez tego trenujesz na 30-40%',
+            'Nie potrzebujesz nowego planu',
+            'Potrzebujesz naprawić godziny poza siłownią',
+          ],
+        },
+        impact: 'Wysiłek bez efektów',
+      },
     ];
     const worst = areas.sort((a, b) => b.score - a.score)[0];
     return worst;
@@ -878,10 +1141,12 @@ export default function Page() {
   // Zalecane badania krwi - ZERO hardcoded defaults, wszystko pod konkretne sygnały
   const badania: { nazwa: string; dlaczego: string; priorytet: 'wysoki' | 'sredni' }[] = [];
 
-  // Morfologia - baseline, ale tylko jeśli user ma jakikolwiek sygnał do interpretacji
+  // Domyślny zestaw - 3 najuniwersalniejsze badania, dające najwięcej "easy winów" u 80% facetów
   const hasAnySignal = D.tags.size >= 1 || D.stress >= 2 || D.energy >= 2 || D.sleep < 7 || D.drinks > 5 || D.subs > 0 || D.miss > 0 || D.binge >= 2 || D.dopamine >= 2;
   if (hasAnySignal) {
     badania.push({ nazwa: 'Morfologia z rozmazem', dlaczego: 'Punkt startowy: stan zapalny, anemia, odporność. Reszta interpretuje się w kontekście tego wyniku.', priorytet: 'wysoki' });
+    badania.push({ nazwa: 'Witamina D3 (25-OH)', dlaczego: '80% Polaków ma niedobór, większość nie wie. Niski D3 zżera testosteron, regenerację i decyzje wieczorem. Norma „ok" zaczyna się dużo wyżej niż referencyjna.', priorytet: 'wysoki' });
+    badania.push({ nazwa: 'Ferrytyna', dlaczego: 'Top przyczyna „mgły mózgowej" i zmęczenia u facetów. Norma 30 ng/ml to dno. Optymalna: 80-150. Energia w środę 14:00 zwykle leży tutaj.', priorytet: 'wysoki' });
   }
 
   // Testosteron całkowity + wolny - tylko gdy sygnały męskie
@@ -1117,7 +1382,8 @@ export default function Page() {
     if (D.mondayFeel >= 3) pct -= 8;
     else if (D.mondayFeel >= 2) pct -= 5;
     if (D.screenBed >= 2) pct -= 4;
-    return Math.max(pct, 15);
+    // Floor 40 - poniżej tego ICP wyśmieje liczbę. Realnie nikt nie chodzi po świecie z mózgiem na 15%.
+    return Math.max(pct, 40);
   })();
 
   // Wiek mozgu - osobna metryka od wieku biologicznego
@@ -1150,8 +1416,18 @@ export default function Page() {
   })();
 
   // Roczny spadek kognitywny przy obecnym stylu zycia
-  const cognitiveDecayPerYear = Math.round((100 - cognitive) * 0.12 * 10) / 10;
-  const cognitiveIn5Years = Math.max(Math.round(cognitive - cognitiveDecayPerYear * 5), 20);
+  // Realistycznie: 0.5-1%/rok przy zlym stylu zycia, max 2%/rok przy ekstremalnym
+  // Coefficient 0.02 = przy cognitive=40 wychodzi 1.2%/rok, przy cognitive=70 = 0.6%/rok
+  const cognitiveDecayPerYear = Math.round((100 - cognitive) * 0.02 * 10) / 10;
+  const cognitiveIn5Years = Math.max(Math.round(cognitive - cognitiveDecayPerYear * 5), 30);
+
+  // ── HERO VERDICT FRAME (council recommendation) ──
+  // Lata oddane = brain age - real age (verifiable in feel: spojrz w lustro)
+  const losYears = Math.max(Math.round(brainAge - D.age), 0);
+  // 70% odzyskasz w 90 dni (na podstawie 180+ transformacji Michala)
+  const recoverableYears = Math.max(Math.round(losYears * 0.7), 0);
+  // Roczny koszt zycia w obecnym stylu (extrapolacja z 6mies)
+  const costPerYear = Math.round(C.total / 6 * 12 / 100) * 100; // zaokraglenie do 100zł
 
   // Insight o mozgu - po obliczeniu cognitive
   if (cognitive < 75) insights.push(`Twój mózg pracuje na <b>${cognitive}% mocy</b>. To organ który zarabia Ci pieniądze, a Ty go degradujesz stylem życia.`);
@@ -1215,6 +1491,7 @@ export default function Page() {
   const animCognitive = useCounter(cognitive, 1100, countersActive);
   const animBioAge = useCounter(Math.round(bioAge), 900, countersActive);
   const animBrainAge = useCounter(Math.round(brainAge), 1000, countersActive);
+  const animLosYears = useCounter(losYears, 1200, countersActive);
 
   const SevField = ({ label, sub, k, val }: { label: string; sub?: string; k: SevKey; val: number }) => (
     <div style={{ marginBottom: 26 }}>
@@ -1436,6 +1713,80 @@ export default function Page() {
         @media (prefers-reduced-motion: reduce){
           *{animation:none !important;transition-duration:0.01ms !important}
         }
+
+        /* ════════════════════════════════════════════════════════════════
+           PREMIUM DIAG LAYER · matte cards · ambient · micro-interactions
+           ════════════════════════════════════════════════════════════════ */
+        @keyframes diagSheen{0%{background-position:300% 0}100%{background-position:-300% 0}}
+        @keyframes diagSheenV{0%{background-position:0 -300%}100%{background-position:0 300%}}
+        @keyframes diagOrb1{0%{transform:translate(0,0)}50%{transform:translate(-12vw,18vh)}100%{transform:translate(8vw,-6vh)}}
+        @keyframes diagOrb2{0%{transform:translate(0,0)}50%{transform:translate(15vw,-12vh)}100%{transform:translate(-8vw,8vh)}}
+        @keyframes diagNumGlow{0%,100%{filter:drop-shadow(0 0 14px rgba(200,168,78,.18))}50%{filter:drop-shadow(0 0 28px rgba(200,168,78,.4))}}
+        @keyframes diagBarShine{0%{transform:translateX(-100%)}50%,100%{transform:translateX(300%)}}
+
+        /* Ambient floating orby */
+        .diag-ambient{position:fixed;inset:0;pointer-events:none;z-index:0;overflow:hidden}
+        .diag-ambient::before,.diag-ambient::after{content:'';position:absolute;border-radius:50%;filter:blur(80px);opacity:.07;pointer-events:none}
+        .diag-ambient::before{width:55vw;height:55vw;background:radial-gradient(circle,rgba(232,195,115,.55),transparent 60%);top:-15vw;right:-15vw;animation:diagOrb1 32s ease-in-out infinite alternate}
+        .diag-ambient::after{width:45vw;height:45vw;background:radial-gradient(circle,rgba(200,168,78,.5),transparent 60%);bottom:-8vw;left:-8vw;animation:diagOrb2 38s ease-in-out infinite alternate}
+
+        /* Premium card with animated top border sheen */
+        .diag-card{position:relative;isolation:isolate;overflow:hidden;transition:transform .45s cubic-bezier(.16,1,.3,1),border-color .35s,box-shadow .45s}
+        .diag-card::after{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent 0%,rgba(200,168,78,.4) 35%,rgba(232,195,115,.85) 50%,rgba(200,168,78,.4) 65%,transparent 100%);background-size:300% 100%;animation:diagSheen 7s ease-in-out infinite;pointer-events:none;z-index:5}
+        .diag-card:hover{transform:translateY(-3px);box-shadow:0 18px 50px rgba(0,0,0,.55),0 0 28px rgba(200,168,78,.1) !important}
+
+        /* Big metric numbers shimmer */
+        .diag-metric-num{
+          background:linear-gradient(135deg,${M.gold} 0%,#e8cc80 35%,#f5e0a0 50%,#e8cc80 65%,${M.gold} 100%) !important;
+          background-size:300% 100% !important;-webkit-background-clip:text !important;background-clip:text !important;-webkit-text-fill-color:transparent !important;
+          color:transparent !important;
+          animation:shimmer 5s ease-in-out infinite,diagNumGlow 3.5s ease-in-out infinite
+        }
+
+        /* Verdict big number (lata fory oddanej) - red→gold gradient, dominacja straty */
+        .diag-verdict-num{
+          background:linear-gradient(135deg,#dc4444 0%,#e8cc80 50%,#dc4444 100%) !important;
+          background-size:300% 100% !important;-webkit-background-clip:text !important;background-clip:text !important;-webkit-text-fill-color:transparent !important;
+          color:transparent !important;
+          animation:shimmer 6s ease-in-out infinite,diagVerdictPulse 3s ease-in-out infinite
+        }
+        @keyframes diagVerdictPulse{
+          0%,100%{filter:drop-shadow(0 0 16px rgba(220,68,68,.18))}
+          50%{filter:drop-shadow(0 0 32px rgba(220,68,68,.4))}
+        }
+
+        /* Before/After mini boxes */
+        .diag-ba-box{position:relative;overflow:hidden;transition:transform .35s cubic-bezier(.16,1,.3,1),border-color .35s,box-shadow .35s}
+        .diag-ba-box::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;opacity:.7;animation:diagSheen 5s ease-in-out infinite;background-size:300% 100%}
+        .diag-ba-box.now::before{background:linear-gradient(90deg,transparent 0%,rgba(220,68,68,.5) 50%,transparent 100%);background-size:300% 100%}
+        .diag-ba-box.future::before{background:linear-gradient(90deg,transparent 0%,rgba(232,195,115,.7) 50%,transparent 100%);background-size:300% 100%}
+        .diag-ba-box:hover{transform:translateY(-2px) scale(1.01)}
+        .diag-ba-box.now:hover{border-color:rgba(220,68,68,.4) !important;box-shadow:0 12px 32px rgba(0,0,0,.4),0 0 22px rgba(220,68,68,.12)}
+        .diag-ba-box.future:hover{border-color:rgba(200,168,78,.5) !important;box-shadow:0 12px 32px rgba(0,0,0,.4),0 0 22px rgba(200,168,78,.14)}
+
+        /* Priority card with stronger pulse */
+        .diag-priority{position:relative;overflow:hidden;transition:transform .45s cubic-bezier(.16,1,.3,1),border-color .35s,box-shadow .45s}
+        .diag-priority::after{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,rgba(200,168,78,.6),rgba(232,195,115,.95),rgba(200,168,78,.6),transparent);background-size:300% 100%;animation:diagSheen 5s ease-in-out infinite;z-index:3}
+        .diag-priority:hover{transform:translateY(-3px);border-color:rgba(200,168,78,.55) !important;box-shadow:0 18px 50px rgba(0,0,0,.55),0 0 32px rgba(200,168,78,.14) !important}
+
+        /* Profile card with vertical sheen on left */
+        .diag-profile{position:relative;overflow:hidden;transition:transform .45s,border-color .35s,box-shadow .45s}
+        .diag-profile::after{content:'';position:absolute;top:0;left:0;width:2px;height:100%;background:linear-gradient(180deg,transparent 0%,rgba(200,168,78,.5) 30%,rgba(232,195,115,.9) 50%,rgba(200,168,78,.5) 70%,transparent 100%);background-size:100% 300%;animation:diagSheenV 6s ease-in-out infinite;z-index:3}
+        .diag-profile:hover{transform:translateX(2px);border-color:rgba(200,168,78,.3) !important;box-shadow:0 14px 40px rgba(0,0,0,.45),0 0 24px rgba(200,168,78,.08) !important}
+
+        /* Progress bar shine animation */
+        .diag-progress-bar{position:relative;overflow:hidden}
+        .diag-progress-bar::after{content:'';position:absolute;top:0;left:0;width:30%;height:100%;background:linear-gradient(90deg,transparent 0%,rgba(255,255,255,.25) 50%,transparent 100%);animation:diagBarShine 3.5s ease-in-out infinite;animation-delay:var(--shine-delay,0s)}
+
+        /* Collapsible buttons upgrade */
+        .diag-collapse-btn{position:relative;overflow:hidden;transition:transform .25s cubic-bezier(.16,1,.3,1),border-color .3s,background .3s,box-shadow .3s !important}
+        .diag-collapse-btn::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(200,168,78,.35),transparent);background-size:200% 100%;animation:diagSheen 9s ease-in-out infinite;opacity:.5;pointer-events:none}
+        .diag-collapse-btn:hover{transform:translateY(-1px);border-color:rgba(200,168,78,.4) !important;background:linear-gradient(135deg,rgba(200,168,78,.07) 0%,rgba(200,168,78,.02) 100%) !important;box-shadow:0 8px 22px rgba(0,0,0,.35),0 0 16px rgba(200,168,78,.08)}
+
+        /* Section tag spotlight */
+        .diag-section-tag{position:relative}
+        .diag-section-tag::before{content:'';position:absolute;left:-12px;top:50%;width:6px;height:6px;border-radius:50%;background:${M.gold};transform:translateY(-50%);box-shadow:0 0 12px ${M.gold},0 0 4px ${M.gold};animation:scorePulse 2.5s ease-in-out infinite}
+
       `}</style>
 
       {/* ── Skip-to-content dla dostępności ── */}
@@ -1465,8 +1816,8 @@ export default function Page() {
       {/* ── Scroll progress bar ── */}
       <ScrollProgress />
 
-      {/* ── Animowane niebo z gwiazdami ── */}
-      <StarField />
+      {/* ── Ambient gold orby (premium drift) ── */}
+      <div className="diag-ambient" aria-hidden="true" />
 
       <div
         id="diagnostyka"
@@ -1554,29 +1905,28 @@ export default function Page() {
                       background: M.gold + '10', borderRadius: 20, fontWeight: 700,
                       boxShadow: `0 0 12px ${M.gold}15`,
                     }} className="border-glow">
-                      Audyt 1:1 &middot; 200+ facetów &middot; 9 lat z neurobiologią
+                      12 pytań &middot; 90 sekund &middot; raport na ekranie
                     </div>
                     <h1 style={{
                       fontSize: 34, fontWeight: 900, lineHeight: 1.02, letterSpacing: -0.8, marginBottom: 20,
                       color: M.t1, textShadow: '0 0 24px rgba(255,255,255,.1), 0 1px 3px rgba(0,0,0,.5)',
                       textWrap: 'balance',
                     }}>
-                      Przesiewam, czy{' '}
+                      Ile lat żyjesz{' '}
                       <span style={{
                         color: M.gold,
                         fontWeight: 900,
                       }}>
-                        pasujemy.
-                      </span>{' '}
-                      Ty i ja, pół roku, 1:1.
+                        na pół gwizdka?
+                      </span>
                     </h1>
                     <p style={{ color: M.t2, fontSize: 16, lineHeight: 1.55, fontWeight: 500, maxWidth: 400, margin: '0 auto 18px' }}>
-                      Wypełniasz audyt 12 pytań. <strong style={{ color: M.t1 }}>Czytam osobiście</strong>. Po 24h wracam w DM @hantleitalerz z konkretną decyzją: pasujemy, nie pasujemy, dopytuję jeszcze 2 rzeczy.
+                      Praca zdalna, weekend co tydzień, ekran do 1:00. Sprawdzę, gdzie u Ciebie wycieka.
                     </p>
                     <p style={{ color: M.t3, fontSize: 13, lineHeight: 1.6, fontWeight: 400, maxWidth: 380, margin: '0 auto 18px', fontStyle: 'italic' }}>
-                      Filtr pod <strong style={{ color: M.gold, fontStyle: 'normal' }}>sześciomiesięczne prowadzenie 1:1</strong>, nie pod tani materiał. Po formularzu wracam z konkretną ofertą, jeśli widzę że ma sens po obu stronach.
+                      Za 90 sekund: <strong style={{ color: M.gold, fontStyle: 'normal' }}>wiek biologiczny, sprawność mózgu, miesięczna strata</strong>. Nikt Ci tego wcześniej nie policzył.
                     </p>
-                    <div style={{ fontFamily: M.mono, fontSize: 10, color: M.t4, letterSpacing: 1.5, marginTop: 4 }}>Poufne &middot; 300+ paneli hormonalnych &middot; 5.0 Google</div>
+                    <div style={{ fontFamily: M.mono, fontSize: 10, color: M.t4, letterSpacing: 1.5, marginTop: 4 }}>Poufne &middot; 9 lat z neurobiologią &middot; 300+ paneli hormonalnych</div>
                   </div>
                 </div>
               )}
@@ -1705,7 +2055,7 @@ export default function Page() {
                   </div>
                   <SevField label="Chaos w jedzeniu" sub="Omijasz śniadanie, wieczorem jesz za trzech?" k="dietChaos" val={D.dietChaos} />
                   <SevField label="Objadanie się" sub="Cały dzień na diecie, wieczorem pizza + lody. Po weekendzie znowu od zera." k="binge" val={D.binge} />
-                  <Slider label="Wydajesz miesięcznie na junk food / zamówienia" min={0} max={1000} step={50} k="junk" val={D.junk} unit=" zł" note={`6 miesięcy: ${(D.junk * 6).toLocaleString('pl-PL')} zł`} ariaLabel="Miesięczne wydatki na śmieciowe jedzenie w złotych" />
+                  <Slider label="Wydajesz miesięcznie na junk food / zamówienia" min={0} max={1000} step={50} k="junk" val={D.junk} unit=" zł" note={`6 miesięcy: ${(D.junk * 6).toLocaleString('pl-PL')} zł`} ariaLabel="Miesięczne wydatki na junk food / zamówienia w złotych" />
                   {/* Ile posiłków dziennie */}
                   <div style={{ marginBottom: 26 }}>
                     <div style={{ fontSize: 15, color: M.t1, fontWeight: 500, marginBottom: 6, lineHeight: 1.45 }}>
@@ -1763,7 +2113,7 @@ export default function Page() {
                 <div className="fade-up">
                   {/* Micro-reward: insight z poprzedniej sekcji */}
                   <div style={{ borderLeft: `3px solid ${M.gold}`, padding: '8px 12px', marginBottom: 20, background: `${M.gold}08`, borderRadius: '0 8px 8px 0', maxWidth: '100%', margin: '0 auto 20px' }}>
-                    <p style={{ fontSize: 12, color: M.t3, margin: 0, lineHeight: 1.5, textAlign: 'center' }}>Śmieciowe jedzenie: <strong style={{ color: M.gold }}>{(D.junk * 6).toLocaleString('pl-PL')} zł</strong> w 6 miesięcy</p>
+                    <p style={{ fontSize: 12, color: M.t3, margin: 0, lineHeight: 1.5, textAlign: 'center' }}>Junk food / zamówienia: <strong style={{ color: M.gold }}>{(D.junk * 6).toLocaleString('pl-PL')} zł</strong> w 6 miesięcy</p>
                   </div>
                   <div style={{ fontSize: 13.5, color: M.t3, fontWeight: 400, marginBottom: 20, lineHeight: 1.6 }}>Zero moralizowania. Policzę co Cię to kosztuje w złotówkach i testosteronie.</div>
                   <Slider label="Ile weekendów w miesiącu imprezujesz?" min={0} max={4} step={1} k="wknd" val={D.wknd} unit="" ariaLabel="Liczba imprezowych weekendów w miesiącu" />
@@ -2151,7 +2501,7 @@ export default function Page() {
               <Logo />
               <div style={{ marginTop: 14 }}>
                 <div style={{ fontFamily: M.mono, fontSize: 10, letterSpacing: 3, textTransform: 'uppercase', color: M.t4, marginBottom: 6 }}>Raport</div>
-                <h2 style={{ fontSize: 22, fontWeight: 800, letterSpacing: -0.5, color: M.t1 }}>{imie.trim() ? `${imie.trim()}, Twoje liczby` : 'Twoje liczby'}</h2>
+                <h2 style={{ fontSize: 22, fontWeight: 800, letterSpacing: -0.5, color: M.t1 }}>{imie.trim() ? `${capName(imie.trim())}, Twoje liczby` : 'Twoje liczby'}</h2>
               </div>
             </div>
 
@@ -2164,58 +2514,229 @@ export default function Page() {
                 boxSizing: 'border-box',
                 border: `2px solid ${M.gold}40`,
                 boxShadow: `0 8px 40px ${M.gold}15, inset 0 1px 0 ${M.gold}15`,
-              }} className="float-el">
+              }} className="float-el diag-card">
                 <div style={{ position: 'absolute', inset: 0, backgroundImage: 'repeating-linear-gradient(-45deg,transparent,transparent 4px,rgba(200,168,78,.03) 4px,rgba(200,168,78,.03) 8px)' }} />
                 <div style={{ position: 'relative' }}>
-                  {/* 3 metryki - DUŻE */}
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8, marginBottom: 16 }}>
-                    <div>
-                      <div style={{ fontFamily: M.mono, fontSize: 'clamp(40px, 10vw, 60px)', fontWeight: 800, color: M.gold, lineHeight: 1, textShadow: `0 0 24px ${M.gold}40` }}>
-                        {countersActive ? animPotential : potential}%
-                      </div>
-                      <div style={{ fontFamily: M.mono, fontSize: 9, letterSpacing: 1.5, textTransform: 'uppercase', color: M.t4, marginTop: 6 }}>potencjału</div>
-                    </div>
-                    <div style={{ textAlign: 'center' }}>
-                      <div style={{ fontFamily: M.mono, fontSize: 'clamp(40px, 10vw, 60px)', fontWeight: 800, color: bioAge > D.age + 2 ? M.org : M.t1, lineHeight: 1 }}>
-                        {countersActive ? animBioAge : Math.round(bioAge)}
-                      </div>
-                      <div style={{ fontFamily: M.mono, fontSize: 9, letterSpacing: 1.5, textTransform: 'uppercase', color: M.t4, marginTop: 6 }}>wiek biol.</div>
-                    </div>
-                    <div style={{ textAlign: 'right' }}>
-                      <div style={{ fontFamily: M.mono, fontSize: 'clamp(40px, 10vw, 60px)', fontWeight: 800, color: cognitive < 70 ? M.red : cognitive < 85 ? M.org : M.grn, lineHeight: 1 }}>
-                        {countersActive ? animCognitive : cognitive}%
-                      </div>
-                      <div style={{ fontFamily: M.mono, fontSize: 9, letterSpacing: 1.5, textTransform: 'uppercase', color: M.t4, marginTop: 6 }}>mózg</div>
-                    </div>
+                  {/* ── VERDICT: wiek mózgu jako headline. Konkret, nie label-game ── */}
+                  <div className="diag-verdict-num" style={{ fontFamily: M.mono, fontSize: 'clamp(78px, 21vw, 132px)', fontWeight: 900, lineHeight: .85, letterSpacing: '-0.04em', marginBottom: 4 }}>
+                    {countersActive ? animBrainAge : Math.round(brainAge)}
                   </div>
-                  {/* Brain insight */}
-                  <div style={{ fontSize: 13, color: M.t3, lineHeight: 1.6, marginTop: 8 }}>
-                    Twój mózg pracuje na <strong style={{ color: cognitive < 70 ? M.red : M.gold }}>{cognitive}%</strong> swojej mocy.
-                    {cognitiveDecayPerYear > 0.5 && <> Co roku tracisz ~{cognitiveDecayPerYear}% sprawności kognitywnej.</>}
+                  <div style={{ fontFamily: M.mono, fontSize: 11, letterSpacing: 3, textTransform: 'uppercase', color: M.t4, marginBottom: 16, fontWeight: 700 }}>tyle lat ma Twój mózg</div>
+
+                  <div style={{ fontSize: 16, color: M.t2, lineHeight: 1.5, marginBottom: 18 }}>
+                    Masz <strong style={{ color: M.t1 }}>{D.age}</strong>.
+                    {bioAge > D.age + 1 && <> Organizm: <strong style={{ color: M.org }}>{Math.round(bioAge)}</strong>.</>}
                   </div>
-                  {/* Identity shift */}
-                  <div style={{ marginTop: 12, fontSize: 11.5, color: M.t4, lineHeight: 1.55, fontStyle: 'italic' }}>
-                    Nikt Ci tego nie wytłumaczył. Teraz wiesz. Co z tym zrobisz, to już Twoja decyzja.
+
+                  {/* ── 2 supporting tiles ── */}
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                    {recoverableYears > 0 && (
+                      <div style={{ padding: '12px 8px', background: 'rgba(122,176,95,.08)', border: '1px solid rgba(122,176,95,.2)', borderRadius: 10, textAlign: 'center' }}>
+                        <div style={{ fontFamily: M.mono, fontSize: 'clamp(22px, 5.5vw, 30px)', fontWeight: 800, color: M.grn, lineHeight: 1 }}>-{recoverableYears} lat</div>
+                        <div style={{ fontFamily: M.mono, fontSize: 9, letterSpacing: 1.2, textTransform: 'uppercase', color: M.t4, marginTop: 4 }}>do cofnięcia w 90 dni</div>
+                      </div>
+                    )}
+                    {costPerYear > 0 && (
+                      <div style={{ padding: '12px 8px', background: 'rgba(220,68,68,.07)', border: '1px solid rgba(220,68,68,.18)', borderRadius: 10, textAlign: 'center' }}>
+                        <div style={{ fontFamily: M.mono, fontSize: 'clamp(22px, 5.5vw, 30px)', fontWeight: 800, color: M.red, lineHeight: 1 }}>{costPerYear.toLocaleString('pl-PL')} zł</div>
+                        <div style={{ fontFamily: M.mono, fontSize: 9, letterSpacing: 1.2, textTransform: 'uppercase', color: M.t4, marginTop: 4 }}>kosztuje Cię rocznie</div>
+                      </div>
+                    )}
                   </div>
-                  {brainAge > D.age + 1 && (
-                    <div style={{ marginTop: 8, fontSize: 11.5, color: M.t4 }}>
-                      Masz <strong style={{ color: M.t2 }}>{D.age} lat</strong>. Twój organizm ma <strong style={{ color: bioAge > D.age + 2 ? M.org : M.t2 }}>{Math.round(bioAge)}</strong>. Twój mózg ma <strong style={{ color: brainAge > D.age + 3 ? M.red : M.org }}>{Math.round(brainAge)}</strong>.
-                    </div>
-                  )}
                 </div>
               </div>
             </Reveal>
+
+            {/* ═══ DECYZJA - hot CTA zaraz pod hero (council recommendation) ═══ */}
+            <Reveal delay={100}>
+              <div style={{
+                position: 'relative', overflow: 'hidden',
+                background: `linear-gradient(160deg, rgba(19,19,19,0.95), rgba(200,168,78,0.08))`,
+                border: `2px solid ${M.gold}40`,
+                padding: '30px 22px', marginBottom: 20, borderRadius: 18, width: '100%', boxSizing: 'border-box',
+                boxShadow: `0 0 40px ${M.gold}10, inset 0 1px 0 ${M.gold}15`,
+              }}>
+                <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%) rotate(-25deg)', fontFamily: M.mono, fontSize: 52, fontWeight: 900, color: `${M.gold}04`, letterSpacing: 8, whiteSpace: 'nowrap', pointerEvents: 'none', userSelect: 'none' }}>HANTLE I TALERZ</div>
+
+                {(() => {
+                  const worstCat = catScores.reduce((a, b) => a.pct < b.pct ? a : b, catScores[0]);
+                  const topCatLabel = worstCat.label;
+                  const imieDisplay = imie.trim() ? capName(imie.trim()) : 'Stary';
+                  const dmText = `${topCatLabel.toLowerCase()} ciągnie, mózg ma ${Math.round(brainAge)} lat przy moich ${D.age}. gadamy?`;
+                  const dmHref = `https://ig.me/m/hantleitalerz?text=${encodeURIComponent(dmText)}`;
+                  return (
+                    <div style={{ position: 'relative' }}>
+                      <div style={{ fontFamily: M.mono, fontSize: 10, letterSpacing: 2.5, textTransform: 'uppercase', color: M.gold, fontWeight: 700, marginBottom: 14 }}>
+                        Co z tym dalej
+                      </div>
+                      <h3 style={{ fontSize: 26, fontWeight: 900, lineHeight: 1.15, marginBottom: 18, color: M.t1, letterSpacing: '-0.01em' }}>
+                        {SC > 60
+                          ? <>{imieDisplay}, masz tu robotę.</>
+                          : SC > 40
+                          ? <>{imieDisplay}, {topCatLabel.toLowerCase()} ciągnie Cię w dół.</>
+                          : <>{imieDisplay}, baza trzyma. Widzę tylko co się rozjeżdża.</>}
+                      </h3>
+
+                      {/* MICRO-PORTRAIT: micro-trust signal przy bio */}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 16 }}>
+                        <img
+                          src="/michal-portrait.jpg"
+                          alt="Michał"
+                          loading="lazy"
+                          style={{
+                            width: 60, height: 60,
+                            borderRadius: '50%',
+                            objectFit: 'cover',
+                            objectPosition: 'center 30%',
+                            border: `2px solid ${M.gold}`,
+                            boxShadow: `0 6px 20px rgba(0,0,0,.5),0 0 16px ${M.gold}25`,
+                            flexShrink: 0,
+                          }}
+                        />
+                        <div>
+                          <div style={{ fontSize: 14, fontWeight: 700, color: M.t1, lineHeight: 1.2, marginBottom: 3 }}>Michał &middot; Hantle i Talerz</div>
+                          <div style={{ fontSize: 12, color: M.t4, lineHeight: 1.4 }}>9 lat w neuro &middot; 180+ transformacji &middot; 5.0 na Google</div>
+                        </div>
+                      </div>
+
+                      <p style={{ fontSize: 14.5, color: M.t2, lineHeight: 1.65, marginBottom: 12 }}>
+                        U mnie robota wygląda tak: <strong style={{ color: M.t1 }}>panel krwi + Twoje odpowiedzi + plan pod Twoje życie</strong>.
+                      </p>
+                      <p style={{ fontSize: 14.5, color: M.t2, lineHeight: 1.65, marginBottom: 12 }}>
+                        U mnie robota wygląda tak: <strong style={{ color: M.t1 }}>panel krwi + Twoje odpowiedzi + plan pod Twoje życie</strong>.
+                      </p>
+                      <p style={{ fontSize: 14.5, color: M.t2, lineHeight: 1.65, marginBottom: 12 }}>
+                        Piszesz na DM jak do ziomka. Odpisuję w ciągu dnia.
+                      </p>
+                      <p style={{ fontSize: 14, color: M.t3, lineHeight: 1.65, marginBottom: 22 }}>
+                        30 dni: czujesz różnicę. 5 miesięcy: organizm trzyma to sam, bez Twojego pilnowania.
+                      </p>
+
+                      <div style={{ padding: '14px 16px', marginBottom: 22, background: `${M.gold}08`, borderRadius: 12, borderLeft: `3px solid ${M.gold}` }}>
+                        <div style={{ fontSize: 13.5, color: M.t2, lineHeight: 1.6 }}>
+                          {SC > 60
+                            ? <>Z Twoich odpowiedzi widzę, że <strong style={{ color: M.t1 }}>{topCatLabel.toLowerCase()}</strong> ciągnie reszta za sobą. Ruszysz to sam bez kontekstu, wracasz w to samo miejsce za 3 miesiące.</>
+                            : SC > 40
+                            ? <>Główny punkt: <strong style={{ color: M.t1 }}>{topCatLabel.toLowerCase()}</strong>. W Twoim wieku ma konkretną sekwencję. Ustalamy ją razem.</>
+                            : <>Masz {D.age} lat. Okno, w którym te interwencje działają najmocniej. Za 5 lat ten sam efekt kosztuje pół roku terapii.</>}
+                        </div>
+                      </div>
+
+                      {/* PRIMARY: forma LP - pelna sciezka, application qualifier */}
+                      <a
+                        href="https://forma.talerzihantle.com?utm_source=diagnostyka"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="shimmer-btn"
+                        onClick={() => { trackEvent('diag_cta_click', { target: 'forma_primary', score: SC, category: topCatLabel }); fbqTrack('AddToCart', { content_name: 'forma_aplikacja', content_category: 'high_ticket', value: SC, currency: 'PLN' }); }}
+                        style={{
+                          display: 'block', textAlign: 'center',
+                          background: `linear-gradient(135deg, ${M.gold}, #a08a3e)`,
+                          color: M.bg,
+                          fontFamily: M.sans, textDecoration: 'none', padding: '20px',
+                          marginBottom: 10, borderRadius: 14,
+                          boxShadow: '0 4px 24px rgba(200,168,78,0.25)',
+                          position: 'relative', overflow: 'hidden',
+                        } as React.CSSProperties}
+                      >
+                        <span style={{ fontSize: 15, fontWeight: 800, letterSpacing: 1.2 }}>
+                          WYPEŁNIJ APLIKACJĘ
+                        </span>
+                        <span style={{ display: 'block', fontSize: 11, fontWeight: 600, letterSpacing: 1.5, marginTop: 4, opacity: 0.9 }}>
+                          12 pytań &middot; 10 min &middot; odpisuję w 24h
+                        </span>
+                      </a>
+                      <div style={{ fontSize: 11.5, color: M.t4, lineHeight: 1.55, textAlign: 'center', marginBottom: 14 }}>
+                        Czytam osobiście. Bez bota.
+                      </div>
+
+                      {/* SECONDARY: DM bezpośrednio */}
+                      <a
+                        href={dmHref}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        onClick={() => trackEvent('diag_cta_click', { target: 'dm_secondary', score: SC, category: topCatLabel })}
+                        style={{
+                          display: 'block', textAlign: 'center', padding: '10px',
+                          color: M.t3, fontSize: 12, fontWeight: 500, fontFamily: M.sans,
+                          textDecoration: 'underline', textDecorationColor: `${M.t4}55`, textUnderlineOffset: 3,
+                          marginBottom: 8,
+                        }}
+                      >
+                        albo napisz w DM @hantleitalerz →
+                      </a>
+
+                      {/* TERTIARY: Share PNG (viral mechanic) */}
+                      <button
+                        onClick={async () => {
+                          trackEvent('diag_share_click', { score: SC });
+                          const blob = await genBrainAgeShareCard({
+                            name: imie.trim() ? capName(imie.trim()) : '',
+                            brainAge: Math.round(brainAge),
+                            age: D.age,
+                            bioAge: Math.round(bioAge),
+                          });
+                          if (!blob) return;
+                          const file = new File([blob], 'wiek-mozgu.png', { type: 'image/png' });
+                          // Native share API (mobile) z plikiem
+                          if ((navigator as any).canShare?.({ files: [file] })) {
+                            try {
+                              await (navigator as any).share({
+                                files: [file],
+                                text: `Mój wiek mózgu: ${Math.round(brainAge)}. Sprawdź swój: https://diagnostyka.talerzihantle.com`,
+                              });
+                              trackEvent('diag_share_complete', { method: 'native' });
+                              return;
+                            } catch {}
+                          }
+                          // Fallback: download
+                          const url = URL.createObjectURL(blob);
+                          const a = document.createElement('a');
+                          a.href = url; a.download = 'wiek-mozgu.png';
+                          document.body.appendChild(a);
+                          a.click();
+                          document.body.removeChild(a);
+                          URL.revokeObjectURL(url);
+                          trackEvent('diag_share_complete', { method: 'download' });
+                        }}
+                        style={{
+                          display: 'block', width: '100%', textAlign: 'center', padding: '12px',
+                          background: 'transparent',
+                          border: `1px dashed ${M.gold}40`,
+                          color: M.t3, fontSize: 12.5, fontWeight: 600, fontFamily: M.sans,
+                          borderRadius: 10, cursor: 'pointer',
+                          marginBottom: 14,
+                          transition: 'border-color .2s, color .2s, background .2s',
+                        }}
+                        onMouseEnter={e => { e.currentTarget.style.borderColor = `${M.gold}80`; e.currentTarget.style.color = M.gold; e.currentTarget.style.background = `${M.gold}06`; }}
+                        onMouseLeave={e => { e.currentTarget.style.borderColor = `${M.gold}40`; e.currentTarget.style.color = M.t3; e.currentTarget.style.background = 'transparent'; }}
+                      >
+                        Wyślij ziomkowi swój wynik
+                        <span style={{ display: 'block', fontSize: 10, color: M.t4, marginTop: 3, fontFamily: M.mono, letterSpacing: 1 }}>PNG · gotowy pod IG / DM / Story</span>
+                      </button>
+
+                      <div style={{ fontSize: 13, color: M.t3, lineHeight: 1.6, textAlign: 'center', paddingTop: 14, borderTop: `1px solid ${M.gold}20`, fontStyle: 'italic' }}>
+                        Imprezujesz w piątek. Poniedziałek ma być Twój.
+                      </div>
+                    </div>
+                  );
+                })()}
+              </div>
+            </Reveal>
+
+            {/* Section divider */}
+            <SectionDivider num="03" label="Co dalej · 3 miesiące" />
 
             {/* Before/After - TERAZ vs PO 3 MIESIĄCACH */}
             {SC > 15 && (
               <Reveal delay={90}>
                 <div style={{ display: 'flex', gap: 12, marginBottom: 20, width: '100%' }}>
-                  <div style={{ flex: 1, textAlign: 'center', padding: '14px 10px', background: 'rgba(220,68,68,0.08)', borderRadius: 12, border: '1px solid rgba(220,68,68,0.15)' }}>
+                  <div className="diag-ba-box now" style={{ flex: 1, textAlign: 'center', padding: '14px 10px', background: 'rgba(220,68,68,0.08)', borderRadius: 12, border: '1px solid rgba(220,68,68,0.15)' }}>
                     <div style={{ fontFamily: M.mono, fontSize: 9, color: M.t4, letterSpacing: 2.5, textTransform: 'uppercase', marginBottom: 6 }}>TERAZ</div>
                     <div style={{ fontFamily: M.mono, fontSize: 24, fontWeight: 800, color: M.red }}>{potential}%</div>
                     <div style={{ fontSize: 10, color: M.t4, marginTop: 3 }}>potencjału</div>
                   </div>
-                  <div style={{ flex: 1, textAlign: 'center', padding: '14px 10px', background: 'rgba(200,168,78,0.08)', borderRadius: 12, border: '1px solid rgba(200,168,78,0.15)' }}>
+                  <div className="diag-ba-box future" style={{ flex: 1, textAlign: 'center', padding: '14px 10px', background: 'rgba(200,168,78,0.08)', borderRadius: 12, border: '1px solid rgba(200,168,78,0.15)' }}>
                     <div style={{ fontFamily: M.mono, fontSize: 9, color: M.t4, letterSpacing: 2.5, textTransform: 'uppercase', marginBottom: 6 }}>PO 3 MIESIĄCACH</div>
                     <div style={{ fontFamily: M.mono, fontSize: 24, fontWeight: 800, color: M.gold }}>{Math.min(potential + Math.round(SC * 0.45), 95)}%</div>
                     <div style={{ fontSize: 10, color: M.grn, marginTop: 3, fontWeight: 600 }}>+{Math.round(SC * 0.45)}% odzyskane</div>
@@ -2224,9 +2745,12 @@ export default function Page() {
               </Reveal>
             )}
 
+            {/* Section divider */}
+            <SectionDivider num="04" label="Wąskie gardło" />
+
             {/* ═══ SCREEN 2: PRIORYTET #1 ═══ */}
             <Reveal delay={100}>
-              <div style={{
+              <div className="diag-priority" style={{
                 position: 'relative', overflow: 'hidden',
                 background: `linear-gradient(160deg, rgba(19,19,19,0.95), ${M.gold}0a)`,
                 border: `2px solid ${M.gold}35`,
@@ -2235,24 +2759,35 @@ export default function Page() {
               }}>
                 <div style={{ fontFamily: M.mono, fontSize: 9, letterSpacing: 3, textTransform: 'uppercase', color: M.gold, marginBottom: 12, display: 'flex', alignItems: 'center', gap: 8 }}>
                   <span style={{ width: 8, height: 8, borderRadius: 4, background: M.gold, display: 'inline-block', boxShadow: `0 0 8px ${M.gold}60` }} />
-                  {imie.trim() ? `${imie.trim()}, Twój priorytet nr 1` : 'Twój priorytet nr 1'}
+                  {imie.trim() ? `${capName(imie.trim())}, Twój priorytet nr 1` : 'Twój priorytet nr 1'}
                 </div>
-                <div style={{ fontSize: 16, fontWeight: 700, color: M.t1, marginBottom: 8, lineHeight: 1.35 }}>
+                <div style={{ fontSize: 16, fontWeight: 700, color: M.t1, marginBottom: 10, lineHeight: 1.35 }}>
                   {priority.area}
                 </div>
-                <p style={{ fontSize: 13, color: M.t2, lineHeight: 1.65, marginBottom: 10 }}>
-                  {priority.action}
+                <p style={{ fontSize: 13.5, color: M.t1, lineHeight: 1.55, marginBottom: 10, fontWeight: 500 }}>
+                  {priority.action.lead}
                 </p>
+                <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 14px', display: 'flex', flexDirection: 'column', gap: 7 }}>
+                  {priority.action.bullets.map((b: string, i: number) => (
+                    <li key={i} style={{ fontSize: 12.5, color: M.t3, lineHeight: 1.55, paddingLeft: 16, position: 'relative' }}>
+                      <span style={{ position: 'absolute', left: 0, top: 0, color: M.gold, fontWeight: 700 }}>·</span>
+                      {b}
+                    </li>
+                  ))}
+                </ul>
                 <div style={{ fontFamily: M.mono, fontSize: 10, color: M.grn, letterSpacing: 1, padding: '6px 10px', background: `${M.grn}0c`, border: `1px solid ${M.grn}20`, borderRadius: 8, display: 'inline-block' }}>
                   {priority.impact}
                 </div>
               </div>
             </Reveal>
 
+            {/* Section divider */}
+            <SectionDivider num="05" label="Twój profil w 6 osiach" />
+
             {/* ═══ SCREEN 3: 6 KATEGORII (compact bars) ═══ */}
             <Reveal delay={110}>
-              <div style={{
-                background: M.s1, border: `1px solid ${M.brd}`,
+              <div className="diag-profile diag-card" style={{
+                background: `linear-gradient(180deg, ${M.s1} 0%, #08080a 100%)`, border: `1px solid ${M.brd}`,
                 padding: '18px 16px', marginBottom: 20, borderRadius: 14, width: '100%', boxSizing: 'border-box',
               }}>
                 <div style={{ fontFamily: M.mono, fontSize: 10, letterSpacing: 2.5, textTransform: 'uppercase', color: M.t4, marginBottom: 16 }}>Twój profil</div>
@@ -2263,7 +2798,7 @@ export default function Page() {
                 {catScores.map((cat, i) => (
                   <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: i < catScores.length - 1 ? 10 : 0 }}>
                     <span style={{ fontSize: 12, fontWeight: 600, color: M.t2, width: 72, flexShrink: 0 }}>{cat.label}</span>
-                    <div style={{ flex: 1, height: 8, background: M.s3, borderRadius: 4, overflow: 'hidden', minWidth: 0 }}>
+                    <div className="diag-progress-bar" style={{ flex: 1, height: 8, background: M.s3, borderRadius: 4, overflow: 'hidden', minWidth: 0, ['--shine-delay' as any]: `${i * 0.4}s` }}>
                       <div style={{ height: '100%', background: catBarColor(cat.pct), width: `${cat.pct}%`, borderRadius: 4, transition: 'width 1s ease .2s' }} />
                     </div>
                     <span style={{ fontFamily: M.mono, fontSize: 12, fontWeight: 700, color: catBarColor(cat.pct), width: 38, flexShrink: 0, textAlign: 'right' }}>{cat.pct}%</span>
@@ -2273,12 +2808,15 @@ export default function Page() {
               </div>
             </Reveal>
 
+            {/* Section divider */}
+            <SectionDivider num="06" label="Pełen kontekst · rozwiń jeśli chcesz" />
+
             {/* ═══ SCREEN 4: COLLAPSIBLE SECTIONS ═══ */}
 
             {/* Collapsible: Koszty - TEASER tylko total + 1 insight */}
             <div style={{ marginBottom: 12 }}>
-              <button onClick={() => setShowDetails(!showDetails)} style={{
-                width: '100%', padding: '14px 18px', background: M.s1, border: `1px solid ${M.brd}`,
+              <button onClick={() => setShowDetails(!showDetails)} className="diag-collapse-btn" style={{
+                width: '100%', padding: '14px 18px', background: `linear-gradient(180deg, ${M.s1} 0%, #08080a 100%)`, border: `1px solid ${M.brd}`,
                 borderRadius: showDetails ? '12px 12px 0 0' : 12, color: M.t2, fontSize: 13, fontWeight: 600, fontFamily: M.sans,
                 cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center',
               }}>
@@ -2305,8 +2843,8 @@ export default function Page() {
             {/* Collapsible: Badania krwi - TEASER top 3 tylko */}
             {badaniaUnique.length > 0 && (
               <div style={{ marginBottom: 12 }}>
-                <button onClick={() => setShowBadania(!showBadania)} style={{
-                  width: '100%', padding: '14px 18px', background: M.s1, border: `1px solid ${M.brd}`,
+                <button onClick={() => setShowBadania(!showBadania)} className="diag-collapse-btn" style={{
+                  width: '100%', padding: '14px 18px', background: `linear-gradient(180deg, ${M.s1} 0%, #08080a 100%)`, border: `1px solid ${M.brd}`,
                   borderRadius: showBadania ? '12px 12px 0 0' : 12, color: M.t2, fontSize: 13, fontWeight: 600, fontFamily: M.sans,
                   cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center',
                 }}>
@@ -2327,8 +2865,9 @@ export default function Page() {
                         <div style={{ fontSize: 11.5, color: M.t3, lineHeight: 1.5, marginTop: 4 }}>{b.dlaczego}</div>
                       </div>
                     ))}
-                    <div style={{ marginTop: 16, padding: '14px', background: `${M.gold}08`, borderRadius: 10, fontSize: 12, color: M.t3, lineHeight: 1.55 }}>
-                      Resztę badań, kolejność i interpretację wyników omawiam na DM. Każdy panel leci pod Twój profil, nie z szablonu.
+                    <div style={{ marginTop: 16, padding: '14px', background: `${M.gold}08`, borderRadius: 10, fontSize: 12, color: M.t3, lineHeight: 1.6 }}>
+                      <strong style={{ color: M.t2 }}>Uwaga:</strong> 3 badania bez kontekstu reszty (kortyzol, hsCRP, B12, lipidogram, magnez, insulina...) to jak czytać 3 strony książki. Pokażą Ci, że coś jest nie tak, ale nie powiedzą czemu.<br /><br />
+                      Pełen panel pod Twój profil + interpretacja każdego wyniku w kontekście Twojego stylu życia robię razem z facetami, których prowadzę. Bez tego rzucasz monetą.
                     </div>
                   </div>
                 )}
@@ -2348,15 +2887,18 @@ export default function Page() {
                 </button>
                 {showProgresja && (
                   <div style={{ padding: '16px 18px', background: M.s1, borderRadius: '0 0 12px 12px', border: `1px solid ${M.brd}`, borderTopWidth: 0 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
                       <div style={{ width: 7, height: 7, borderRadius: 4, background: '#dc2626', boxShadow: `0 0 6px #dc262650` }} />
                       <span style={{ fontFamily: M.mono, fontSize: 11, fontWeight: 700, color: '#dc2626' }}>Za 12 miesięcy bez zmian</span>
                     </div>
-                    <div style={{ fontSize: 13.5, color: M.t2, lineHeight: 1.65, marginLeft: 15 }}>
-                      Mózg na <strong style={{ color: M.red }}>{cognitiveIn5Years}% mocy za 5 lat</strong>. Sprawność kognitywna <strong style={{ color: M.red }}>{Math.max(cognitive - Math.round(cognitiveDecayPerYear * 0.5), 30)}%</strong>. Objawy, które teraz są irytujące, zaczynają wymagać leczenia.
+                    <div style={{ fontSize: 13.5, color: M.t2, lineHeight: 1.65, marginLeft: 15, marginBottom: 8 }}>
+                      Wiek mózgu skacze do <strong style={{ color: M.red }}>{Math.round(brainAge) + 1}</strong>. Sprawność spada o <strong style={{ color: M.red }}>~{cognitiveDecayPerYear}%</strong>.
                     </div>
-                    <div style={{ marginTop: 14, padding: '12px 14px', background: `${M.gold}08`, borderRadius: 10, fontSize: 11.5, color: M.t3, lineHeight: 1.55 }}>
-                      Jak ta trajektoria wygląda miesiąc po miesiącu i gdzie można ją zatrzymać, omawiam 1:1.
+                    <div style={{ fontSize: 13.5, color: M.t2, lineHeight: 1.65, marginLeft: 15 }}>
+                      Objawy z irytujących robią się medyczne.
+                    </div>
+                    <div style={{ marginTop: 16, padding: '12px 14px', background: `${M.gold}08`, borderRadius: 10, fontSize: 11.5, color: M.t3, lineHeight: 1.55 }}>
+                      Jak to wygląda miesiąc po miesiącu i gdzie się zatrzymuje, omawiam 1:1.
                     </div>
                   </div>
                 )}
@@ -2402,7 +2944,7 @@ export default function Page() {
                 border: `1px solid ${M.brd}`,
               }}>
                 <div style={{ fontFamily: M.mono, fontSize: 10, letterSpacing: 2.5, color: M.t4, marginBottom: 14, textTransform: 'uppercase', fontWeight: 700 }}>
-                  {imie.trim() ? `${imie.trim()}, co tu widzę` : 'Co tu widzę'}
+                  {imie.trim() ? `${capName(imie.trim())}, co tu widzę` : 'Co tu widzę'}
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                   {D.sleep < 7 && <div style={{ fontSize: 14, color: M.t2, lineHeight: 1.6 }}><strong style={{ color: M.t1 }}>Śpisz {D.sleep}h.</strong> To nie jest o zegarze. Przy takim rytmie kortyzol nie resetuje się w nocy, rano startujesz już z niższej pozycji.</div>}
@@ -2415,131 +2957,14 @@ export default function Page() {
               </div>
             </Reveal>
 
-            {/* ═══ DECYZJA - Kalski pozycjonuje, nie sprzedaje ═══ */}
-            <Reveal delay={130}>
-              <div style={{
-                position: 'relative', overflow: 'hidden',
-                background: `linear-gradient(160deg, rgba(19,19,19,0.95), rgba(200,168,78,0.08))`,
-                border: `2px solid ${M.gold}40`,
-                padding: '30px 22px', marginBottom: 20, borderRadius: 18, width: '100%', boxSizing: 'border-box',
-                boxShadow: `0 0 40px ${M.gold}10, inset 0 1px 0 ${M.gold}15`,
-              }}>
-                <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%) rotate(-25deg)', fontFamily: M.mono, fontSize: 52, fontWeight: 900, color: `${M.gold}04`, letterSpacing: 8, whiteSpace: 'nowrap', pointerEvents: 'none', userSelect: 'none' }}>HANTLE I TALERZ</div>
-
-                {(() => {
-                  const worstCat = catScores.reduce((a, b) => a.pct < b.pct ? a : b, catScores[0]);
-                  const topCatLabel = worstCat.label;
-                  const imieDisplay = imie.trim() || 'Stary';
-                  return (
-                    <div style={{ position: 'relative' }}>
-                      <div style={{ fontFamily: M.mono, fontSize: 10, letterSpacing: 2.5, textTransform: 'uppercase', color: M.gold, fontWeight: 700, marginBottom: 14 }}>
-                        Co z tym dalej
-                      </div>
-                      <h3 style={{ fontSize: 26, fontWeight: 900, lineHeight: 1.15, marginBottom: 18, color: M.t1, letterSpacing: '-0.01em' }}>
-                        {SC > 60
-                          ? <>{imieDisplay}, to nie jest pojedynczy problem. To spięty układ.</>
-                          : SC > 40
-                          ? <>{imieDisplay}, {topCatLabel.toLowerCase()} ciągnie resztę za sobą.</>
-                          : <>{imieDisplay}, baza jest. Ale widzę, co się rozjedzie.</>}
-                      </h3>
-                      <p style={{ fontSize: 14.5, color: M.t2, lineHeight: 1.7, marginBottom: 20 }}>
-                        Od 9 lat pracuję z facetami w Twojej sytuacji. <strong style={{ color: M.t1 }}>180+ podopiecznych</strong>, 300+ paneli hormonalnych, 5.0 na Google. Tak to wygląda: <strong style={{ color: M.t1 }}>krew + Twoje odpowiedzi + plan pod Twój organizm</strong>. 6 miesięcy tygodniowych korekt. Piszesz do mnie na DM jak do kumpla, ja odpowiadam w ciągu dnia.
-                      </p>
-                      <div style={{ padding: '16px 18px', marginBottom: 24, background: `${M.gold}08`, borderRadius: 12, borderLeft: `3px solid ${M.gold}` }}>
-                        <div style={{ fontSize: 13.5, color: M.t2, lineHeight: 1.65 }}>
-                          {SC > 60
-                            ? <>Z Twoich odpowiedzi widzę, że <strong style={{ color: M.t1 }}>{topCatLabel.toLowerCase()}</strong> ciągnie najmocniej. Ruszenie tego bez reszty to droga donikąd, sam byłem przy paru takich próbach z podopiecznymi, którzy przyszli dopiero po kolejnym nieudanym podejściu.</>
-                            : SC > 40
-                            ? <>Główny punkt to <strong style={{ color: M.t1 }}>{topCatLabel.toLowerCase()}</strong>, ale tu nie wchodzi się pojedynczą zmianą. Ten problem w Twoim wieku ma konkretną sekwencję, którą ustalamy razem.</>
-                            : <>Masz {D.age} lat i okno, w którym te interwencje działają nieliniowo dobrze. Za 5 lat ten sam efekt kosztuje półroczną terapię. Widzę to na podopiecznych, którzy przyszli za późno.</>}
-                        </div>
-                      </div>
-                      {(() => {
-                        const dmText = `hej michal, zrobilem diagnostyke - ${topCatLabel.toLowerCase()} ciagnie, ${potential}% potencjalu. chcialbym porozmawiac o prowadzeniu`;
-                        const dmHref = `https://ig.me/m/hantleitalerz?text=${encodeURIComponent(dmText)}`;
-                        return (
-                          <>
-                            <a
-                              href="https://forma.talerzihantle.com?utm_source=diagnostyka"
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="shimmer-btn"
-                              onClick={() => { trackEvent('diag_cta_click', { target: 'forma_primary', score: SC, category: topCatLabel }); fbqTrack('AddToCart', { content_name: 'forma_aplikacja', content_category: 'high_ticket', value: SC, currency: 'PLN' }); }}
-                              style={{
-                                display: 'block', textAlign: 'center',
-                                background: `linear-gradient(135deg, ${M.gold}, #a08a3e)`,
-                                color: M.bg,
-                                fontFamily: M.sans, textDecoration: 'none', padding: '20px',
-                                marginBottom: 10, borderRadius: 14,
-                                boxShadow: '0 4px 24px rgba(200,168,78,0.25)',
-                                position: 'relative', overflow: 'hidden',
-                              } as React.CSSProperties}
-                            >
-                              <span style={{ fontSize: 15, fontWeight: 800, letterSpacing: 1.2 }}>
-                                WYPEŁNIJ PEŁNĄ APLIKACJĘ
-                              </span>
-                              <span style={{ display: 'block', fontSize: 11, fontWeight: 600, letterSpacing: 1.5, marginTop: 4, opacity: 0.85 }}>
-                                12 pytań &middot; 10 min &middot; wracam w 24h w DM
-                              </span>
-                            </a>
-                            <div style={{ fontSize: 11.5, color: M.t4, lineHeight: 1.55, textAlign: 'center', marginBottom: 10 }}>
-                              Aplikacja na sześciomiesięczne prowadzenie 1:1. Twoje odpowiedzi czytam osobiście. Wracam w 24h w DM @hantleitalerz z decyzją: pasujemy, nie pasujemy, dopytuję jeszcze 2 rzeczy.
-                            </div>
-                            <a
-                              href={dmHref}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              onClick={() => trackEvent('diag_cta_click', { target: 'dm_secondary', score: SC, category: topCatLabel })}
-                              style={{
-                                display: 'block', textAlign: 'center', padding: '10px',
-                                color: M.t4, fontSize: 11.5, fontWeight: 500, fontFamily: M.sans,
-                                textDecoration: 'underline', textDecorationColor: `${M.t4}55`, textUnderlineOffset: 3,
-                                marginBottom: 14,
-                              }}
-                            >
-                              albo napisz od razu w DM @hantleitalerz →
-                            </a>
-                          </>
-                        );
-                      })()}
-                      <div style={{ fontSize: 13, color: M.t3, lineHeight: 1.6, textAlign: 'center', paddingTop: 14, borderTop: `1px solid ${M.gold}20`, fontStyle: 'italic' }}>
-                        Imprezujesz w piątek. Poniedziałek ma być Twój.
-                      </div>
-                    </div>
-                  );
-                })()}
-              </div>
-            </Reveal>
-
             {/* Źródła - kompaktowe */}
             <div style={{ padding: '12px', fontSize: 10, color: M.t4, lineHeight: 1.6, fontFamily: M.mono }}>
               Źródła: RAND 2016, Leproult & Van Cauter JAMA 2011, Parr et al. 2014, Cappuccio et al. 2010, Hemp HBR 2004, Vingren et al. 2013, Halson 2014, Schoenfeld et al. 2017, Expert Rev. Endocrinol. Metab. 2023
             </div>
 
-            {/* ═══ STICKY CTA ═══ */}
+            {/* ═══ STICKY CTA - upgraded: scroll progress + DM-direct (council Expansionist) ═══ */}
             {showStickyCta && (
-              <div style={{
-                position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 50,
-                padding: '12px 20px', paddingBottom: 'max(12px, env(safe-area-inset-bottom))',
-                background: 'linear-gradient(to top, rgba(10,10,10,0.95), rgba(10,10,10,0.8), transparent)',
-              }}>
-                <a
-                  href="https://forma.talerzihantle.com?utm_source=diagnostyka_sticky"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  onClick={() => { trackEvent('diag_cta_click', { target: 'forma_sticky', score: SC }); fbqTrack('InitiateCheckout', { content_name: 'forma_sticky', content_category: 'high_ticket', value: SC, currency: 'PLN' }); }}
-                  style={{
-                    display: 'block', width: '100%', maxWidth: 520, margin: '0 auto',
-                    padding: '14px', textAlign: 'center', borderRadius: 12,
-                    background: `linear-gradient(135deg, ${M.gold}, #a08a3e)`,
-                    color: M.bg, fontWeight: 800, fontSize: 13.5, textDecoration: 'none',
-                    letterSpacing: 1.2,
-                    boxShadow: '0 4px 20px rgba(200,168,78,0.35)',
-                  }}
-                >
-                  WYPEŁNIJ PEŁNĄ APLIKACJĘ &rarr;
-                </a>
-              </div>
+              <StickyCtaBar SC={SC} potential={potential} brainAge={brainAge} userAge={D.age} topCatLabel={catScores.reduce((a, b) => a.pct < b.pct ? a : b, catScores[0]).label} />
             )}
           </div>
         )}
