@@ -622,7 +622,7 @@ function StickyCtaBar({ SC, potential, brainAge, userAge, topCatLabel }: { SC: n
   const dmHref = `https://ig.me/m/hantleitalerz?text=${encodeURIComponent(dmText)}`;
   return (
     <div style={{
-      position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 50,
+      position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 100,
       paddingBottom: 'max(10px, env(safe-area-inset-bottom))',
       background: 'linear-gradient(to top, rgba(10,10,10,0.96) 0%, rgba(10,10,10,0.88) 60%, rgba(10,10,10,0.4) 90%, transparent 100%)',
     }}>
@@ -2494,7 +2494,7 @@ export default function Page() {
 
         {/* ── RESULTS ── */}
         {phase === 'results' && (
-          <div className="fade-up" style={{ padding: '32px 16px 80px', width: '100%', boxSizing: 'border-box' }}>
+          <div className="fade-up" style={{ padding: '32px 16px 140px', width: '100%', boxSizing: 'border-box' }}>
 
             {/* Header */}
             <div style={{ textAlign: 'center', marginBottom: 24, paddingBottom: 16, borderBottom: `1px solid ${M.brd}` }}>
@@ -2518,15 +2518,22 @@ export default function Page() {
                 <div style={{ position: 'absolute', inset: 0, backgroundImage: 'repeating-linear-gradient(-45deg,transparent,transparent 4px,rgba(200,168,78,.03) 4px,rgba(200,168,78,.03) 8px)' }} />
                 <div style={{ position: 'relative' }}>
                   {/* ── VERDICT: wiek mózgu jako headline. Konkret, nie label-game ── */}
-                  <div className="diag-verdict-num" style={{ fontFamily: M.mono, fontSize: 'clamp(78px, 21vw, 132px)', fontWeight: 900, lineHeight: .85, letterSpacing: '-0.04em', marginBottom: 4 }}>
+                  <div className="diag-verdict-num" style={{ fontFamily: M.mono, fontSize: 'clamp(64px, 18vw, 120px)', fontWeight: 900, lineHeight: .9, letterSpacing: '-0.03em', marginBottom: 4 }}>
                     {countersActive ? animBrainAge : Math.round(brainAge)}
                   </div>
                   <div style={{ fontFamily: M.mono, fontSize: 11, letterSpacing: 3, textTransform: 'uppercase', color: M.t4, marginBottom: 16, fontWeight: 700 }}>tyle lat ma Twój mózg</div>
 
-                  <div style={{ fontSize: 16, color: M.t2, lineHeight: 1.5, marginBottom: 18 }}>
+                  <div style={{ fontSize: 16, color: M.t2, lineHeight: 1.5, marginBottom: 14 }}>
                     Masz <strong style={{ color: M.t1 }}>{D.age}</strong>.
                     {bioAge > D.age + 1 && <> Organizm: <strong style={{ color: M.org }}>{Math.round(bioAge)}</strong>.</>}
                   </div>
+
+                  {/* ── Co to znaczy w środę 14:00 - identity shock requires sitting in it ── */}
+                  {losYears >= 3 && (
+                    <div style={{ fontSize: 13.5, color: M.t3, lineHeight: 1.6, marginBottom: 18, padding: '11px 14px', background: 'rgba(220,68,68,0.05)', border: '1px solid rgba(220,68,68,0.15)', borderRadius: 8 }}>
+                      W praktyce: maila czytasz {losYears > 6 ? '3' : '2'} razy zanim zrozumiesz. Energia siada o 14:00 mimo kawy o 9:00. Wieczorem decyzje zwlekają do jutra.
+                    </div>
+                  )}
 
                   {/* ── 2 supporting tiles ── */}
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
@@ -2648,6 +2655,11 @@ export default function Page() {
                         </div>
                       </div>
 
+                      {/* TRUST PRE-CTA: relief frame zanim user kliknie (nie po) */}
+                      <div style={{ fontSize: 12, color: M.t3, lineHeight: 1.5, textAlign: 'center', marginBottom: 12, fontStyle: 'italic' }}>
+                        Czytam osobiście, nie bot. Odpisuję w 24h. Jak nie pasujesz, mówię wprost.
+                      </div>
+
                       {/* PRIMARY: forma LP - pelna sciezka, application qualifier */}
                       <a
                         href="https://forma.talerzihantle.com?utm_source=diagnostyka"
@@ -2660,7 +2672,7 @@ export default function Page() {
                           background: `linear-gradient(135deg, ${M.gold}, #a08a3e)`,
                           color: M.bg,
                           fontFamily: M.sans, textDecoration: 'none', padding: '20px',
-                          marginBottom: 10, borderRadius: 14,
+                          marginBottom: 14, borderRadius: 14,
                           boxShadow: '0 4px 24px rgba(200,168,78,0.25)',
                           position: 'relative', overflow: 'hidden',
                         } as React.CSSProperties}
@@ -2669,27 +2681,26 @@ export default function Page() {
                           WYPEŁNIJ APLIKACJĘ
                         </span>
                         <span style={{ display: 'block', fontSize: 11, fontWeight: 600, letterSpacing: 1.5, marginTop: 4, opacity: 0.9 }}>
-                          12 pytań &middot; 10 min &middot; odpisuję w 24h
+                          12 pytań &middot; pisanie 5-7 min &middot; DM zwrotny w 24h
                         </span>
                       </a>
-                      <div style={{ fontSize: 11.5, color: M.t4, lineHeight: 1.55, textAlign: 'center', marginBottom: 14 }}>
-                        Czytam osobiście. Bez bota.
-                      </div>
 
-                      {/* SECONDARY: DM bezpośrednio */}
+                      {/* SECONDARY: DM bezpośrednio - 44px tap target */}
                       <a
                         href={dmHref}
                         target="_blank"
                         rel="noopener noreferrer"
                         onClick={() => trackEvent('diag_cta_click', { target: 'dm_secondary', score: SC, category: topCatLabel })}
                         style={{
-                          display: 'block', textAlign: 'center', padding: '10px',
-                          color: M.t3, fontSize: 12, fontWeight: 500, fontFamily: M.sans,
-                          textDecoration: 'underline', textDecorationColor: `${M.t4}55`, textUnderlineOffset: 3,
-                          marginBottom: 8,
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          padding: '14px 16px', minHeight: 44,
+                          color: M.t3, fontSize: 13, fontWeight: 600, fontFamily: M.sans,
+                          textDecoration: 'none', borderRadius: 10,
+                          border: `1px solid ${M.brd2}`, background: 'transparent',
+                          marginBottom: 10,
                         }}
                       >
-                        albo napisz w DM @hantleitalerz →
+                        albo napisz w DM @hantleitalerz &rarr;
                       </a>
 
                       {/* TERTIARY: Share PNG (viral mechanic) */}
