@@ -1921,10 +1921,10 @@ export default function Page() {
                       </span>
                     </h1>
                     <p style={{ color: M.t2, fontSize: 16, lineHeight: 1.55, fontWeight: 500, maxWidth: 400, margin: '0 auto 18px' }}>
-                      Praca zdalna, weekend co tydzień, ekran do 1:00. Sprawdzę, gdzie u Ciebie wycieka.
+                      Sprawdzę gdzie u Ciebie wycieka.
                     </p>
                     <p style={{ color: M.t3, fontSize: 13, lineHeight: 1.6, fontWeight: 400, maxWidth: 380, margin: '0 auto 18px', fontStyle: 'italic' }}>
-                      Za 90 sekund: <strong style={{ color: M.gold, fontStyle: 'normal' }}>wiek biologiczny, sprawność mózgu, miesięczna strata</strong>. Nikt Ci tego wcześniej nie policzył.
+                      12 pytań, 90 sekund. <strong style={{ color: M.gold, fontStyle: 'normal' }}>Wiek mózgu, hormony, miesięczna strata.</strong> Nikt Ci tego wcześniej nie policzył.
                     </p>
                     <div style={{ fontFamily: M.mono, fontSize: 10, color: M.t4, letterSpacing: 1.5, marginTop: 4 }}>Poufne &middot; 9 lat z neurobiologią &middot; 300+ paneli hormonalnych</div>
                   </div>
