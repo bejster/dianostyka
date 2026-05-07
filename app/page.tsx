@@ -1094,7 +1094,7 @@ export default function Page() {
         area: 'Dopamina',
         score: (D.dopamine * 2 + (D.screenBed >= 2 ? 1 : 0)),
         action: {
-          lead: 'Receptory D2 zregulowane w dół. Telefon, substancje, jedzenie - coraz mniej kopa.',
+          lead: 'Receptory D2 zregulowane w dół. Telefon, substancje, jedzenie. Coraz mniej kopa za każdym razem.',
           bullets: [
             'Mechanizm jak tolerancja na używki',
             'Dopamina napędza trening, dyscyplinę, sen - leży wszystko naraz',
@@ -1416,16 +1416,16 @@ export default function Page() {
   })();
 
   // Roczny spadek kognitywny przy obecnym stylu zycia
-  // Realistycznie: 0.5-1%/rok przy zlym stylu zycia, max 2%/rok przy ekstremalnym
-  // Coefficient 0.02 = przy cognitive=40 wychodzi 1.2%/rok, przy cognitive=70 = 0.6%/rok
-  const cognitiveDecayPerYear = Math.round((100 - cognitive) * 0.02 * 10) / 10;
+  // Realistycznie: 0.5-1%/rok przy zlym stylu zycia, max 1.5%/rok przy ekstremalnym
+  // Coefficient 0.015 = przy cognitive=40 wychodzi 0.9%/rok, przy cognitive=70 = 0.45%/rok
+  const cognitiveDecayPerYear = Math.round((100 - cognitive) * 0.015 * 10) / 10;
   const cognitiveIn5Years = Math.max(Math.round(cognitive - cognitiveDecayPerYear * 5), 30);
 
   // ── HERO VERDICT FRAME (council recommendation) ──
   // Lata oddane = brain age - real age (verifiable in feel: spojrz w lustro)
   const losYears = Math.max(Math.round(brainAge - D.age), 0);
-  // 70% odzyskasz w 90 dni (na podstawie 180+ transformacji Michala)
-  const recoverableYears = Math.max(Math.round(losYears * 0.7), 0);
+  // 70% odzyskasz w 90 dni, max 4 lata (cap medycznie realistyczny - Subagent B audit)
+  const recoverableYears = Math.max(Math.min(Math.round(losYears * 0.7), 4), 0);
   // Roczny koszt zycia w obecnym stylu (extrapolacja z 6mies)
   const costPerYear = Math.round(C.total / 6 * 12 / 100) * 100; // zaokraglenie do 100zł
 
@@ -2122,7 +2122,7 @@ export default function Page() {
                   <Slider label="Ile wydajesz na substancje" min={0} max={800} step={50} k="subs" val={D.subs} unit=" zł" ariaLabel="Miesięczne wydatki na substancje w złotych" />
                   {D.subs > 0 && (
                     <div style={{ padding: '12px 16px', background: M.s1, borderRadius: 12, border: `1px solid ${M.brd}`, marginTop: -12, marginBottom: 28 }}>
-                      <div style={{ fontSize: 11, color: M.t4, fontFamily: M.mono, letterSpacing: 0.5, marginBottom: 8 }}>CO TO OZNACZA DLA TWOJEGO ORGANIZMU:</div>
+                      <div style={{ fontSize: 11, color: M.t4, fontFamily: M.mono, letterSpacing: 0.5, marginBottom: 8 }}>Co to znaczy dla Twojego organizmu</div>
                       <div style={{ fontSize: 12.5, color: M.t3, lineHeight: 1.7 }}>
                         {D.subs > 0 && D.subs <= 200 && '• Okazjonalne użycie - serotonina potrzebuje 2-4 tyg. na regenerację. Przy regularnym cyklu okno regeneracji nigdy się nie zamyka.'}
                         {D.subs > 200 && D.subs <= 500 && '• Regularne wydatki na substancje - wyczerpanie serotoniny + dopaminy. Mózg zaczyna traktować normalny poziom jako „za mało". Trening i odżywianie tracą na efektywności.'}
@@ -2574,7 +2574,7 @@ export default function Page() {
                           ? <>{imieDisplay}, masz tu robotę.</>
                           : SC > 40
                           ? <>{imieDisplay}, {topCatLabel.toLowerCase()} ciągnie Cię w dół.</>
-                          : <>{imieDisplay}, baza trzyma. Widzę tylko co się rozjeżdża.</>}
+                          : <>{imieDisplay}, baza trzyma. 2-3 punkty nie pozwalają wyjść wyżej.</>}
                       </h3>
 
                       {/* MICRO-PORTRAIT: micro-trust signal przy bio */}
@@ -2635,7 +2635,7 @@ export default function Page() {
                       </div>
 
                       <p style={{ fontSize: 13.5, color: M.t3, lineHeight: 1.6, marginBottom: 18, fontStyle: 'italic' }}>
-                        180+ facetów już tam doszło. Z Twoich odpowiedzi widzę, że Ty też zobaczysz swoje liczby tam, gdzie chcesz.
+                        180+ facetów po tym samym. Twoje odpowiedzi nie są wyjątkowe — sekwencja działa.
                       </p>
 
                       <div style={{ padding: '14px 16px', marginBottom: 22, background: `${M.gold}08`, borderRadius: 12, borderLeft: `3px solid ${M.gold}` }}>
@@ -2742,7 +2742,7 @@ export default function Page() {
                       </button>
 
                       <div style={{ fontSize: 13, color: M.t3, lineHeight: 1.6, textAlign: 'center', paddingTop: 14, borderTop: `1px solid ${M.gold}20`, fontStyle: 'italic' }}>
-                        Imprezujesz w piątek. Poniedziałek ma być Twój.
+                        Piątek dla wszystkich. Poniedziałek dla tych co coś z tego mają.
                       </div>
                     </div>
                   );
