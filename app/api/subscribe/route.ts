@@ -20,6 +20,11 @@ export async function POST(req: NextRequest) {
       wynik_badania_count,
       wynik_badania_priorytet,
       biggest_category,
+      // Nowe pola — priority lead routing
+      priority_lead,
+      commitment_proxy,
+      budget_proxy,
+      path,
       timestamp,
       source,
       odpowiedzi,
@@ -50,6 +55,11 @@ export async function POST(req: NextRequest) {
     if (wynik_hamulce) mlFields.diagnostyka_brakes = String(wynik_hamulce);
     if (wynik_badania_count) mlFields.diagnostyka_tests_count = String(wynik_badania_count);
     if (wynik_badania_priorytet) mlFields.diagnostyka_tests_priority = String(wynik_badania_priorytet);
+    // Whitelist nowych pól — routing i scoring lead
+    if (priority_lead !== undefined) mlFields.diagnostyka_priority_lead = String(priority_lead);
+    if (commitment_proxy !== undefined) mlFields.diagnostyka_commitment = String(commitment_proxy);
+    if (budget_proxy !== undefined) mlFields.diagnostyka_budget = String(budget_proxy);
+    if (path) mlFields.diagnostyka_path = String(path);
     if (fields) Object.assign(mlFields, fields);
 
     let mlOk = false;
@@ -101,6 +111,10 @@ export async function POST(req: NextRequest) {
             wynik_badania_count: wynik_badania_count || '',
             wynik_badania_priorytet: wynik_badania_priorytet || '',
             biggest_category: biggest_category || '',
+            priority_lead: priority_lead || '0',
+            commitment_proxy: commitment_proxy || '',
+            budget_proxy: budget_proxy || '',
+            path: path || 'general',
             timestamp: timestamp || new Date().toISOString(),
             source: source || 'diagnostyka_hit',
             odpowiedzi: odpowiedzi || {},
