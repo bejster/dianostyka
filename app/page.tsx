@@ -2642,7 +2642,7 @@ export default function Page() {
                       </div>
 
                       <p style={{ fontSize: 13.5, color: M.t3, lineHeight: 1.6, marginBottom: 18, fontStyle: 'italic' }}>
-                        180+ facetów po tym samym. Twoje odpowiedzi nie są wyjątkowe — sekwencja działa.
+                        180+ facetów po tym samym. Twoje odpowiedzi nie są wyjątkowe. Sekwencja działa.
                       </p>
 
                       <div style={{ padding: '14px 16px', marginBottom: 22, background: `${M.gold}08`, borderRadius: 12, borderLeft: `3px solid ${M.gold}` }}>
