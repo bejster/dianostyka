@@ -1839,7 +1839,7 @@ export default function Page() {
             }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
                 <Logo />
-                <span style={{ fontFamily: M.mono, fontSize: 10, fontWeight: 700, color: M.gold, textAlign: 'right' }}>Sekcja {sec + 1} z 7: {SECTIONS[sec]}</span>
+                <span style={{ fontFamily: M.mono, fontSize: 10, fontWeight: 700, color: M.gold, textAlign: 'right' }}>{sec + 1}/7 &middot; {SECTIONS[sec]}</span>
               </div>
               <div
                 role="progressbar"
@@ -1869,7 +1869,7 @@ export default function Page() {
                 padding: '10px 16px',
                 display: 'flex', justifyContent: 'space-between', alignItems: 'center',
               }}>
-                <span style={{ fontFamily: M.mono, fontSize: 10, letterSpacing: 2.5, textTransform: 'uppercase', color: M.t4 }}>Tyle Cię to kosztuje / 6 mies.</span>
+                <span style={{ fontFamily: M.mono, fontSize: 10, letterSpacing: 2.5, textTransform: 'uppercase', color: M.t4 }}>Twoja strata / 6 mies.</span>
                 <span style={{ fontFamily: M.mono, fontSize: 18, fontWeight: 700, color: M.gold, textShadow: `0 0 12px ${M.gold}25` }}>{C.total.toLocaleString('pl-PL')} zł</span>
               </div>
             )}
@@ -1905,28 +1905,28 @@ export default function Page() {
                       background: M.gold + '10', borderRadius: 20, fontWeight: 700,
                       boxShadow: `0 0 12px ${M.gold}15`,
                     }} className="border-glow">
-                      12 pytań &middot; 90 sekund &middot; raport na ekranie
+                      3 minuty &middot; liczby których jeszcze nikt Ci nie pokazał
                     </div>
                     <h1 style={{
                       fontSize: 34, fontWeight: 900, lineHeight: 1.02, letterSpacing: -0.8, marginBottom: 20,
                       color: M.t1, textShadow: '0 0 24px rgba(255,255,255,.1), 0 1px 3px rgba(0,0,0,.5)',
                       textWrap: 'balance',
                     }}>
-                      Ile lat żyjesz{' '}
+                      Ile lat ma{' '}
                       <span style={{
                         color: M.gold,
                         fontWeight: 900,
                       }}>
-                        na pół gwizdka?
+                        Twój mózg dzisiaj?
                       </span>
                     </h1>
                     <p style={{ color: M.t2, fontSize: 16, lineHeight: 1.55, fontWeight: 500, maxWidth: 400, margin: '0 auto 18px' }}>
-                      Sprawdzę gdzie u Ciebie wycieka.
+                      Liczę dokładnie ile zł, lat mózgu i testosteronu ucieka Ci co miesiąc.
                     </p>
                     <p style={{ color: M.t3, fontSize: 13, lineHeight: 1.6, fontWeight: 400, maxWidth: 380, margin: '0 auto 18px', fontStyle: 'italic' }}>
-                      12 pytań, 90 sekund. <strong style={{ color: M.gold, fontStyle: 'normal' }}>Wiek mózgu, hormony, miesięczna strata.</strong> Nikt Ci tego wcześniej nie policzył.
+                      <strong style={{ color: M.gold, fontStyle: 'normal' }}>Nikt Ci tego wcześniej nie policzył.</strong> Po 3 minutach masz cyfry, których nie zobaczysz u lekarza.
                     </p>
-                    <div style={{ fontFamily: M.mono, fontSize: 10, color: M.t4, letterSpacing: 1.5, marginTop: 4 }}>Poufne &middot; 9 lat z neurobiologią &middot; 300+ paneli hormonalnych</div>
+                    <div style={{ fontFamily: M.mono, fontSize: 10, color: M.t4, letterSpacing: 1.5, marginTop: 4 }}>Poufne. 180+ chłopaków policzonych. 5.0 na Google.</div>
                   </div>
                 </div>
               )}
@@ -2415,10 +2415,10 @@ export default function Page() {
                 borderRadius: 16,
               }}>
                 <h2 style={{ fontSize: 22, fontWeight: 800, lineHeight: 1.25, letterSpacing: -0.5, marginBottom: 10, color: M.t1, textShadow: '0 0 20px rgba(255,255,255,.1)' }}>
-                  {SC >= 60 ? 'Twój wynik plasuje Cię niżej niż 4 z 5 facetów Twojego pokolenia.' : SC >= 40 ? 'Średnia. Czyli każdy rok kosztuje Cię tyle samo co kolegów obok.' : 'Wynik niski. 1-2 zmiany dadzą Ci jakość życia, której koledzy nigdy nie poczują.'}
+                  {SC >= 60 ? 'Plasujesz się niżej niż 4 z 5 facetów w Twoim wieku.' : SC >= 40 ? 'Wynik średni. Większość Twoich rówieśników płaci taką samą cenę i nawet o tym nie wie.' : 'Baza trzyma. Brakuje 2-3 ruchów żeby zostawić rówieśników w tyle.'}
                 </h2>
                 <p style={{ fontSize: 14, color: M.t3, lineHeight: 1.6, marginBottom: 24, fontWeight: 400 }}>
-                  Pełny raport ma <strong style={{ color: M.t1 }}>wiek biologiczny, sprawność mózgu, hormony do sprawdzenia i priorytet nr 1</strong>. Pokazuję od razu na ekranie. Email zostaje u mnie, żebym wracał w DM z konkretną ofertą prowadzenia 1:1, jeśli widzę że pasujemy.
+                  Pełny raport pokazuje <strong style={{ color: M.t1 }}>wiek biologiczny, mózg, hormony i priorytet nr 1</strong> od razu na ekranie. Email zostaje u mnie. Jak widzę że pasujemy, odzywam się w DM.
                 </p>
 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 10, textAlign: 'left' }}>
@@ -2480,13 +2480,13 @@ export default function Page() {
                       minHeight: 48,
                     }}
                   >
-                    {loading ? 'Ładuję wynik...' : 'Pokaż raport →'}
+                    {loading ? 'Ładuję wynik...' : 'Pokaż mi co widać →'}
                   </button>
                 </div>
               </div>
 
               <p style={{ fontSize: 11, color: M.t4, marginTop: 16, fontFamily: M.mono, letterSpacing: 0.5, textAlign: 'center' }}>
-                Przeglądam wyniki osobiście. Do wybranych osób odezwę się w DM.
+                Każdy wynik czytam sam. Jak coś widzę, wracam w DM w 24h.
               </p>
             </div>
           </div>
@@ -2521,7 +2521,7 @@ export default function Page() {
                   <div className="diag-verdict-num" style={{ fontFamily: M.mono, fontSize: 'clamp(64px, 18vw, 120px)', fontWeight: 900, lineHeight: .9, letterSpacing: '-0.03em', marginBottom: 4 }}>
                     {countersActive ? animBrainAge : Math.round(brainAge)}
                   </div>
-                  <div style={{ fontFamily: M.mono, fontSize: 11, letterSpacing: 3, textTransform: 'uppercase', color: M.t4, marginBottom: 16, fontWeight: 700 }}>tyle lat ma Twój mózg</div>
+                  <div style={{ fontFamily: M.mono, fontSize: 11, letterSpacing: 3, textTransform: 'uppercase', color: M.t4, marginBottom: 16, fontWeight: 700 }}>tyle lat ma Twój mózg dzisiaj</div>
 
                   <div style={{ fontSize: 16, color: M.t2, lineHeight: 1.5, marginBottom: 14 }}>
                     Masz <strong style={{ color: M.t1 }}>{D.age}</strong>.
@@ -2531,7 +2531,7 @@ export default function Page() {
                   {/* ── Co to znaczy w środę 14:00 - identity shock requires sitting in it ── */}
                   {losYears >= 3 && (
                     <div style={{ fontSize: 13.5, color: M.t3, lineHeight: 1.6, marginBottom: 18, padding: '11px 14px', background: 'rgba(220,68,68,0.05)', border: '1px solid rgba(220,68,68,0.15)', borderRadius: 8 }}>
-                      W praktyce: maila czytasz {losYears > 6 ? '3' : '2'} razy zanim zrozumiesz. Energia siada o 14:00 mimo kawy o 9:00. Wieczorem decyzje zwlekają do jutra.
+                      W praktyce: maila czytasz {losYears > 6 ? '3' : '2'} razy zanim załapiesz, energia siada o 14:00 mimo kawy o 9:00, a decyzje wieczorem przesuwasz na rano.
                     </div>
                   )}
 
@@ -2540,7 +2540,7 @@ export default function Page() {
                     {recoverableYears > 0 && (
                       <div style={{ padding: '12px 8px', background: 'rgba(122,176,95,.08)', border: '1px solid rgba(122,176,95,.2)', borderRadius: 10, textAlign: 'center' }}>
                         <div style={{ fontFamily: M.mono, fontSize: 'clamp(22px, 5.5vw, 30px)', fontWeight: 800, color: M.grn, lineHeight: 1 }}>-{recoverableYears} lat</div>
-                        <div style={{ fontFamily: M.mono, fontSize: 9, letterSpacing: 1.2, textTransform: 'uppercase', color: M.t4, marginTop: 4 }}>do cofnięcia w 90 dni</div>
+                        <div style={{ fontFamily: M.mono, fontSize: 9, letterSpacing: 1.2, textTransform: 'uppercase', color: M.t4, marginTop: 4 }}>cofniesz w 90 dni</div>
                       </div>
                     )}
                     {costPerYear > 0 && (
@@ -2569,19 +2569,19 @@ export default function Page() {
                   const worstCat = catScores.reduce((a, b) => a.pct < b.pct ? a : b, catScores[0]);
                   const topCatLabel = worstCat.label;
                   const imieDisplay = imie.trim() ? capName(imie.trim()) : 'Stary';
-                  const dmText = `${topCatLabel.toLowerCase()} ciągnie, mózg ma ${Math.round(brainAge)} lat przy moich ${D.age}. gadamy?`;
+                  const dmText = `${topCatLabel.toLowerCase()} ciągnie, mózg pokazał ${Math.round(brainAge)} przy moich ${D.age}. ruszysz to ze mną?`;
                   const dmHref = `https://ig.me/m/hantleitalerz?text=${encodeURIComponent(dmText)}`;
                   return (
                     <div style={{ position: 'relative' }}>
                       <div style={{ fontFamily: M.mono, fontSize: 10, letterSpacing: 2.5, textTransform: 'uppercase', color: M.gold, fontWeight: 700, marginBottom: 14 }}>
-                        Co z tym dalej
+                        Twój ruch
                       </div>
                       <h3 style={{ fontSize: 26, fontWeight: 900, lineHeight: 1.15, marginBottom: 18, color: M.t1, letterSpacing: '-0.01em' }}>
                         {SC > 60
-                          ? <>{imieDisplay}, masz tu robotę.</>
+                          ? <>{imieDisplay}, masz tu konkret do ruszenia.</>
                           : SC > 40
-                          ? <>{imieDisplay}, {topCatLabel.toLowerCase()} ciągnie Cię w dół.</>
-                          : <>{imieDisplay}, baza trzyma. 2-3 punkty nie pozwalają wyjść wyżej.</>}
+                          ? <>{imieDisplay}, {topCatLabel.toLowerCase()} kosztuje Cię najwięcej.</>
+                          : <>{imieDisplay}, fundament trzyma. Brakuje 2-3 ruchów.</>}
                       </h3>
 
                       {/* MICRO-PORTRAIT: micro-trust signal przy bio */}
@@ -2602,7 +2602,7 @@ export default function Page() {
                         />
                         <div>
                           <div style={{ fontSize: 14, fontWeight: 700, color: M.t1, lineHeight: 1.2, marginBottom: 3 }}>Michał &middot; Hantle i Talerz</div>
-                          <div style={{ fontSize: 12, color: M.t4, lineHeight: 1.4 }}>9 lat w neuro &middot; 180+ transformacji &middot; 5.0 na Google</div>
+                          <div style={{ fontSize: 12, color: M.t4, lineHeight: 1.4 }}>180+ chłopaków policzonych &middot; 5.0 na Google &middot; 9 lat z fizjologią</div>
                         </div>
                       </div>
 
@@ -2614,8 +2614,8 @@ export default function Page() {
                         <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 16px', display: 'flex', flexDirection: 'column', gap: 7 }}>
                           {[
                             'Sen głębszy, rano wstajesz przed alarmem',
-                            'Energia ciągnie do 19:00 bez kawy o 14:00',
-                            'Weekend kosztuje 1 dzień, nie 3',
+                            'Energia trzyma do wieczora bez kawy na ratunek',
+                            'Weekend kosztuje Cię jeden dzień, nie trzy',
                           ].map((b, i) => (
                             <li key={i} style={{ fontSize: 14, color: M.t2, lineHeight: 1.55, paddingLeft: 18, position: 'relative' }}>
                               <span style={{ position: 'absolute', left: 0, top: 0, color: M.gold, fontWeight: 700 }}>·</span>
@@ -2642,7 +2642,7 @@ export default function Page() {
                       </div>
 
                       <p style={{ fontSize: 13.5, color: M.t3, lineHeight: 1.6, marginBottom: 18, fontStyle: 'italic' }}>
-                        180+ facetów po tym samym. Twoje odpowiedzi nie są wyjątkowe. Sekwencja działa.
+                        180+ chłopaków policzonych identycznie. Tej samej drogi nie wymyślasz na nowo.
                       </p>
 
                       <div style={{ padding: '14px 16px', marginBottom: 22, background: `${M.gold}08`, borderRadius: 12, borderLeft: `3px solid ${M.gold}` }}>
@@ -2657,7 +2657,7 @@ export default function Page() {
 
                       {/* TRUST PRE-CTA: relief frame zanim user kliknie (nie po) */}
                       <div style={{ fontSize: 12, color: M.t3, lineHeight: 1.5, textAlign: 'center', marginBottom: 12, fontStyle: 'italic' }}>
-                        Czytam osobiście, nie bot. Odpisuję w 24h. Jak nie pasujesz, mówię wprost.
+                        Czytam osobiście. Odpisuję w 24h. Jak nie pasujesz, mówię wprost zamiast wciskać.
                       </div>
 
                       {/* PRIMARY: forma LP - pelna sciezka, application qualifier */}
@@ -2678,10 +2678,10 @@ export default function Page() {
                         } as React.CSSProperties}
                       >
                         <span style={{ fontSize: 15, fontWeight: 800, letterSpacing: 1.2 }}>
-                          WYPEŁNIJ APLIKACJĘ
+                          ZGŁASZAM SIĘ
                         </span>
                         <span style={{ display: 'block', fontSize: 11, fontWeight: 600, letterSpacing: 1.5, marginTop: 4, opacity: 0.9 }}>
-                          12 pytań &middot; pisanie 5-7 min &middot; DM zwrotny w 24h
+                          12 pytań &middot; 5-7 min &middot; odpiszę w DM w 24h
                         </span>
                       </a>
 
@@ -2700,7 +2700,7 @@ export default function Page() {
                           marginBottom: 10,
                         }}
                       >
-                        albo napisz w DM @hantleitalerz &rarr;
+                        Napisz mi w DM zamiast aplikacji &rarr;
                       </a>
 
                       {/* TERTIARY: Share PNG (viral mechanic) */}
@@ -2829,9 +2829,9 @@ export default function Page() {
               }}>
                 <div style={{ fontFamily: M.mono, fontSize: 10, letterSpacing: 2.5, textTransform: 'uppercase', color: M.t4, marginBottom: 16 }}>Twój profil</div>
                 {/* Pain amplification */}
-                {D.sleep < 6 && <div style={{ fontSize: 11, color: M.t4, lineHeight: 1.5, marginBottom: 12, padding: '8px 10px', background: `${M.red}08`, borderRadius: 8, border: `1px solid ${M.red}10` }}>Poniżej 6h snu mózg nie kończy cyklu oczyszczania. Toksyny metaboliczne zostają. Każda taka noc to skumulowana szkoda.</div>}
-                {D.stress >= 3 && D.sleep >= 6 && <div style={{ fontSize: 11, color: M.t4, lineHeight: 1.5, marginBottom: 12, padding: '8px 10px', background: `${M.red}08`, borderRadius: 8, border: `1px solid ${M.red}10` }}>Chroniczny kortyzol nie spada sam. Organizm zaczyna traktować ten poziom jako normę. Im dłużej czekasz, tym trudniej go ściągnąć.</div>}
-                {D.weekendWork >= 2 && D.sleep >= 6 && D.stress < 3 && <div style={{ fontSize: 11, color: M.t4, lineHeight: 1.5, marginBottom: 12, padding: '8px 10px', background: `${M.red}08`, borderRadius: 8, border: `1px solid ${M.red}10` }}>2 dni tygodniowo na 60% mocy = 100 dni w roku. Przez 5 lat to prawie 2 lata gorszych decyzji i słabszej pracy.</div>}
+                {D.sleep < 6 && <div style={{ fontSize: 11, color: M.t4, lineHeight: 1.5, marginBottom: 12, padding: '8px 10px', background: `${M.red}08`, borderRadius: 8, border: `1px solid ${M.red}10` }}>Pod 6h snu mózg nie zdąża się oczyścić, toksyny metaboliczne kumulują się z każdą nocą.</div>}
+                {D.stress >= 3 && D.sleep >= 6 && <div style={{ fontSize: 11, color: M.t4, lineHeight: 1.5, marginBottom: 12, padding: '8px 10px', background: `${M.red}08`, borderRadius: 8, border: `1px solid ${M.red}10` }}>Chroniczny kortyzol nie spada sam, organizm przesuwa normę w górę i im dłużej zwlekasz, tym trudniej go ściągnąć.</div>}
+                {D.weekendWork >= 2 && D.sleep >= 6 && D.stress < 3 && <div style={{ fontSize: 11, color: M.t4, lineHeight: 1.5, marginBottom: 12, padding: '8px 10px', background: `${M.red}08`, borderRadius: 8, border: `1px solid ${M.red}10` }}>2 dni tygodniowo na 60% mocy = 100 dni rocznie. Przez 5 lat masz prawie 2 lata gorszych decyzji.</div>}
                 {catScores.map((cat, i) => (
                   <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: i < catScores.length - 1 ? 10 : 0 }}>
                     <span style={{ fontSize: 12, fontWeight: 600, color: M.t2, width: 72, flexShrink: 0 }}>{cat.label}</span>
@@ -2857,13 +2857,13 @@ export default function Page() {
                 borderRadius: showDetails ? '12px 12px 0 0' : 12, color: M.t2, fontSize: 13, fontWeight: 600, fontFamily: M.sans,
                 cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center',
               }}>
-                Ile realnie to Cię kosztuje ({C.total.toLocaleString('pl-PL')} zł / 6 mies.)
+                Z czego się składają te {C.total.toLocaleString('pl-PL')} zł / 6 mies.
                 <span style={{ transform: showDetails ? 'rotate(180deg)' : 'rotate(0)', transition: 'transform 0.3s', fontSize: 12 }}>&#9660;</span>
               </button>
               {showDetails && (
                 <div style={{ padding: '16px 18px', background: M.s1, borderRadius: '0 0 12px 12px', border: `1px solid ${M.brd}`, borderTopWidth: 0 }}>
                   <div style={{ fontSize: 13, color: M.t3, lineHeight: 1.6, marginBottom: 12 }}>
-                    Razem <strong style={{ color: M.gold }}>{C.total.toLocaleString('pl-PL')} zł</strong> w półrocze. Z tego <strong style={{ color: M.t2 }}>{C.hardTotal.toLocaleString('pl-PL')} zł</strong> wychodzi Ci z konta, <strong style={{ color: M.t2 }}>{C.hiddenTotal.toLocaleString('pl-PL')} zł</strong> to niewidzialne koszty: stracone treningi, gorsza praca, wolniejsza regeneracja.
+                    Razem <strong style={{ color: M.gold }}>{C.total.toLocaleString('pl-PL')} zł</strong> w 6 miesięcy. Z konta wychodzi <strong style={{ color: M.t2 }}>{C.hardTotal.toLocaleString('pl-PL')} zł</strong>. Reszta — <strong style={{ color: M.t2 }}>{C.hiddenTotal.toLocaleString('pl-PL')} zł</strong> — to treningi które się nie liczą, praca na 60% mocy i regeneracja co zajmuje dwa razy dłużej.
                   </div>
                   {C.brakes > 0 && C.wastedSessions > 0 && (
                     <div style={{ padding: '12px 14px', background: M.s2, borderRadius: 10, fontSize: 12, color: M.t3, lineHeight: 1.6 }}>
@@ -2871,7 +2871,7 @@ export default function Page() {
                     </div>
                   )}
                   <div style={{ marginTop: 14, padding: '12px 14px', background: `${M.gold}08`, borderRadius: 10, fontSize: 11.5, color: M.t3, lineHeight: 1.55 }}>
-                    Rozbicie tych kosztów per kategoria i plan jak to zatrzymać, omawiam 1:1.
+                    Rozbicie kategoriami i kolejność jak to zatrzymać, omawiam 1:1.
                   </div>
                 </div>
               )}
@@ -2885,13 +2885,13 @@ export default function Page() {
                   borderRadius: showBadania ? '12px 12px 0 0' : 12, color: M.t2, fontSize: 13, fontWeight: 600, fontFamily: M.sans,
                   cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center',
                 }}>
-                  Ile i jakich badań krwi widzę dla Ciebie ({badaniaUnique.length})
+                  Jakie badania krwi pokazałbym Ci ({badaniaUnique.length})
                   <span style={{ transform: showBadania ? 'rotate(180deg)' : 'rotate(0)', transition: 'transform 0.3s', fontSize: 12 }}>&#9660;</span>
                 </button>
                 {showBadania && (
                   <div style={{ padding: '16px 18px', background: M.s1, borderRadius: '0 0 12px 12px', border: `1px solid ${M.brd}`, borderTopWidth: 0 }}>
                     <div style={{ fontSize: 13, color: M.t3, lineHeight: 1.6, marginBottom: 14 }}>
-                      Dla Twojego profilu widzę <strong style={{ color: M.t1 }}>{badaniaUnique.length} badań</strong> do zrobienia. Trzy, od których warto zacząć:
+                      Dla Twoich odpowiedzi widzę <strong style={{ color: M.t1 }}>{badaniaUnique.length} badań</strong>. Trzy do zrobienia w pierwszej kolejności:
                     </div>
                     <div style={{ fontFamily: M.mono, fontSize: 9, letterSpacing: 2, textTransform: 'uppercase', color: M.gold, marginBottom: 10, display: 'flex', alignItems: 'center', gap: 6 }}>
                       <span style={{ width: 6, height: 6, borderRadius: 3, background: M.gold }} /> Pierwsza trójka
@@ -2903,8 +2903,8 @@ export default function Page() {
                       </div>
                     ))}
                     <div style={{ marginTop: 16, padding: '14px', background: `${M.gold}08`, borderRadius: 10, fontSize: 12, color: M.t3, lineHeight: 1.6 }}>
-                      <strong style={{ color: M.t2 }}>Uwaga:</strong> 3 badania bez kontekstu reszty (kortyzol, hsCRP, B12, lipidogram, magnez, insulina...) to jak czytać 3 strony książki. Pokażą Ci, że coś jest nie tak, ale nie powiedzą czemu.<br /><br />
-                      Pełen panel pod Twój profil + interpretacja każdego wyniku w kontekście Twojego stylu życia robię razem z facetami, których prowadzę. Bez tego rzucasz monetą.
+                      <strong style={{ color: M.t2 }}>Uwaga:</strong> 3 badania bez reszty (kortyzol, hsCRP, lipidogram, B12, magnez, insulina, TSH) to jak otworzyć książkę na 3 stronach. Pokażą że coś leży, nie pokażą czemu.<br /><br />
+                      Pełny panel pod Twoje odpowiedzi i interpretacja w kontekście Twojego stylu robię tylko z chłopakami, których prowadzę. Bez tego rzucasz monetą.
                     </div>
                   </div>
                 )}
@@ -2919,7 +2919,7 @@ export default function Page() {
                   borderRadius: showProgresja ? '12px 12px 0 0' : 12, color: M.t2, fontSize: 13, fontWeight: 600, fontFamily: M.sans,
                   cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center',
                 }}>
-                  Co się stanie jeśli nic nie zmienisz
+                  Co zobaczysz w lustrze za 12 miesięcy
                   <span style={{ transform: showProgresja ? 'rotate(180deg)' : 'rotate(0)', transition: 'transform 0.3s', fontSize: 12 }}>&#9660;</span>
                 </button>
                 {showProgresja && (
@@ -2929,10 +2929,10 @@ export default function Page() {
                       <span style={{ fontFamily: M.mono, fontSize: 11, fontWeight: 700, color: '#dc2626' }}>Za 12 miesięcy bez zmian</span>
                     </div>
                     <div style={{ fontSize: 13.5, color: M.t2, lineHeight: 1.65, marginLeft: 15, marginBottom: 8 }}>
-                      Wiek mózgu skacze do <strong style={{ color: M.red }}>{Math.round(brainAge) + 1}</strong>. Sprawność spada o <strong style={{ color: M.red }}>~{cognitiveDecayPerYear}%</strong>.
+                      Wiek mózgu skacze do <strong style={{ color: M.red }}>{Math.round(brainAge) + 1}</strong>, sprawność spada o <strong style={{ color: M.red }}>~{cognitiveDecayPerYear}%</strong>.
                     </div>
                     <div style={{ fontSize: 13.5, color: M.t2, lineHeight: 1.65, marginLeft: 15 }}>
-                      Objawy z irytujących robią się medyczne.
+                      Objawy z „irytujących” stają się tym, co mówi się lekarzowi.
                     </div>
                     <div style={{ marginTop: 16, padding: '12px 14px', background: `${M.gold}08`, borderRadius: 10, fontSize: 11.5, color: M.t3, lineHeight: 1.55 }}>
                       Jak to wygląda miesiąc po miesiącu i gdzie się zatrzymuje, omawiam 1:1.
@@ -2950,13 +2950,13 @@ export default function Page() {
                   borderRadius: showHormony ? '12px 12px 0 0' : 12, color: M.t2, fontSize: 13, fontWeight: 600, fontFamily: M.sans,
                   cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center',
                 }}>
-                  Które hormony mi się tu świecą ({hormones.length})
+                  Które hormony Ci się świecą ({hormones.length} osi do sprawdzenia)
                   <span style={{ transform: showHormony ? 'rotate(180deg)' : 'rotate(0)', transition: 'transform 0.3s', fontSize: 12 }}>&#9660;</span>
                 </button>
                 {showHormony && (
                   <div style={{ padding: '16px 18px', background: M.s1, borderRadius: '0 0 12px 12px', border: `1px solid ${M.brd}`, borderTopWidth: 0 }}>
                     <div style={{ fontSize: 13, color: M.t3, lineHeight: 1.6, marginBottom: 12 }}>
-                      Na podstawie Twoich odpowiedzi <strong style={{ color: M.t1 }}>{hormones.length} osi hormonalnych</strong> wymaga sprawdzenia:
+                      Po Twoich odpowiedziach <strong style={{ color: M.t1 }}>{hormones.length} osi hormonalnych</strong> wisi w powietrzu:
                     </div>
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 14 }}>
                       {hormones.map((h, i) => (
@@ -2966,7 +2966,7 @@ export default function Page() {
                       ))}
                     </div>
                     <div style={{ padding: '12px 14px', background: `${M.gold}08`, borderRadius: 10, fontSize: 11.5, color: M.t3, lineHeight: 1.55 }}>
-                      Które z tych osi naprawiać w pierwszej kolejności i w jakim tempie, decyduję po wynikach krwi w 1:1.
+                      Którą oś ruszać pierwszą i jak agresywnie, decyduję jak zobaczę wyniki krwi, 1:1.
                     </div>
                   </div>
                 )}
@@ -2981,15 +2981,15 @@ export default function Page() {
                 border: `1px solid ${M.brd}`,
               }}>
                 <div style={{ fontFamily: M.mono, fontSize: 10, letterSpacing: 2.5, color: M.t4, marginBottom: 14, textTransform: 'uppercase', fontWeight: 700 }}>
-                  {imie.trim() ? `${capName(imie.trim())}, co tu widzę` : 'Co tu widzę'}
+                  {imie.trim() ? `${capName(imie.trim())}, co tu wyłapuję` : 'Co tu wyłapuję'}
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                   {D.sleep < 7 && <div style={{ fontSize: 14, color: M.t2, lineHeight: 1.6 }}><strong style={{ color: M.t1 }}>Śpisz {D.sleep}h.</strong> To nie jest o zegarze. Przy takim rytmie kortyzol nie resetuje się w nocy, rano startujesz już z niższej pozycji.</div>}
                   {D.stress >= 2 && <div style={{ fontSize: 14, color: M.t2, lineHeight: 1.6 }}><strong style={{ color: M.t1 }}>Stres na {D.stress}/5.</strong> Organizm przestał odróżniać alarm od normy. Testosteron i kortyzol mają ten sam prekursor, wygrywa zawsze ten bardziej potrzebny.</div>}
-                  {D.mondayFeel >= 1 && <div style={{ fontSize: 14, color: M.t2, lineHeight: 1.6 }}><strong style={{ color: M.t1 }}>Poniedziałek startujesz na minusie.</strong> Piątek wziął Ci 3 dni regeneracji. Tego się nie naprawia przez „mniej pić”.</div>}
+                  {D.mondayFeel >= 1 && <div style={{ fontSize: 14, color: M.t2, lineHeight: 1.6 }}><strong style={{ color: M.t1 }}>Poniedziałek startujesz na minusie.</strong> Piątek zabrał Ci 3 dni regeneracji, czego nie naprawisz przez „mniej pić”.</div>}
                   {D.trainHappy >= 1 && D.trainYears >= 2 && <div style={{ fontSize: 14, color: M.t2, lineHeight: 1.6 }}><strong style={{ color: M.t1 }}>{D.trainYears} lat trenujesz, a efekty nie idą.</strong> Gdyby trening sam z siebie wystarczył, byłoby widać. Problem siedzi w pozostałych 163 godzinach tygodnia.</div>}
                   {D.triedBefore >= 2 && <div style={{ fontSize: 14, color: M.t2, lineHeight: 1.6 }}><strong style={{ color: M.t1 }}>Próbowałeś parę razy sam.</strong> Dyscypliny Ci nie brakuje. Brakuje danych z własnego organizmu, żeby wiedzieć, co dokładnie ruszać i w jakiej kolejności.</div>}
-                  <div style={{ fontSize: 14, color: M.t3, lineHeight: 1.6, paddingTop: 12, borderTop: `1px solid ${M.brd}`, marginTop: 4, fontStyle: 'italic' }}>Te rzeczy się zazębiają. Pojedyncza zmiana nie trzyma długo, bo reszta natychmiast się przesuwa.</div>
+                  <div style={{ fontSize: 14, color: M.t3, lineHeight: 1.6, paddingTop: 12, borderTop: `1px solid ${M.brd}`, marginTop: 4, fontStyle: 'italic' }}>Te rzeczy się zazębiają, ruszysz jedną i reszta natychmiast przesuwa się w miejscu starego balansu.</div>
                 </div>
               </div>
             </Reveal>

@@ -2,11 +2,11 @@ import type { Metadata } from 'next';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'Diagnostyka Neurochemiczna - Ile Cię kosztuje to jak żyjesz?',
-  description: 'Sprawdź ile naprawdę tracisz na swoim stylu życia. Pełna diagnostyka: sen, stres, żywienie, weekend, trening.',
+  title: 'Ile lat ma Twój mózg? | Hantle i Talerz',
+  description: '3 minuty kalkulatora. Wiek mózgu, hormony i kwota którą tracisz miesięcznie. Liczby których jeszcze nikt Ci nie pokazał.',
   openGraph: {
-    title: 'Diagnostyka Neurochemiczna - Ile Cię kosztuje to jak żyjesz?',
-    description: 'Sprawdź ile naprawdę tracisz na swoim stylu życia. Pełna diagnostyka: sen, stres, żywienie, weekend, trening.',
+    title: 'Ile lat ma Twój mózg? | Hantle i Talerz',
+    description: '3 minuty kalkulatora. Wiek mózgu, hormony i kwota którą tracisz miesięcznie. Liczby których jeszcze nikt Ci nie pokazał.',
     url: 'https://diagnostyka.talerzihantle.com',
     siteName: 'Diagnostyka | Hantle i Talerz',
     images: [
@@ -21,8 +21,8 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Diagnostyka Neurochemiczna - Ile Cię kosztuje to jak żyjesz?',
-    description: 'Sprawdź ile naprawdę tracisz na swoim stylu życia. Pełna diagnostyka: sen, stres, żywienie, weekend, trening.',
+    title: 'Ile lat ma Twój mózg? | Hantle i Talerz',
+    description: '3 minuty kalkulatora. Wiek mózgu, hormony i kwota którą tracisz miesięcznie. Liczby których jeszcze nikt Ci nie pokazał.',
     images: ['https://diagnostyka.talerzihantle.com/og.png'],
   },
   icons: {

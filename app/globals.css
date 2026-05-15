@@ -430,3 +430,110 @@ a:hover {
     transition-duration: 0.01ms !important;
   }
 }
+
+/* ================================
+   PREMIUM VISUAL LAYER 2026-05-08
+   depth, materials, light
+   ================================ */
+
+/* Body film grain — subtle analog film texture */
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;
+  opacity: 0.03;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml;utf8,<svg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/></filter><rect width='100%25' height='100%25' filter='url(%23n)' opacity='0.9'/></svg>");
+  background-size: 200px 200px;
+}
+@media (prefers-reduced-motion: reduce) {
+  body::after { display: none; }
+}
+
+/* Body ambient gradient mesh — subtle gold haze on edges */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background:
+    radial-gradient(ellipse 70% 50% at 0% 0%, rgba(200, 168, 78, 0.04) 0%, transparent 60%),
+    radial-gradient(ellipse 70% 50% at 100% 100%, rgba(200, 168, 78, 0.025) 0%, transparent 60%);
+}
+
+/* Premium card hover — multi-layer shadow expansion */
+.hover-lift:hover {
+  transform: translateY(-4px);
+  box-shadow:
+    0 6px 16px rgba(0, 0, 0, 0.35),
+    0 24px 56px rgba(0, 0, 0, 0.5),
+    0 0 32px rgba(200, 168, 78, 0.08);
+}
+
+/* Liquid gold for primary CTA buttons */
+button[class*="bg-"][class*="amber"],
+button[class*="bg-gold"],
+button[style*="c8a84e"],
+button[style*="C8A84E"] {
+  background-image: linear-gradient(135deg, #c8a84e 0%, #d8b85e 35%, #e8c873 50%, #d8b85e 65%, #c8a84e 100%) !important;
+  background-size: 300% 100% !important;
+  animation: liquid-gold-diag 8s ease-in-out infinite;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.25),
+    inset 0 -2px 4px rgba(0, 0, 0, 0.15),
+    0 4px 14px rgba(200, 168, 78, 0.32),
+    0 12px 32px rgba(200, 168, 78, 0.18) !important;
+}
+@keyframes liquid-gold-diag {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+@media (prefers-reduced-motion: reduce) {
+  button[class*="bg-"][class*="amber"],
+  button[class*="bg-gold"],
+  button[style*="c8a84e"],
+  button[style*="C8A84E"] {
+    animation: none;
+  }
+}
+
+/* Score circle premium glow */
+.score-circle {
+  filter: drop-shadow(0 0 24px rgba(200, 168, 78, 0.18));
+}
+.score-ring {
+  filter: drop-shadow(0 0 14px currentColor) drop-shadow(0 0 28px rgba(200, 168, 78, 0.12));
+}
+
+/* Result item cards — premium frame */
+.result-item {
+  position: relative;
+  isolation: isolate;
+}
+
+/* Sheen animation for premium accents */
+@keyframes premium-sheen {
+  0%, 100% { background-position: 200% 0; }
+  50% { background-position: -200% 0; }
+}
+
+/* Top-border sheen effect — for any element with .premium-sheen class */
+.premium-sheen {
+  position: relative;
+  overflow: hidden;
+}
+.premium-sheen::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(200, 168, 78, 0.5), transparent);
+  background-size: 200% 100%;
+  animation: premium-sheen 7s ease-in-out infinite;
+  pointer-events: none;
+}
