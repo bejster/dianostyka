@@ -3,10 +3,10 @@ import './globals.css';
 
 export const metadata: Metadata = {
   title: 'Ile lat ma Twój mózg? | Hantle i Talerz',
-  description: '3 minuty kalkulatora. Wiek mózgu, hormony i kwota którą tracisz miesięcznie. Liczby których jeszcze nikt Ci nie pokazał.',
+  description: '5 minut kalkulatora. Wiek mózgu, hormony i kwota którą tracisz miesięcznie. Liczby których jeszcze nikt Ci nie pokazał.',
   openGraph: {
     title: 'Ile lat ma Twój mózg? | Hantle i Talerz',
-    description: '3 minuty kalkulatora. Wiek mózgu, hormony i kwota którą tracisz miesięcznie. Liczby których jeszcze nikt Ci nie pokazał.',
+    description: '5 minut kalkulatora. Wiek mózgu, hormony i kwota którą tracisz miesięcznie. Liczby których jeszcze nikt Ci nie pokazał.',
     url: 'https://diagnostyka.talerzihantle.com',
     siteName: 'Diagnostyka | Hantle i Talerz',
     images: [
@@ -22,7 +22,7 @@ export const metadata: Metadata = {
   twitter: {
     card: 'summary_large_image',
     title: 'Ile lat ma Twój mózg? | Hantle i Talerz',
-    description: '3 minuty kalkulatora. Wiek mózgu, hormony i kwota którą tracisz miesięcznie. Liczby których jeszcze nikt Ci nie pokazał.',
+    description: '5 minut kalkulatora. Wiek mózgu, hormony i kwota którą tracisz miesięcznie. Liczby których jeszcze nikt Ci nie pokazał.',
     images: ['https://diagnostyka.talerzihantle.com/og.png'],
   },
   icons: {

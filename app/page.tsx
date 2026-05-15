@@ -31,6 +31,38 @@ function fbqTrack(event: string, params?: Record<string, unknown>) {
   } catch (_e) {}
 }
 
+// ── Mobile haptic feedback - krotka wibracja przy interakcji ──
+function vibe(pattern: number | number[] = 8) {
+  try {
+    if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
+      (navigator as Navigator).vibrate(pattern);
+    }
+  } catch (_e) {}
+}
+
+// ── Confetti burst - 30 czastek z punktu klikniecia, CSS animacja ──
+function spawnConfetti() {
+  if (typeof document === 'undefined') return;
+  const colors = ['#D4A853', '#10B981', '#A855F7', '#EF4444', '#06B6D4', '#F59E0B'];
+  for (let i = 0; i < 30; i++) {
+    const el = document.createElement('div');
+    const c = colors[Math.floor(Math.random() * colors.length)];
+    el.style.cssText = `position:fixed;left:50%;top:60%;width:${6 + Math.random() * 6}px;height:${6 + Math.random() * 6}px;background:${c};border-radius:${Math.random() > 0.5 ? '50%' : '2px'};pointer-events:none;z-index:99999;transform:translate(-50%,-50%);transition:none;will-change:transform,opacity`;
+    document.body.appendChild(el);
+    requestAnimationFrame(() => {
+      const angle = (Math.random() * Math.PI) - Math.PI / 2 - Math.PI / 4 + (Math.random() * Math.PI / 2);
+      const dist = 280 + Math.random() * 320;
+      const x = Math.cos(angle) * dist;
+      const y = Math.sin(angle) * dist - 200;
+      const rot = (Math.random() - 0.5) * 720;
+      el.style.transition = 'transform 1.8s cubic-bezier(.18,.9,.4,1), opacity 1.8s ease-out';
+      el.style.transform = `translate(calc(-50% + ${x}px), calc(-50% + ${y}px)) rotate(${rot}deg)`;
+      el.style.opacity = '0';
+    });
+    setTimeout(() => el.remove(), 2000);
+  }
+}
+
 type SevKey = 'sleepQ' | 'screenBed' | 'stress' | 'energy' | 'dopamine' | 'dietChaos' | 'binge';
 type ChipKey = 'fatigue' | 'mood' | 'libido' | 'belly' | 'brain' | 'anxiety' | 'joints' | 'skin' | 'motivation' | 'digest' | 'cravings' | 'recovery' | 'focus' | 'headaches' | 'sweating' | 'heartRate' | 'procrastination' | 'impatience' | 'memory' | 'confidence';
 
@@ -67,6 +99,8 @@ const INIT: FD = {
 };
 
 const SECTIONS = ['Sen', 'Stres', 'Żywienie', 'Weekend', 'Trening', 'Sygnały', 'Głowa'];
+// Mood color per sekcja - subtelny radial gradient na tle dla emocjonalnej variation
+const SECTION_HUES = ['#4F46E5', '#EF4444', '#F59E0B', '#A855F7', '#10B981', '#06B6D4', '#D4A853'];
 
 // Wagi objawów - im poważniejszy symptom, tym wyższy wpływ na score i koszt
 // Koszt: szacunek konsekwencji finansowych na 6 miesięcy (suplementy, wizyty, utracona produktywność)
@@ -596,7 +630,7 @@ async function genBrainAgeShareCard({ name, brainAge, age, bioAge }: { name: str
   // Sub stats line
   ctx.fillStyle = '#ddd';
   ctx.font = '500 36px "Inter", sans-serif';
-  const subText = name ? `${name}, mam ${age}. Mózg ${brainAge}. Organizm ${Math.round(bioAge)}.` : `Mam ${age}. Mózg ${brainAge}. Organizm ${Math.round(bioAge)}.`;
+  const subText = name ? `${name}, mam ${age}. Mózg pokazuje ${brainAge}, organizm ${Math.round(bioAge)}.` : `Mam ${age}. Mózg pokazuje ${brainAge}, organizm ${Math.round(bioAge)}.`;
   ctx.fillText(subText, 540, 770);
 
   // Bottom divider
@@ -618,7 +652,7 @@ async function genBrainAgeShareCard({ name, brainAge, age, bioAge }: { name: str
 // ── STICKY CTA BAR: scroll progress + dual button (forma + DM) ──
 function StickyCtaBar({ SC, potential, brainAge, userAge, topCatLabel }: { SC: number; potential: number; brainAge: number; userAge: number; topCatLabel: string }) {
   const progress = useScrollProgress();
-  const dmText = `${topCatLabel.toLowerCase()} ciągnie, mózg ma ${Math.round(brainAge)} lat przy moich ${userAge}. gadamy?`;
+  const dmText = `${topCatLabel.toLowerCase()} ciągnie, mózg pokazał ${Math.round(brainAge)} przy moich ${userAge}. ruszysz to ze mną?`;
   const dmHref = `https://ig.me/m/hantleitalerz?text=${encodeURIComponent(dmText)}`;
   return (
     <div style={{
@@ -734,12 +768,12 @@ export default function Page() {
     return undefined;
   }, [phase]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const upd = (k: keyof FD, v: number) => setD(p => ({ ...p, [k]: v }));
-  const sev = (k: SevKey, v: number) => setD(p => ({ ...p, [k]: v }));
-  const tog = (t: ChipKey) => setD(p => {
+  const upd = (k: keyof FD, v: number) => { vibe(6); setD(p => ({ ...p, [k]: v })); };
+  const sev = (k: SevKey, v: number) => { vibe(10); setD(p => ({ ...p, [k]: v })); };
+  const tog = (t: ChipKey) => { vibe(8); setD(p => {
     const tags = new Set(p.tags); tags.has(t) ? tags.delete(t) : tags.add(t);
     return { ...p, tags };
-  });
+  }); };
 
   // Soft scroll: tylko gdy user jest pod formularzem (rect.top < 0). Instant, bez smooth-jumpa.
   const softScrollToForm = () => {
@@ -751,6 +785,7 @@ export default function Page() {
   };
 
   const go = () => {
+    vibe([12, 40, 12]); // sekcja complete - tactile checkpoint
     if (sec < SECTIONS.length - 1) {
       setSecTransition('out-left');
       setTimeout(() => {
@@ -769,6 +804,7 @@ export default function Page() {
     }
   };
   const back = () => {
+    vibe(15);
     setSecTransition('out-right');
     setTimeout(() => {
       setSec(s => s - 1);
@@ -781,9 +817,12 @@ export default function Page() {
   const submit = async () => {
     // Walidacja IG handle
     const handle = igHandle.trim().replace(/^@/, '');
-    if (!handle) { setIgErr('Podaj nick na Instagramie'); return; }
+    if (!handle) { setIgErr('Podaj nick na Instagramie'); vibe([30, 80, 30]); return; }
     // Walidacja email - RFC 5322 uproszczony
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) { setEmailErr('Podaj poprawny email'); return; }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) { setEmailErr('Podaj poprawny email'); vibe([30, 80, 30]); return; }
+    // Successful submit - confetti burst + mocna wibracja
+    vibe([20, 60, 20, 60, 40]);
+    spawnConfetti();
     setLoading(true);
     const c = costs(D); const sc = score(D);
     // Oblicz metryki biologiczne na potrzeby payloadu
@@ -1876,7 +1915,13 @@ export default function Page() {
 
             <div
               className={secTransition === 'out-left' ? 'sec-out-left' : secTransition === 'out-right' ? 'sec-out-right' : secTransition === 'in' ? 'sec-in' : ''}
-              style={{ padding: '0 16px' }}
+              style={{
+                padding: '0 16px',
+                minHeight: 'calc(100vh - 120px)',
+                position: 'relative',
+                background: `radial-gradient(ellipse 80% 50% at 50% 0%, ${SECTION_HUES[sec]}0c 0%, transparent 65%), radial-gradient(ellipse 60% 40% at 100% 100%, ${SECTION_HUES[sec]}05 0%, transparent 70%)`,
+                transition: 'background .8s cubic-bezier(.4,0,.2,1)',
+              }}
             >
               {/* Hero - pierwszy ekran */}
               {sec === 0 && (
@@ -1905,7 +1950,7 @@ export default function Page() {
                       background: M.gold + '10', borderRadius: 20, fontWeight: 700,
                       boxShadow: `0 0 12px ${M.gold}15`,
                     }} className="border-glow">
-                      3 minuty &middot; liczby których jeszcze nikt Ci nie pokazał
+                      5 minut &middot; liczby których jeszcze nikt Ci nie pokazał
                     </div>
                     <h1 style={{
                       fontSize: 34, fontWeight: 900, lineHeight: 1.02, letterSpacing: -0.8, marginBottom: 20,
@@ -1924,7 +1969,7 @@ export default function Page() {
                       Liczę dokładnie ile zł, lat mózgu i testosteronu ucieka Ci co miesiąc.
                     </p>
                     <p style={{ color: M.t3, fontSize: 13, lineHeight: 1.6, fontWeight: 400, maxWidth: 380, margin: '0 auto 18px', fontStyle: 'italic' }}>
-                      <strong style={{ color: M.gold, fontStyle: 'normal' }}>Nikt Ci tego wcześniej nie policzył.</strong> Po 3 minutach masz cyfry, których nie zobaczysz u lekarza.
+                      <strong style={{ color: M.gold, fontStyle: 'normal' }}>Nikt Ci tego wcześniej nie policzył.</strong> Po 5 minutach masz cyfry, których nie zobaczysz u lekarza.
                     </p>
                     <div style={{ fontFamily: M.mono, fontSize: 10, color: M.t4, letterSpacing: 1.5, marginTop: 4 }}>Poufne. 180+ chłopaków policzonych. 5.0 na Google.</div>
                   </div>
@@ -1981,7 +2026,7 @@ export default function Page() {
                 <div className="fade-up">
                   {/* Micro-reward: insight z poprzedniej sekcji */}
                   <div style={{ borderLeft: `3px solid ${M.gold}`, padding: '8px 12px', marginBottom: 20, background: `${M.gold}08`, borderRadius: '0 8px 8px 0', maxWidth: '100%', margin: '0 auto 20px' }}>
-                    <p style={{ fontSize: 12, color: M.t3, margin: 0, lineHeight: 1.5, textAlign: 'center' }}>Twój sen: brakuje Ci <strong style={{ color: M.gold }}>{Math.max((7.5 - D.sleep) * 7, 0).toFixed(0)}h</strong> w tygodniu</p>
+                    <p style={{ fontSize: 12, color: M.t3, margin: 0, lineHeight: 1.5, textAlign: 'center' }}>Twój sen: brakuje <strong style={{ color: M.gold }}>{Math.max((7.5 - D.sleep) * 7, 0).toFixed(0)}h</strong> w tygodniu. To <strong style={{ color: M.gold }}>{Math.round(Math.max((7.5 - D.sleep) * 7 * 52, 0))}h</strong> rocznie pod alarmem.</p>
                   </div>
                   <SevField label="Stres siedzi w ciele?" sub="Kark, żołądek, myśli o pracy po 22." k="stress" val={D.stress} />
                   <SevField label="Wypalenie" sub="Wstajesz zmęczony, kawa to placebo." k="energy" val={D.energy} />
@@ -2051,7 +2096,7 @@ export default function Page() {
                 <div className="fade-up">
                   {/* Micro-reward: insight z poprzedniej sekcji */}
                   <div style={{ borderLeft: `3px solid ${M.gold}`, padding: '8px 12px', marginBottom: 20, background: `${M.gold}08`, borderRadius: '0 8px 8px 0', maxWidth: '100%', margin: '0 auto 20px' }}>
-                    <p style={{ fontSize: 12, color: M.t3, margin: 0, lineHeight: 1.5, textAlign: 'center' }}>Tracisz w pracy: ~<strong style={{ color: M.gold }}>{Math.round(D.lost * D.rate * 22)} zł</strong> miesięcznie</p>
+                    <p style={{ fontSize: 12, color: M.t3, margin: 0, lineHeight: 1.5, textAlign: 'center' }}>Tracisz w pracy: ~<strong style={{ color: M.gold }}>{Math.round(D.lost * D.rate * 22).toLocaleString('pl-PL')} zł</strong> miesięcznie. Rocznie: <strong style={{ color: M.gold }}>{Math.round(D.lost * D.rate * 22 * 12).toLocaleString('pl-PL')} zł</strong> w kieszeń.</p>
                   </div>
                   <SevField label="Chaos w jedzeniu" sub="Omijasz śniadanie, wieczorem jesz za trzech?" k="dietChaos" val={D.dietChaos} />
                   <SevField label="Objadanie się" sub="Cały dzień na diecie, wieczorem pizza + lody. Po weekendzie znowu od zera." k="binge" val={D.binge} />
@@ -2193,7 +2238,7 @@ export default function Page() {
                 <div className="fade-up">
                   {/* Micro-reward: insight z poprzedniej sekcji */}
                   <div style={{ borderLeft: `3px solid ${M.gold}`, padding: '8px 12px', marginBottom: 20, background: `${M.gold}08`, borderRadius: '0 8px 8px 0', maxWidth: '100%', margin: '0 auto 20px' }}>
-                    <p style={{ fontSize: 12, color: M.t3, margin: 0, lineHeight: 1.5, textAlign: 'center' }}>Twój weekend: <strong style={{ color: M.gold }}>{(D.cash * D.wknd).toLocaleString('pl-PL')} zł</strong> miesięcznie z konta{D.drinks > 5 ? <> oraz <strong style={{ color: M.gold }}>{Math.round(D.drinks * 3.4)}%</strong> spadku testosteronu</> : null}</p>
+                    <p style={{ fontSize: 12, color: M.t3, margin: 0, lineHeight: 1.5, textAlign: 'center' }}>Twój weekend: <strong style={{ color: M.gold }}>{(D.cash * D.wknd).toLocaleString('pl-PL')} zł</strong> z konta {D.drinks > 5 ? <>+ <strong style={{ color: M.gold }}>{Math.round(D.drinks * 3.4)}%</strong> spadku T po każdym</> : 'miesięcznie'}. Rok = <strong style={{ color: M.gold }}>{(D.cash * D.wknd * 12).toLocaleString('pl-PL')} zł</strong> z kasy.</p>
                   </div>
                   <Slider label="Ile płacisz za siłownię miesięcznie?" min={0} max={500} step={50} k="gym" val={D.gym} unit=" zł" ariaLabel="Miesięczny koszt siłowni w złotych" />
                   <Slider label="Ile treningów planujesz tygodniowo?" min={0} max={7} step={1} k="plan" val={D.plan} unit="" ariaLabel="Liczba planowanych treningów w tygodniu" />
@@ -2256,7 +2301,7 @@ export default function Page() {
                 <div className="fade-up">
                   {/* Micro-reward: insight z poprzedniej sekcji */}
                   <div style={{ borderLeft: `3px solid ${M.gold}`, padding: '8px 12px', marginBottom: 20, background: `${M.gold}08`, borderRadius: '0 8px 8px 0', maxWidth: '100%', margin: '0 auto 20px' }}>
-                    <p style={{ fontSize: 12, color: M.t3, margin: 0, lineHeight: 1.5, textAlign: 'center' }}>Tracisz <strong style={{ color: M.gold }}>{D.miss * 4 * 6}</strong> treningów = karnet w błotem</p>
+                    <p style={{ fontSize: 12, color: M.t3, margin: 0, lineHeight: 1.5, textAlign: 'center' }}>Tracisz <strong style={{ color: M.gold }}>{D.miss * 4 * 6}</strong> treningów = <strong style={{ color: M.gold }}>{(D.miss * 4 * 6 * (D.gym / 16 || 25)).toLocaleString('pl-PL', { maximumFractionDigits: 0 })} zł</strong> karnetu w błotem. Plus rok stagnacji formy.</p>
                   </div>
                   <div style={{ fontSize: 15, color: M.t2, fontWeight: 500, marginBottom: 18, lineHeight: 1.5 }}>Zaznacz każdy objaw który masz w tym tygodniu.</div>
                   {([
@@ -2288,7 +2333,7 @@ export default function Page() {
                 <div className="fade-up">
                   {/* Micro-reward: insight z poprzedniej sekcji */}
                   <div style={{ borderLeft: `3px solid ${M.gold}`, padding: '8px 12px', marginBottom: 20, background: `${M.gold}08`, borderRadius: '0 8px 8px 0', maxWidth: '100%', margin: '0 auto 20px' }}>
-                    <p style={{ fontSize: 12, color: M.t3, margin: 0, lineHeight: 1.5, textAlign: 'center' }}>Zaznaczono <strong style={{ color: M.gold }}>{D.tags.size}</strong> objawów</p>
+                    <p style={{ fontSize: 12, color: M.t3, margin: 0, lineHeight: 1.5, textAlign: 'center' }}>Zaznaczono <strong style={{ color: M.gold }}>{D.tags.size}</strong> objawów. Każdy zjada ~<strong style={{ color: M.gold }}>400 zł</strong> w 6 miesięcy: ~<strong style={{ color: M.gold }}>{(D.tags.size * 400).toLocaleString('pl-PL')} zł</strong> niewidzialnego kosztu.</p>
                   </div>
                   <div style={{ fontSize: 13.5, color: M.t3, fontWeight: 400, marginBottom: 20, lineHeight: 1.6 }}>Ostatnia sekcja. 60 sekund i masz liczby.</div>
                   {/* Próby zmiany */}
@@ -2681,7 +2726,7 @@ export default function Page() {
                           ZGŁASZAM SIĘ
                         </span>
                         <span style={{ display: 'block', fontSize: 11, fontWeight: 600, letterSpacing: 1.5, marginTop: 4, opacity: 0.9 }}>
-                          12 pytań &middot; 5-7 min &middot; odpiszę w DM w 24h
+                          7 sekcji &middot; 5 min &middot; odpiszę w DM w 24h
                         </span>
                       </a>
 
