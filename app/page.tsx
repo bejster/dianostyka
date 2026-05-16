@@ -2531,7 +2531,7 @@ export default function Page() {
               </div>
 
               <p style={{ fontSize: 11, color: M.t4, marginTop: 16, fontFamily: M.mono, letterSpacing: 0.5, textAlign: 'center' }}>
-                Każdy wynik czytam sam. Jak coś widzę, wracam w DM w 24h.
+                Każdy wynik czytam sam. Potwierdzam w 24h, decyzja merytoryczna do 5 dni roboczych.
               </p>
             </div>
           </div>
