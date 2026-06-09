@@ -1965,11 +1965,8 @@ export default function Page() {
                         Twój mózg dzisiaj?
                       </span>
                     </h1>
-                    <p style={{ color: M.t2, fontSize: 16, lineHeight: 1.55, fontWeight: 500, maxWidth: 400, margin: '0 auto 18px' }}>
+                    <p style={{ color: M.t2, fontSize: 16, lineHeight: 1.55, fontWeight: 500, maxWidth: 400, margin: '0 auto 20px' }}>
                       Liczę dokładnie ile zł, lat mózgu i testosteronu ucieka Ci co miesiąc.
-                    </p>
-                    <p style={{ color: M.t3, fontSize: 13, lineHeight: 1.6, fontWeight: 400, maxWidth: 380, margin: '0 auto 18px', fontStyle: 'italic' }}>
-                      <strong style={{ color: M.gold, fontStyle: 'normal' }}>Nikt Ci tego wcześniej nie policzył.</strong> Po 5 minutach masz cyfry, których nie zobaczysz u lekarza.
                     </p>
                     <div style={{ fontFamily: M.mono, fontSize: 10, color: M.t4, letterSpacing: 1.5, marginTop: 4 }}>Poufne. 180+ chłopaków policzonych. 5.0 na Google.</div>
                   </div>
