@@ -36,7 +36,7 @@ ZWROC TYLKO PURE JSON, BEZ MARKDOWN, BEZ BACKTICKOW, BEZ KOMENTARZY:
 
 export async function POST(req: NextRequest) {
   try {
-    const apiKey = process.env.ANTHROPIC_API_KEY;
+    const apiKey = process.env.OPENROUTER_API_KEY;
     if (!apiKey) {
       // Brak klucza w env, frontend ma fallback szablon
       return NextResponse.json({ ok: false, reason: 'no_api_key' });
@@ -65,19 +65,22 @@ export async function POST(req: NextRequest) {
       .replace('{segment}', pSegment)
       .replace('{age}', String(pAge));
 
-    // Call Anthropic API, Haiku 4.5 (szybki + tani dla klasyfikacji)
-    const r = await fetch('https://api.anthropic.com/v1/messages', {
+    // Call OpenRouter (OpenAI-compatible), Claude Haiku 4.5 (szybki + tani dla klasyfikacji)
+    const r = await fetch('https://openrouter.ai/api/v1/chat/completions', {
       method: 'POST',
       headers: {
-        'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01',
-        'content-type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
+        'HTTP-Referer': 'https://diagnostyka.talerzihantle.com',
+        'X-Title': 'Diagnostyka HiT',
       },
       body: JSON.stringify({
-        model: 'claude-haiku-4-5-20251001',
+        model: 'anthropic/claude-haiku-4.5',
         max_tokens: 1024,
-        system: sys,
-        messages: [{ role: 'user', content: userMsg }],
+        messages: [
+          { role: 'system', content: sys },
+          { role: 'user', content: userMsg },
+        ],
       }),
     });
 
@@ -86,7 +89,7 @@ export async function POST(req: NextRequest) {
     }
 
     const json = await r.json();
-    const text: string = json?.content?.[0]?.text || '';
+    const text: string = json?.choices?.[0]?.message?.content || '';
 
     // Czyszczenie: usun markdown code fences jak Claude dolozyl
     const cleaned = text.replace(/^```(?:json)?\s*|\s*```$/g, '').trim();
