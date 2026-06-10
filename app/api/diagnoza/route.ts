@@ -10,19 +10,21 @@ Lead wpisal wlasnymi slowami:
 
 Twoje zadanie: wyciagnij Z TEKSTU LEADA (nie zmyslaj, nie dodawaj swoich domyslnych przykladow) piec elementow:
 
-1. CYTAT — 1-2 zdania DOKLADNIE z tego co napisal lead (preferuj BOL, jak nic tam nie ma to SELF-DX). Bez zmiany slow, max 25 slow.
-2. FALSZYWE_ZALOZENIE — jakie zalozenie ma lead pod tym tekstem ktore JEST FALSZYWE. 1 zdanie, max 20 slow.
-3. MECHANIZM — co lead pomija. Glebsze wyjasnienie. Mocno fizjologiczne (kortyzol, dopamina, testosteron, NREM, oś HPA). 2-3 zdania, max 50 slow.
-4. KOLEJNOSC — 3 kroki w kolejnosci rozwiazywania problemu. Tablica 3 stringow, kazdy max 6 slow.
-5. PULAPKA — krotkie zdanie z czego lead sam sie nie wyciagnie. 1 zdanie, max 25 slow.
+1. CYTAT: 1-2 zdania DOKLADNIE z tego co napisal lead (preferuj BOL, jak nic tam nie ma to SELF-DX). Bez zmiany slow, max 25 slow.
+2. FALSZYWE_ZALOZENIE: jakie zalozenie ma lead pod tym tekstem ktore JEST FALSZYWE. 1 zdanie, max 20 slow.
+3. MECHANIZM: co lead pomija. Glebsze wyjasnienie. Mocno fizjologiczne (kortyzol, dopamina, testosteron, NREM, os HPA). 2-3 zdania, max 50 slow.
+4. KOLEJNOSC: 3 kroki w kolejnosci rozwiazywania problemu. Tablica 3 stringow, kazdy max 6 slow.
+5. PULAPKA: krotkie zdanie z czego lead sam sie nie wyciagnie. 1 zdanie, max 25 slow.
 
 ZASADY TONU (NIE LAMAJ):
 - Polski, konkretny, bez korpo/coachowskiego
 - Wyrazy ZAKAZANE: realnie, system, mnich, partnerka, szef, kluczowe, super, swietnie, fajnie, naprawde, wspaniale, transformacja, najlepsza wersja, mindset, ekspert
 - "facet" zamiast "klient", "podopieczny" zamiast "klient"
-- Brak em-dashow (—), uzywaj kropek/przecinkow
+- ZAKAZ dlugich myslnikow (em-dash). Tylko kropki, przecinki, dwukropki. Jak chcesz wtracic, uzyj przecinka.
+- ZAKAZ konstrukcji "To nie X. To Y." oraz "Nie chodzi o X, chodzi o Y."
+- Pisz jak czlowiek w rozmowie, nie jak raport. Krotkie zdania. Konkret.
 - Bez moralizowania o uzywkach (alkohol, substancje)
-- Identity peaceful: "widze", "czytam", "u Ciebie" — nie "musisz", "powinienes"
+- Identity peaceful: "widze", "czytam", "u Ciebie". Zakaz "musisz", "powinienes".
 
 KONTEKST USERA:
 - Worst category: {worstCat}
@@ -36,7 +38,7 @@ export async function POST(req: NextRequest) {
   try {
     const apiKey = process.env.ANTHROPIC_API_KEY;
     if (!apiKey) {
-      // Brak klucza w env — frontend ma fallback szablon
+      // Brak klucza w env, frontend ma fallback szablon
       return NextResponse.json({ ok: false, reason: 'no_api_key' });
     }
 
@@ -63,7 +65,7 @@ export async function POST(req: NextRequest) {
       .replace('{segment}', pSegment)
       .replace('{age}', String(pAge));
 
-    // Call Anthropic API — Haiku 4.5 (szybki + tani dla klasyfikacji)
+    // Call Anthropic API, Haiku 4.5 (szybki + tani dla klasyfikacji)
     const r = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {

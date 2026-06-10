@@ -2010,7 +2010,7 @@ export default function Page() {
                   <SH n="01" title="Sen" />
                   <div style={{ fontSize: 14, color: M.t3, fontWeight: 400, paddingLeft: 38, marginBottom: 28 }}>Leżysz 8h. Ile z tego naprawdę śpisz, a ile przewijasz telefon?</div>
                   <Slider label="Ile godzin twardo śpisz w nocy" min={3} max={9} step={0.5} k="sleep" val={D.sleep} unit="h" note={`Deficyt vs 7.5h: ${Math.max((7.5 - D.sleep) * 7, 0).toFixed(0)}h / tydzień`} ariaLabel="Średni czas snu w nocy w godzinach" />
-                  <SevField label="Budzisz się w nocy, kręcisz, płytki sen?" sub="Nie chodzi o to ile śpisz. Chodzi o to czy sen Cię regeneruje." k="sleepQ" val={D.sleepQ} />
+                  <SevField label="Budzisz się w nocy, kręcisz, płytki sen?" sub="Możesz przespać 8h i wstać rozbity. Pytam o to drugie." k="sleepQ" val={D.sleepQ} />
                   <SevField label="Leżysz z telefonem przed snem?" sub="Ekran tłumi melatoninę o 50% na 90 minut." k="screenBed" val={D.screenBed} />
                   <Slider label="O której wstajesz w tygodniu?" min={4} max={10} step={0.5} k="wakeTime" val={D.wakeTime} unit=":00" ariaLabel="Godzina wstawania w tygodniu" />
                 </div>
@@ -2114,7 +2114,7 @@ export default function Page() {
                       <div style={{ fontSize: 11, color: M.t4, fontFamily: M.mono, letterSpacing: 0.5, marginBottom: 8 }}>Co to znaczy dla Twojego organizmu</div>
                       <div style={{ fontSize: 12.5, color: M.t3, lineHeight: 1.7 }}>
                         {D.subs > 0 && D.subs <= 200 && '• Okazjonalne użycie. Serotonina potrzebuje 2-4 tyg. na regenerację, a przy regularnym cyklu to okno nigdy się nie zamyka.'}
-                        {D.subs > 200 && D.subs <= 500 && '• Regularne wydatki. Wyczerpanie serotoniny i dopaminy sprawia, że mózg przesuwa wzorzec — bez kreski czuje że jest za mało. Trening i odżywianie tracą na efektywności.'}
+                        {D.subs > 200 && D.subs <= 500 && '• Regularne wydatki. Wyczerpanie serotoniny i dopaminy sprawia, że mózg przesuwa wzorzec: bez kreski czuje, że jest za mało. Trening i odżywianie tracą na efektywności.'}
                         {D.subs > 500 && '• Poważne wydatki. Układ nerwowy jest w trybie ciągłej kompensacji, regeneracja po weekendzie zajmuje cały tydzień, a forma stoi w miejscu.'}
                       </div>
                     </div>
@@ -2938,7 +2938,7 @@ export default function Page() {
               {showDetails && (
                 <div style={{ padding: '16px 18px', background: M.s1, borderRadius: '0 0 12px 12px', border: `1px solid ${M.brd}`, borderTopWidth: 0 }}>
                   <div style={{ fontSize: 13, color: M.t3, lineHeight: 1.6, marginBottom: 12 }}>
-                    Razem <strong style={{ color: M.gold }}>{C.total.toLocaleString('pl-PL')} zł</strong> w 6 miesięcy. Z konta wychodzi <strong style={{ color: M.t2 }}>{C.hardTotal.toLocaleString('pl-PL')} zł</strong>. Reszta — <strong style={{ color: M.t2 }}>{C.hiddenTotal.toLocaleString('pl-PL')} zł</strong> — to treningi które się nie liczą, praca na 60% mocy i regeneracja co zajmuje dwa razy dłużej.
+                    Razem <strong style={{ color: M.gold }}>{C.total.toLocaleString('pl-PL')} zł</strong> w 6 miesięcy. Z konta wychodzi <strong style={{ color: M.t2 }}>{C.hardTotal.toLocaleString('pl-PL')} zł</strong>. Reszta, czyli <strong style={{ color: M.t2 }}>{C.hiddenTotal.toLocaleString('pl-PL')} zł</strong>, to treningi które się nie liczą, praca na 60% mocy i regeneracja co zajmuje dwa razy dłużej.
                   </div>
                   {C.brakes > 0 && C.wastedSessions > 0 && (
                     <div style={{ padding: '12px 14px', background: M.s2, borderRadius: 10, fontSize: 12, color: M.t3, lineHeight: 1.6 }}>
@@ -2965,35 +2965,38 @@ export default function Page() {
                 </button>
                 {showBadania && (
                   <div style={{ padding: '16px 18px', background: M.s1, borderRadius: '0 0 12px 12px', border: `1px solid ${M.brd}`, borderTopWidth: 0 }}>
-                    <p style={{ fontSize: 13, color: M.t2, lineHeight: 1.65, marginBottom: 14 }}>
-                      Kortyzol, lipidogram albo TSH <strong style={{ color: M.t1 }}>bez kontekstu tygodnia</strong> mogą wyglądać okej, a Ty dalej możesz być bez energii, głodny wieczorem i martwy po weekendzie.
+                    <p style={{ fontSize: 13, color: M.t2, lineHeight: 1.65, marginBottom: 16 }}>
+                      Kortyzol, lipidogram albo TSH <strong style={{ color: M.t1 }}>bez kontekstu tygodnia</strong> mogą wyglądać okej, a Ty dalej wstajesz zmęczony, wieczorem dojadasz i po weekendzie zbierasz się do środy.
                     </p>
-                    <p style={{ fontSize: 13, color: M.t3, lineHeight: 1.6, marginBottom: 14 }}>
-                      Dlatego patrzymy szerzej. Z Twoich odpowiedzi widzę <strong style={{ color: M.t1 }}>{badaniaUnique.length} markerów</strong> do sprawdzenia:
-                    </p>
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 16 }}>
-                      {[
-                        'morfologia z rozmazem',
-                        'lipidogram',
-                        'glukoza + insulina + HbA1c',
-                        'TSH + FT3 + FT4',
-                        'witamina B12',
-                        'ferrytyna + żelazo',
-                        'magnez',
-                        'hs-CRP',
-                        'ALT + AST + GGTP',
-                        'kreatynina + eGFR',
-                        'sód + potas',
-                        'witamina D',
-                        'kortyzol rano (z kontekstem snu, stresu i kawy)',
-                      ].map((b, i) => (
-                        <span key={i} style={{ fontFamily: M.mono, fontSize: 11, padding: '5px 9px', borderRadius: 6, background: M.s2, color: M.t2, border: `1px solid ${M.brd2}`, lineHeight: 1.3 }}>{b}</span>
-                      ))}
+
+                    {/* TOP 3 nazwane, personalizowane pod odpowiedzi leada */}
+                    <div style={{ fontFamily: M.mono, fontSize: 9, letterSpacing: 2, textTransform: 'uppercase', color: M.gold, marginBottom: 10, fontWeight: 700 }}>
+                      Top 3 pod Twoje odpowiedzi
                     </div>
-                    <div style={{ marginTop: 10, padding: '14px', background: `${M.gold}08`, borderRadius: 10, fontSize: 12, color: M.t3, lineHeight: 1.65 }}>
-                      <strong style={{ color: M.t2 }}>Co znaczą Twoje liczby</strong> i gdzie powinny lądować pod Twój wiek i cel, ustawiamy razem. Wynik bez kontekstu to tylko cyfra na kartce.
-                    </div>
-                    <div style={{ marginTop: 12, fontSize: 10.5, color: M.t4, lineHeight: 1.5, fontStyle: 'italic' }}>
+                    {[...badaniaWysoki, ...badaniaSredni].slice(0, 3).map((b, i) => (
+                      <div key={`top-${i}`} style={{ padding: '10px 0', borderBottom: i < 2 ? `1px solid ${M.brd}` : 'none' }}>
+                        <div style={{ fontSize: 13, fontWeight: 700, color: M.t1 }}>{i + 1}. {b.nazwa}</div>
+                        <div style={{ fontSize: 11.5, color: M.t3, lineHeight: 1.5, marginTop: 4 }}>{b.dlaczego}</div>
+                      </div>
+                    ))}
+
+                    {/* RESZTA zamazana. Lead widzi ile, nie widzi co. Hook: sam tego nie ulozysz. */}
+                    {badaniaUnique.length > 3 && (
+                      <>
+                        <div style={{ fontFamily: M.mono, fontSize: 9, letterSpacing: 2, textTransform: 'uppercase', color: M.t4, margin: '18px 0 10px', fontWeight: 700 }}>
+                          Reszta: jeszcze {badaniaUnique.length - 3} {badaniaUnique.length - 3 === 1 ? 'marker' : 'markerów'}
+                        </div>
+                        <div aria-hidden="true" style={{ display: 'flex', flexWrap: 'wrap', gap: 6, filter: 'blur(5.5px)', opacity: 0.5, userSelect: 'none', pointerEvents: 'none', marginBottom: 16 }}>
+                          {badaniaUnique.slice(3).map((b, i) => (
+                            <span key={i} style={{ fontFamily: M.mono, fontSize: 11, padding: '5px 9px', borderRadius: 6, background: M.s2, color: M.t2, border: `1px solid ${M.brd2}` }}>{b.nazwa}</span>
+                          ))}
+                        </div>
+                        <p style={{ fontSize: 12.5, color: M.t3, lineHeight: 1.65, marginBottom: 14 }}>
+                          Resztę zostawiam zamazaną i nie dla efektu. Sama lista nic Ci nie da. Każdy ściągnie pięć badań z internetu i dalej siedzi nad wynikiem jak nad chińskim. Które zrobić u Ciebie najpierw, w jakiej kolejności i co razem znaczą z Twoim tygodniem, układam tylko z chłopakami których prowadzę. Za darmo tego nikomu nie poskładam.
+                        </p>
+                      </>
+                    )}
+                    <div style={{ marginTop: 4, fontSize: 10.5, color: M.t4, lineHeight: 1.5, fontStyle: 'italic' }}>
                       To nie jest diagnoza lekarska. Raport pokazuje obszary stylu życia, które mogą wpływać na energię, apetyt, sen, trening i regenerację.
                     </div>
                   </div>
