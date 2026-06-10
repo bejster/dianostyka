@@ -680,22 +680,23 @@ function StickyCtaBar({ SC, potential, brainAge, userAge, topCatLabel }: { SC: n
         }} />
       </div>
 
-      {/* Dual CTA */}
+      {/* Dual CTA - primary Jotform (pełna aplikacja), DM bezpośrednio dla gorących */}
       <div style={{ padding: '0 16px', maxWidth: 520, margin: '0 auto', display: 'grid', gridTemplateColumns: '1fr auto', gap: 8 }}>
         <a
-          href="https://forma.talerzihantle.com?utm_source=diagnostyka_sticky"
+          href="https://form.jotform.com/252274061537051?utm_source=diagnostyka_sticky"
           target="_blank"
           rel="noopener noreferrer"
-          onClick={() => { trackEvent('diag_cta_click', { target: 'forma_sticky', score: SC }); fbqTrack('InitiateCheckout', { content_name: 'forma_sticky', content_category: 'high_ticket', value: SC, currency: 'PLN' }); }}
+          onClick={() => { trackEvent('diag_cta_click', { target: 'jotform_sticky', score: SC }); fbqTrack('InitiateCheckout', { content_name: 'jotform_sticky', content_category: 'high_ticket', value: SC, currency: 'PLN' }); }}
           style={{
-            display: 'block', textAlign: 'center', padding: '12px 14px', borderRadius: 10,
+            display: 'block', textAlign: 'center', padding: '10px 14px', borderRadius: 10,
             background: `linear-gradient(135deg, ${M.gold}, #a08a3e)`,
             color: M.bg, fontWeight: 800, fontSize: 13, textDecoration: 'none',
-            letterSpacing: 1, lineHeight: 1.2,
+            letterSpacing: 1, lineHeight: 1.15,
             boxShadow: '0 4px 18px rgba(200,168,78,0.32)',
           }}
         >
-          WYPEŁNIJ APLIKACJĘ
+          POKAŻ MI CAŁY TYDZIEŃ
+          <span style={{ display: 'block', fontSize: 9.5, fontWeight: 600, letterSpacing: 0.8, marginTop: 2, opacity: 0.85 }}>13 pytań · bez płatności</span>
         </a>
         <a
           href={dmHref}
@@ -2328,7 +2329,7 @@ export default function Page() {
                   {SC >= 60 ? 'Plasujesz się niżej niż 4 z 5 facetów w Twoim wieku.' : SC >= 40 ? 'Wynik średni. Większość Twoich rówieśników płaci taką samą cenę i nawet o tym nie wie.' : 'Baza trzyma. Brakuje 2-3 ruchów żeby zostawić rówieśników w tyle.'}
                 </h2>
                 <p style={{ fontSize: 14, color: M.t3, lineHeight: 1.6, marginBottom: 24, fontWeight: 400 }}>
-                  Pełny raport pokazuje <strong style={{ color: M.t1 }}>wiek biologiczny, mózg, hormony i priorytet nr 1</strong> od razu na ekranie. Email zostaje u mnie. Jak widzę że pasujemy, odzywam się w DM.
+                  Pełny raport pokazuje <strong style={{ color: M.t1 }}>szacunkowy wiek mózgu, hormony do sprawdzenia i priorytet nr 1</strong> od razu na ekranie. Email zostaje u mnie. Jak widzę że pasujemy, odzywam się w DM.
                 </p>
 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 10, textAlign: 'left' }}>
@@ -2435,7 +2436,11 @@ export default function Page() {
 
                   <div style={{ fontSize: 16, color: M.t2, lineHeight: 1.5, marginBottom: 14 }}>
                     Masz <strong style={{ color: M.t1 }}>{D.age}</strong>.
-                    {bioAge > D.age + 1 && <> Organizm: <strong style={{ color: M.org }}>{Math.round(bioAge)}</strong>.</>}
+                    {bioAge > D.age + 1 && <> Ale Twój tydzień pracuje jak <strong style={{ color: M.org }}>{Math.round(bioAge)}</strong>.</>}
+                  </div>
+                  {/* Dyskretny disclaimer - kompletny pre-empt vs medycznego framingu */}
+                  <div style={{ fontSize: 10.5, color: M.t4, lineHeight: 1.45, fontStyle: 'italic', marginBottom: 10, opacity: 0.8 }}>
+                    Szacunek z 7 sekcji ankiety. To nie diagnoza lekarska.
                   </div>
 
                   {/* ── Co to znaczy w środę 14:00 - identity shock requires sitting in it ── */}
@@ -2456,7 +2461,7 @@ export default function Page() {
                     {costPerYear > 0 && (
                       <div style={{ padding: '12px 8px', background: 'rgba(220,68,68,.07)', border: '1px solid rgba(220,68,68,.18)', borderRadius: 10, textAlign: 'center' }}>
                         <div style={{ fontFamily: M.mono, fontSize: 'clamp(22px, 5.5vw, 30px)', fontWeight: 800, color: M.red, lineHeight: 1 }}>{costPerYear.toLocaleString('pl-PL')} zł</div>
-                        <div style={{ fontFamily: M.mono, fontSize: 9, letterSpacing: 1.2, textTransform: 'uppercase', color: M.t4, marginTop: 4 }}>kosztuje Cię rocznie</div>
+                        <div style={{ fontFamily: M.mono, fontSize: 9, letterSpacing: 1.2, textTransform: 'uppercase', color: M.t4, marginTop: 4 }}>szacunek rocznie</div>
                       </div>
                     )}
                   </div>
@@ -2487,11 +2492,8 @@ export default function Page() {
                         Twój ruch
                       </div>
                       <h3 style={{ fontSize: 26, fontWeight: 900, lineHeight: 1.15, marginBottom: 18, color: M.t1, letterSpacing: '-0.01em' }}>
-                        {SC > 60
-                          ? <>{imieDisplay}, masz tu konkret do ruszenia.</>
-                          : SC > 40
-                          ? <>{imieDisplay}, {topCatLabel.toLowerCase()} kosztuje Cię najwięcej.</>
-                          : <>{imieDisplay}, fundament trzyma. Brakuje 2-3 ruchów.</>}
+                        {imieDisplay}, tu nie brakuje Ci planu.<br/>
+                        <span style={{ color: M.gold }}>Tu wycieka tydzień.</span>
                       </h3>
 
                       {/* MICRO-PORTRAIT: micro-trust signal przy bio */}
@@ -2565,18 +2567,50 @@ export default function Page() {
                         </div>
                       </div>
 
+                      {/* MOST DO APLIKACJI - selekcja zamiast sprzedazy */}
+                      <div style={{ padding: '16px 18px', marginBottom: 18, background: `rgba(19,19,19,0.55)`, border: `1px solid ${M.brd2}`, borderRadius: 12 }}>
+                        <p style={{ fontSize: 13.5, color: M.t2, lineHeight: 1.6, margin: '0 0 8px' }}>
+                          Nie będę Ci sprzedawał prowadzenia z jednego wyniku quizu.
+                        </p>
+                        <p style={{ fontSize: 13.5, color: M.t2, lineHeight: 1.6, margin: '0 0 8px' }}>
+                          Ten raport pokazuje <strong style={{ color: M.t1 }}>kierunek</strong>. Aplikacja pokaże, czy Twój tydzień da się ułożyć w proces.
+                        </p>
+                        <p style={{ fontSize: 13.5, color: M.t3, lineHeight: 1.6, margin: 0 }}>
+                          Jak widzę że pasujesz, odpisuję konkretnie. Jak nie, mówię od czego zacząć zamiast brać kasę za coś bez sensu.
+                        </p>
+                      </div>
+
+                      {/* CO SIE STANIE PO KLIKNIECIU - reduce friction */}
+                      <div style={{ marginBottom: 18 }}>
+                        <div style={{ fontFamily: M.mono, fontSize: 10, letterSpacing: 2, textTransform: 'uppercase', color: M.t4, fontWeight: 700, marginBottom: 12 }}>
+                          Co się stanie po kliknięciu
+                        </div>
+                        <ol style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 10 }}>
+                          {[
+                            'Wypełniasz 13 pytań. 10 minut, bez płatności, bez telefonu.',
+                            'Czytam całość sam, ten sam wieczór.',
+                            'Odpisuję w 24h w DM: bierzemy się, dopytam o dwie rzeczy, albo to nie Twój moment.',
+                          ].map((step, i) => (
+                            <li key={i} style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
+                              <span style={{ fontFamily: M.mono, fontSize: 13, fontWeight: 800, color: M.gold, minWidth: 18, lineHeight: 1.5 }}>{i + 1}.</span>
+                              <span style={{ fontSize: 13, color: M.t2, lineHeight: 1.55 }}>{step}</span>
+                            </li>
+                          ))}
+                        </ol>
+                      </div>
+
                       {/* TRUST PRE-CTA: relief frame zanim user kliknie (nie po) */}
                       <div style={{ fontSize: 12, color: M.t3, lineHeight: 1.5, textAlign: 'center', marginBottom: 12, fontStyle: 'italic' }}>
                         Czytam osobiście, odpisuję w 24h, a jak nie pasujesz mówię wprost zamiast wciskać.
                       </div>
 
-                      {/* PRIMARY: forma LP - pelna sciezka, application qualifier */}
+                      {/* PRIMARY: Jotform - pelna aplikacja, ciepły lead po quizie */}
                       <a
-                        href="https://forma.talerzihantle.com?utm_source=diagnostyka"
+                        href="https://form.jotform.com/252274061537051?utm_source=diagnostyka"
                         target="_blank"
                         rel="noopener noreferrer"
                         className="shimmer-btn"
-                        onClick={() => { trackEvent('diag_cta_click', { target: 'forma_primary', score: SC, category: topCatLabel }); fbqTrack('AddToCart', { content_name: 'forma_aplikacja', content_category: 'high_ticket', value: SC, currency: 'PLN' }); }}
+                        onClick={() => { trackEvent('diag_cta_click', { target: 'jotform_primary', score: SC, category: topCatLabel }); fbqTrack('AddToCart', { content_name: 'jotform_aplikacja', content_category: 'high_ticket', value: SC, currency: 'PLN' }); }}
                         style={{
                           display: 'block', textAlign: 'center',
                           background: `linear-gradient(135deg, ${M.gold}, #a08a3e)`,
@@ -2588,19 +2622,19 @@ export default function Page() {
                         } as React.CSSProperties}
                       >
                         <span style={{ fontSize: 15, fontWeight: 800, letterSpacing: 1.2 }}>
-                          ZGŁASZAM SIĘ
+                          POKAŻ MI CAŁY TYDZIEŃ
                         </span>
                         <span style={{ display: 'block', fontSize: 11, fontWeight: 600, letterSpacing: 1.5, marginTop: 4, opacity: 0.9 }}>
-                          7 sekcji &middot; 5 min &middot; odpiszę w DM w 24h
+                          13 pytań &middot; bez płatności &middot; bez telefonu &middot; decyzja w 24h
                         </span>
                       </a>
 
-                      {/* SECONDARY: DM bezpośrednio - 44px tap target */}
+                      {/* SECONDARY: nabor LP - ciepły landing dla wahających się */}
                       <a
-                        href={dmHref}
+                        href="https://nabor.talerzihantle.com?utm_source=diagnostyka_secondary"
                         target="_blank"
                         rel="noopener noreferrer"
-                        onClick={() => trackEvent('diag_cta_click', { target: 'dm_secondary', score: SC, category: topCatLabel })}
+                        onClick={() => trackEvent('diag_cta_click', { target: 'nabor_secondary', score: SC, category: topCatLabel })}
                         style={{
                           display: 'flex', alignItems: 'center', justifyContent: 'center',
                           padding: '14px 16px', minHeight: 44,
@@ -2610,7 +2644,24 @@ export default function Page() {
                           marginBottom: 10,
                         }}
                       >
-                        Napisz mi w DM zamiast aplikacji &rarr;
+                        Najpierw zobacz, jak działa prowadzenie &rarr;
+                      </a>
+
+                      {/* TERTIARY: DM bezpośrednio - dla gorących leadów co chcą gadać */}
+                      <a
+                        href={dmHref}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        onClick={() => trackEvent('diag_cta_click', { target: 'dm_tertiary', score: SC, category: topCatLabel })}
+                        style={{
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          padding: '10px 16px', minHeight: 40,
+                          color: M.t4, fontSize: 12, fontWeight: 500, fontFamily: M.sans,
+                          textDecoration: 'underline', textDecorationColor: `${M.t4}55`, textUnderlineOffset: 3,
+                          marginBottom: 10,
+                        }}
+                      >
+                        albo napisz od razu w DM &rarr;
                       </a>
 
                       {/* TERTIARY: Share PNG (viral mechanic) */}
