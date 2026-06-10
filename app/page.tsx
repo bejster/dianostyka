@@ -680,41 +680,23 @@ function StickyCtaBar({ SC, potential, brainAge, userAge, topCatLabel }: { SC: n
         }} />
       </div>
 
-      {/* Dual CTA - primary Jotform (pełna aplikacja), DM bezpośrednio dla gorących */}
-      <div style={{ padding: '0 16px', maxWidth: 520, margin: '0 auto', display: 'grid', gridTemplateColumns: '1fr auto', gap: 8 }}>
+      {/* SINGLE CTA - jedno mocne CTA Jotform. DM wyciety per user: "wszystkie glowne CTA -> JotForm" */}
+      <div style={{ padding: '0 16px', maxWidth: 520, margin: '0 auto' }}>
         <a
           href="https://form.jotform.com/252274061537051?utm_source=diagnostyka_sticky"
           target="_blank"
           rel="noopener noreferrer"
           onClick={() => { trackEvent('diag_cta_click', { target: 'jotform_sticky', score: SC }); fbqTrack('InitiateCheckout', { content_name: 'jotform_sticky', content_category: 'high_ticket', value: SC, currency: 'PLN' }); }}
           style={{
-            display: 'block', textAlign: 'center', padding: '10px 14px', borderRadius: 10,
+            display: 'block', textAlign: 'center', padding: '14px 16px', borderRadius: 12,
             background: `linear-gradient(135deg, ${M.gold}, #a08a3e)`,
-            color: M.bg, fontWeight: 800, fontSize: 13, textDecoration: 'none',
-            letterSpacing: 1, lineHeight: 1.15,
-            boxShadow: '0 4px 18px rgba(200,168,78,0.32)',
+            color: M.bg, fontWeight: 800, fontSize: 14, textDecoration: 'none',
+            letterSpacing: 1, lineHeight: 1.15, minHeight: 52,
+            boxShadow: '0 4px 22px rgba(200,168,78,0.4)',
           }}
         >
           POKAŻ MI CAŁY TYDZIEŃ
-          <span style={{ display: 'block', fontSize: 9.5, fontWeight: 600, letterSpacing: 0.8, marginTop: 2, opacity: 0.85 }}>13 pytań · bez płatności</span>
-        </a>
-        <a
-          href={dmHref}
-          target="_blank"
-          rel="noopener noreferrer"
-          onClick={() => trackEvent('diag_cta_click', { target: 'dm_sticky', score: SC })}
-          aria-label="Napisz w DM"
-          style={{
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            padding: '12px 14px', borderRadius: 10,
-            background: 'transparent',
-            border: `1px solid ${M.gold}55`,
-            color: M.gold, fontWeight: 700, fontSize: 12, textDecoration: 'none',
-            letterSpacing: 0.5, lineHeight: 1.2,
-            minWidth: 50,
-          }}
-        >
-          DM
+          <span style={{ display: 'block', fontSize: 10, fontWeight: 600, letterSpacing: 0.8, marginTop: 3, opacity: 0.85 }}>13 pytań · bez płatności · decyzja w 24h</span>
         </a>
       </div>
     </div>
@@ -2428,43 +2410,70 @@ export default function Page() {
               }} className="float-el diag-card">
                 <div style={{ position: 'absolute', inset: 0, backgroundImage: 'repeating-linear-gradient(-45deg,transparent,transparent 4px,rgba(200,168,78,.03) 4px,rgba(200,168,78,.03) 8px)' }} />
                 <div style={{ position: 'relative' }}>
-                  {/* ── VERDICT: wiek mózgu jako headline. Konkret, nie label-game ── */}
-                  <div className="diag-verdict-num" style={{ fontFamily: M.mono, fontSize: 'clamp(64px, 18vw, 120px)', fontWeight: 900, lineHeight: .9, letterSpacing: '-0.03em', marginBottom: 4 }}>
-                    {countersActive ? animBrainAge : Math.round(brainAge)}
-                  </div>
-                  <div style={{ fontFamily: M.mono, fontSize: 11, letterSpacing: 3, textTransform: 'uppercase', color: M.t4, marginBottom: 16, fontWeight: 700 }}>tyle lat ma Twój mózg dzisiaj</div>
+                  {/* ── DIAGNOZA FIRST - liczba jako dowod, nie hak ── */}
+                  {(() => {
+                    const imieD = imie.trim() ? capName(imie.trim()) : 'Stary';
+                    // Top 3 najgorszych kategorii (wyciek tygodnia)
+                    const top3 = [...catScores].sort((a, b) => a.pct - b.pct).slice(0, 3).map(c => c.label.toLowerCase());
+                    return (
+                      <>
+                        <h2 style={{ fontSize: 26, fontWeight: 900, lineHeight: 1.12, letterSpacing: '-0.01em', color: M.t1, marginBottom: 8, textAlign: 'left' }}>
+                          {imieD}, tu nie brakuje planu.<br/>
+                          <span style={{ color: M.gold }}>Tu wycieka tydzień.</span>
+                        </h2>
+                        <p style={{ fontSize: 14, color: M.t3, lineHeight: 1.55, marginBottom: 22, textAlign: 'left' }}>
+                          Największy wyciek: <strong style={{ color: M.t1 }}>{top3.join(' + ')}</strong>.
+                        </p>
 
-                  <div style={{ fontSize: 16, color: M.t2, lineHeight: 1.5, marginBottom: 14 }}>
-                    Masz <strong style={{ color: M.t1 }}>{D.age}</strong>.
-                    {bioAge > D.age + 1 && <> Ale Twój tydzień pracuje jak <strong style={{ color: M.org }}>{Math.round(bioAge)}</strong>.</>}
-                  </div>
-                  {/* Dyskretny disclaimer - kompletny pre-empt vs medycznego framingu */}
-                  <div style={{ fontSize: 10.5, color: M.t4, lineHeight: 1.45, fontStyle: 'italic', marginBottom: 10, opacity: 0.8 }}>
-                    Szacunek z 7 sekcji ankiety. To nie diagnoza lekarska.
-                  </div>
+                        {/* LICZBA jako dowod */}
+                        <div className="diag-verdict-num" style={{ fontFamily: M.mono, fontSize: 'clamp(64px, 18vw, 120px)', fontWeight: 900, lineHeight: .9, letterSpacing: '-0.03em', marginBottom: 4 }}>
+                          {countersActive ? animScore : SC}<span style={{ fontSize: '0.45em', color: M.t4, fontWeight: 700 }}>/100</span>
+                        </div>
+                        <div style={{ fontFamily: M.mono, fontSize: 11, letterSpacing: 2.5, textTransform: 'uppercase', color: M.t4, marginBottom: 16, fontWeight: 700 }}>Indeks przeciążenia tygodnia</div>
 
-                  {/* ── Co to znaczy w środę 14:00 - identity shock requires sitting in it ── */}
-                  {losYears >= 3 && (
-                    <div style={{ fontSize: 13.5, color: M.t3, lineHeight: 1.6, marginBottom: 18, padding: '11px 14px', background: 'rgba(220,68,68,0.05)', border: '1px solid rgba(220,68,68,0.15)', borderRadius: 8 }}>
-                      W praktyce: maila czytasz {losYears > 6 ? '3' : '2'} razy zanim załapiesz, energia siada o 14:00 mimo kawy o 9:00, a decyzje wieczorem przesuwasz na rano.
-                    </div>
-                  )}
+                        {bioAge > D.age + 1 && (
+                          <div style={{ fontSize: 14, color: M.t2, lineHeight: 1.55, marginBottom: 12, textAlign: 'left' }}>
+                            Masz <strong style={{ color: M.t1 }}>{D.age}</strong>. Ale z odpowiedzi wychodzi, że <strong style={{ color: M.org }}>Twój tydzień działa jak dużo starsza, bardziej zmęczona wersja Ciebie.</strong>
+                          </div>
+                        )}
 
-                  {/* ── 2 supporting tiles ── */}
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-                    {recoverableYears > 0 && (
-                      <div style={{ padding: '12px 8px', background: 'rgba(122,176,95,.08)', border: '1px solid rgba(122,176,95,.2)', borderRadius: 10, textAlign: 'center' }}>
-                        <div style={{ fontFamily: M.mono, fontSize: 'clamp(22px, 5.5vw, 30px)', fontWeight: 800, color: M.grn, lineHeight: 1 }}>-{recoverableYears} lat</div>
-                        <div style={{ fontFamily: M.mono, fontSize: 9, letterSpacing: 1.2, textTransform: 'uppercase', color: M.t4, marginTop: 4 }}>cofniesz w 90 dni</div>
-                      </div>
-                    )}
-                    {costPerYear > 0 && (
-                      <div style={{ padding: '12px 8px', background: 'rgba(220,68,68,.07)', border: '1px solid rgba(220,68,68,.18)', borderRadius: 10, textAlign: 'center' }}>
-                        <div style={{ fontFamily: M.mono, fontSize: 'clamp(22px, 5.5vw, 30px)', fontWeight: 800, color: M.red, lineHeight: 1 }}>{costPerYear.toLocaleString('pl-PL')} zł</div>
-                        <div style={{ fontFamily: M.mono, fontSize: 9, letterSpacing: 1.2, textTransform: 'uppercase', color: M.t4, marginTop: 4 }}>szacunek rocznie</div>
-                      </div>
-                    )}
-                  </div>
+                        {/* Dyskretny disclaimer */}
+                        <div style={{ fontSize: 10.5, color: M.t4, lineHeight: 1.45, fontStyle: 'italic', marginBottom: 14, opacity: 0.8, textAlign: 'left' }}>
+                          Szacunek z odpowiedzi ankiety. To nie diagnoza lekarska.
+                        </div>
+
+                        {/* ── W praktyce - ludzkie, nie AI-scenka ── */}
+                        {losYears >= 3 && (
+                          <div style={{ fontSize: 13.5, color: M.t3, lineHeight: 1.6, marginBottom: 18, padding: '11px 14px', background: 'rgba(220,68,68,0.05)', border: '1px solid rgba(220,68,68,0.15)', borderRadius: 8, textAlign: 'left' }}>
+                            W praktyce: rano udajesz, że jest okej, po 14:00 lecisz na resztkach, a wieczorem lodówka robi za terapię.
+                          </div>
+                        )}
+
+                        {/* ── 2 supporting tiles - dowody, nie haki ── */}
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                          {recoverableYears > 0 && (
+                            <div style={{ padding: '12px 8px', background: 'rgba(122,176,95,.08)', border: '1px solid rgba(122,176,95,.2)', borderRadius: 10, textAlign: 'center' }}>
+                              <div style={{ fontFamily: M.mono, fontSize: 'clamp(22px, 5.5vw, 30px)', fontWeight: 800, color: M.grn, lineHeight: 1 }}>-{recoverableYears} lat</div>
+                              <div style={{ fontFamily: M.mono, fontSize: 9, letterSpacing: 1.2, textTransform: 'uppercase', color: M.t4, marginTop: 4 }}>cofniesz w 90 dni</div>
+                            </div>
+                          )}
+                          {costPerYear > 0 && (
+                            <div style={{ padding: '12px 8px', background: 'rgba(220,68,68,.07)', border: '1px solid rgba(220,68,68,.18)', borderRadius: 10, textAlign: 'center' }}>
+                              <div style={{ fontFamily: M.mono, fontSize: 'clamp(22px, 5.5vw, 30px)', fontWeight: 800, color: M.red, lineHeight: 1 }}>{costPerYear.toLocaleString('pl-PL')} zł</div>
+                              <div style={{ fontFamily: M.mono, fontSize: 9, letterSpacing: 1.2, textTransform: 'uppercase', color: M.t4, marginTop: 4 }}>szacunek chaosu rocznie</div>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Wyjasnienie kosztu - anti scam-vibes */}
+                        {costPerYear > 0 && (
+                          <div style={{ fontSize: 11.5, color: M.t4, lineHeight: 1.55, marginTop: 12, fontStyle: 'italic', textAlign: 'left', paddingTop: 10, borderTop: `1px solid ${M.brd}` }}>
+                            To nie faktura. Szacunek kosztu chaosu: jedzenia na zmęczeniu, odpuszczonych treningów, słabszej pracy i poniedziałków, które zaczynają się dopiero w środę.
+                          </div>
+                        )}
+                      </>
+                    );
+                  })()}
                 </div>
               </div>
             </Reveal>
@@ -2557,14 +2566,30 @@ export default function Page() {
                         180+ chłopaków policzonych identycznie. Tej samej drogi nie wymyślasz na nowo.
                       </p>
 
+                      {/* 3 MIEJSCA - dynamiczna diagnoza z worst categories */}
                       <div style={{ padding: '14px 16px', marginBottom: 22, background: `${M.gold}08`, borderRadius: 12, borderLeft: `3px solid ${M.gold}` }}>
-                        <div style={{ fontSize: 13.5, color: M.t2, lineHeight: 1.6 }}>
-                          {SC > 60
-                            ? <>Z Twoich odpowiedzi widzę, że <strong style={{ color: M.t1 }}>{topCatLabel.toLowerCase()}</strong> ciągnie resztę za sobą. Ruszysz to sam bez kontekstu, wracasz w to samo miejsce za 3 miesiące. Tyle widzę u facetów co próbują sami.</>
-                            : SC > 40
-                            ? <>Główny punkt: <strong style={{ color: M.t1 }}>{topCatLabel.toLowerCase()}</strong>. W Twoim wieku poprawia się w konkretnej kolejności. Tę kolejność ustawiamy razem.</>
-                            : <>Masz {D.age} lat. Okno, w którym to się jeszcze odkręca w 6 tygodni, nie 6 miesięcy. Za 5 lat ten sam efekt kosztuje pół roku grzebania w hormonach.</>}
+                        <div style={{ fontSize: 13.5, color: M.t2, lineHeight: 1.6, marginBottom: 12 }}>
+                          Z Twoich odpowiedzi widzę 3 miejsca:
                         </div>
+                        <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 8 }}>
+                          {(() => {
+                            const diagnozaMap: Record<string, string> = {
+                              'Sen': 'sen nie ładuje Cię do końca',
+                              'Stres': 'stres siedzi nawet wieczorem i blokuje regenerację',
+                              'Żywienie': 'wieczór kasuje to, co budujesz w dzień',
+                              'Weekend': 'weekend kosztuje Cię więcej niż sam wieczór',
+                              'Trening': 'trening ciągnie resztę za sobą, zamiast działać na gotowym organizmie',
+                              'Głowa': 'głowa pracuje na półfali, decyzje wieczorem przesuwają się na rano',
+                            };
+                            const top3 = [...catScores].sort((a, b) => a.pct - b.pct).slice(0, 3);
+                            return top3.map((cat, i) => (
+                              <li key={i} style={{ fontSize: 13.5, color: M.t2, lineHeight: 1.55, paddingLeft: 16, position: 'relative' }}>
+                                <span style={{ position: 'absolute', left: 0, top: 0, color: M.gold, fontWeight: 700 }}>·</span>
+                                {diagnozaMap[cat.label] || cat.label.toLowerCase()}
+                              </li>
+                            ));
+                          })()}
+                        </ul>
                       </div>
 
                       {/* MOST DO APLIKACJI - selekcja zamiast sprzedazy */}
@@ -2927,34 +2952,49 @@ export default function Page() {
               )}
             </div>
 
-            {/* Collapsible: Badania krwi - TEASER top 3 tylko */}
+            {/* Sekcja badań - reframe: "Uwaga: 3 badania bez reszty nie powiedzą Ci prawdy" */}
             {badaniaUnique.length > 0 && (
               <div style={{ marginBottom: 12 }}>
                 <button onClick={() => setShowBadania(!showBadania)} className="diag-collapse-btn" style={{
                   width: '100%', padding: '14px 18px', background: `linear-gradient(180deg, ${M.s1} 0%, #08080a 100%)`, border: `1px solid ${M.brd}`,
                   borderRadius: showBadania ? '12px 12px 0 0' : 12, color: M.t2, fontSize: 13, fontWeight: 600, fontFamily: M.sans,
-                  cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                  cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center', textAlign: 'left',
                 }}>
-                  Jakie badania krwi pokazałbym Ci ({badaniaUnique.length})
-                  <span style={{ transform: showBadania ? 'rotate(180deg)' : 'rotate(0)', transition: 'transform 0.3s', fontSize: 12 }}>&#9660;</span>
+                  <span><strong style={{ color: M.org }}>Uwaga:</strong> 3 badania bez reszty nie powiedzą Ci prawdy</span>
+                  <span style={{ transform: showBadania ? 'rotate(180deg)' : 'rotate(0)', transition: 'transform 0.3s', fontSize: 12, flexShrink: 0, marginLeft: 8 }}>&#9660;</span>
                 </button>
                 {showBadania && (
                   <div style={{ padding: '16px 18px', background: M.s1, borderRadius: '0 0 12px 12px', border: `1px solid ${M.brd}`, borderTopWidth: 0 }}>
-                    <div style={{ fontSize: 13, color: M.t3, lineHeight: 1.6, marginBottom: 14 }}>
-                      Dla Twoich odpowiedzi widzę <strong style={{ color: M.t1 }}>{badaniaUnique.length} badań</strong>. Trzy do zrobienia w pierwszej kolejności:
+                    <p style={{ fontSize: 13, color: M.t2, lineHeight: 1.65, marginBottom: 14 }}>
+                      Kortyzol, lipidogram albo TSH <strong style={{ color: M.t1 }}>bez kontekstu tygodnia</strong> mogą wyglądać okej, a Ty dalej możesz być bez energii, głodny wieczorem i martwy po weekendzie.
+                    </p>
+                    <p style={{ fontSize: 13, color: M.t3, lineHeight: 1.6, marginBottom: 14 }}>
+                      Dlatego patrzymy szerzej. Z Twoich odpowiedzi widzę <strong style={{ color: M.t1 }}>{badaniaUnique.length} markerów</strong> do sprawdzenia:
+                    </p>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 16 }}>
+                      {[
+                        'morfologia z rozmazem',
+                        'lipidogram',
+                        'glukoza + insulina + HbA1c',
+                        'TSH + FT3 + FT4',
+                        'witamina B12',
+                        'ferrytyna + żelazo',
+                        'magnez',
+                        'hs-CRP',
+                        'ALT + AST + GGTP',
+                        'kreatynina + eGFR',
+                        'sód + potas',
+                        'witamina D',
+                        'kortyzol rano (z kontekstem snu, stresu i kawy)',
+                      ].map((b, i) => (
+                        <span key={i} style={{ fontFamily: M.mono, fontSize: 11, padding: '5px 9px', borderRadius: 6, background: M.s2, color: M.t2, border: `1px solid ${M.brd2}`, lineHeight: 1.3 }}>{b}</span>
+                      ))}
                     </div>
-                    <div style={{ fontFamily: M.mono, fontSize: 9, letterSpacing: 2, textTransform: 'uppercase', color: M.gold, marginBottom: 10, display: 'flex', alignItems: 'center', gap: 6 }}>
-                      <span style={{ width: 6, height: 6, borderRadius: 3, background: M.gold }} /> Pierwsza trójka
+                    <div style={{ marginTop: 10, padding: '14px', background: `${M.gold}08`, borderRadius: 10, fontSize: 12, color: M.t3, lineHeight: 1.65 }}>
+                      <strong style={{ color: M.t2 }}>Co znaczą Twoje liczby</strong> i gdzie powinny lądować pod Twój wiek i cel, ustawiamy razem. Wynik bez kontekstu to tylko cyfra na kartce.
                     </div>
-                    {[...badaniaWysoki, ...badaniaSredni].slice(0, 3).map((b, i) => (
-                      <div key={`top-${i}`} style={{ padding: '10px 0', borderBottom: i < 2 ? `1px solid ${M.brd}` : 'none' }}>
-                        <div style={{ fontSize: 13, fontWeight: 700, color: M.t1 }}>{b.nazwa}</div>
-                        <div style={{ fontSize: 11.5, color: M.t3, lineHeight: 1.5, marginTop: 4 }}>{b.dlaczego}</div>
-                      </div>
-                    ))}
-                    <div style={{ marginTop: 16, padding: '14px', background: `${M.gold}08`, borderRadius: 10, fontSize: 12, color: M.t3, lineHeight: 1.6 }}>
-                      <strong style={{ color: M.t2 }}>Uwaga:</strong> 3 badania bez reszty (kortyzol, hsCRP, lipidogram, B12, magnez, insulina, TSH) to jak otworzyć książkę na 3 stronach. Pokażą że coś leży, nie pokażą czemu.<br /><br />
-                      Pełny panel pod Twoje odpowiedzi i interpretacja w kontekście Twojego stylu robię tylko z chłopakami, których prowadzę. Bez tego rzucasz monetą.
+                    <div style={{ marginTop: 12, fontSize: 10.5, color: M.t4, lineHeight: 1.5, fontStyle: 'italic' }}>
+                      To nie jest diagnoza lekarska. Raport pokazuje obszary stylu życia, które mogą wpływać na energię, apetyt, sen, trening i regenerację.
                     </div>
                   </div>
                 )}
