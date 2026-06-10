@@ -63,6 +63,15 @@ function spawnConfetti() {
   }
 }
 
+// Reframe generowany przez Claude (klasyfikuj-nie-zmysluj) z wpisanego tekstu leada
+interface ReframeData {
+  cytat?: string;
+  falszywe_zalozenie?: string;
+  mechanizm?: string;
+  kolejnosc?: string[];
+  pulapka?: string;
+}
+
 type SevKey = 'sleepQ' | 'screenBed' | 'stress' | 'energy' | 'dopamine' | 'dietChaos' | 'binge';
 type ChipKey = 'fatigue' | 'mood' | 'libido' | 'belly' | 'brain' | 'anxiety' | 'joints' | 'skin' | 'motivation' | 'digest' | 'cravings' | 'recovery' | 'focus' | 'headaches' | 'sweating' | 'heartRate' | 'procrastination' | 'impatience' | 'memory' | 'confidence';
 
@@ -733,6 +742,13 @@ export default function Page() {
   const [showHormony, setShowHormony] = useState(false); // collapsible hormones
   const [showStickyCta, setShowStickyCta] = useState(false); // sticky CTA po scrollu
   const [secTransition, setSecTransition] = useState<'idle' | 'out-left' | 'out-right' | 'in'>('idle'); // animacja przejscia sekcji
+  // Pytania otwarte - dane jakościowe od leada (bóle własnymi słowami) - przywrócone z baseline
+  const [pain, setPain] = useState('');
+  const [trigger, setTrigger] = useState('');
+  const [selfDx, setSelfDx] = useState('');
+  // Reframe per-user z Claude - unikatowy belief-shift z wpisanego tekstu
+  const [reframe, setReframe] = useState<ReframeData | null>(null);
+  const [reframeLoading, setReframeLoading] = useState(false);
   const topRef = useRef<HTMLDivElement>(null);
 
   // Efekt wejścia hero + tracking startu + UTM
@@ -813,6 +829,24 @@ export default function Page() {
       setTimeout(() => setSecTransition('idle'), 400);
     }, 250);
   };
+
+  // Generacja reframe przez Claude - odpalana w submit, nie blokuje wynikow (fallback gdy padnie)
+  const fetchReframe = useCallback(async (args: { pain: string; selfDx: string; trigger: string; worstCat: string; segment: string; age: number }) => {
+    if (!args.pain.trim() && !args.selfDx.trim()) return;
+    setReframeLoading(true);
+    try {
+      const res = await fetch('/api/diagnoza', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(args),
+      });
+      const json = await res.json();
+      if (json?.ok && json.reframe) setReframe(json.reframe as ReframeData);
+    } catch {
+      // cisza - frontend pokaze fallback (kolejnosc procesu z worstCat)
+    } finally {
+      setReframeLoading(false);
+    }
+  }, []);
 
   const submit = async () => {
     // Walidacja IG handle
@@ -915,6 +949,7 @@ export default function Page() {
       trainYears: D.trainYears, trainHappy: D.trainHappy, trainPlan: D.trainPlan,
       rate: D.rate, tags: Array.from(D.tags),
       triedBefore: D.triedBefore, frustration: D.frustration,
+      pain, trigger, selfDx,
     };
     const biggest = catData.reduce((a, b) => a.v > b.v ? a : b, catData[0]);
     const payloadBlocked = Math.min(sc, 85);
@@ -930,6 +965,8 @@ export default function Page() {
       { label: 'Głowa', pct: Math.max(100 - Math.round((tagScoreWeighted(D.tags) / 10) * 90), 5) },
     ];
     const worstCatP = pCatScores.reduce((a, b) => a.pct < b.pct ? a : b, pCatScores[0]);
+    // Odpal generacje reframe rownolegle - poleci w tle, gotowe zanim lead doscrolluje
+    fetchReframe({ pain, selfDx, trigger, worstCat: worstCatP.label, segment, age: D.age });
     // Routed product - diagnostyka ZAWSZE kieruje na system (coaching page z formularzem)
     // Sprzedaz produktow per sciezka odbywa sie w DM po formularzu, nie na diagnostyce
     const routedProduct = 'system_coaching';
@@ -1762,6 +1799,7 @@ export default function Page() {
         @keyframes diagOrb2{0%{transform:translate(0,0)}50%{transform:translate(15vw,-12vh)}100%{transform:translate(-8vw,8vh)}}
         @keyframes diagNumGlow{0%,100%{filter:drop-shadow(0 0 14px rgba(200,168,78,.18))}50%{filter:drop-shadow(0 0 28px rgba(200,168,78,.4))}}
         @keyframes diagBarShine{0%{transform:translateX(-100%)}50%,100%{transform:translateX(300%)}}
+        @keyframes diagPulse{0%,100%{opacity:.35}50%{opacity:.7}}
 
         /* Ambient floating orby */
         .diag-ambient{position:fixed;inset:0;pointer-events:none;z-index:0;overflow:hidden}
@@ -1992,30 +2030,6 @@ export default function Page() {
                   <SevField label="Budzisz się w nocy, kręcisz, płytki sen?" sub="Nie chodzi o to ile śpisz. Chodzi o to czy sen Cię regeneruje." k="sleepQ" val={D.sleepQ} />
                   <SevField label="Leżysz z telefonem przed snem?" sub="Ekran tłumi melatoninę o 50% na 90 minut." k="screenBed" val={D.screenBed} />
                   <Slider label="O której wstajesz w tygodniu?" min={4} max={10} step={0.5} k="wakeTime" val={D.wakeTime} unit=":00" ariaLabel="Godzina wstawania w tygodniu" />
-                  {/* Budzik czy sam */}
-                  <div style={{ marginBottom: 26 }}>
-                    <div style={{ fontSize: 15, color: M.t1, fontWeight: 500, marginBottom: 6, lineHeight: 1.45 }}>
-                      Budzenie<span style={{ display: 'block', fontSize: 12.5, color: M.t3, marginTop: 4, fontWeight: 400 }}>Jeśli potrzebujesz budzika, Twój organizm nie skończył regeneracji.</span>
-                    </div>
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2,1fr)', gap: 10 }}>
-                      {[{ n: '🔇', l: 'Sam', v: 0 }, { n: '⏰', l: 'Budzik', v: 1 }].map(o => {
-                        const on = D.alarm === o.v;
-                        return (
-                          <button key={o.v} onClick={() => upd('alarm', o.v)} style={{
-                            padding: '16px 4px', textAlign: 'center',
-                            border: `1.5px solid ${on ? M.gold : M.brd2}`,
-                            background: on ? M.gold + '12' : M.s1,
-                            cursor: 'pointer', borderRadius: 12, transition: 'all .25s ease',
-                            transform: on ? 'scale(1.03)' : 'scale(1)', minHeight: 58,
-                            boxShadow: on ? `0 0 14px ${M.gold}25` : 'none',
-                          }}>
-                            <span style={{ fontSize: 20, fontWeight: 700, display: 'block', marginBottom: 4, color: on ? M.gold : M.t3 }}>{o.n}</span>
-                            <span style={{ fontSize: 11, fontWeight: 600, color: on ? M.gold : M.t4, textTransform: 'uppercase', letterSpacing: 0.8 }}>{o.l}</span>
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
                 </div>
               )}
 
@@ -2098,56 +2112,6 @@ export default function Page() {
                   <SevField label="Chaos w jedzeniu" sub="Omijasz śniadanie, wieczorem jesz za trzech?" k="dietChaos" val={D.dietChaos} />
                   <SevField label="Objadanie się" sub="Cały dzień na diecie, wieczorem pizza + lody. Po weekendzie znowu od zera." k="binge" val={D.binge} />
                   <Slider label="Wydajesz miesięcznie na śmieciowe jedzenie / dowóz" min={0} max={1000} step={50} k="junk" val={D.junk} unit=" zł" note={`6 miesięcy: ${(D.junk * 6).toLocaleString('pl-PL')} zł`} ariaLabel="Miesięczne wydatki na śmieciowe jedzenie i dowóz w złotych" />
-                  {/* Ile posiłków dziennie */}
-                  <div style={{ marginBottom: 26 }}>
-                    <div style={{ fontSize: 15, color: M.t1, fontWeight: 500, marginBottom: 6, lineHeight: 1.45 }}>
-                      Ile posiłków dziennie<span style={{ display: 'block', fontSize: 12.5, color: M.t3, marginTop: 4, fontWeight: 400 }}>Pełne posiłki, nie baton z automatu.</span>
-                    </div>
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 10 }}>
-                      {[{ n: '1', l: 'Jeden', v: 1 }, { n: '2', l: 'Dwa', v: 2 }, { n: '3', l: 'Trzy', v: 3 }, { n: '4+', l: 'Cztery+', v: 4 }].map(o => {
-                        const on = D.meals === o.v;
-                        const col = o.v <= 1 ? M.red : o.v === 2 ? M.org : M.grn;
-                        return (
-                          <button key={o.v} onClick={() => upd('meals', o.v)} style={{
-                            padding: '16px 4px', textAlign: 'center',
-                            border: `1.5px solid ${on ? col : M.brd2}`,
-                            background: on ? col + '12' : M.s1,
-                            cursor: 'pointer', borderRadius: 12, transition: 'all .25s ease',
-                            transform: on ? 'scale(1.03)' : 'scale(1)', minHeight: 58,
-                            boxShadow: on ? `0 0 14px ${col}25` : 'none',
-                          }}>
-                            <span style={{ fontSize: 20, fontWeight: 700, display: 'block', marginBottom: 4, color: on ? col : M.t3 }}>{o.n}</span>
-                            <span style={{ fontSize: 11, fontWeight: 600, color: on ? col : M.t4, textTransform: 'uppercase', letterSpacing: 0.8 }}>{o.l}</span>
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
-                  {/* Jak jesz - gotowanie */}
-                  <div style={{ marginBottom: 26 }}>
-                    <div style={{ fontSize: 15, color: M.t1, fontWeight: 500, marginBottom: 6, lineHeight: 1.45 }}>
-                      Jak jesz na co dzień<span style={{ display: 'block', fontSize: 12.5, color: M.t3, marginTop: 4, fontWeight: 400 }}>Ubereats czy patelnia?</span>
-                    </div>
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 10 }}>
-                      {[{ n: '🍳', l: 'Gotuję', v: 0 }, { n: '↔', l: 'Mix', v: 1 }, { n: '📱', l: 'Zamawiam', v: 2 }].map(o => {
-                        const on = D.cooking === o.v;
-                        const col = o.v === 0 ? M.grn : o.v === 1 ? M.yel : M.org;
-                        return (
-                          <button key={o.v} onClick={() => upd('cooking', o.v)} style={{
-                            padding: '16px 4px', textAlign: 'center',
-                            border: `1.5px solid ${on ? col : M.brd2}`,
-                            background: on ? col + '12' : M.s1,
-                            cursor: 'pointer', borderRadius: 12, transition: 'all .25s ease',
-                            transform: on ? 'scale(1.03)' : 'scale(1)', minHeight: 58,
-                            boxShadow: on ? `0 0 14px ${col}25` : 'none',
-                          }}>
-                            <span style={{ fontSize: 20, fontWeight: 700, display: 'block', marginBottom: 4, color: on ? col : M.t3 }}>{o.n}</span>
-                            <span style={{ fontSize: 11, fontWeight: 600, color: on ? col : M.t4, textTransform: 'uppercase', letterSpacing: 0.8 }}>{o.l}</span>
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
                 </div>
               )}
 
@@ -2177,57 +2141,6 @@ export default function Page() {
                       {D.drinks}+ drinków regularnie. Wątroba potrzebuje ~72h na pełną regenerację. Przy 2+ weekendach - nigdy nie wraca do poziomu wyjściowego.
                     </div>
                   )}
-                  {/* Poniedziałek rano */}
-                  <div style={{ marginBottom: 26 }}>
-                    <div style={{ fontSize: 15, color: M.t1, fontWeight: 500, marginBottom: 6, lineHeight: 1.45 }}>
-                      Poniedziałek rano<span style={{ display: 'block', fontSize: 12.5, color: M.t3, marginTop: 4, fontWeight: 400 }}>Wstajesz i od razu wiesz jak będzie.</span>
-                    </div>
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 10 }}>
-                      {[{ n: '0', l: 'Ok', v: 0 }, { n: '1', l: 'Średnio', v: 1 }, { n: '2', l: 'Źle', v: 2 }, { n: '3', l: 'Tragedia', v: 3 }].map(o => {
-                        const on = D.mondayFeel === o.v;
-                        const cols = [M.grn, M.yel, M.org, M.red];
-                        const col = cols[o.v];
-                        return (
-                          <button key={o.v} onClick={() => upd('mondayFeel', o.v)} style={{
-                            padding: '16px 4px', textAlign: 'center',
-                            border: `1.5px solid ${on ? col : M.brd2}`,
-                            background: on ? col + '12' : M.s1,
-                            cursor: 'pointer', borderRadius: 12, transition: 'all .25s ease',
-                            transform: on ? 'scale(1.03)' : 'scale(1)', minHeight: 58,
-                            boxShadow: on ? `0 0 14px ${col}25` : 'none',
-                          }}>
-                            <span style={{ fontSize: 20, fontWeight: 700, display: 'block', marginBottom: 4, color: on ? col : M.t3 }}>{o.n}</span>
-                            <span style={{ fontSize: 11, fontWeight: 600, color: on ? col : M.t4, textTransform: 'uppercase', letterSpacing: 0.8 }}>{o.l}</span>
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
-                  {/* Weekend a praca */}
-                  <div style={{ marginBottom: 26 }}>
-                    <div style={{ fontSize: 15, color: M.t1, fontWeight: 500, marginBottom: 6, lineHeight: 1.45 }}>
-                      Poniedziałek vs piątek<span style={{ display: 'block', fontSize: 12.5, color: M.t3, marginTop: 4, fontWeight: 400 }}>Po weekendzie ciągniesz pracę o połowę dłużej?</span>
-                    </div>
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 10 }}>
-                      {[{ n: '0', l: 'Nie', v: 0 }, { n: '1', l: 'Czasem', v: 1 }, { n: '2', l: 'Regularnie', v: 2 }].map(o => {
-                        const on = D.weekendWork === o.v;
-                        const col = o.v === 0 ? M.grn : o.v === 1 ? M.yel : M.red;
-                        return (
-                          <button key={o.v} onClick={() => upd('weekendWork', o.v)} style={{
-                            padding: '16px 4px', textAlign: 'center',
-                            border: `1.5px solid ${on ? col : M.brd2}`,
-                            background: on ? col + '12' : M.s1,
-                            cursor: 'pointer', borderRadius: 12, transition: 'all .25s ease',
-                            transform: on ? 'scale(1.03)' : 'scale(1)', minHeight: 58,
-                            boxShadow: on ? `0 0 14px ${col}25` : 'none',
-                          }}>
-                            <span style={{ fontSize: 20, fontWeight: 700, display: 'block', marginBottom: 4, color: on ? col : M.t3 }}>{o.n}</span>
-                            <span style={{ fontSize: 11, fontWeight: 600, color: on ? col : M.t4, textTransform: 'uppercase', letterSpacing: 0.8 }}>{o.l}</span>
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
                 </div>
               )}
 
@@ -2241,56 +2154,6 @@ export default function Page() {
                   <Slider label="Ile treningów planujesz tygodniowo?" min={0} max={7} step={1} k="plan" val={D.plan} unit="" ariaLabel="Liczba planowanych treningów w tygodniu" />
                   <Slider label="Ile odpuszczasz bo zmęczenie, kac, brak motywacji?" min={0} max={4} step={1} k="miss" val={D.miss} unit="" note={`Tracisz: ${D.miss * 4 * 6} treningów w 6 mies.`} ariaLabel="Liczba treningów opuszczanych tygodniowo przez zmęczenie lub kaca" />
                   <Slider label="Od ilu lat trenujesz?" min={0} max={15} step={1} k="trainYears" val={D.trainYears} unit=" lat" ariaLabel="Liczba lat treningu" />
-                  {/* Zadowolony z wyników */}
-                  <div style={{ marginBottom: 26 }}>
-                    <div style={{ fontSize: 15, color: M.t1, fontWeight: 500, marginBottom: 6, lineHeight: 1.45 }}>
-                      Efekty treningu<span style={{ display: 'block', fontSize: 12.5, color: M.t3, marginTop: 4, fontWeight: 400 }}>Widzisz progres w lustrze i na sztandze?</span>
-                    </div>
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 10 }}>
-                      {[{ n: '✓', l: 'Tak', v: 0 }, { n: '~', l: 'Nie do końca', v: 1 }, { n: '✗', l: 'Nie', v: 2 }].map(o => {
-                        const on = D.trainHappy === o.v;
-                        const col = o.v === 0 ? M.grn : o.v === 1 ? M.yel : M.red;
-                        return (
-                          <button key={o.v} onClick={() => upd('trainHappy', o.v)} style={{
-                            padding: '16px 4px', textAlign: 'center',
-                            border: `1.5px solid ${on ? col : M.brd2}`,
-                            background: on ? col + '12' : M.s1,
-                            cursor: 'pointer', borderRadius: 12, transition: 'all .25s ease',
-                            transform: on ? 'scale(1.03)' : 'scale(1)', minHeight: 58,
-                            boxShadow: on ? `0 0 14px ${col}25` : 'none',
-                          }}>
-                            <span style={{ fontSize: 20, fontWeight: 700, display: 'block', marginBottom: 4, color: on ? col : M.t3 }}>{o.n}</span>
-                            <span style={{ fontSize: 11, fontWeight: 600, color: on ? col : M.t4, textTransform: 'uppercase', letterSpacing: 0.8 }}>{o.l}</span>
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
-                  {/* Plan treningowy */}
-                  <div style={{ marginBottom: 26 }}>
-                    <div style={{ fontSize: 15, color: M.t1, fontWeight: 500, marginBottom: 6, lineHeight: 1.45 }}>
-                      Plan treningowy<span style={{ display: 'block', fontSize: 12.5, color: M.t3, marginTop: 4, fontWeight: 400 }}>Trenujesz z planem czy robisz co akurat chcesz?</span>
-                    </div>
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2,1fr)', gap: 10 }}>
-                      {[{ n: '📋', l: 'Mam plan', v: 0 }, { n: '🎲', l: 'Improwizuję', v: 1 }].map(o => {
-                        const on = D.trainPlan === o.v;
-                        const col = o.v === 0 ? M.grn : M.org;
-                        return (
-                          <button key={o.v} onClick={() => upd('trainPlan', o.v)} style={{
-                            padding: '16px 4px', textAlign: 'center',
-                            border: `1.5px solid ${on ? col : M.brd2}`,
-                            background: on ? col + '12' : M.s1,
-                            cursor: 'pointer', borderRadius: 12, transition: 'all .25s ease',
-                            transform: on ? 'scale(1.03)' : 'scale(1)', minHeight: 58,
-                            boxShadow: on ? `0 0 14px ${col}25` : 'none',
-                          }}>
-                            <span style={{ fontSize: 20, fontWeight: 700, display: 'block', marginBottom: 4, color: on ? col : M.t3 }}>{o.n}</span>
-                            <span style={{ fontSize: 11, fontWeight: 600, color: on ? col : M.t4, textTransform: 'uppercase', letterSpacing: 0.8 }}>{o.l}</span>
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
                 </div>
               )}
 
@@ -2358,29 +2221,34 @@ export default function Page() {
                       })}
                     </div>
                   </div>
-                  {/* Co najbardziej frustruje */}
-                  <div style={{ marginBottom: 26 }}>
-                    <div style={{ fontSize: 15, color: M.t1, fontWeight: 500, marginBottom: 6, lineHeight: 1.45 }}>
-                      Co Cię najbardziej wkurza<span style={{ display: 'block', fontSize: 12.5, color: M.t3, marginTop: 4, fontWeight: 400 }}>Jedno główne. Reszta z tego wychodzi.</span>
-                    </div>
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2,1fr)', gap: 10 }}>
-                      {[{ n: '📉', l: 'Brak wyników', v: 0 }, { n: '🔋', l: 'Brak energii', v: 1 }, { n: '⏰', l: 'Brak czasu', v: 2 }, { n: '🔄', l: 'Brak konsekwencji', v: 3 }, { n: '✓', l: 'Jest ok', v: 4 }].map(o => {
-                        const on = D.frustration === o.v;
-                        return (
-                          <button key={o.v} onClick={() => upd('frustration', o.v)} style={{
-                            padding: '16px 4px', textAlign: 'center',
-                            border: `1.5px solid ${on ? M.gold : M.brd2}`,
-                            background: on ? M.gold + '12' : M.s1,
-                            cursor: 'pointer', borderRadius: 12, transition: 'all .25s ease',
-                            transform: on ? 'scale(1.03)' : 'scale(1)', minHeight: 58,
-                            boxShadow: on ? `0 0 14px ${M.gold}25` : 'none',
-                          }}>
-                            <span style={{ fontSize: 20, fontWeight: 700, display: 'block', marginBottom: 4, color: on ? M.gold : M.t3 }}>{o.n}</span>
-                            <span style={{ fontSize: 11, fontWeight: 600, color: on ? M.gold : M.t4, textTransform: 'uppercase', letterSpacing: 0.8 }}>{o.l}</span>
-                          </button>
-                        );
-                      })}
-                    </div>
+                  {/* Pytania otwarte - climax sekcji, dane jakościowe (własne słowa leada) */}
+                  <div style={{ borderTop: `1px solid ${M.brd}`, paddingTop: 22, marginTop: 4 }}>
+                    <div style={{ fontSize: 13, color: M.gold, fontFamily: M.mono, letterSpacing: 0.5, marginBottom: 4 }}>OSTATNIE TRZY. TWOIMI SŁOWAMI.</div>
+                    <div style={{ fontSize: 13.5, color: M.t3, fontWeight: 400, marginBottom: 20, lineHeight: 1.6 }}>Liczby już mam. Teraz chcę usłyszeć Ciebie. To z tego czytam najwięcej.</div>
+                    {[
+                      { v: pain, set: setPain, label: 'Co Cię w tym wszystkim najbardziej wkurwia?', sub: 'Jedno zdanie, własnymi słowami. Bez ładnego pisania.', ph: 'np. budzę się zmęczony i wieczorem znowu nie mam na nic siły...' },
+                      { v: trigger, set: setTrigger, label: 'Czemu akurat teraz to sprawdzasz?', sub: 'Coś pękło, coś się zadziało? Napisz krótko.', ph: 'np. zobaczyłem zdjęcie z wakacji...' },
+                      { v: selfDx, set: setSelfDx, label: 'Jak myślisz, co Cię trzyma w miejscu?', sub: 'Za chwilę zobaczysz, czy trafiłeś.', ph: 'np. brak konsekwencji, weekendy, robota...' },
+                    ].map((q, i) => (
+                      <div key={i} style={{ marginBottom: 22 }}>
+                        <div style={{ fontSize: 15, color: M.t1, fontWeight: 500, marginBottom: 8, lineHeight: 1.45 }}>
+                          {q.label}<span style={{ display: 'block', fontSize: 12.5, color: M.t3, marginTop: 4, fontWeight: 400 }}>{q.sub}</span>
+                        </div>
+                        <textarea
+                          value={q.v}
+                          onChange={e => q.set(e.target.value)}
+                          placeholder={q.ph}
+                          rows={2}
+                          maxLength={500}
+                          style={{
+                            width: '100%', boxSizing: 'border-box', padding: '12px 14px',
+                            background: M.s1, color: M.t1, fontSize: 14.5, lineHeight: 1.55,
+                            border: `1.5px solid ${M.brd2}`, borderRadius: 12, resize: 'vertical',
+                            fontFamily: 'inherit', outline: 'none',
+                          }}
+                        />
+                      </div>
+                    ))}
                   </div>
                 </div>
               )}
@@ -2820,6 +2688,95 @@ export default function Page() {
                     <div style={{ fontFamily: M.mono, fontSize: 24, fontWeight: 800, color: M.gold }}>{Math.min(potential + Math.round(SC * 0.45), 95)}%</div>
                     <div style={{ fontSize: 10, color: M.grn, marginTop: 3, fontWeight: 600 }}>+{Math.round(SC * 0.45)}% odzyskane</div>
                   </div>
+                </div>
+              </Reveal>
+            )}
+
+            {/* ═══ POD TYM CO WPISAŁEŚ - LLM reframe (klasyfikuj-nie-zmysluj). Pokazuje się gdy lead wpisał free-text. Fallback do szablonu po worstCat gdy API zwróci ok:false. ═══ */}
+            {(pain.trim() || selfDx.trim()) && (
+              <Reveal delay={98}>
+                <div style={{
+                  position: 'relative', overflow: 'hidden',
+                  background: `linear-gradient(160deg, rgba(19,19,19,0.96), ${M.gold}0d)`,
+                  border: `2px solid ${M.gold}38`,
+                  padding: '22px 18px', marginBottom: 20, borderRadius: 14, width: '100%', boxSizing: 'border-box',
+                  boxShadow: `0 4px 28px ${M.gold}12`,
+                }}>
+                  <div style={{ fontFamily: M.mono, fontSize: 9, letterSpacing: 3, textTransform: 'uppercase', color: M.gold, marginBottom: 10, display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <span style={{ width: 8, height: 8, borderRadius: 4, background: M.gold, display: 'inline-block', boxShadow: `0 0 8px ${M.gold}60` }} />
+                    Pod tym, co wpisałeś
+                  </div>
+                  <p style={{ fontSize: 12.5, color: M.t4, lineHeight: 1.55, marginBottom: 16 }}>
+                    Wpisałeś to ręcznie. Czytam to razem z resztą Twoich odpowiedzi, nie osobno.
+                  </p>
+                  {reframeLoading && !reframe ? (
+                    <>
+                      {[0, 1, 2].map((i) => (
+                        <div key={i} style={{ height: 12, borderRadius: 6, background: M.s3, marginBottom: 10, width: i === 2 ? '70%' : '100%', animation: `diagPulse 1.4s ease-in-out ${i * 0.18}s infinite` }} />
+                      ))}
+                      <div style={{ fontFamily: M.mono, fontSize: 10, color: M.t4, letterSpacing: 1, marginTop: 4 }}>składam to z Twoich słów...</div>
+                    </>
+                  ) : (() => {
+                    const worstCat = catScores.reduce((a, b) => a.pct < b.pct ? a : b, catScores[0]);
+                    const step1Map: Record<string, string> = {
+                      'Sen': 'najpierw sen i kortyzol',
+                      'Stres': 'najpierw zejście ze stresu',
+                      'Żywienie': 'najpierw rytm jedzenia',
+                      'Weekend': 'najpierw odzysk weekendu',
+                      'Trening': 'najpierw regeneracja między sesjami',
+                      'Głowa': 'najpierw sen i napęd',
+                    };
+                    const step1 = step1Map[worstCat.label] || 'najpierw regeneracja';
+                    const fbMechanizm = 'To, co wpisałeś, to objaw. Przyczyna siedzi głębiej, w kolejności, której jedną zmianą nie ruszysz: gdy regeneracja leży, hormony i napęd nie wejdą, a sylwetka stoi.';
+                    const fbKolejnosc = [step1, 'potem hormony i napęd', 'potem siła i sylwetka'];
+                    const fbPulapka = 'Który trybik ruszyć u Ciebie pierwszy, z samych suwaków tego nie wyczytam. To wychodzi dopiero z 13 odpowiedzi.';
+                    const sd = selfDx.trim();
+                    const pn = pain.trim();
+                    const llmCytat = (reframe?.cytat || '').trim();
+                    const cytatFromPain = !!llmCytat && !!pn && pn.toLowerCase().includes(llmCytat.toLowerCase());
+                    const cytatRaw = cytatFromPain ? sd : (llmCytat || sd);
+                    const showCytat = !!cytatRaw && (!!sd || !pn);
+                    const falszywe = (reframe?.falszywe_zalozenie || '').trim();
+                    const mechanizm = (reframe?.mechanizm || '').trim() || fbMechanizm;
+                    const rfKol = reframe?.kolejnosc;
+                    const kol = (Array.isArray(rfKol) && rfKol.length === 3) ? rfKol : fbKolejnosc;
+                    const pulapka = (reframe?.pulapka || '').trim() || fbPulapka;
+                    return (
+                      <>
+                        {showCytat && (
+                          <div style={{ fontSize: 14.5, color: M.t2, lineHeight: 1.6, fontStyle: 'italic', borderLeft: `3px solid ${M.gold}`, paddingLeft: 14, marginBottom: 14 }}>„{cytatRaw}"</div>
+                        )}
+                        {falszywe && (
+                          <div style={{ display: 'flex', gap: 8, alignItems: 'flex-start', marginBottom: 12 }}>
+                            <span style={{ fontFamily: M.mono, color: M.t4, fontSize: 10, fontWeight: 800, letterSpacing: 1, minWidth: 64, paddingTop: 2 }}>ZAŁOŻENIE</span>
+                            <p style={{ color: M.t3, fontSize: 13, lineHeight: 1.55, margin: 0, fontStyle: 'italic' }}>{falszywe}</p>
+                          </div>
+                        )}
+                        <p style={{ fontSize: 14, color: M.t1, lineHeight: 1.6, fontWeight: 600, marginBottom: 16 }}>{mechanizm}</p>
+                        <div style={{ fontFamily: M.mono, fontSize: 9, letterSpacing: 2.5, textTransform: 'uppercase', color: M.t4, marginBottom: 10 }}>W tej kolejności</div>
+                        <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 8, marginBottom: 16 }}>
+                          {kol.map((k, i) => (
+                            <span key={`k${i}`}>
+                              <span style={{ fontFamily: M.mono, fontSize: 11.5, fontWeight: 700, padding: '6px 11px', borderRadius: 8, background: i === 0 ? M.gold : M.s2, color: i === 0 ? '#000' : M.t2, border: i === 0 ? 'none' : `1px solid ${M.brd2}` }}>{k}</span>
+                              {i < kol.length - 1 && <span style={{ color: M.t4, fontSize: 13, marginLeft: 8 }}>→</span>}
+                            </span>
+                          ))}
+                        </div>
+                        <div style={{ paddingTop: 14, borderTop: `1px solid ${M.gold}22`, fontSize: 13, color: M.t3, lineHeight: 1.6, fontStyle: 'italic' }}>{pulapka}</div>
+                      </>
+                    );
+                  })()}
+                </div>
+              </Reveal>
+            )}
+
+            {/* ═══ TWOIMI SŁOWAMI - acknowledgment echo, mirror pain ═══ */}
+            {pain.trim() && (
+              <Reveal delay={104}>
+                <div style={{ marginBottom: 22, padding: '20px 18px', borderRadius: 14, width: '100%', boxSizing: 'border-box', background: M.s1, border: `1px solid ${M.brd}` }}>
+                  <div style={{ fontFamily: M.mono, fontSize: 10, letterSpacing: 2.5, textTransform: 'uppercase', color: M.t4, marginBottom: 14 }}>Twoimi słowami</div>
+                  <div style={{ fontSize: 14.5, color: M.t2, lineHeight: 1.6, fontStyle: 'italic', borderLeft: `3px solid ${M.gold}`, paddingLeft: 14, marginBottom: 8 }}>„{pain.trim()}"</div>
+                  <div style={{ fontSize: 13, color: M.t3, lineHeight: 1.6 }}>Zapisałem słowo w słowo. Liczby wyżej mówią to samo, tylko bez emocji. {imie.trim() ? capName(imie.trim()) + ', t' : 'T'}o nie jest w Twojej głowie.</div>
                 </div>
               </Reveal>
             )}

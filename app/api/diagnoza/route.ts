@@ -1,0 +1,108 @@
+import { NextRequest, NextResponse } from 'next/server';
+
+// Reframe generator - klasyfikuj NIE zmysluj, polski, ton Michala (bez korpo/coachowskiego)
+const SYS_PROMPT = `Jestes analitykiem tresci dla diagnostyki Michala (Talerz i Hantle, kierunek facet 28-40, neuro + harm reduction).
+
+Lead wpisal wlasnymi slowami:
+- BOL: co go najbardziej wkurwia
+- TRIGGER: czemu akurat teraz to sprawdza
+- SELF-DX: co jego zdaniem go trzyma w miejscu
+
+Twoje zadanie: wyciagnij Z TEKSTU LEADA (nie zmyslaj, nie dodawaj swoich domyslnych przykladow) piec elementow:
+
+1. CYTAT — 1-2 zdania DOKLADNIE z tego co napisal lead (preferuj BOL, jak nic tam nie ma to SELF-DX). Bez zmiany slow, max 25 slow.
+2. FALSZYWE_ZALOZENIE — jakie zalozenie ma lead pod tym tekstem ktore JEST FALSZYWE. 1 zdanie, max 20 slow.
+3. MECHANIZM — co lead pomija. Glebsze wyjasnienie. Mocno fizjologiczne (kortyzol, dopamina, testosteron, NREM, oś HPA). 2-3 zdania, max 50 slow.
+4. KOLEJNOSC — 3 kroki w kolejnosci rozwiazywania problemu. Tablica 3 stringow, kazdy max 6 slow.
+5. PULAPKA — krotkie zdanie z czego lead sam sie nie wyciagnie. 1 zdanie, max 25 slow.
+
+ZASADY TONU (NIE LAMAJ):
+- Polski, konkretny, bez korpo/coachowskiego
+- Wyrazy ZAKAZANE: realnie, system, mnich, partnerka, szef, kluczowe, super, swietnie, fajnie, naprawde, wspaniale, transformacja, najlepsza wersja, mindset, ekspert
+- "facet" zamiast "klient", "podopieczny" zamiast "klient"
+- Brak em-dashow (—), uzywaj kropek/przecinkow
+- Bez moralizowania o uzywkach (alkohol, substancje)
+- Identity peaceful: "widze", "czytam", "u Ciebie" — nie "musisz", "powinienes"
+
+KONTEKST USERA:
+- Worst category: {worstCat}
+- Segment: {segment} (GORACY/CIEPELY/ZIMNY)
+- Wiek: {age}
+
+ZWROC TYLKO PURE JSON, BEZ MARKDOWN, BEZ BACKTICKOW, BEZ KOMENTARZY:
+{"cytat":"...","falszywe_zalozenie":"...","mechanizm":"...","kolejnosc":["krok1","krok2","krok3"],"pulapka":"..."}`;
+
+export async function POST(req: NextRequest) {
+  try {
+    const apiKey = process.env.ANTHROPIC_API_KEY;
+    if (!apiKey) {
+      // Brak klucza w env — frontend ma fallback szablon
+      return NextResponse.json({ ok: false, reason: 'no_api_key' });
+    }
+
+    const body = await req.json();
+    const { pain, selfDx, trigger, worstCat, segment, age } = body || {};
+
+    // Walidacja: musi byc cos w pain albo selfDx
+    if ((!pain || typeof pain !== 'string' || !pain.trim()) &&
+        (!selfDx || typeof selfDx !== 'string' || !selfDx.trim())) {
+      return NextResponse.json({ ok: false, reason: 'no_input' });
+    }
+
+    // Sanityzacja: max 500 znakow per pole (frontend juz tnie ale safety)
+    const pPain = String(pain || '').slice(0, 500).trim();
+    const pTrigger = String(trigger || '').slice(0, 500).trim();
+    const pSelfDx = String(selfDx || '').slice(0, 500).trim();
+    const pWorstCat = String(worstCat || 'Sen').slice(0, 50);
+    const pSegment = String(segment || 'CIEPELY').slice(0, 20);
+    const pAge = Number(age) || 30;
+
+    const userMsg = `BOL: ${pPain || '(brak)'}\nTRIGGER: ${pTrigger || '(brak)'}\nCO MNIE TRZYMA: ${pSelfDx || '(brak)'}`;
+    const sys = SYS_PROMPT
+      .replace('{worstCat}', pWorstCat)
+      .replace('{segment}', pSegment)
+      .replace('{age}', String(pAge));
+
+    // Call Anthropic API — Haiku 4.5 (szybki + tani dla klasyfikacji)
+    const r = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01',
+        'content-type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'claude-haiku-4-5-20251001',
+        max_tokens: 1024,
+        system: sys,
+        messages: [{ role: 'user', content: userMsg }],
+      }),
+    });
+
+    if (!r.ok) {
+      return NextResponse.json({ ok: false, reason: 'api_error', status: r.status });
+    }
+
+    const json = await r.json();
+    const text: string = json?.content?.[0]?.text || '';
+
+    // Czyszczenie: usun markdown code fences jak Claude dolozyl
+    const cleaned = text.replace(/^```(?:json)?\s*|\s*```$/g, '').trim();
+
+    let reframe;
+    try {
+      reframe = JSON.parse(cleaned);
+    } catch {
+      return NextResponse.json({ ok: false, reason: 'parse_error' });
+    }
+
+    // Walidacja struktury minimum
+    if (typeof reframe !== 'object' || !reframe.mechanizm || !Array.isArray(reframe.kolejnosc)) {
+      return NextResponse.json({ ok: false, reason: 'invalid_structure' });
+    }
+
+    return NextResponse.json({ ok: true, reframe });
+  } catch (e) {
+    return NextResponse.json({ ok: false, reason: 'unknown_error' });
+  }
+}
