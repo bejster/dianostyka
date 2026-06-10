@@ -67,53 +67,61 @@ export async function POST(req: NextRequest) {
       .replace('{segment}', pSegment)
       .replace('{age}', String(pAge));
 
-    // Call OpenRouter (OpenAI-compatible). Sonnet zamiast Haiku: Haiku przeciekal cyrylica
-    // w polskich odpowiedziach (~50% requestow lapane przez lang_leak guard).
-    const r = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${apiKey}`,
-        'Content-Type': 'application/json',
-        'HTTP-Referer': 'https://diagnostyka.talerzihantle.com',
-        'X-Title': 'Diagnostyka HiT',
-      },
-      body: JSON.stringify({
-        model: 'anthropic/claude-sonnet-4.6',
-        max_tokens: 1024,
-        temperature: 0.4,
-        messages: [
-          { role: 'system', content: sys },
-          { role: 'user', content: userMsg },
-        ],
-      }),
-    });
+    // Call OpenRouter (OpenAI-compatible). DeepSeek V3: najtanszy sensowny model
+    // (~$0.0002/lead, publiczny ruch nie boli). Tanie modele przeciekaja obcymi
+    // alfabetami w polskim, stad guard (cyrylica + CJK + em-dash) i 1 retry.
+    let reframe: Record<string, unknown> | null = null;
+    let lastReason = 'unknown_error';
 
-    if (!r.ok) {
-      return NextResponse.json({ ok: false, reason: 'api_error', status: r.status });
+    for (let attempt = 0; attempt < 2 && !reframe; attempt++) {
+      const r = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${apiKey}`,
+          'Content-Type': 'application/json',
+          'HTTP-Referer': 'https://diagnostyka.talerzihantle.com',
+          'X-Title': 'Diagnostyka HiT',
+        },
+        body: JSON.stringify({
+          model: 'deepseek/deepseek-chat',
+          max_tokens: 1024,
+          temperature: 0.4,
+          messages: [
+            { role: 'system', content: sys },
+            { role: 'user', content: userMsg },
+          ],
+        }),
+      });
+
+      if (!r.ok) { lastReason = `api_error_${r.status}`; continue; }
+
+      const json = await r.json();
+      const text: string = json?.choices?.[0]?.message?.content || '';
+
+      // Czyszczenie: usun markdown code fences jak model dolozyl
+      const cleaned = text.replace(/^```(?:json)?\s*|\s*```$/g, '').trim();
+
+      let parsed: Record<string, unknown>;
+      try {
+        parsed = JSON.parse(cleaned);
+      } catch { lastReason = 'parse_error'; continue; }
+
+      // Walidacja struktury minimum
+      if (typeof parsed !== 'object' || !parsed.mechanizm || !Array.isArray(parsed.kolejnosc)) {
+        lastReason = 'invalid_structure'; continue;
+      }
+
+      // Guard: cyrylica, chinskie znaki albo em-dash = krzaki u leada, retry/fallback
+      const allText = JSON.stringify(parsed);
+      if (/[Ѐ-ӿ]/.test(allText) || /[一-鿿　-〿]/.test(allText) || allText.includes('—')) {
+        lastReason = 'lang_leak'; continue;
+      }
+
+      reframe = parsed;
     }
 
-    const json = await r.json();
-    const text: string = json?.choices?.[0]?.message?.content || '';
-
-    // Czyszczenie: usun markdown code fences jak Claude dolozyl
-    const cleaned = text.replace(/^```(?:json)?\s*|\s*```$/g, '').trim();
-
-    let reframe;
-    try {
-      reframe = JSON.parse(cleaned);
-    } catch {
-      return NextResponse.json({ ok: false, reason: 'parse_error' });
-    }
-
-    // Walidacja struktury minimum
-    if (typeof reframe !== 'object' || !reframe.mechanizm || !Array.isArray(reframe.kolejnosc)) {
-      return NextResponse.json({ ok: false, reason: 'invalid_structure' });
-    }
-
-    // Guard: cyrylica albo em-dash w outputach modelu = fallback zamiast krzakow u leada
-    const allText = JSON.stringify(reframe);
-    if (/[Ѐ-ӿ]/.test(allText) || allText.includes('—')) {
-      return NextResponse.json({ ok: false, reason: 'lang_leak' });
+    if (!reframe) {
+      return NextResponse.json({ ok: false, reason: lastReason });
     }
 
     return NextResponse.json({ ok: true, reframe });
