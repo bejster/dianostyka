@@ -2009,7 +2009,7 @@ export default function Page() {
                   </div>
                   <SH n="01" title="Sen" />
                   <div style={{ fontSize: 14, color: M.t3, fontWeight: 400, paddingLeft: 38, marginBottom: 28 }}>Leżysz 8h. Ile z tego naprawdę śpisz, a ile przewijasz telefon?</div>
-                  <Slider label="Ile godzin twardo śpisz w nocy" min={3} max={9} step={0.5} k="sleep" val={D.sleep} unit="h" note={`Deficyt vs 7.5h: ${Math.max((7.5 - D.sleep) * 7, 0).toFixed(0)}h / tydzień`} ariaLabel="Średni czas snu w nocy w godzinach" />
+                  <Slider label="Ile godzin faktycznie śpisz" min={3} max={9} step={0.5} k="sleep" val={D.sleep} unit="h" note={`Deficyt vs 7.5h: ${Math.max((7.5 - D.sleep) * 7, 0).toFixed(0)}h / tydzień`} ariaLabel="Średni czas snu w nocy w godzinach" />
                   <SevField label="Budzisz się w nocy, kręcisz, płytki sen?" sub="Możesz przespać 8h i wstać rozbity. Pytam o to drugie." k="sleepQ" val={D.sleepQ} />
                   <SevField label="Leżysz z telefonem przed snem?" sub="Ekran tłumi melatoninę o 50% na 90 minut." k="screenBed" val={D.screenBed} />
                   <Slider label="O której wstajesz w tygodniu?" min={4} max={10} step={0.5} k="wakeTime" val={D.wakeTime} unit=":00" ariaLabel="Godzina wstawania w tygodniu" />
@@ -2023,9 +2023,9 @@ export default function Page() {
                     <p style={{ fontSize: 12, color: M.t3, margin: 0, lineHeight: 1.5, textAlign: 'center' }}>Twój sen: brakuje <strong style={{ color: M.gold }}>{Math.max((7.5 - D.sleep) * 7, 0).toFixed(0)}h</strong> w tygodniu. To <strong style={{ color: M.gold }}>{Math.round(Math.max((7.5 - D.sleep) * 7 * 52, 0))}h</strong> rocznie pod alarmem.</p>
                   </div>
                   <SevField label="Stres siedzi w ciele?" sub="Kark, żołądek, myśli o pracy po 22." k="stress" val={D.stress} />
-                  <SevField label="Wypalenie" sub="Wstajesz zmęczony, kawa to placebo." k="energy" val={D.energy} />
+                  <SevField label="Wypalenie" sub="Wstajesz i już nie masz siły. Trzecia kawa nic nie zmienia." k="energy" val={D.energy} />
                   <SevField label="Głód dopaminowy" sub="Otwierasz telefon co 3 minuty. Na nudnym zadaniu nie wytrzymujesz 10 minut." k="dopamine" val={D.dopamine} />
-                  <Slider label="Ile godzin dziennie marnuje Ci mgła i wolne myślenie?" min={0} max={4} step={0.5} k="lost" val={D.lost} unit="h" ariaLabel="Liczba godzin traconych dziennie przez mgłę umysłową" />
+                  <Slider label="Ile godzin dziennie lecisz na pół mocy?" min={0} max={4} step={0.5} k="lost" val={D.lost} unit="h" ariaLabel="Liczba godzin traconych dziennie przez mgłę umysłową" />
                   {/* Średni przychód netto */}
                   <div style={{ marginBottom: 28 }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 10 }}>
@@ -2092,8 +2092,8 @@ export default function Page() {
                   <div style={{ borderLeft: `3px solid ${M.gold}`, padding: '8px 12px', marginBottom: 20, background: `${M.gold}08`, borderRadius: '0 8px 8px 0', maxWidth: '100%', margin: '0 auto 20px' }}>
                     <p style={{ fontSize: 12, color: M.t3, margin: 0, lineHeight: 1.5, textAlign: 'center' }}>Tracisz w pracy: ~<strong style={{ color: M.gold }}>{Math.round(D.lost * D.rate * 22).toLocaleString('pl-PL')} zł</strong> miesięcznie. Rocznie: <strong style={{ color: M.gold }}>{Math.round(D.lost * D.rate * 22 * 12).toLocaleString('pl-PL')} zł</strong> w kieszeń.</p>
                   </div>
-                  <SevField label="Chaos w jedzeniu" sub="Omijasz śniadanie, wieczorem jesz za trzech?" k="dietChaos" val={D.dietChaos} />
-                  <SevField label="Objadanie się" sub="Cały dzień na diecie, wieczorem pizza + lody. Po weekendzie znowu od zera." k="binge" val={D.binge} />
+                  <SevField label="Chaos w jedzeniu" sub="Do 15 sama kawa, wieczorem zjadasz pół lodówki." k="dietChaos" val={D.dietChaos} />
+                  <SevField label="Objadanie się" sub="Trzymasz się do wieczora, potem leci wszystko co jest w domu. Rano wyrzuty i od nowa." k="binge" val={D.binge} />
                   <Slider label="Wydajesz miesięcznie na śmieciowe jedzenie / dowóz" min={0} max={1000} step={50} k="junk" val={D.junk} unit=" zł" note={`6 miesięcy: ${(D.junk * 6).toLocaleString('pl-PL')} zł`} ariaLabel="Miesięczne wydatki na śmieciowe jedzenie i dowóz w złotych" />
                 </div>
               )}
