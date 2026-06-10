@@ -1356,9 +1356,9 @@ export default function Page() {
   if (D.tags.has('headaches') && D.sleep < 6.5) insights.push(`Bóle głowy + deficyt snu = <b>przewlekły stan zapalny</b>. Ibuprofen to plaster, nie rozwiązanie.`);
   if (D.tags.has('procrastination') && D.dopamine >= 2) insights.push(`Prokrastynacja + głód dopaminowy = <b>mózg wybiera natychmiastową nagrodę</b>. Sięgasz po telefon zamiast robić, bo dopamina bazowa jest za niska.`);
   if (D.tags.has('memory') && D.sleep < 7) insights.push(`Słabsza pamięć + deficyt snu = <b>hipokamp nie konsoliduje wspomnień</b>. Sen poniżej 7h blokuje przenoszenie informacji z pamięci krótkotrwałej do długotrwałej.`);
-  if (D.tags.has('confidence') && D.trainHappy >= 1) insights.push(`Mniejsza pewność siebie + niezadowolenie z wyników. <b>Testosteron i pewność siebie korelują bezpośrednio</b>. To nie psychologia, to biochemia.`);
+  if (D.tags.has('confidence') && D.trainHappy >= 1) insights.push(`Mniejsza pewność siebie + niezadowolenie z wyników. <b>Testosteron i pewność siebie korelują bezpośrednio</b>. Biochemia, nie psychologia.`);
   if (D.tags.has('impatience') && D.dopamine >= 2) insights.push(`Brak cierpliwości + rozregulowana dopamina = <b>mózg przyzwyczajony do szybkich nagród</b>. Dlatego trudno wytrwać przy planie który wymaga tygodni.`);
-  if (D.triedBefore >= 2) insights.push(`Próbowałeś wiele razy sam. <b>To nie dyscyplina jest problemem</b>. Widzisz fragmenty, ale nie widzisz jak one na siebie wpływają.`);
+  if (D.triedBefore >= 2) insights.push(`Próbowałeś wiele razy sam. <b>Problem nie siedzi w dyscyplinie</b>. Widzisz fragmenty, ale nie widzisz jak one na siebie wpływają.`);
   if (C.total > 8000) insights.push(`<b>${C.total.toLocaleString('pl-PL')} zł w pół roku</b>. Na konsekwencje, nie na sam weekend.`);
 
   // Potencjal - ile % blokujesz stylem zycia vs ile wykorzystujesz
@@ -1989,7 +1989,7 @@ export default function Page() {
                     <p style={{ color: M.t2, fontSize: 16, lineHeight: 1.55, fontWeight: 500, maxWidth: 400, margin: '0 auto 20px' }}>
                       Liczę dokładnie ile zł, lat mózgu i testosteronu ucieka Ci co miesiąc.
                     </p>
-                    <div style={{ fontFamily: M.mono, fontSize: 10, color: M.t4, letterSpacing: 1.5, marginTop: 4 }}>Poufne. 180+ chłopaków policzonych. 5.0 na Google.</div>
+                    <div style={{ fontFamily: M.mono, fontSize: 10, color: M.t4, letterSpacing: 1.5, marginTop: 4 }}>Poufne. 180 facetów już przez to przeszło. 5.0 na Google.</div>
                   </div>
                 </div>
               )}
@@ -2439,7 +2439,7 @@ export default function Page() {
 
                         {/* Dyskretny disclaimer */}
                         <div style={{ fontSize: 10.5, color: M.t4, lineHeight: 1.45, fontStyle: 'italic', marginBottom: 14, opacity: 0.8, textAlign: 'left' }}>
-                          Szacunek z odpowiedzi ankiety. To nie diagnoza lekarska.
+                          Szacunek z Twoich odpowiedzi, nie diagnoza lekarska.
                         </div>
 
                         {/* ── W praktyce - ludzkie, nie AI-scenka ── */}
@@ -2468,7 +2468,7 @@ export default function Page() {
                         {/* Wyjasnienie kosztu - anti scam-vibes */}
                         {costPerYear > 0 && (
                           <div style={{ fontSize: 11.5, color: M.t4, lineHeight: 1.55, marginTop: 12, fontStyle: 'italic', textAlign: 'left', paddingTop: 10, borderTop: `1px solid ${M.brd}` }}>
-                            To nie faktura. Szacunek kosztu chaosu: jedzenia na zmęczeniu, odpuszczonych treningów, słabszej pracy i poniedziałków, które zaczynają się dopiero w środę.
+                            Nikt Ci takiej faktury nie wystawi. Ta kwota rozchodzi się po cichu: jedzenie na zmęczeniu, odpuszczone treningi, słabsza robota i poniedziałki, które zaczynają się dopiero w środę.
                           </div>
                         )}
                       </>
@@ -2523,7 +2523,7 @@ export default function Page() {
                         />
                         <div>
                           <div style={{ fontSize: 14, fontWeight: 700, color: M.t1, lineHeight: 1.2, marginBottom: 3 }}>Michał &middot; Hantle i Talerz</div>
-                          <div style={{ fontSize: 12, color: M.t4, lineHeight: 1.4 }}>180+ chłopaków policzonych &middot; 5.0 na Google &middot; 9 lat z fizjologią</div>
+                          <div style={{ fontSize: 12, color: M.t4, lineHeight: 1.4 }}>180 facetów przeszło ten proces &middot; 5.0 na Google &middot; 9 lat prowadzenia</div>
                         </div>
                       </div>
 
@@ -2550,7 +2550,7 @@ export default function Page() {
                         </div>
                         <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 16px', display: 'flex', flexDirection: 'column', gap: 7 }}>
                           {[
-                            'Brzuch chodzi w lustrze',
+                            'Brzuch schodzi i widać to w lustrze',
                             'Libido wraca, panel krwi w normie',
                             'Rytm tygodnia trzyma się sam, bez pilnowania',
                           ].map((b, i) => (
@@ -2563,7 +2563,7 @@ export default function Page() {
                       </div>
 
                       <p style={{ fontSize: 13.5, color: M.t3, lineHeight: 1.6, marginBottom: 18, fontStyle: 'italic' }}>
-                        180+ chłopaków policzonych identycznie. Tej samej drogi nie wymyślasz na nowo.
+                        180 facetów przeszło tę drogę przed Tobą. Nie wymyślasz jej na nowo.
                       </p>
 
                       {/* 3 MIEJSCA - dynamiczna diagnoza z worst categories */}
@@ -2739,7 +2739,7 @@ export default function Page() {
                       </button>
 
                       <div style={{ fontSize: 13, color: M.t3, lineHeight: 1.6, textAlign: 'center', paddingTop: 14, borderTop: `1px solid ${M.gold}20`, fontStyle: 'italic' }}>
-                        Piątek wieczorem to wszyscy wytrzymają. Poniedziałek rano dzieli ludzi na dwie grupy.
+                        Imprezujesz w piątek. Poniedziałek ma być Twój.
                       </div>
                     </div>
                   );
@@ -2852,7 +2852,7 @@ export default function Page() {
                 <div style={{ marginBottom: 22, padding: '20px 18px', borderRadius: 14, width: '100%', boxSizing: 'border-box', background: M.s1, border: `1px solid ${M.brd}` }}>
                   <div style={{ fontFamily: M.mono, fontSize: 10, letterSpacing: 2.5, textTransform: 'uppercase', color: M.t4, marginBottom: 14 }}>Twoimi słowami</div>
                   <div style={{ fontSize: 14.5, color: M.t2, lineHeight: 1.6, fontStyle: 'italic', borderLeft: `3px solid ${M.gold}`, paddingLeft: 14, marginBottom: 8 }}>„{pain.trim()}"</div>
-                  <div style={{ fontSize: 13, color: M.t3, lineHeight: 1.6 }}>Zapisałem słowo w słowo. Liczby wyżej mówią to samo, tylko bez emocji. {imie.trim() ? capName(imie.trim()) + ', t' : 'T'}o nie jest w Twojej głowie.</div>
+                  <div style={{ fontSize: 13, color: M.t3, lineHeight: 1.6 }}>Zapisałem słowo w słowo. Liczby wyżej pokazują to samo. {imie.trim() ? capName(imie.trim()) + ', n' : 'N'}ie wymyśliłeś sobie tego.</div>
                 </div>
               </Reveal>
             )}
@@ -2997,7 +2997,7 @@ export default function Page() {
                       </>
                     )}
                     <div style={{ marginTop: 4, fontSize: 10.5, color: M.t4, lineHeight: 1.5, fontStyle: 'italic' }}>
-                      To nie jest diagnoza lekarska. Raport pokazuje obszary stylu życia, które mogą wpływać na energię, apetyt, sen, trening i regenerację.
+                      Raport nie jest diagnozą lekarską. Pokazuje obszary stylu życia, które mogą wpływać na energię, apetyt, sen, trening i regenerację.
                     </div>
                   </div>
                 )}
@@ -3077,7 +3077,7 @@ export default function Page() {
                   {imie.trim() ? `${capName(imie.trim())}, co tu wyłapuję` : 'Co tu wyłapuję'}
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                  {D.sleep < 7 && <div style={{ fontSize: 14, color: M.t2, lineHeight: 1.6 }}><strong style={{ color: M.t1 }}>Śpisz {D.sleep}h.</strong> To nie jest o zegarze. Przy takim rytmie kortyzol nie resetuje się w nocy, rano startujesz już z niższej pozycji.</div>}
+                  {D.sleep < 7 && <div style={{ fontSize: 14, color: M.t2, lineHeight: 1.6 }}><strong style={{ color: M.t1 }}>Śpisz {D.sleep}h.</strong> Przy takim rytmie kortyzol nie schodzi w nocy, rano startujesz już z niższej pozycji.</div>}
                   {D.stress >= 2 && <div style={{ fontSize: 14, color: M.t2, lineHeight: 1.6 }}><strong style={{ color: M.t1 }}>Stres na {D.stress}/5.</strong> Organizm przestał odróżniać alarm od normy. Testosteron i kortyzol mają ten sam prekursor, wygrywa zawsze ten bardziej potrzebny.</div>}
                   {D.mondayFeel >= 1 && <div style={{ fontSize: 14, color: M.t2, lineHeight: 1.6 }}><strong style={{ color: M.t1 }}>Poniedziałek startujesz na minusie.</strong> Piątek zabrał Ci 3 dni regeneracji, czego nie naprawisz przez „mniej pić”.</div>}
                   {D.trainHappy >= 1 && D.trainYears >= 2 && <div style={{ fontSize: 14, color: M.t2, lineHeight: 1.6 }}><strong style={{ color: M.t1 }}>{D.trainYears} lat trenujesz, a efekty nie idą.</strong> Gdyby trening sam z siebie wystarczył, byłoby widać. Problem siedzi w pozostałych 163 godzinach tygodnia.</div>}
