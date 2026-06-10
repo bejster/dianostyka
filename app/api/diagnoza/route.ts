@@ -67,7 +67,8 @@ export async function POST(req: NextRequest) {
       .replace('{segment}', pSegment)
       .replace('{age}', String(pAge));
 
-    // Call OpenRouter (OpenAI-compatible), Claude Haiku 4.5 (szybki + tani dla klasyfikacji)
+    // Call OpenRouter (OpenAI-compatible). Sonnet zamiast Haiku: Haiku przeciekal cyrylica
+    // w polskich odpowiedziach (~50% requestow lapane przez lang_leak guard).
     const r = await fetch('https://openrouter.ai/api/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -77,7 +78,7 @@ export async function POST(req: NextRequest) {
         'X-Title': 'Diagnostyka HiT',
       },
       body: JSON.stringify({
-        model: 'anthropic/claude-haiku-4.5',
+        model: 'anthropic/claude-sonnet-4.6',
         max_tokens: 1024,
         temperature: 0.4,
         messages: [
