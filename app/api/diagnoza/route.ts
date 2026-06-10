@@ -17,6 +17,8 @@ Twoje zadanie: wyciagnij Z TEKSTU LEADA (nie zmyslaj, nie dodawaj swoich domysln
 5. PULAPKA: krotkie zdanie z czego lead sam sie nie wyciagnie. 1 zdanie, max 25 slow.
 
 ZASADY TONU (NIE LAMAJ):
+- WYLACZNIE jezyk polski, WYLACZNIE polski alfabet lacinski. ZERO cyrylicy, zero rosyjskich/ukrainskich slow, zero angielskich wtracen.
+- Poprawna polska gramatyka, pelne formy czasownikow
 - Polski, konkretny, bez korpo/coachowskiego
 - Wyrazy ZAKAZANE: realnie, system, mnich, partnerka, szef, kluczowe, super, swietnie, fajnie, naprawde, wspaniale, transformacja, najlepsza wersja, mindset, ekspert
 - "facet" zamiast "klient", "podopieczny" zamiast "klient"
@@ -77,6 +79,7 @@ export async function POST(req: NextRequest) {
       body: JSON.stringify({
         model: 'anthropic/claude-haiku-4.5',
         max_tokens: 1024,
+        temperature: 0.4,
         messages: [
           { role: 'system', content: sys },
           { role: 'user', content: userMsg },
@@ -104,6 +107,12 @@ export async function POST(req: NextRequest) {
     // Walidacja struktury minimum
     if (typeof reframe !== 'object' || !reframe.mechanizm || !Array.isArray(reframe.kolejnosc)) {
       return NextResponse.json({ ok: false, reason: 'invalid_structure' });
+    }
+
+    // Guard: cyrylica albo em-dash w outputach modelu = fallback zamiast krzakow u leada
+    const allText = JSON.stringify(reframe);
+    if (/[Ѐ-ӿ]/.test(allText) || allText.includes('—')) {
+      return NextResponse.json({ ok: false, reason: 'lang_leak' });
     }
 
     return NextResponse.json({ ok: true, reframe });
