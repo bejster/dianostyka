@@ -72,7 +72,7 @@ interface ReframeData {
   pulapka?: string;
 }
 
-type SevKey = 'sleepQ' | 'screenBed' | 'stress' | 'energy' | 'dopamine' | 'dietChaos' | 'binge';
+type SevKey = 'sleepQ' | 'screenBed' | 'stress' | 'energy' | 'dopamine' | 'dietChaos' | 'binge' | 'caffeine' | 'evening' | 'wired';
 type ChipKey = 'fatigue' | 'mood' | 'libido' | 'belly' | 'brain' | 'anxiety' | 'joints' | 'skin' | 'motivation' | 'digest' | 'cravings' | 'recovery' | 'focus' | 'headaches' | 'sweating' | 'heartRate' | 'procrastination' | 'impatience' | 'memory' | 'confidence';
 
 interface FD {
@@ -95,6 +95,9 @@ interface FD {
   triedBefore: number;  // próbował zmienić sam: 0=nie, 1=raz-dwa, 2=wiele razy
   frustration: number;  // co frustruje: 0=brak wyników, 1=brak energii, 2=brak czasu, 3=brak konsekwencji
   budget: number;       // gotowość inwestycji 6 mies: 0=sam ogarnę, 1=jak zadziała, 2=gotów wydać, 3=kasa nie problem
+  caffeine: number;     // ile kofeiny żeby ruszyć: 0=żadnej, 1=jedna kawa, 2=potrzebuję, 3=bez 3 kaw nie żyję
+  evening: number;      // wieczorem nie możesz wyłączyć głowy: 0-3
+  wired: number;        // spięty/na nerwach bez powodu: 0-3
 }
 
 const INIT: FD = {
@@ -106,6 +109,7 @@ const INIT: FD = {
   wakeTime: 7, alarm: 1, workHours: 8, progress: 0, meals: 3, cooking: 1,
   mondayFeel: 0, weekendWork: 1, trainYears: 3, trainHappy: 0, trainPlan: 0,
   triedBefore: 1, frustration: 1, budget: 1,
+  caffeine: 0, evening: 0, wired: 0,
 };
 
 const SECTIONS = ['Sen', 'Stres i głowa', 'Weekend', 'Objawy', 'Twoimi słowami'];
@@ -200,10 +204,10 @@ function score(D: FD) {
   // Max possible: 20+25+15+20+18+15+12 = 125, capped at 100
   const tagScore = tagScoreWeighted(D.tags);
   const s =
-    // Sen (max 20): sleep 5h + bad quality + phone = 20
-    Math.min(((D.sleepQ + D.screenBed) / 4 + (7.5 - Math.min(D.sleep, 7.5))) * 6, 20)
-    // Stres (max 25): stress 3 + energy 3 + dopamine 3 = 25
-    + Math.min((D.stress + D.energy + D.dopamine) * 2.8, 25)
+    // Sen (max 20): sleep 5h + bad quality + phone + kofeina = 20
+    Math.min(((D.sleepQ + D.screenBed + D.caffeine) / 5 + (7.5 - Math.min(D.sleep, 7.5))) * 6, 20)
+    // Stres (max 25): stress + energy + dopamine + evening + wired
+    + Math.min((D.stress + D.energy + D.dopamine + D.evening + D.wired) * 1.7, 25)
     // Dieta (max 15): chaos 3 + binge 3 = 15
     + Math.min((D.dietChaos + D.binge) * 2.5, 15)
     // Weekend (max 20): drinks 10+ = 14, subs = +6
@@ -932,6 +936,7 @@ export default function Page() {
       trainYears: D.trainYears, trainHappy: D.trainHappy, trainPlan: D.trainPlan,
       rate: D.rate, tags: Array.from(D.tags),
       triedBefore: D.triedBefore, frustration: D.frustration, budget: D.budget,
+      caffeine: D.caffeine, evening: D.evening, wired: D.wired,
       pain, trigger, selfDx,
     };
     const biggest = catData.reduce((a, b) => a.v > b.v ? a : b, catData[0]);
@@ -1441,6 +1446,12 @@ export default function Page() {
     if (D.mondayFeel >= 3) pct -= 8;
     else if (D.mondayFeel >= 2) pct -= 5;
     if (D.screenBed >= 2) pct -= 4;
+    // Kofeina jako podpora = adenozyna zalega, mózg nie startuje sam
+    if (D.caffeine >= 3) pct -= 7;
+    else if (D.caffeine >= 2) pct -= 4;
+    // Wieczorne nakręcenie / spięcie = kortyzol nie schodzi
+    if (D.evening >= 2) pct -= 4;
+    if (D.wired >= 2) pct -= 4;
     // Floor 40 - poniżej tego ICP wyśmieje liczbę. Realnie nikt nie chodzi po świecie z mózgiem na 15%.
     return Math.max(pct, 40);
   })();
@@ -1470,6 +1481,10 @@ export default function Page() {
     if (D.tags.has('memory')) penalty += 1;
     if (D.tags.has('headaches')) penalty += 0.5;
     if (D.miss >= 2) penalty += 0.5;
+    if (D.caffeine >= 3) penalty += 1.5;
+    else if (D.caffeine >= 2) penalty += 0.5;
+    if (D.evening >= 2) penalty += 0.5;
+    if (D.wired >= 2) penalty += 0.5;
     // Mózg nieco starszy od ciała (min +1)
     return Math.round((baseAge + Math.max(penalty, bioAge - baseAge + 1)) * 10) / 10;
   })();
@@ -2009,6 +2024,8 @@ export default function Page() {
                   </div>
                   <Slider label="Ile godzin faktycznie śpisz" min={3} max={9} step={0.5} k="sleep" val={D.sleep} unit="h" note={`Deficyt vs 7.5h: ${Math.max((7.5 - D.sleep) * 7, 0).toFixed(0)}h / tydzień`} ariaLabel="Średni czas snu w nocy w godzinach" />
                   <SevField label="Budzisz się w nocy, kręcisz, płytki sen?" sub="Możesz przespać 8h i wstać rozbity. Pytam o to drugie." k="sleepQ" val={D.sleepQ} />
+                  <SevField label="Bez kawy nie ruszasz z miejsca?" sub="Rano, po obiedzie, wieczorem. Jak często łapiesz za kubek, żeby w ogóle działać." k="caffeine" val={D.caffeine} />
+                  <SevField label="Wieczorem nie możesz wyłączyć głowy?" sub="Leżysz, a myśli o robocie i jutrze same wracają." k="evening" val={D.evening} />
                   <SevField label="Leżysz z telefonem przed snem?" sub="Ekran tłumi melatoninę o 50% na 90 minut. Mózg nie schodzi w głęboki sen." k="screenBed" val={D.screenBed} />
                 </div>
               )}
@@ -2020,9 +2037,11 @@ export default function Page() {
                     <p style={{ fontSize: 12, color: M.t3, margin: 0, lineHeight: 1.5, textAlign: 'center' }}>Twój sen: brakuje <strong style={{ color: M.gold }}>{Math.max((7.5 - D.sleep) * 7, 0).toFixed(0)}h</strong> w tygodniu. To <strong style={{ color: M.gold }}>{Math.round(Math.max((7.5 - D.sleep) * 7 * 52, 0))}h</strong> rocznie pod alarmem.</p>
                   </div>
                   <SevField label="Stres siedzi w ciele?" sub="Kark, żołądek, myśli o pracy po 22." k="stress" val={D.stress} />
+                  <SevField label="Spięty bez powodu?" sub="Coś podgryza od środka, choć nic złego się nie dzieje." k="wired" val={D.wired} />
                   <SevField label="Wypalenie" sub="Wstajesz i już nie masz siły. Trzecia kawa nic nie zmienia." k="energy" val={D.energy} />
                   <SevField label="Głód dopaminowy" sub="Otwierasz telefon co 3 minuty. Na nudnym zadaniu nie wytrzymujesz 10 minut." k="dopamine" val={D.dopamine} />
-                  <Slider label="Ile godzin dziennie lecisz na pół mocy?" min={0} max={4} step={0.5} k="lost" val={D.lost} unit="h" note={D.lost > 0 ? `Mgła i wolniejsze myślenie kosztują Cię ${Math.round(D.lost * 5 * 4)}h miesięcznie` : ''} ariaLabel="Liczba godzin dziennie na obniżonej koncentracji" />
+                  <Slider label="Ile godzin dziennie pracujesz głową?" min={2} max={14} step={1} k="workHours" val={D.workHours} unit="h" ariaLabel="Liczba godzin pracy umysłowej dziennie" />
+                  <Slider label="Ile z tego lecisz na pół mocy?" min={0} max={8} step={0.5} k="lost" val={D.lost} unit="h" note={D.lost > 0 ? `Mgła i wolniejsze myślenie zjadają Ci ${Math.round(D.lost * 5 * 4)}h miesięcznie` : ''} ariaLabel="Liczba godzin dziennie na obniżonej koncentracji" />
                 </div>
               )}
 
