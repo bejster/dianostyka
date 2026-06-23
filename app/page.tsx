@@ -2094,7 +2094,6 @@ export default function Page() {
                   </div>
                   <SevField label="Chaos w jedzeniu" sub="Do 15 sama kawa, wieczorem zjadasz pół lodówki." k="dietChaos" val={D.dietChaos} />
                   <SevField label="Objadanie się" sub="Trzymasz się do wieczora, potem leci wszystko co jest w domu. Rano wyrzuty i od nowa." k="binge" val={D.binge} />
-                  <Slider label="Wydajesz miesięcznie na śmieciowe jedzenie / dowóz" min={0} max={1000} step={50} k="junk" val={D.junk} unit=" zł" note={`6 miesięcy: ${(D.junk * 6).toLocaleString('pl-PL')} zł`} ariaLabel="Miesięczne wydatki na śmieciowe jedzenie i dowóz w złotych" />
                 </div>
               )}
 
