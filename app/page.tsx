@@ -108,9 +108,9 @@ const INIT: FD = {
   triedBefore: 1, frustration: 1, budget: 1,
 };
 
-const SECTIONS = ['Sen i głowa', 'Weekend', 'Objawy', 'Decyzja'];
+const SECTIONS = ['Sen', 'Stres i głowa', 'Weekend', 'Objawy', 'Twoimi słowami'];
 // Mood color per sekcja - subtelny radial gradient na tle dla emocjonalnej variation
-const SECTION_HUES = ['#4F46E5', '#A855F7', '#06B6D4', '#D4A853'];
+const SECTION_HUES = ['#4F46E5', '#EF4444', '#A855F7', '#06B6D4', '#D4A853'];
 
 // Wagi objawów - im poważniejszy symptom, tym wyższy wpływ na score i koszt
 // Koszt: szacunek konsekwencji finansowych na 6 miesięcy (suplementy, wizyty, utracona produktywność)
@@ -936,10 +936,8 @@ export default function Page() {
     };
     const biggest = catData.reduce((a, b) => a.v > b.v ? a : b, catData[0]);
     const payloadBlocked = Math.min(sc, 85);
-    // Segment z KWALIFIKACJI: problem (sc) + budżet (D.budget). Sam wysoki score bez budżetu != gorący lead.
-    const segment = (sc > 50 && D.budget >= 2) ? 'GORACY'
-                  : (sc > 35 || D.budget >= 1) ? 'CIEPELY'
-                  : 'ZIMNY';
+    // Segment ze score diagnostyki. Twarda kwalifikacja (budżet) dzieje się w JotForm, nie tutaj.
+    const segment = sc > 60 ? 'GORACY' : sc > 40 ? 'CIEPELY' : 'ZIMNY';
     // Najgorsza kategoria wg catScores (zsynchronizowane z CTA routing)
     const pCatScores = [
       { label: 'Sen', pct: Math.max(100 - Math.round(((D.sleepQ + D.screenBed) / 6 + (7.5 - Math.min(D.sleep, 7.5)) / 1.5) * 55), 5) },
@@ -955,11 +953,11 @@ export default function Page() {
     // Routed product - diagnostyka ZAWSZE kieruje na system (coaching page z formularzem)
     // Sprzedaz produktow per sciezka odbywa sie w DM po formularzu, nie na diagnostyce
     const routedProduct = 'system_coaching';
-    // PRIORITY FLAG - teraz z TWARDEGO pytania o budżet (D.budget 0-3) + ile razy próbował sam.
-    // To rozwiązuje "każdy wychodzi": priorytet wymaga realnej gotowości inwestycji.
+    // PRIORITY FLAG - z diagnostyki: wysoki score + walczył już sam = warto się odezwać.
+    // Realna kwalifikacja budżetowa odbywa się w JotForm po quizie.
     const commitmentProxy = D.triedBefore; // 0-2: ile razy walczył sam = jak bardzo zmotywowany
-    const budgetProxy = D.budget;          // 0-3: deklarowana gotowość inwestycji
-    const priorityLead = sc >= 45 && budgetProxy >= 2 && commitmentProxy >= 1;
+    const budgetProxy = 0;                 // budżet pytany dopiero w JotForm, nie w diagnostyce
+    const priorityLead = sc >= 60 && commitmentProxy >= 1;
     const payload = {
       instagram_handle: finalHandle,
       email,
@@ -2010,9 +2008,8 @@ export default function Page() {
                     <Slider label="Twój wiek" min={18} max={50} step={1} k="age" val={D.age} unit=" lat" ariaLabel="Twój wiek w latach" />
                   </div>
                   <Slider label="Ile godzin faktycznie śpisz" min={3} max={9} step={0.5} k="sleep" val={D.sleep} unit="h" note={`Deficyt vs 7.5h: ${Math.max((7.5 - D.sleep) * 7, 0).toFixed(0)}h / tydzień`} ariaLabel="Średni czas snu w nocy w godzinach" />
-                  <SevField label="Stres siedzi w ciele?" sub="Kark, żołądek, myśli o pracy po 22." k="stress" val={D.stress} />
-                  <SevField label="Wypalenie" sub="Wstajesz i już nie masz siły. Trzecia kawa nic nie zmienia." k="energy" val={D.energy} />
-                  <SevField label="Głód dopaminowy" sub="Otwierasz telefon co 3 minuty. Na nudnym zadaniu nie wytrzymujesz 10 minut." k="dopamine" val={D.dopamine} />
+                  <SevField label="Budzisz się w nocy, kręcisz, płytki sen?" sub="Możesz przespać 8h i wstać rozbity. Pytam o to drugie." k="sleepQ" val={D.sleepQ} />
+                  <SevField label="Leżysz z telefonem przed snem?" sub="Ekran tłumi melatoninę o 50% na 90 minut. Mózg nie schodzi w głęboki sen." k="screenBed" val={D.screenBed} />
                 </div>
               )}
 
@@ -2022,9 +2019,33 @@ export default function Page() {
                   <div style={{ borderLeft: `3px solid ${M.gold}`, padding: '8px 12px', marginBottom: 20, background: `${M.gold}08`, borderRadius: '0 8px 8px 0', maxWidth: '100%', margin: '0 auto 20px' }}>
                     <p style={{ fontSize: 12, color: M.t3, margin: 0, lineHeight: 1.5, textAlign: 'center' }}>Twój sen: brakuje <strong style={{ color: M.gold }}>{Math.max((7.5 - D.sleep) * 7, 0).toFixed(0)}h</strong> w tygodniu. To <strong style={{ color: M.gold }}>{Math.round(Math.max((7.5 - D.sleep) * 7 * 52, 0))}h</strong> rocznie pod alarmem.</p>
                   </div>
+                  <SevField label="Stres siedzi w ciele?" sub="Kark, żołądek, myśli o pracy po 22." k="stress" val={D.stress} />
+                  <SevField label="Wypalenie" sub="Wstajesz i już nie masz siły. Trzecia kawa nic nie zmienia." k="energy" val={D.energy} />
+                  <SevField label="Głód dopaminowy" sub="Otwierasz telefon co 3 minuty. Na nudnym zadaniu nie wytrzymujesz 10 minut." k="dopamine" val={D.dopamine} />
+                  <Slider label="Ile godzin dziennie lecisz na pół mocy?" min={0} max={4} step={0.5} k="lost" val={D.lost} unit="h" note={D.lost > 0 ? `Mgła i wolniejsze myślenie kosztują Cię ${Math.round(D.lost * 5 * 4)}h miesięcznie` : ''} ariaLabel="Liczba godzin dziennie na obniżonej koncentracji" />
+                </div>
+              )}
+
+              {sec === 2 && (
+                <div className="fade-up">
+                  {/* Micro-reward: insight z poprzedniej sekcji */}
+                  <div style={{ borderLeft: `3px solid ${M.gold}`, padding: '8px 12px', marginBottom: 20, background: `${M.gold}08`, borderRadius: '0 8px 8px 0', maxWidth: '100%', margin: '0 auto 20px' }}>
+                    <p style={{ fontSize: 12, color: M.t3, margin: 0, lineHeight: 1.5, textAlign: 'center' }}>Mózg na półfali {D.lost > 0 ? <><strong style={{ color: M.gold }}>{D.lost}h</strong> dziennie. </>: ''}Teraz policzę co dokłada do tego weekend.</p>
+                  </div>
                   <div style={{ fontSize: 13.5, color: M.t3, fontWeight: 400, marginBottom: 20, lineHeight: 1.6 }}>Zero moralizowania. Policzę co Cię to kosztuje w złotówkach i testosteronie.</div>
                   <Slider label="Ile drinków w typowy weekend?" min={0} max={20} step={1} k="drinks" val={D.drinks} unit="" note={D.drinks > 5 ? `${D.drinks} drinków = ~${Math.round(D.drinks * 3.4)}% spadek testosteronu w 12h (Vingren 2013)` : ''} ariaLabel="Średnia liczba drinków na imprezie" />
-                  <Slider label="Ile miesięcznie schodzi Ci na wyjścia, alkohol i używki?" min={0} max={2500} step={50} k="cash" val={D.cash} unit=" zł" note={`Suma 6 mies.: ${(D.cash * 6).toLocaleString('pl-PL')} zł`} ariaLabel="Miesięczne wydatki na wyjścia i używki w złotych" />
+                  <Slider label="Ile miesięcznie schodzi Ci na wyjścia i alkohol?" min={0} max={2500} step={50} k="cash" val={D.cash} unit=" zł" note={`Suma 6 mies.: ${(D.cash * 6).toLocaleString('pl-PL')} zł`} ariaLabel="Miesięczne wydatki na wyjścia w złotych" />
+                  <Slider label="Ile wydajesz na substancje (jeśli używasz)" min={0} max={1000} step={50} k="subs" val={D.subs} unit=" zł" ariaLabel="Miesięczne wydatki na substancje w złotych" />
+                  {D.subs > 0 && (
+                    <div style={{ padding: '12px 16px', background: M.s1, borderRadius: 12, border: `1px solid ${M.brd}`, marginTop: -12, marginBottom: 28 }}>
+                      <div style={{ fontSize: 11, color: M.t4, fontFamily: M.mono, letterSpacing: 0.5, marginBottom: 8 }}>Co to znaczy dla Twojego mózgu</div>
+                      <div style={{ fontSize: 12.5, color: M.t3, lineHeight: 1.7 }}>
+                        {D.subs <= 200 && '• Okazjonalne użycie. Serotonina potrzebuje 2-4 tyg. na regenerację, a przy regularnym cyklu to okno nigdy się nie zamyka.'}
+                        {D.subs > 200 && D.subs <= 500 && '• Regularne wydatki. Wyczerpanie serotoniny i dopaminy sprawia, że mózg przesuwa wzorzec: bez kreski czuje, że jest za mało. Trening i odżywianie tracą na efektywności.'}
+                        {D.subs > 500 && '• Poważne wydatki. Układ nerwowy jest w trybie ciągłej kompensacji, regeneracja po weekendzie zajmuje cały tydzień, a forma stoi w miejscu.'}
+                      </div>
+                    </div>
+                  )}
                   {D.drinks > 10 && (
                     <div style={{ fontSize: 11.5, color: M.org, fontStyle: 'italic', marginTop: -16, marginBottom: 24, lineHeight: 1.5 }}>
                       {D.drinks}+ drinków regularnie. Wątroba potrzebuje ~72h na pełną regenerację. Przy 2+ weekendach nigdy nie wraca do poziomu wyjściowego.
@@ -2033,13 +2054,13 @@ export default function Page() {
                 </div>
               )}
 
-              {sec === 2 && (
+              {sec === 3 && (
                 <div className="fade-up">
                   {/* Micro-reward: insight z poprzedniej sekcji */}
                   <div style={{ borderLeft: `3px solid ${M.gold}`, padding: '8px 12px', marginBottom: 20, background: `${M.gold}08`, borderRadius: '0 8px 8px 0', maxWidth: '100%', margin: '0 auto 20px' }}>
                     <p style={{ fontSize: 12, color: M.t3, margin: 0, lineHeight: 1.5, textAlign: 'center' }}>Twój weekend: <strong style={{ color: M.gold }}>{(D.cash * 6).toLocaleString('pl-PL')} zł</strong> w pół roku{D.drinks > 5 ? <> + <strong style={{ color: M.gold }}>{Math.round(D.drinks * 3.4)}%</strong> spadku testosteronu po każdym</> : ''}.</p>
                   </div>
-                  <div style={{ fontSize: 15, color: M.t2, fontWeight: 500, marginBottom: 18, lineHeight: 1.5 }}>Zaznacz każdy objaw który masz w tym tygodniu. Im więcej, tym jaśniejszy obraz.</div>
+                  <div style={{ fontSize: 15, color: M.t2, fontWeight: 500, marginBottom: 18, lineHeight: 1.5 }}>Zaznacz każdy objaw który masz w tym tygodniu. Im więcej, tym jaśniejszy obraz dla mnie.</div>
                   {([
                     ['fatigue', 'Zmęczony mimo 8h snu. Kawa nie pomaga.'],
                     ['mood', 'Wahania nastroju. Z 0 do 100 bez powodu.'],
@@ -2055,15 +2076,17 @@ export default function Page() {
                     ['memory', 'Zapominasz o czym myślałeś 5 sekund temu.'],
                     ['procrastination', 'Odkładasz rzeczy na później. Codziennie.'],
                     ['confidence', 'Mniej pewny siebie niż rok temu.'],
+                    ['sweating', 'Nocne poty. Budzisz się mokry.'],
+                    ['heartRate', 'Tętno spoczynkowe powyżej 75 bpm.'],
                   ] as [ChipKey, string][]).map(([k, l]) => <Chip key={k} t={k} label={l} />)}
                 </div>
               )}
 
-              {sec === 3 && (
+              {sec === 4 && (
                 <div className="fade-up">
                   {/* Micro-reward: insight z poprzedniej sekcji */}
                   <div style={{ borderLeft: `3px solid ${M.gold}`, padding: '8px 12px', marginBottom: 20, background: `${M.gold}08`, borderRadius: '0 8px 8px 0', maxWidth: '100%', margin: '0 auto 20px' }}>
-                    <p style={{ fontSize: 12, color: M.t3, margin: 0, lineHeight: 1.5, textAlign: 'center' }}>Zaznaczono <strong style={{ color: M.gold }}>{D.tags.size}</strong> objawów. Liczby gotowe. Ostatnia sekcja.</p>
+                    <p style={{ fontSize: 12, color: M.t3, margin: 0, lineHeight: 1.5, textAlign: 'center' }}>Zaznaczono <strong style={{ color: M.gold }}>{D.tags.size}</strong> objawów. Liczby gotowe. Ostatni krok.</p>
                   </div>
                   {/* Próby zmiany */}
                   <div style={{ marginBottom: 26 }}>
@@ -2090,45 +2113,14 @@ export default function Page() {
                       })}
                     </div>
                   </div>
-                  {/* BUDŻET - twarda kwalifikacja. Decyduje o segmencie i priorytecie. */}
-                  <div style={{ marginBottom: 26 }}>
-                    <div style={{ fontSize: 15, color: M.t1, fontWeight: 500, marginBottom: 6, lineHeight: 1.45 }}>
-                      Gdybyś miał to ruszyć z kimś, kto już 180 razy to przeszedł<span style={{ display: 'block', fontSize: 12.5, color: M.t3, marginTop: 4, fontWeight: 400 }}>Szczerze. Nie ma złej odpowiedzi, ale wpływa na to czy się odezwę.</span>
-                    </div>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                      {[
-                        { v: 0, l: 'Wolę ogarnąć sam, za darmo' },
-                        { v: 1, l: 'Zainwestuję, jak zobaczę że to działa' },
-                        { v: 2, l: 'Gotów wydać konkretne pieniądze, byle ruszyć' },
-                        { v: 3, l: 'Kasa nie jest problemem, problemem jest czas' },
-                      ].map(o => {
-                        const on = D.budget === o.v;
-                        const col = o.v >= 2 ? M.gold : o.v === 1 ? M.yel : M.t4;
-                        return (
-                          <button key={o.v} onClick={() => upd('budget', o.v)} style={{
-                            padding: '15px 16px', textAlign: 'left',
-                            border: `1.5px solid ${on ? col : M.brd2}`,
-                            background: on ? col + '12' : M.s1,
-                            cursor: 'pointer', borderRadius: 12, transition: 'all .25s ease',
-                            minHeight: 52, display: 'flex', alignItems: 'center', gap: 12,
-                            boxShadow: on ? `0 0 14px ${col}22` : 'none',
-                          }}>
-                            <span style={{ width: 20, height: 20, borderRadius: '50%', border: `2px solid ${on ? col : M.brd2}`, background: on ? col : 'transparent', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                              {on && <span style={{ fontSize: 11, color: '#0a0a0a', fontWeight: 700 }}>✓</span>}
-                            </span>
-                            <span style={{ fontSize: 14, fontWeight: on ? 600 : 400, color: on ? M.t1 : M.t2, lineHeight: 1.35 }}>{o.l}</span>
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
-                  {/* Pytania otwarte - climax sekcji, dane jakościowe (własne słowa leada) */}
+                  {/* Pytania otwarte - climax sekcji, dane jakościowe (własne słowa leada). Budżet/kwalifikacja = JotForm, nie tutaj. */}
                   <div style={{ borderTop: `1px solid ${M.brd}`, paddingTop: 22, marginTop: 4 }}>
-                    <div style={{ fontSize: 13, color: M.gold, fontFamily: M.mono, letterSpacing: 0.5, marginBottom: 4 }}>OSTATNIE DWA. TWOIMI SŁOWAMI.</div>
-                    <div style={{ fontSize: 13.5, color: M.t3, fontWeight: 400, marginBottom: 20, lineHeight: 1.6 }}>Liczby już mam. Teraz chcę usłyszeć Ciebie. To z tego czytam najwięcej.</div>
+                    <div style={{ fontSize: 13, color: M.gold, fontFamily: M.mono, letterSpacing: 0.5, marginBottom: 4 }}>OSTATNIE TRZY. TWOIMI SŁOWAMI.</div>
+                    <div style={{ fontSize: 13.5, color: M.t3, fontWeight: 400, marginBottom: 20, lineHeight: 1.6 }}>Liczby już mam. Teraz chcę usłyszeć Ciebie. To z tego czytam najwięcej i pod to piszę raport.</div>
                     {[
                       { v: pain, set: setPain, label: 'Co Cię w tym wszystkim najbardziej wkurwia?', sub: 'Jedno zdanie, własnymi słowami. Bez ładnego pisania.', ph: 'np. budzę się zmęczony i wieczorem znowu nie mam na nic siły...' },
                       { v: trigger, set: setTrigger, label: 'Czemu akurat teraz to sprawdzasz?', sub: 'Coś pękło, coś się zadziało? Napisz krótko.', ph: 'np. zobaczyłem zdjęcie z wakacji...' },
+                      { v: selfDx, set: setSelfDx, label: 'Jak myślisz, co Cię trzyma w miejscu?', sub: 'Za chwilę zobaczysz, czy trafiłeś.', ph: 'np. brak konsekwencji, weekendy, robota...' },
                     ].map((q, i) => (
                       <div key={i} style={{ marginBottom: 22 }}>
                         <div style={{ fontSize: 15, color: M.t1, fontWeight: 500, marginBottom: 8, lineHeight: 1.45 }}>
