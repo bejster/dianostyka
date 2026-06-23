@@ -2024,18 +2024,7 @@ export default function Page() {
                   </div>
                   <div style={{ fontSize: 13.5, color: M.t3, fontWeight: 400, marginBottom: 20, lineHeight: 1.6 }}>Zero moralizowania. Policzę co Cię to kosztuje w złotówkach i testosteronie.</div>
                   <Slider label="Ile drinków w typowy weekend?" min={0} max={20} step={1} k="drinks" val={D.drinks} unit="" note={D.drinks > 5 ? `${D.drinks} drinków = ~${Math.round(D.drinks * 3.4)}% spadek testosteronu w 12h (Vingren 2013)` : ''} ariaLabel="Średnia liczba drinków na imprezie" />
-                  <Slider label="Ile wydajesz na wyjścia miesięcznie (alkohol, kluby, taksówki)" min={0} max={2000} step={50} k="cash" val={D.cash} unit=" zł" note={`Suma 6 mies.: ${(D.cash * 6).toLocaleString('pl-PL')} zł`} ariaLabel="Wydatki na wyjścia w złotych" />
-                  <Slider label="Ile wydajesz na substancje miesięcznie" min={0} max={1000} step={50} k="subs" val={D.subs} unit=" zł" ariaLabel="Miesięczne wydatki na substancje w złotych" />
-                  {D.subs > 0 && (
-                    <div style={{ padding: '12px 16px', background: M.s1, borderRadius: 12, border: `1px solid ${M.brd}`, marginTop: -12, marginBottom: 28 }}>
-                      <div style={{ fontSize: 11, color: M.t4, fontFamily: M.mono, letterSpacing: 0.5, marginBottom: 8 }}>Co to znaczy dla Twojego organizmu</div>
-                      <div style={{ fontSize: 12.5, color: M.t3, lineHeight: 1.7 }}>
-                        {D.subs > 0 && D.subs <= 200 && '• Okazjonalne użycie. Serotonina potrzebuje 2-4 tyg. na regenerację, a przy regularnym cyklu to okno nigdy się nie zamyka.'}
-                        {D.subs > 200 && D.subs <= 500 && '• Regularne wydatki. Wyczerpanie serotoniny i dopaminy sprawia, że mózg przesuwa wzorzec: bez kreski czuje, że jest za mało. Trening i odżywianie tracą na efektywności.'}
-                        {D.subs > 500 && '• Poważne wydatki. Układ nerwowy jest w trybie ciągłej kompensacji, regeneracja po weekendzie zajmuje cały tydzień, a forma stoi w miejscu.'}
-                      </div>
-                    </div>
-                  )}
+                  <Slider label="Ile miesięcznie schodzi Ci na wyjścia, alkohol i używki?" min={0} max={2500} step={50} k="cash" val={D.cash} unit=" zł" note={`Suma 6 mies.: ${(D.cash * 6).toLocaleString('pl-PL')} zł`} ariaLabel="Miesięczne wydatki na wyjścia i używki w złotych" />
                   {D.drinks > 10 && (
                     <div style={{ fontSize: 11.5, color: M.org, fontStyle: 'italic', marginTop: -16, marginBottom: 24, lineHeight: 1.5 }}>
                       {D.drinks}+ drinków regularnie. Wątroba potrzebuje ~72h na pełną regenerację. Przy 2+ weekendach nigdy nie wraca do poziomu wyjściowego.
@@ -2135,12 +2124,11 @@ export default function Page() {
                   </div>
                   {/* Pytania otwarte - climax sekcji, dane jakościowe (własne słowa leada) */}
                   <div style={{ borderTop: `1px solid ${M.brd}`, paddingTop: 22, marginTop: 4 }}>
-                    <div style={{ fontSize: 13, color: M.gold, fontFamily: M.mono, letterSpacing: 0.5, marginBottom: 4 }}>OSTATNIE TRZY. TWOIMI SŁOWAMI.</div>
+                    <div style={{ fontSize: 13, color: M.gold, fontFamily: M.mono, letterSpacing: 0.5, marginBottom: 4 }}>OSTATNIE DWA. TWOIMI SŁOWAMI.</div>
                     <div style={{ fontSize: 13.5, color: M.t3, fontWeight: 400, marginBottom: 20, lineHeight: 1.6 }}>Liczby już mam. Teraz chcę usłyszeć Ciebie. To z tego czytam najwięcej.</div>
                     {[
                       { v: pain, set: setPain, label: 'Co Cię w tym wszystkim najbardziej wkurwia?', sub: 'Jedno zdanie, własnymi słowami. Bez ładnego pisania.', ph: 'np. budzę się zmęczony i wieczorem znowu nie mam na nic siły...' },
                       { v: trigger, set: setTrigger, label: 'Czemu akurat teraz to sprawdzasz?', sub: 'Coś pękło, coś się zadziało? Napisz krótko.', ph: 'np. zobaczyłem zdjęcie z wakacji...' },
-                      { v: selfDx, set: setSelfDx, label: 'Jak myślisz, co Cię trzyma w miejscu?', sub: 'Za chwilę zobaczysz, czy trafiłeś.', ph: 'np. brak konsekwencji, weekendy, robota...' },
                     ].map((q, i) => (
                       <div key={i} style={{ marginBottom: 22 }}>
                         <div style={{ fontSize: 15, color: M.t1, fontWeight: 500, marginBottom: 8, lineHeight: 1.45 }}>
