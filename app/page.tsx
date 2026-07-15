@@ -77,6 +77,7 @@ type ChipKey = 'fatigue' | 'mood' | 'libido' | 'belly' | 'brain' | 'anxiety' | '
 
 interface FD {
   age: number;
+  breakWindow: number; // pierwszy moment pęknięcia dnia: -1=brak odp, 0=rano, 1=10-14, 2=14-18, 3=18-21, 4=po21, 5=weekend, 6=brak stałego
   sleep: number; sleepQ: number; screenBed: number; stress: number; energy: number;
   dopamine: number; dietChaos: number; junk: number; binge: number; wknd: number;
   drinks: number; cash: number; subs: number; lost: number; plan: number;
@@ -94,20 +95,87 @@ interface FD {
   trainPlan: number;    // ma plan: 0=tak, 1=improwizuje
   triedBefore: number;  // próbował zmienić sam: 0=nie, 1=raz-dwa, 2=wiele razy
   frustration: number;  // co frustruje: 0=brak wyników, 1=brak energii, 2=brak czasu, 3=brak konsekwencji
+  raise: number;        // ruch w zarobkach 12 mies: -1=brak odp, 0=konkretny, 1=symboliczny, 2=stoi, 3=nie pamięta (gate komponentu C kotwicy)
+  defer: number;        // odkładane decyzje/tydzień: -1=brak odp, 0=0, 1=1-2, 2=3-5, 3=codziennie coś wisi
+  retreat: number;      // odpuszczona rozmowa (pewność siebie): -1=brak odp, 0=w tym tygodniu, 1=w tym miesiącu, 2=dawno, 3=ciągle
+  veggies: number;      // warzywa/owoce ~500g dziennie: 0=tak, 1=czasem, 2=prawie wcale (jakość żywienia)
+  protein: number;      // białko + regularne posiłki: 0=tak, 1=średnio, 2=mało/nieregularnie
+  morningWood: number;  // poranny wzwód (marker hormonalny z narzędzia hormonów): 0=regularnie, 1=czasem, 2=rzadko/wcale
+  supps: number;        // suplementacja bitmask: 1=D3, 2=omega-3, 4=kreatyna, 8=magnez; 0=nic; -1=brak odp
 }
 
 const INIT: FD = {
   age: 28,
+  breakWindow: -1,
   sleep: 7, sleepQ: 0, screenBed: 0, stress: 0, energy: 0, dopamine: 0,
-  dietChaos: 0, junk: 0, binge: 0, wknd: 1, drinks: 0, cash: 0,
+  dietChaos: 0, junk: 0, binge: 0, wknd: 0, drinks: 0, cash: 0,
   subs: 0, lost: 0, plan: 0, miss: 0, gym: 150, rate: 60,
   tags: new Set(),
-  wakeTime: 7, alarm: 1, workHours: 8, progress: 1, meals: 3, cooking: 1,
-  mondayFeel: 1, weekendWork: 1, trainYears: 3, trainHappy: 1, trainPlan: 1,
+  wakeTime: 7, alarm: 1, workHours: 8, progress: 0, meals: 3, cooking: 1,
+  mondayFeel: 0, weekendWork: 1, trainYears: 3, trainHappy: 0, trainPlan: 0,
   triedBefore: 1, frustration: 1,
+  raise: -1, defer: -1, retreat: -1,
+  veggies: 0, protein: 0, morningWood: 0, supps: -1,
 };
 
+// Suplementy do multi-select (bitmask). Kolejnosc = priorytet hormonalny.
+const SUPP_OPTS: [number, string][] = [[1, 'Witamina D3'], [2, 'Omega-3'], [4, 'Kreatyna'], [8, 'Magnez']];
+
+// ── KOTWICA ROCZNA: tylko realny wydatek (podany przez usera) + czas na pół mocy. Zero zmyślonej pensji/podwyżki. ──
+// hardYear = wydatki, które user sam wpisał: weekend (ile schodzi x częstotliwość) + dowozy/jedzenie na mieście.
+// hours/dni = godziny na pół mocy w roku, ostrożnie: 220 dni roboczych, nie 365. To rama czasu, nie kwota.
+function anchorRok(D: FD) {
+  const hardYear = Math.round((D.cash * D.wknd * 12) + (D.junk * 12));
+  const hours = Math.round(D.lost * 220);
+  const dni = Math.round(hours / 8);
+  const tys = Math.floor(hardYear / 1000);
+  const light = hardYear < 3000;
+  const display = hardYear >= 45000 ? 'ponad 45 tys zł'
+    : tys >= 1 ? `około ${tys} tys zł`
+    : `${Math.round(hardYear / 100) * 100} zł`;
+  return { hardYear, hours, dni, display, light };
+}
+
 const SECTIONS = ['Sen', 'Stres', 'Żywienie', 'Weekend', 'Trening', 'Sygnały', 'Głowa'];
+const RZYM = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII'];
+
+// ── Profile podglądu: ?resultPreview=1..5 renderuje stronę wyniku bez przechodzenia quizu ──
+type PreviewProfile = { D: Partial<Omit<FD, 'tags'>> & { tags: ChipKey[] }; pain: string; trigger: string; selfDx: string; imie: string };
+const PREVIEW_PROFILES: Record<string, PreviewProfile> = {
+  '1': { // Wiem wszystko, nie dowożę
+    D: { age: 33, sleep: 6, sleepQ: 1, screenBed: 2, stress: 2, energy: 2, dopamine: 1, workHours: 10, lost: 1.5, progress: 2, dietChaos: 1, junk: 250, binge: 1, wknd: 1, drinks: 4, cash: 150, subs: 0, mondayFeel: 1, weekendWork: 1, gym: 150, plan: 4, miss: 1, trainYears: 6, trainHappy: 2, rate: 110, triedBefore: 2, raise: 2, defer: 2, retreat: 3, tags: ['fatigue', 'belly', 'motivation', 'recovery'] },
+    pain: 'trenuję lata i dalej wyglądam tak samo', trigger: 'zdjęcie z wesela', selfDx: 'chyba brak konsekwencji', imie: 'Kamil',
+  },
+  '2': { // Weekend cofa mnie do zera (drinks>=8 odpala regułę 2, triedBefore<2 omija regułę 1)
+    D: { age: 28, sleep: 6.5, sleepQ: 1, screenBed: 1, stress: 1, energy: 2, dopamine: 2, workHours: 9, lost: 1, progress: 1, dietChaos: 2, junk: 400, binge: 1, wknd: 4, drinks: 12, cash: 400, subs: 150, mondayFeel: 3, weekendWork: 2, gym: 150, plan: 3, miss: 2, trainYears: 3, trainHappy: 1, rate: 90, triedBefore: 1, raise: 1, defer: 1, retreat: 1, tags: ['fatigue', 'mood', 'cravings', 'anxiety'] },
+    pain: 'weekend rozwala mi cały tydzień', trigger: 'kolejny stracony poniedziałek', selfDx: 'za dużo imprez', imie: '',
+  },
+  '3': { // Głowa zajeżdża ciało (stres 3 + praca 12h odpala regułę 3, triedBefore<2 omija regułę 1)
+    D: { age: 31, sleep: 5.5, sleepQ: 3, screenBed: 3, stress: 3, energy: 3, dopamine: 3, workHours: 12, lost: 2.5, progress: 2, dietChaos: 2, junk: 300, binge: 1, wknd: 1, drinks: 3, cash: 100, subs: 0, mondayFeel: 2, weekendWork: 1, gym: 100, plan: 3, miss: 1, trainYears: 4, trainHappy: 1, rate: 130, triedBefore: 1, raise: 3, defer: 3, retreat: 0, tags: ['fatigue', 'brain', 'focus', 'anxiety', 'headaches', 'procrastination'] },
+    pain: 'głowa mi paruje, wieczorem nie mam już nic', trigger: 'prawie zasnąłem na spotkaniu', selfDx: 'za dużo roboty', imie: 'Michał',
+  },
+  '4': { // Wieczorny odpad (Żywienie najgorsze + binge 3 odpala regułę 4; stres 1 i praca 8h omijają regułę 3)
+    D: { age: 30, sleep: 6, sleepQ: 2, screenBed: 3, stress: 1, energy: 2, dopamine: 2, workHours: 8, lost: 1, progress: 1, dietChaos: 3, junk: 500, binge: 3, wknd: 2, drinks: 6, cash: 200, subs: 0, mondayFeel: 1, weekendWork: 1, gym: 120, plan: 3, miss: 2, trainYears: 3, trainHappy: 1, rate: 85, triedBefore: 1, raise: 1, defer: 2, retreat: 1, tags: ['belly', 'cravings', 'fatigue', 'digest', 'confidence'] },
+    pain: 'trzymam się cały dzień i wieczorem wszystko się sypie', trigger: 'znowu zjadłem pół lodówki o 23', selfDx: 'słaba wola wieczorem', imie: 'Bartek',
+  },
+  '5': { // Silnik bez paliwa (niski score = tier LOW "cieknacy zawor"; Trening najgorszy = furtka do typu domyślnego)
+    D: { age: 27, sleep: 7, sleepQ: 0, screenBed: 0, stress: 1, energy: 1, dopamine: 0, workHours: 8, lost: 0.5, progress: 1, dietChaos: 1, junk: 150, binge: 1, wknd: 1, drinks: 3, cash: 100, subs: 0, mondayFeel: 0, weekendWork: 0, gym: 150, plan: 3, miss: 1, trainYears: 2, trainHappy: 1, rate: 80, triedBefore: 1, raise: 2, defer: 1, retreat: 2, tags: ['libido', 'sweating'] },
+    pain: 'niby wszystko robię a lecę na pół gwizdka', trigger: 'badania wyszły dziwne', selfDx: 'nie wiem co jest', imie: '',
+  },
+  '6': { // IDEALNY tydzień - test DOBREJ ścieżki (good=true, SC~0): sen, dieta, trening, głowa - wszystko gra
+    D: { age: 30, breakWindow: 6, sleep: 8, sleepQ: 0, screenBed: 0, stress: 0, energy: 0, dopamine: 0, dietChaos: 0, junk: 100, binge: 0, wknd: 0, drinks: 0, cash: 0, subs: 0, lost: 0, plan: 4, miss: 0, gym: 150, rate: 100, workHours: 8, progress: 0, mondayFeel: 0, weekendWork: 0, trainYears: 5, trainHappy: 0, triedBefore: 0, raise: 0, defer: 0, retreat: 0, veggies: 0, protein: 0, morningWood: 0, supps: 7, tags: [] },
+    pain: 'w sumie jest okej, ale ciekawość', trigger: 'chcę sprawdzić, czy da się lepiej', selfDx: 'chyba wszystko gra', imie: 'Adam',
+  },
+};
+// Pierwszy ruch per kategoria - jeden konkret na dzis, nie plan na pol strony
+const RUCH_MAP: Record<string, string> = {
+  'Sen': '90 minut bez ekranu przed snem. Trzy wieczory z rzędu.',
+  'Stres': '10 minut marszu zaraz po robocie, zanim usiądziesz do telefonu.',
+  'Żywienie': 'Normalny posiłek, zanim wieczorem odpalisz telefon.',
+  'Weekend': 'Poniedziałek bez karnego treningu. Spacer, woda, normalne jedzenie.',
+  'Trening': 'Jeden krótszy trening zrobiony dziś zamiast idealnego planu od poniedziałku.',
+  'Głowa': 'Jedna decyzja zapisana wieczorem na kartce. Rano wykonana przed telefonem.',
+};
 // Mood color per sekcja - subtelny radial gradient na tle dla emocjonalnej variation
 const SECTION_HUES = ['#4F46E5', '#EF4444', '#F59E0B', '#A855F7', '#10B981', '#06B6D4', '#D4A853'];
 
@@ -158,8 +226,8 @@ function tagScoreWeighted(tags: Set<ChipKey>): number {
 function costs(D: FD) {
   // ── TWARDE KOSZTY - wydajesz wprost, weryfikowalne ──
   const wkndCost = Math.round((D.cash + D.subs) * D.wknd * 6);
-  const foodCost = Math.round(D.junk * 6 + (D.binge >= 3 ? 300 : 0));
-  const trainCost = D.plan > 0 ? Math.round(D.gym * 6 * Math.min(D.miss / D.plan, 1)) : 0;
+  const foodCost = Math.round(D.junk * 6);
+  const trainCost = 0; // koszt siłowni wypadł z diagnostyki (nie podbijamy nim rachunku)
   // Sen: kompensacja deficytu - kawa, suplementy, gorsze decyzje zakupowe (Cappuccio 2010)
   const sleepCostRaw = D.sleep < 7 ? Math.round((7.5 - D.sleep) * 140 * 6) : 0;
   const sleepCost = D.sleep >= 6.5 ? Math.round(sleepCostRaw * 0.5) : sleepCostRaw;
@@ -185,9 +253,9 @@ function costs(D: FD) {
   const signalCost = Math.round(tagCost(D.tags));
 
   const totalLostH = Math.round(D.lost * 26);
-  const hardTotal = wkndCost + foodCost + trainCost + sleepCost;
-  const hiddenTotal = prodCost + stagnationCost + signalCost;
-  const total = hardTotal + hiddenTotal;
+  const hardTotal = wkndCost + foodCost; // tylko realny wydatek (weekend + dowozy), bez siłowni i „kompensacji snu"
+  const hiddenTotal = prodCost + stagnationCost + signalCost; // liczone, ale NIE idą do wyświetlanej kwoty
+  const total = hardTotal; // gate/kotwica pokazują wyłącznie realny wydatek
 
   return { sleepCost, foodCost, wkndCost, trainCost, prodCost, stagnationCost, signalCost,
            total, hardTotal, hiddenTotal, totalLostH,
@@ -203,17 +271,230 @@ function score(D: FD) {
     Math.min(((D.sleepQ + D.screenBed) / 4 + (7.5 - Math.min(D.sleep, 7.5))) * 6, 20)
     // Stres (max 25): stress 3 + energy 3 + dopamine 3 = 25
     + Math.min((D.stress + D.energy + D.dopamine) * 2.8, 25)
-    // Dieta (max 15): chaos 3 + binge 3 = 15
-    + Math.min((D.dietChaos + D.binge) * 2.5, 15)
-    // Weekend (max 20): drinks 10+ = 14, subs = +6
-    + Math.min(D.drinks * 1.4 + (D.subs > 0 ? 6 : 0), 20)
-    // Trening (max 18): miss 3 + unhappy + no plan = 18
-    + Math.min(D.miss * 4 + (D.trainHappy >= 1 ? 5 : 0) + (D.trainPlan >= 1 ? 3 : 0), 18)
+    // Dieta (max 15): wieczorne jedzenie bez kontroli (binge 0-4)
+    + Math.min(D.binge * 3.5, 15)
+    // Weekend (max 20): jak mocno weekend rusza rytm (wknd 0-4) + opcjonalna dawka
+    + Math.min(D.wknd * 3.5 + D.drinks * 0.8, 20)
+    // Trening (max 18): miss + niezadowolenie (bez kary dla początkujących, trainHappy=3) + brak planu
+    + Math.min(D.miss * 4 + (D.trainHappy >= 1 && D.trainHappy <= 2 ? 5 : 0) + (D.trainPlan >= 1 ? 3 : 0), 18)
     // Sygnaly (max 15): 5+ tags = 15
     + Math.min(tagScore * 1.5, 15)
     // Glowa (max 12): no progress + long hours + bad monday + tried before
-    + Math.min((D.progress >= 2 ? 5 : D.progress >= 1 ? 2 : 0) + (D.workHours > 9 ? 3 : D.workHours > 8 ? 1 : 0) + (D.mondayFeel >= 2 ? 3 : D.mondayFeel >= 1 ? 1 : 0) + (D.triedBefore >= 2 ? 3 : D.triedBefore >= 1 ? 1 : 0), 12);
+    + Math.min((D.progress >= 2 ? 5 : D.progress >= 1 ? 2 : 0) + (D.workHours > 9 ? 3 : D.workHours > 8 ? 1 : 0) + (D.mondayFeel >= 2 ? 3 : D.mondayFeel >= 1 ? 1 : 0) + (D.triedBefore >= 2 ? 3 : D.triedBefore >= 1 ? 1 : 0), 12)
+    // Jakosc/hormony (max 12): warzywa + bialko + poranny wzwod (opcjonalny). Suplementy NIE liczą się do score. Defaulty=0 = zero inflacji.
+    + Math.min(D.veggies * 2 + D.protein * 2 + D.morningWood * 2, 12);
   return Math.min(Math.round(s), 100);
+}
+
+// ── ARCHETYP: nazwany typ leada z wzorca odpowiedzi (identity + share hook) ──
+interface Archetype { key: string; label: string; tagline: string; mirror: string; }
+function pickArchetype(D: FD, worstLabel: string): Archetype {
+  // 1. Wiem wszystko, nie dowożę - identity-priority (ICP: wiedza bez wdrożenia)
+  if (D.trainYears >= 3 && D.triedBefore >= 2 && (D.trainHappy >= 1 || D.progress >= 1)) {
+    return {
+      key: 'wiedza_bez_wdrozenia',
+      label: 'Wiem wszystko, nie dowożę',
+      tagline: 'Teorię znasz lepiej niż połowa trenerów. Po ciele tego nie widać.',
+      mirror: 'Lata treningu, dziesiątki obejrzanych filmów, a wynik stoi w miejscu. Wiedzy masz aż nadto. Brakuje kogoś, kto ułoży ją pod Twój tydzień i rozliczy Cię z niego, zamiast dawać kolejną porcję teorii.',
+    };
+  }
+  // 2. Weekend cofa mnie do zera
+  if (worstLabel === 'Weekend' || D.drinks >= 8 || D.wknd >= 3) {
+    return {
+      key: 'weekend_reset',
+      label: 'Weekend cofa mnie do zera',
+      tagline: 'Pięć dni budujesz. Dwa dni kasujesz.',
+      mirror: 'W tygodniu trzymasz się nieźle. Potem przychodzi weekend i w poniedziałek zaczynasz od tego samego miejsca. Nie od zera, od minusa, bo dochodzi kac, gorszy sen i wyrzuty.',
+    };
+  }
+  // 3. Głowa zajeżdża ciało
+  if (worstLabel === 'Stres' || worstLabel === 'Głowa' || (D.stress >= 2 && D.workHours >= 9)) {
+    return {
+      key: 'glowa_zajezdza',
+      label: 'Głowa zajeżdża ciało',
+      tagline: 'Problem nie zaczyna się na talerzu. Zaczyna się w głowie o 22:00.',
+      mirror: 'Robota, napięcie, telefon do późna. Ciało dostaje resztki. Zanim wjedzie kolejny plan, trzeba zejść z tego, co zjada Ci sen, apetyt i decyzje wieczorem.',
+    };
+  }
+  // 4. Wieczorny odpad
+  if (worstLabel === 'Żywienie' || worstLabel === 'Sen' || D.binge >= 2 || D.screenBed >= 2) {
+    return {
+      key: 'wieczorny_odpad',
+      label: 'Wieczorny odpad',
+      tagline: 'W dzień masz kontrolę. Wieczorem organizm odbiera dług.',
+      mirror: 'Do osiemnastej jesteś ogarnięty. Potem leci telefon, lodówka i sen po pierwszej. Wieczorem spłacasz rachunek za cały dzień na kawie i stresie. Silna wola nie ma tu nic do gadania.',
+    };
+  }
+  // 5. default - silnik bez paliwa
+  return {
+    key: 'silnik_bez_paliwa',
+    label: 'Silnik bez paliwa',
+    tagline: 'Niby wszystko robisz. Niby nic nie działa.',
+    mirror: 'Trenujesz, pilnujesz jedzenia, a i tak lecisz na pół mocy. Coś pod spodem nie gra: sen, hormony, regeneracja. To się sprawdza, nie zgaduje.',
+  };
+}
+
+// ── TWOJA GODZINA: pora doby w której tydzień pęka, liczona z odpowiedzi (deterministyczna, per user) ──
+// yourHour() usunięte: zmyślało minutę z wieku/pracy/snu. Zastąpione przez hourRange()/breakPos() z realnej odpowiedzi breakWindow.
+
+// ── PRZEDZIAŁ PĘKNIĘCIA: uczciwy zakres z odpowiedzi usera (breakWindow), NIE zmyślona minuta ──
+function hourRange(D: FD): string {
+  switch (D.breakWindow) {
+    case 0: return 'zaraz po przebudzeniu';
+    case 1: return 'między 10:00 a 14:00';
+    case 2: return 'między 14:00 a 18:00';
+    case 3: return 'między 18:00 a 21:00';
+    case 4: return 'po 21:00';
+    case 5: return 'w weekend';
+    case 6: return 'różnie, bez jednej stałej pory';
+    default: return 'wieczorem';
+  }
+}
+// Pozycja na osi doby (0-100%) dla znacznika „TU PĘKASZ", z breakWindow zamiast parsowania fikcyjnej godziny
+function breakPos(D: FD): number {
+  switch (D.breakWindow) {
+    case 0: return 30; case 1: return 50; case 2: return 67;
+    case 3: return 79; case 4: return 90; case 5: return 96; case 6: return 60;
+    default: return 85;
+  }
+}
+// Krótki token pory do karty share/OG (długi przedział rozwaliłby grafikę)
+function hourShort(D: FD): string {
+  switch (D.breakWindow) {
+    case 0: return 'rano'; case 1: return 'przed 14'; case 2: return 'popołudniu';
+    case 3: return '18-21'; case 4: return 'po 21'; case 5: return 'weekend'; case 6: return 'różnie';
+    default: return 'wieczór';
+  }
+}
+
+// ── ROZBIEŻNOŚĆ: przyłapanie na sprzeczności między dwiema odpowiedziami usera ──
+function contradiction(D: FD, selfDx: string): { said: string; body: string } | null {
+  // Przylapanie musi byc TWARDE albo zadne - miekka rozbieznosc czyta sie jak trik
+  if (D.trainYears >= 2 && D.progress >= 2) {
+    return { said: `Trenujesz od ${D.trainYears} lat.`, body: `Postępy rok do roku: nie widzisz.` };
+  }
+  if (D.gym >= 100 && D.miss >= 2) {
+    return { said: `Płacisz ${D.gym} zł miesięcznie za siłownię.`, body: `Odpuszczasz około ${D.miss * 4} treningów w miesiącu.` };
+  }
+  const sd = selfDx.trim();
+  if (sd) {
+    return { said: `„${sd.slice(0, 90)}${sd.length > 90 ? '…' : ''}"`, body: `Sen ${D.sleep} h, ${D.drinks} drinków w weekend, ${D.miss} treningi odpuszczane w tygodniu.` };
+  }
+  return null;
+}
+
+// ── PERSONALIZACJA WYNIKU: kazdy blok decyzyjny budowany z odpowiedzi usera, zero uniwersalnych obietnic ──
+const LEAK_LINE: Record<string, string> = {
+  'Sen': 'śpisz za krótko, żeby cokolwiek innego miało prawo zadziałać',
+  'Stres': 'napięcie nie schodzi nawet wieczorem, organizm nie wychodzi z trybu alarmu',
+  'Żywienie': 'w dzień kontrola, wieczorem odbijasz wszystko z nawiązką',
+  'Weekend': 'piątek z sobotą kasują to, co wyrobiłeś przez pięć dni',
+  'Trening': 'katujesz zmęczony organizm zamiast trenować wypoczęty',
+  'Głowa': 'głowa na pół mocy, decyzje spadają na jutro, a jutro na pojutrze',
+};
+const LEAK_MOVE: Record<string, string> = {
+  'Sen': '90 minut bez ekranu przed snem, trzy wieczory z rzędu.',
+  'Stres': '10 minut marszu po robocie, zanim usiądziesz do telefonu.',
+  'Żywienie': 'Pełny posiłek, zanim zaczniesz wieczorne scrollowanie.',
+  'Weekend': 'Poniedziałek bez karnego treningu: spacer, woda, normalne jedzenie.',
+  'Trening': 'Jeden krótszy trening zrobiony bije idealny w głowie.',
+  'Głowa': 'Jedna decyzja zapisana wieczorem, wykonana rano.',
+};
+const BENEFIT_30: Record<string, string> = {
+  'Sen': 'Zasypiasz szybciej i budzisz się przed alarmem, nie pod nim',
+  'Stres': 'Wieczorem schodzisz z obrotów, zamiast dojeżdżać na oparach',
+  'Żywienie': 'Wieczór przestaje kasować dzień, koniec nalotów na lodówkę',
+  'Weekend': 'Weekend kosztuje Cię jeden dzień, nie trzy',
+  'Trening': 'Treningi wracają do rytmu i przestają wypadać',
+  'Głowa': 'Skupienie trzyma po 14:00, decyzje zapadają tego samego dnia',
+};
+const TAIL_LINE: Record<string, string> = {
+  'Sen': 'Śpisz jak człowiek. Reszta zaczyna się układać sama.',
+  'Stres': 'Napięcie ma schodzić wieczorem, nie na urlopie raz w roku.',
+  'Żywienie': 'Wieczór przestaje być spowiedzią. Zaczyna być odpoczynkiem.',
+  'Weekend': 'Imprezujesz w piątek. Poniedziałek ma być Twój.',
+  'Trening': 'Karnet masz. Czas zbudować tydzień, który z niego korzysta.',
+  'Głowa': 'Głowa wraca na pełną moc. Reszta jedzie za nią.',
+};
+const SCENE_LINE: Record<string, string> = {
+  'Sen': 'Że budzik przesuwasz trzy razy i wstajesz bardziej zmęczony, niż się kładłeś.',
+  'Stres': 'Że wieczorem niby odpoczywasz, a głowa dalej mieli robotę.',
+  'Żywienie': 'Że po 21 stoisz przy otwartej lodówce, chociaż nie jesteś głodny.',
+  'Weekend': 'Że niedziela wieczorem to lekki dół, bo wiesz, ile ten weekend kosztował.',
+  'Trening': 'Że karnet się odnawia, a Ty coraz częściej mówisz sobie „od jutra".',
+  'Głowa': 'Że proste decyzje przesuwasz na jutro, a jutro robi się pojutrze.',
+};
+// SMACZEK 1: bonus pod największy hamulec - konkretny, mało oczywisty ruch (wzajemność, realna wartość)
+const BONUS_HAMULEC: Record<string, string> = {
+  'Sen': 'Większość pilnuje długości snu, a rozjeżdża ich światło i temperatura. Zbij sypialnię do 18-19°C i złap 10 minut słońca w oczy w pierwszej godzinie po wstaniu. To przesuwa rytm mocniej niż godzina snu więcej.',
+  'Stres': 'Napięcie samo nie schodzi, trzeba mu dać zejście przed snem. 10 minut marszu bez telefonu zaraz po robocie robi dla kortyzolu więcej niż godzina na kanapie z ekranem.',
+  'Żywienie': 'Wieczorny głód bierze się zwykle z dnia na kawie i dwóch byle jakich posiłkach. Dołóż konkretne białko do śniadania, a wieczór siada prawie sam.',
+  'Weekend': 'Najwięcej kosztuje Cię brak dnia na powrót, nie samo wyjście. Zaplanuj niedzielę jako reset (sen, woda, spacer, normalne jedzenie), a poniedziałek przestaje być odrabianiem.',
+  'Trening': 'Zetnij plan do wersji, którą dowieziesz w najgorszy tydzień. Jeden trening 30 minut zrobiony bije idealny 90-minutowy, który odpuścisz.',
+  'Głowa': 'Odkładanie bierze się z za wielu otwartych pętli naraz. Wieczorem zapisz jedną decyzję na kartce i zrób ją rano przed telefonem. Jedna zamknięta pętla dziennie odblokowuje resztę.',
+};
+// SMACZEK 2: belief-shift z realnych odpowiedzi (myślisz X, a to Y). HIDDEN = ukryte drivery pod objawami.
+const HIDDEN_DRIVERS = ['Sen', 'Stres', 'Głowa'];
+function zaskoczenie(worst: string, second: string): string {
+  if (HIDDEN_DRIVERS.includes(worst)) {
+    return `Większość na Twoim miejscu obwinia jedzenie i trening. Twoje odpowiedzi pokazują, że najpierw wysiada Ci ${worst.toLowerCase()}, a dopiero to rozwala apetyt, energię i motywację. Naprawiasz skutki, nie źródło.`;
+  }
+  return `${worst} wygląda na Twój główny problem. Ale to raczej objaw. Pod spodem ciągnie ${second.toLowerCase()}, i dopóki to gra przeciw Tobie, ${worst.toLowerCase()} będzie wracać.`;
+}
+// DOBRY TYDZIEŃ: zaskoczenie i archetyp po pozytywnej stronie (Michał: dobrze = piszemy dobrze, nie wymyślamy problemów)
+function zaskoczenieDobry(best: string): string {
+  return `Większość, kto to wypełnia, szuka u siebie, co naprawić. U Ciebie tego nie ma. Najmocniej trzymasz ${best.toLowerCase()}, a reszta za tym idzie. Zostaje jedno pytanie: jak z dobrego zrobić świetne.`;
+}
+function archetypeGood(best: string): Archetype {
+  return {
+    key: 'ogarniety',
+    label: 'Ogarnięty',
+    tagline: 'Trzymasz tydzień w ryzach. Większość o tym dopiero marzy.',
+    mirror: `Sen, energia, jedzenie, trening. U Ciebie to w większości gra, bo tak układasz tydzień. Najmocniej trzymasz ${best.toLowerCase()}. Do podkręcenia zawsze coś się znajdzie, ale startujesz z pozycji, z której inni dopiero chcą wystartować.`,
+  };
+}
+function pickBenefits180(D: FD, badaniaCount: number): string[] {
+  const out: string[] = [];
+  if (D.tags.has('belly') || D.binge >= 2) out.push('Brzuch schodzi i widać to w lustrze');
+  if (D.tags.has('libido')) out.push('Libido wraca do normy');
+  if (D.tags.has('confidence')) out.push('Koszulka przestaje być tematem, na basenie i na fotkach');
+  if (D.trainYears >= 2 && D.trainHappy >= 1) out.push('Po sylwetce w końcu widać lata treningu');
+  if (D.tags.has('fatigue') || D.energy >= 2) out.push('Energia trzyma do wieczora bez trzeciej kawy');
+  if (badaniaCount > 0) out.push('Panel krwi zrobiony i omówiony, zero zgadywania');
+  out.push('Rytm tygodnia trzyma się sam, bez pilnowania');
+  out.push('Forma rośnie, zamiast stać w miejscu');
+  return out.slice(0, 3);
+}
+
+// ── OSIE HORMONALNE POD PRESJĄ: liczone z danych v5 (wzwód, sen, wyjścia, tagi, praca). Gate: oś pokazuje się TYLKO przy >=2 sygnałach. ──
+function osieHormonalne(D: FD): { n: string; lvl: 2 | 3; why: string }[] {
+  const out: { n: string; lvl: 2 | 3; why: string }[] = [];
+  const t: string[] = []; let ts = 0;
+  if (D.morningWood >= 1) { ts += D.morningWood; t.push(D.morningWood === 2 ? 'poranny wzwód rzadko' : 'poranny wzwód nieregularny'); }
+  if (D.sleep < 6.5) { ts += 1; t.push(`sen ${D.sleep}h`); }
+  if (D.drinks >= 8) { ts += 1; t.push('regularne wyjścia'); }
+  if (D.tags.has('libido')) { ts += 1; t.push('spadek libido'); }
+  if (D.tags.has('belly')) { ts += 1; t.push('tłuszcz na brzuchu'); }
+  if (ts >= 2) out.push({ n: 'Testosteron', lvl: ts >= 4 ? 3 : 2, why: t.slice(0, 3).join(' + ') });
+  const k: string[] = []; let ks = 0;
+  if (D.stress >= 2) { ks += D.stress - 1; k.push('napięcie nie schodzi'); }
+  if (D.sleep < 6.5) { ks += 1; k.push('krótki sen'); }
+  if (D.workHours > 9) { ks += 1; k.push(`praca ${D.workHours}h dziennie`); }
+  if (D.energy >= 2) { ks += 1; k.push('zmęczenie od rana'); }
+  if (ks >= 2) out.push({ n: 'Kortyzol', lvl: ks >= 4 ? 3 : 2, why: k.slice(0, 3).join(' + ') });
+  const dp: string[] = []; let ds = 0;
+  if (D.dopamine >= 2) { ds += 1; dp.push('telefon co chwilę'); }
+  if (D.defer >= 2) { ds += 1; dp.push('odkładane decyzje'); }
+  if (D.screenBed >= 2) { ds += 1; dp.push('scroll przed snem'); }
+  if (D.tags.has('motivation') || D.tags.has('procrastination')) { ds += 1; dp.push('napęd siada'); }
+  if (ds >= 2) out.push({ n: 'Dopamina', lvl: ds >= 3 ? 3 : 2, why: dp.slice(0, 3).join(' + ') });
+  const ins: string[] = []; let isc = 0;
+  if (D.binge >= 2) { isc += 1; ins.push('wieczorne objadanie'); }
+  if (D.tags.has('belly')) { isc += 1; ins.push('brzuch nie schodzi'); }
+  if (D.tags.has('cravings')) { isc += 1; ins.push('głód na słodkie'); }
+  if (D.veggies >= 2 || D.junk >= 400) { isc += 1; ins.push('jedzenie z dowozu i marketu'); }
+  if (isc >= 2) out.push({ n: 'Insulina i apetyt', lvl: isc >= 3 ? 3 : 2, why: ins.slice(0, 3).join(' + ') });
+  return out;
 }
 
 // Paleta: złoto + czerń, minimalizm
@@ -236,8 +517,54 @@ const M = {
   t2: '#e0ddd6',
   t3: '#b8b3a8',
   t4: '#8a857a',
-  mono: "'Inter', system-ui, -apple-system, sans-serif",
+  mono: "'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, Consolas, monospace",
   sans: "'Inter', system-ui, -apple-system, sans-serif",
+  serif: "var(--font-display, 'Instrument Serif'), Georgia, serif",
+};
+
+// ── KONFIGURATOR (?config=1): warianty pierwszej i ostatniej strony, zapis w localStorage ──
+type CfgT = {
+  heroH1: 'A' | 'B' | 'C' | 'D' | 'E'; heroSub: 'A' | 'B'; badge: 'A' | 'B';
+  font: 'instrument' | 'playfair' | 'cormorant'; heroSize: 'M' | 'L';
+  cta: 'A' | 'B' | 'C'; crackTone: 'ostry' | 'spokojny';
+  showOdczyt: boolean; showKontekst: boolean;
+};
+const CFG_DEFAULT: CfgT = { heroH1: 'A', heroSub: 'A', badge: 'A', font: 'instrument', heroSize: 'M', cta: 'A', crackTone: 'ostry', showOdczyt: true, showKontekst: true };
+const FONT_MAP: Record<CfgT['font'], string> = {
+  instrument: "'Instrument Serif', Georgia, serif",
+  playfair: "'Playfair Display', Georgia, serif",
+  cormorant: "'Cormorant Garamond', Georgia, serif",
+};
+// 5 KĄTÓW psychologicznych (Frame 1: diagnoza przed receptą; Caples: pytanie-samoselekcja; identity shift)
+const HERO_H1: Record<CfgT['heroH1'], { pre: string; gold: string }> = {
+  A: { pre: 'Ile potencjału tracisz przez to,', gold: 'co uznałeś już za normalne?' },
+  B: { pre: 'Nie brakuje Ci dyscypliny.', gold: 'Brakuje Ci diagnozy.' },
+  C: { pre: 'Robisz wszystko, co trzeba.', gold: 'I dalej lecisz na pół mocy?' },
+  D: { pre: 'Wiesz o formie więcej niż niejeden trener.', gold: 'Po sylwetce nikt tego nie widzi.' },
+  E: { pre: 'Kolejny plan odłożysz jak poprzednie.', gold: 'Najpierw zobacz, co go wywala.' },
+};
+const HERO_SUB: Record<CfgT['heroSub'], string> = {
+  A: 'tę jedną godzinę i pierwszy ruch, który ją zamyka.',
+  B: 'gdzie tydzień wycieka Ci najmocniej i co ruszyć pierwsze.',
+};
+const BADGE_V: Record<CfgT['badge'], string> = {
+  A: 'Darmowa diagnostyka · 5 minut · wynik od razu',
+  B: 'Darmowy przegląd · 5 minut · wynik od razu',
+};
+const CTA_LBL: Record<CfgT['cta'], string> = {
+  A: 'ZOBACZ, JAK WYGLĄDA PROWADZENIE',
+  B: 'ZOBACZ, JAK PRACUJĘ 1:1',
+  C: 'SPRAWDŹ, CZY SIĘ ŁAPIESZ',
+};
+
+// ── PĘKNIĘCIA TYGODNIA: samoocena na koniec wyniku (commitment: sam odhacza, sam wydaje werdykt) ──
+const CRACK_POOL: Record<string, string> = {
+  'Sen': 'Budzik gra, a Ty jedziesz na baterii z wczoraj',
+  'Stres': 'Ciało siedzi na kanapie, głowa dalej w robocie',
+  'Żywienie': 'Po 21:00 kuchnia wygrywa z planem, który miałeś rano',
+  'Weekend': 'Poniedziałek zaczyna się od odrabiania weekendu',
+  'Trening': 'Trening był w planach. Znowu w planach.',
+  'Głowa': 'Decyzje odkładasz, aż podejmą się same',
 };
 
 // ── HOOK: scroll progress bar ──
@@ -571,7 +898,6 @@ function SectionDivider({ num, label }: { num: string; label: string }) {
     <div style={{ display: 'flex', alignItems: 'center', gap: 14, margin: '32px 0 18px', maxWidth: 480, marginLeft: 'auto', marginRight: 'auto' }}>
       <div style={{ flex: 1, height: 1, background: 'linear-gradient(to right, transparent, rgba(212,168,83,.25), rgba(212,168,83,.4))' }} />
       <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, whiteSpace: 'nowrap' }}>
-        <span style={{ fontFamily: '"JetBrains Mono", monospace', fontSize: 14, fontWeight: 700, color: '#D4A853', letterSpacing: '-0.01em' }}>{num}</span>
         <span style={{ fontFamily: '"JetBrains Mono", monospace', fontSize: 10, fontWeight: 700, color: '#999', letterSpacing: 2.5, textTransform: 'uppercase' }}>{label}</span>
       </div>
       <div style={{ flex: 1, height: 1, background: 'linear-gradient(to left, transparent, rgba(212,168,83,.25), rgba(212,168,83,.4))' }} />
@@ -580,7 +906,11 @@ function SectionDivider({ num, label }: { num: string; label: string }) {
 }
 
 // ── SHAREABLE PNG: 1080x1080 z wiekiem mozgu (council Expansionist: viral mechanic) ──
-async function genBrainAgeShareCard({ name, brainAge, age, bioAge }: { name: string; brainAge: number; age: number; bioAge: number }): Promise<Blob | null> {
+async function genBrainAgeShareCard({ name, brainAge, age, bioAge, type, hour }: { name: string; brainAge: number; age: number; bioAge: number; type?: string; hour?: string }): Promise<Blob | null> {
+  // godzina moze miec prefix ("piątkowe 22:14") - prefix mniejszy, czas duzy
+  const hourParts = (hour || '').split(' ');
+  const hourTime = hourParts[hourParts.length - 1] || '';
+  const hourPrefix = hourParts.slice(0, -1).join(' ');
   if (typeof document === 'undefined') return null;
   const canvas = document.createElement('canvas');
   canvas.width = 1080;
@@ -617,12 +947,18 @@ async function genBrainAgeShareCard({ name, brainAge, age, bioAge }: { name: str
   ctx.fillStyle = '#888';
   ctx.font = '700 30px "Inter", sans-serif';
   ctx.textAlign = 'center';
-  ctx.fillText('WIEK MOJEGO MÓZGU', 540, 380);
+  ctx.fillText(hour ? 'O TEJ GODZINIE PĘKA MÓJ TYDZIEŃ' : 'WIEK MOJEGO MÓZGU', 540, 380);
 
-  // Big gold number
+  // Big gold number: godzina (nowy hero) albo wiek mozgu (fallback)
   ctx.fillStyle = '#D4A853';
-  ctx.font = '900 280px "Inter", sans-serif';
-  ctx.fillText(String(brainAge), 540, 640);
+  if (hour) {
+    if (hourPrefix) { ctx.font = '700 46px "Inter", sans-serif'; ctx.fillText(hourPrefix, 540, 462); }
+    ctx.font = '900 220px "Inter", sans-serif';
+    ctx.fillText(hourTime, 540, 660);
+  } else {
+    ctx.font = '900 280px "Inter", sans-serif';
+    ctx.fillText(String(brainAge), 540, 640);
+  }
 
   // Pulsing glow under number
   const numGlow = ctx.createRadialGradient(540, 600, 0, 540, 600, 320);
@@ -633,14 +969,26 @@ async function genBrainAgeShareCard({ name, brainAge, age, bioAge }: { name: str
 
   // Re-draw number on top of glow
   ctx.fillStyle = '#D4A853';
-  ctx.font = '900 280px "Inter", sans-serif';
-  ctx.fillText(String(brainAge), 540, 640);
+  if (hour) {
+    ctx.font = '900 220px "Inter", sans-serif';
+    ctx.fillText(hourTime, 540, 660);
+  } else {
+    ctx.font = '900 280px "Inter", sans-serif';
+    ctx.fillText(String(brainAge), 540, 640);
+  }
 
   // Sub stats line
   ctx.fillStyle = '#ddd';
   ctx.font = '500 36px "Inter", sans-serif';
   const subText = name ? `${name}, mam ${age}. Mózg pokazuje ${brainAge}, organizm ${Math.round(bioAge)}.` : `Mam ${age}. Mózg pokazuje ${brainAge}, organizm ${Math.round(bioAge)}.`;
   ctx.fillText(subText, 540, 770);
+
+  // Typ (archetyp) - identity na obrazku do udostepnienia
+  if (type) {
+    ctx.fillStyle = '#D4A853';
+    ctx.font = '600 34px "Inter", sans-serif';
+    ctx.fillText(`Typ: ${type}`, 540, 838);
+  }
 
   // Bottom divider
   ctx.fillStyle = '#D4A85333';
@@ -649,7 +997,7 @@ async function genBrainAgeShareCard({ name, brainAge, age, bioAge }: { name: str
   // Bottom CTA prompt
   ctx.fillStyle = '#888';
   ctx.font = '500 26px "Inter", sans-serif';
-  ctx.fillText('Sprawdź swój wiek mózgu:', 540, 930);
+  ctx.fillText(hour ? 'Sprawdź swoją godzinę:' : 'Sprawdź swój tydzień:', 540, 930);
 
   ctx.fillStyle = '#D4A853';
   ctx.font = '700 32px "Inter", sans-serif';
@@ -661,7 +1009,7 @@ async function genBrainAgeShareCard({ name, brainAge, age, bioAge }: { name: str
 // ── STICKY CTA BAR: scroll progress + dual button (forma + DM) ──
 function StickyCtaBar({ SC, potential, brainAge, userAge, topCatLabel }: { SC: number; potential: number; brainAge: number; userAge: number; topCatLabel: string }) {
   const progress = useScrollProgress();
-  const dmText = `${topCatLabel.toLowerCase()} ciągnie, mózg pokazał ${Math.round(brainAge)} przy moich ${userAge}. ruszysz to ze mną?`;
+  const dmText = `${topCatLabel.toLowerCase()} ciągnie, wynik ${SC}/100. ruszysz to ze mną?`;
   const dmHref = `https://ig.me/m/hantleitalerz?text=${encodeURIComponent(dmText)}`;
   return (
     <div style={{
@@ -683,10 +1031,10 @@ function StickyCtaBar({ SC, potential, brainAge, userAge, topCatLabel }: { SC: n
       {/* SINGLE CTA - jedno mocne CTA Jotform. DM wyciety per user: "wszystkie glowne CTA -> JotForm" */}
       <div style={{ padding: '0 16px', maxWidth: 520, margin: '0 auto' }}>
         <a
-          href="https://form.jotform.com/252274061537051?utm_source=diagnostyka_sticky"
+          href="https://nabor.talerzihantle.com?utm_source=diagnostyka&utm_content=sticky"
           target="_blank"
           rel="noopener noreferrer"
-          onClick={() => { trackEvent('diag_cta_click', { target: 'jotform_sticky', score: SC }); fbqTrack('InitiateCheckout', { content_name: 'jotform_sticky', content_category: 'high_ticket', value: SC, currency: 'PLN' }); }}
+          onClick={() => { trackEvent('diag_cta_click', { target: 'nabor_sticky', score: SC }); fbqTrack('InitiateCheckout', { content_name: 'nabor_sticky', content_category: 'high_ticket', value: SC, currency: 'PLN' }); }}
           style={{
             display: 'block', textAlign: 'center', padding: '14px 16px', borderRadius: 12,
             background: `linear-gradient(135deg, ${M.gold}, #a08a3e)`,
@@ -695,8 +1043,8 @@ function StickyCtaBar({ SC, potential, brainAge, userAge, topCatLabel }: { SC: n
             boxShadow: '0 4px 22px rgba(200,168,78,0.4)',
           }}
         >
-          POKAŻ MI CAŁY TYDZIEŃ
-          <span style={{ display: 'block', fontSize: 10, fontWeight: 600, letterSpacing: 0.8, marginTop: 3, opacity: 0.85 }}>13 pytań · bez płatności · decyzja w 24h</span>
+          ZOBACZ, JAK WYGLĄDA PROWADZENIE
+          <span style={{ display: 'block', fontSize: 10, fontWeight: 600, letterSpacing: 0.8, marginTop: 3, opacity: 0.85 }}>3 minuty · bez płatności · potem sam decydujesz</span>
         </a>
       </div>
     </div>
@@ -713,13 +1061,22 @@ export default function Page() {
   const [igErr, setIgErr] = useState('');
   const [emailErr, setEmailErr] = useState('');
   const [loading, setLoading] = useState(false);
-  const [salaryInput, setSalaryInput] = useState(10000);
+  // Tier 3: dwuetapowy lejek (wynik przed kontaktem → intencja → miękki kontakt)
+  const [intent, setIntent] = useState<number | null>(null); // 0=działam sam, 1=zobaczyć pomoc, 2=napisz mi, 3=nie wiem
+  const [startWhen, setStartWhen] = useState<number | null>(null); // 0=7dni, 1=30dni, 2=2-3mies, 3=sprawdzam
+  const [hotWhy, setHotWhy] = useState(''); // warunek decyzji gorącego leada (materiał do DM)
+  const [captured, setCaptured] = useState(false); // kontakt zostawiony (po zobaczeniu wyniku)
+  // salaryInput usunięte: pensja wypadła z przeglądu, kotwica liczy realny wydatek + czas.
   const [loaded, setLoaded] = useState(false); // efekt wejścia hero
   const [copied, setCopied] = useState(false); // przycisk share
   const [utmSource, setUtmSource] = useState('');
   const [utmProblem, setUtmProblem] = useState('');
   const [countersActive, setCountersActive] = useState(false); // uruchom liczniki po wejściu w wyniki
   const [showDetails, setShowDetails] = useState(false); // collapsible cost breakdown
+  const [cracked, setCracked] = useState<Set<number>>(new Set()); // pęknięcia tygodnia - samoocena na wyniku
+  const [lastRes, setLastRes] = useState<{ ts: number; score: number; hour: string; typ: string } | null>(null); // poprzedni wynik (pętla powrotu)
+  const [showConfig, setShowConfig] = useState(false); // panel konfiguratora (?config=1)
+  const [cfg, setCfg] = useState<CfgT>(CFG_DEFAULT);
   const [showBadania, setShowBadania] = useState(false); // collapsible blood tests
   const [showProgresja, setShowProgresja] = useState(false); // collapsible progression timeline
   const [showHormony, setShowHormony] = useState(false); // collapsible hormones
@@ -767,12 +1124,78 @@ export default function Page() {
     return undefined;
   }, [phase]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const upd = (k: keyof FD, v: number) => { vibe(6); setD(p => ({ ...p, [k]: v })); };
+  const upd = (k: keyof FD, v: number) => { vibe(6); setD(p => {
+    const n: FD = { ...p, [k]: v };
+    // Twardy cap: nie da się odpuścić więcej treningów, niż się planuje
+    if (k === 'miss') n.miss = Math.min(v, p.plan);
+    if (k === 'plan') { n.plan = v; if (p.miss > v) n.miss = v; }
+    return n;
+  }); };
   const sev = (k: SevKey, v: number) => { vibe(10); setD(p => ({ ...p, [k]: v })); };
   const tog = (t: ChipKey) => { vibe(8); setD(p => {
-    const tags = new Set(p.tags); tags.has(t) ? tags.delete(t) : tags.add(t);
+    const tags = new Set(p.tags);
+    if (tags.has(t)) tags.delete(t);
+    else { if (tags.size >= 3) return p; tags.add(t); } // max 3 objawy: bez premiowania katastrofizacji
     return { ...p, tags };
   }); };
+
+  // ── Auto-save: powrot bez utraty odpowiedzi (localStorage) + tryb podgladu wyniku ──
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const sp = new URLSearchParams(window.location.search);
+    // ?config=1 : panel konfiguratora (ukryty przed userami) + wczytaj zapisane warianty
+    if (sp.get('config')) setShowConfig(true);
+    try { const c = localStorage.getItem('diag_config_v1'); if (c) setCfg(p => ({ ...p, ...JSON.parse(c) })); } catch {}
+    // ?resultPreview=1..5 : od razu strona wyniku na mocku (do dopracowania UI bez przechodzenia quizu)
+    const pv = sp.get('resultPreview');
+    if (pv && PREVIEW_PROFILES[pv]) {
+      const m = PREVIEW_PROFILES[pv];
+      setD({ ...INIT, ...m.D, tags: new Set(m.D.tags) });
+      setPain(m.pain); setTrigger(m.trigger); setSelfDx(m.selfDx);
+      setImie(m.imie); setIgHandle('podglad'); setEmail('podglad@preview.pl');
+      setPhase('results');
+      return;
+    }
+    // Poprzedni wynik (pętla powrotu: baner na hero + delta na wyniku)
+    try {
+      const lr = localStorage.getItem('diag_last_result');
+      if (lr) setLastRes(JSON.parse(lr));
+    } catch { /* ignoruj */ }
+    // Wznow przerwana diagnoze
+    try {
+      const raw = localStorage.getItem('diag_progress_v2');
+      if (!raw) return;
+      const s = JSON.parse(raw);
+      if (s.D) setD({ ...INIT, ...s.D, tags: new Set(s.D.tags || []) });
+      if (typeof s.sec === 'number') setSec(s.sec);
+      if (s.pain) setPain(s.pain);
+      if (s.trigger) setTrigger(s.trigger);
+      if (s.selfDx) setSelfDx(s.selfDx);
+    } catch { /* corrupt state - ignoruj */ }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    if (typeof window === 'undefined' || phase !== 'form') return;
+    try {
+      localStorage.setItem('diag_progress_v2', JSON.stringify({
+        D: { ...D, tags: Array.from(D.tags) }, sec, pain, trigger, selfDx,
+      }));
+    } catch { /* quota / private mode - trudno */ }
+  }, [D, sec, pain, trigger, selfDx, phase]);
+
+  // Konfigurator: zapisuj warianty (dziala tez bez panelu - raz wybrane zostaje)
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    try { localStorage.setItem('diag_config_v1', JSON.stringify(cfg)); } catch {}
+  }, [cfg]);
+
+  const resetDiagnoza = () => {
+    try { localStorage.removeItem('diag_progress_v2'); } catch {}
+    setD(INIT); setSec(0); setPain(''); setTrigger(''); setSelfDx('');
+    setPhase('form');
+    if (typeof window !== 'undefined' && topRef.current) topRef.current.scrollIntoView({ behavior: 'auto', block: 'start' });
+  };
+  void resetDiagnoza;
 
   // Soft scroll: tylko gdy user jest pod formularzem (rect.top < 0). Instant, bez smooth-jumpa.
   const softScrollToForm = () => {
@@ -796,10 +1219,17 @@ export default function Page() {
         setTimeout(() => setSecTransition('idle'), 400);
       }, 250);
     } else {
-      trackEvent('diag_gate_view');
-      // Pixel: Lead - lead doszedl do email gate (skonczyl 7 sekcji formularza)
-      fbqTrack('Lead', { content_name: 'diagnostyka_gate', content_category: 'lead_gen' });
-      setPhase('gate');
+      // Tier 3: value-first. Wynik pokazuje się OD RAZU, bez ściany email. Kontakt zbieramy niżej, po intencji.
+      const sc = score(D);
+      const worst = [...catScores].sort((a, b) => a.pct - b.pct)[0]?.label || '';
+      trackEvent('diag_results_view', { score: sc });
+      // Pixel: Lead - skonczyl 7 sekcji i zobaczyl wynik
+      fbqTrack('Lead', { content_name: 'diagnostyka_results', content_category: 'lead_gen', value: sc });
+      fetchReframe({ pain, selfDx, trigger, worstCat: worst, segment: '', age: D.age });
+      try { localStorage.removeItem('diag_progress_v2'); } catch {}
+      try { localStorage.setItem('diag_last_result', JSON.stringify({ ts: Date.now(), score: sc, hour: hourRange(D), typ: pickArchetype(D, worst).label })); } catch {}
+      setPhase('results');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   };
   const back = () => {
@@ -832,10 +1262,8 @@ export default function Page() {
   }, []);
 
   const submit = async () => {
-    // Walidacja IG handle
+    // Tier 3: email wymagany (raport + lista), IG opcjonalny (kanał DM). Jeden wymagany kanał zamiast dwóch.
     const handle = igHandle.trim().replace(/^@/, '');
-    if (!handle) { setIgErr('Podaj nick na Instagramie'); vibe([30, 80, 30]); return; }
-    // Walidacja email - RFC 5322 uproszczony
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) { setEmailErr('Podaj poprawny email'); vibe([30, 80, 30]); return; }
     // Successful submit - confetti burst + mocna wibracja
     vibe([20, 60, 20, 60, 40]);
@@ -918,7 +1346,17 @@ export default function Page() {
     })();
     // Tracking: email gate submit
     trackEvent('diag_gate_submit', { email });
-    const finalHandle = '@' + handle;
+    // Pochodne v2 (pola bez UI, klucze payloadu zostają): trainPlan z plan, frustration z tekstu leada
+    D.trainPlan = D.plan > 0 ? 0 : 1;
+    {
+      const kw = (pain + ' ' + selfDx).toLowerCase();
+      D.frustration = /wynik|efekt/.test(kw) ? 0
+        : /energi|zmecz|zmęcz|sił|sil/.test(kw) ? 1
+        : /czas|robot/.test(kw) ? 2
+        : /konsekwen|ogar|dyscyplin|odkłada|odklada/.test(kw) ? 3
+        : 1;
+    }
+    const finalHandle = handle ? '@' + handle : '';
     const odpowiedzi = {
       sleep: D.sleep, sleepQ: D.sleepQ, screenBed: D.screenBed,
       wakeTime: D.wakeTime, alarm: D.alarm,
@@ -932,6 +1370,10 @@ export default function Page() {
       trainYears: D.trainYears, trainHappy: D.trainHappy, trainPlan: D.trainPlan,
       rate: D.rate, tags: Array.from(D.tags),
       triedBefore: D.triedBefore, frustration: D.frustration,
+      raise: D.raise, defer: D.defer, retreat: D.retreat,
+      veggies: D.veggies, protein: D.protein, morningWood: D.morningWood,
+      supps: SUPP_OPTS.filter(([bit]) => D.supps > 0 && (D.supps & bit) !== 0).map(([, l]) => l).join(', ') || (D.supps === 0 ? 'nic' : 'brak odp'),
+      breakWindow: D.breakWindow,
       pain, trigger, selfDx,
     };
     const biggest = catData.reduce((a, b) => a.v > b.v ? a : b, catData[0]);
@@ -958,10 +1400,24 @@ export default function Page() {
     const commitmentProxy = (D.triedBefore >= 2 ? 2 : D.triedBefore) + (D.frustration >= 3 ? 2 : D.frustration >= 1 ? 1 : 0);
     const budgetProxy = (c.hardTotal >= 3000 ? 3 : c.hardTotal >= 1500 ? 2 : 1);
     const priorityLead = sc >= 60 && commitmentProxy >= 3 && budgetProxy >= 2;
+    // Kotwica roczna do payloadu: ta sama kwota co na hero wyniku, slowo w slowo (rada: jeden rozjazd = zaufanie pada)
+    const arP = anchorRok(D);
     const payload = {
       instagram_handle: finalHandle,
       email,
       imie: imie.trim() || null,
+      intencja: intent === null ? '' : ['dziala_sam', 'chce_zobaczyc_pomoc', 'napisz_mi', 'nie_wie'][intent],
+      kiedy_start: startWhen === null ? '' : ['7dni', '30dni', '2-3mies', 'tylko_sprawdza'][startWhen],
+      warunek_decyzji: hotWhy.trim() || '',
+      wynik_godzina: hourRange(D),
+      wynik_stan: sc < 30 ? 'dobry' : sc < 60 ? 'średni' : 'zły',
+      wynik_rok_wydatek: String(arP.hardYear),
+      wynik_rok_godziny: String(arP.hours),
+      wynik_rok_dni: String(arP.dni),
+      wynik_rok_display: arP.display,
+      wynik_typ: pickArchetype(D, worstCatP.label).label,
+      wynik_typ_klucz: pickArchetype(D, worstCatP.label).key,
+      wynik_rozbieznosc: (() => { const cx = contradiction(D, selfDx); return cx ? `${cx.said} VS ${cx.body}` : ''; })(),
       wynik_kwota: String(c.total),
       wynik_score: String(sc),
       wynik_potencjal: String(payloadBlocked),
@@ -1040,9 +1496,12 @@ export default function Page() {
       value: sc,
       currency: 'PLN',
     });
-    // Zawsze pokaż wyniki - lead jest zapisany w sessionStorage na wypadek retry
-    setPhase('results');
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    // Diagnoza dokończona - wyczysc auto-save (zeby powrot nie wrzucil w polowe quizu) + zapisz wynik do pętli powrotu
+    try { localStorage.removeItem('diag_progress_v2'); } catch {}
+    try { localStorage.setItem('diag_last_result', JSON.stringify({ ts: Date.now(), score: sc, hour: hourRange(D), typ: pickArchetype(D, worstCatP.label).label })); } catch {}
+    // Tier 3: już jesteśmy w wynikach. Pokaż potwierdzenie zamiast przełączać fazę.
+    setLoading(false);
+    setCaptured(true);
   };
 
   // Retry nieudanych wysyłek z poprzedniej sesji
@@ -1062,6 +1521,11 @@ export default function Page() {
   }, []);
 
   const C = costs(D); const SC = score(D);
+  // Tier narracji wyniku: doom musi byc proporcjonalny do wyniku, inaczej niski score czyta doom jako fake
+  const tier: 'low' | 'mid' | 'high' = SC >= 60 ? 'high' : SC >= 40 ? 'mid' : 'low';
+  // STAN tygodnia wg realnego przeciążenia (SC). Niskie SC = DOBRY tydzień. Steruje CAŁĄ narracją wyniku.
+  const good = SC < 30;   // dobry tydzień: mówimy „trzymasz mocno", zero wymyślonych problemów
+  const bad = SC >= 60;   // zły tydzień: mówimy wprost, że tydzień pracuje przeciwko niemu
   const pct = Math.round(((sec + 1) / SECTIONS.length) * 100);
   const scoreColor = SC >= 75 ? M.red : SC >= 50 ? M.org : SC >= 25 ? M.yel : M.grn;
 
@@ -1176,8 +1640,7 @@ export default function Page() {
           lead: 'Trenujesz regularnie a wyników brak. Trening to 4-5h, reszta tygodnia 163h.',
           bullets: [
             'Kortyzol, sen, żywienie, regeneracja - bez tego trenujesz na 30-40%',
-            'Nie potrzebujesz nowego planu',
-            'Potrzebujesz naprawić godziny poza siłownią',
+            'Plan masz. Robota siedzi w godzinach poza siłownią',
           ],
         },
         impact: 'Wysiłek bez efektów',
@@ -1235,7 +1698,7 @@ export default function Page() {
   // Stres / energia / wypalenie
   if (D.stress >= 2 || D.energy >= 2) {
     badania.push({ nazwa: 'TSH + fT3 + fT4', dlaczego: 'Tarczyca reguluje metabolizm i energię. Stres ją hamuje - subkliniczne niedoczynności są częste', priorytet: 'wysoki' });
-    badania.push({ nazwa: 'Ferrytyna', dlaczego: 'Niedobór żelaza = zmęczenie, mgła, słaba regeneracja. Norma "ok" to nie norma optymalna', priorytet: 'wysoki' });
+    badania.push({ nazwa: 'Ferrytyna', dlaczego: 'Niedobór żelaza = zmęczenie, mgła, słaba regeneracja, nawet gdy laboratorium pisze "w normie"', priorytet: 'wysoki' });
     badania.push({ nazwa: 'DHEA-S', dlaczego: 'Hormon anty-stresowy - jeśli niski, organizm przegrywa z kortyzolem', priorytet: 'sredni' });
     if (!badania.some(b => b.nazwa.includes('Kortyzol'))) {
       badania.push({ nazwa: 'Kortyzol (poranny, godz. 8:00)', dlaczego: 'Chroniczny stres = oś HPA rozregulowana. Kortyzol powinien być wysoki rano i niski wieczorem', priorytet: 'wysoki' });
@@ -1249,7 +1712,7 @@ export default function Page() {
     badania.push({ nazwa: 'Estradiol (E2)', dlaczego: 'Alkohol zwiększa aromatyzację testosteronu do estrogenów. Więcej E2 = mniej T', priorytet: 'wysoki' });
     if (D.subs > 0) {
       badania.push({ nazwa: 'Prolaktyna', dlaczego: 'Substancje zaburzają oś dopaminową. Podwyższona prolaktyna = spadek libido, motywacji i T', priorytet: 'sredni' });
-      badania.push({ nazwa: 'Witamina B12 + kwas foliowy', dlaczego: 'Substancje i alkohol niszczą zapasy wit. B - kluczowe dla układu nerwowego i energii', priorytet: 'wysoki' });
+      badania.push({ nazwa: 'Witamina B12 + kwas foliowy', dlaczego: 'Substancje i alkohol niszczą zapasy wit. B, a bez nich układ nerwowy i energia leżą', priorytet: 'wysoki' });
     }
   }
 
@@ -1484,7 +1947,7 @@ export default function Page() {
   // Lata oddane = brain age - real age (verifiable in feel: spojrz w lustro)
   const losYears = Math.max(Math.round(brainAge - D.age), 0);
   // 70% odzyskasz w 90 dni, max 4 lata (cap medycznie realistyczny - Subagent B audit)
-  const recoverableYears = Math.max(Math.min(Math.round(losYears * 0.7), 4), 0);
+  // recoverableYears usunięte: „-X lat cofniesz" był zmyślonym pomiarem wieku.
   // Roczny koszt zycia w obecnym stylu (extrapolacja z 6mies)
   const costPerYear = Math.round(C.total / 6 * 12 / 100) * 100; // zaokraglenie do 100zł
 
@@ -1557,7 +2020,8 @@ export default function Page() {
       <div style={{ fontSize: 15, color: M.t1, fontWeight: 500, marginBottom: sub ? 6 : 12, lineHeight: 1.45 }}>
         {label}{sub && <span style={{ display: 'block', fontSize: 12.5, color: M.t3, marginTop: 4, fontWeight: 400 }}>{sub}</span>}
       </div>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 10 }}>
+      {/* Segmentowana skala: jeden instrument, nie cztery kafle-swiatla */}
+      <div style={{ display: 'flex', border: `1px solid ${M.brd2}`, borderRadius: 12, overflow: 'hidden', background: M.s1 }}>
         {sevOpts.map((o, i) => {
           const on = val === i;
           return (
@@ -1568,18 +2032,17 @@ export default function Page() {
               aria-checked={on}
               aria-label={`${label}: ${o.l}`}
               style={{
-                padding: '16px 4px', textAlign: 'center',
-                border: `1.5px solid ${on ? sevColors[i] : M.brd2}`,
-                background: on ? sevColors[i] + '12' : M.s1,
-                cursor: 'pointer', borderRadius: 12,
-                transition: 'all .25s ease',
-                transform: on ? 'scale(1.03)' : 'scale(1)',
-                minHeight: 58,
-                boxShadow: on ? `0 0 14px ${sevColors[i]}25` : 'none',
+                flex: 1, padding: '13px 2px 11px', textAlign: 'center',
+                background: on ? `${M.gold}12` : 'transparent',
+                borderLeft: i > 0 ? `1px solid ${M.brd}` : 'none',
+                borderBottom: on ? `2px solid ${M.gold}` : '2px solid transparent',
+                cursor: 'pointer', borderRadius: 0,
+                transition: 'background .2s ease, border-color .2s ease',
+                minHeight: 56,
               }}
             >
-              <span style={{ fontSize: 20, fontWeight: 700, display: 'block', marginBottom: 4, color: on ? sevColors[i] : M.t3 }}>{o.n}</span>
-              <span style={{ fontSize: 11, fontWeight: 600, color: on ? sevColors[i] : M.t4, textTransform: 'uppercase', letterSpacing: 0.8 }}>{o.l}</span>
+              <span style={{ fontFamily: M.mono, fontSize: 15, fontWeight: 700, display: 'block', marginBottom: 3, color: on ? M.gold : M.t3, fontVariantNumeric: 'tabular-nums' }}>{o.n}</span>
+              <span style={{ fontSize: 9.5, fontWeight: 600, color: on ? M.t1 : M.t4, textTransform: 'uppercase', letterSpacing: 0.6 }}>{o.l}</span>
             </button>
           );
         })}
@@ -1592,13 +2055,13 @@ export default function Page() {
     const hot = unit === 'h' ? val < 7 : val > 0;
     return (
       <div style={{ marginBottom: 28 }}>
-        {label && <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 10 }}>
+        {label && <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 8 }}>
           <span style={{ fontSize: 15, color: M.t1, fontWeight: 500, flex: 1, lineHeight: 1.45 }}>{label}</span>
-          <span style={{ fontFamily: M.mono, fontSize: 17, fontWeight: 700, color: hot ? M.gold : M.t1, minWidth: 60, textAlign: 'right' }}>{val}{unit}</span>
+          <span style={{ fontFamily: M.mono, fontSize: 19, fontWeight: 700, letterSpacing: '-0.02em', color: hot ? M.gold : M.t1, minWidth: 60, textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>{val}{unit}</span>
         </div>}
-        <div style={{ position: 'relative', height: 48, display: 'flex', alignItems: 'center' }}>
-          <div style={{ position: 'absolute', left: 0, right: 0, height: 6, background: M.s3, borderRadius: 3, top: '50%', marginTop: -3 }} />
-          <div style={{ position: 'absolute', left: 0, height: 6, width: `${p}%`, background: hot ? M.gold : M.t4, borderRadius: 3, transition: 'width .2s cubic-bezier(.4,0,.2,1)', top: '50%', marginTop: -3, opacity: hot ? 0.8 : 0.4 }} />
+        <div style={{ position: 'relative', height: 44, display: 'flex', alignItems: 'center' }}>
+          <div style={{ position: 'absolute', left: 0, right: 0, height: 2, background: '#262626', borderRadius: 1, top: '50%', marginTop: -1 }} />
+          <div style={{ position: 'absolute', left: 0, height: 2, width: `${p}%`, background: hot ? M.gold : M.t4, borderRadius: 1, transition: 'width .2s cubic-bezier(.4,0,.2,1)', top: '50%', marginTop: -1, opacity: hot ? 1 : 0.5 }} />
           <input
             type="range"
             min={min}
@@ -1629,24 +2092,22 @@ export default function Page() {
         tabIndex={0}
         onKeyDown={e => (e.key === 'Enter' || e.key === ' ') && tog(t)}
         style={{
-          display: 'flex', alignItems: 'center', gap: 12, padding: '15px 16px',
-          background: on ? M.gold + '10' : M.s1,
-          border: `1.5px solid ${on ? M.gold + '40' : M.brd2}`,
-          cursor: 'pointer', marginBottom: 6, borderRadius: 12,
-          transition: 'all .25s ease',
-          transform: on ? 'scale(1.01)' : 'scale(1)',
+          display: 'flex', alignItems: 'center', gap: 12, padding: '14px 16px',
+          background: on ? M.gold + '0c' : M.s1,
+          border: `1px solid ${on ? M.gold + '55' : M.brd2}`,
+          cursor: 'pointer', marginBottom: 6, borderRadius: 10,
+          transition: 'border-color .2s ease, background .2s ease',
           minHeight: 48,
-          boxShadow: on ? `0 0 12px ${M.gold}15` : 'none',
         }}
       >
         <div style={{
-          width: 22, height: 22,
-          border: `2px solid ${on ? M.gold : M.brd2}`,
+          width: 20, height: 20,
+          border: `1.5px solid ${on ? M.gold : M.brd2}`,
           background: on ? M.gold : 'transparent',
-          display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, borderRadius: 6,
+          display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, borderRadius: '50%',
           transition: 'all .2s ease',
         }}>
-          {on && <span style={{ fontSize: 11, color: '#0a0a0a', fontWeight: 700 }}>✓</span>}
+          {on && <span style={{ fontSize: 10, color: '#0a0a0a', fontWeight: 800, lineHeight: 1 }}>✓</span>}
         </div>
         <span style={{ flex: 1, fontSize: 14.5, fontWeight: on ? 500 : 400, color: on ? M.t1 : M.t2 }}>{label}</span>
       </div>
@@ -1654,9 +2115,10 @@ export default function Page() {
   };
 
   const SH = ({ n, title }: { n: string; title: string }) => (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 6 }}>
-      <div style={{ fontFamily: M.mono, fontSize: 10, fontWeight: 700, background: M.gold, color: M.bg, width: 26, height: 26, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, borderRadius: 8 }}>{n}</div>
-      <div style={{ fontSize: 14, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1.5, color: M.t2 }}>{title}</div>
+    <div style={{ display: 'flex', alignItems: 'baseline', gap: 12, marginBottom: 6 }}>
+      <span style={{ fontFamily: M.mono, fontSize: 11, fontWeight: 700, color: M.gold, letterSpacing: 1 }}>{n}</span>
+      <span style={{ fontFamily: M.serif, fontSize: 25, fontWeight: 400, color: M.t1, letterSpacing: '-0.01em' }}>{title}</span>
+      <span aria-hidden="true" style={{ flex: 1, height: 1, background: M.brd2, transform: 'translateY(-5px)' }} />
     </div>
   );
 
@@ -1882,7 +2344,7 @@ export default function Page() {
       <div
         id="diagnostyka"
         ref={topRef}
-        style={{ maxWidth: 440, width: '100%', margin: '0 auto', padding: '0 0 60px', position: 'relative', zIndex: 1, overflow: 'hidden' }}
+        style={{ maxWidth: phase === 'results' ? 584 : 440, width: '100%', margin: '0 auto', padding: '0 0 60px', position: 'relative', zIndex: 1, overflow: 'hidden', ['--font-display' as string]: FONT_MAP[cfg.font] } as React.CSSProperties}
       >
 
         {/* ── FORM ── */}
@@ -1899,7 +2361,7 @@ export default function Page() {
             }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
                 <Logo />
-                <span style={{ fontFamily: M.mono, fontSize: 10, fontWeight: 700, color: M.gold, textAlign: 'right' }}>{sec + 1}/7 &middot; {SECTIONS[sec]}</span>
+                <span style={{ fontFamily: M.mono, fontSize: 10, fontWeight: 700, letterSpacing: 1.5, textTransform: 'uppercase', color: M.gold, textAlign: 'right' }}>{RZYM[sec]} / VII &middot; {SECTIONS[sec]}</span>
               </div>
               <div
                 role="progressbar"
@@ -1907,13 +2369,10 @@ export default function Page() {
                 aria-valuemin={0}
                 aria-valuemax={100}
                 aria-label="Postęp formularza"
-                style={{ height: 3, background: M.s2, overflow: 'hidden', borderRadius: 2 }}
+                style={{ display: 'flex', gap: 5 }}
               >
-                <div style={{ height: '100%', width: `${pct}%`, background: `linear-gradient(90deg, ${M.goldDim}, ${M.gold})`, transition: 'width 0.4s ease', borderRadius: 2 }} />
-              </div>
-              <div style={{ display: 'flex', gap: 4, marginTop: 8 }}>
                 {SECTIONS.map((s, i) => (
-                  <div key={i} style={{ flex: 1, height: 2, background: i < sec ? M.gold : i === sec ? M.gold : M.s2, opacity: i < sec ? 0.5 : i === sec ? 1 : 0.3, transition: 'all .3s ease' }} title={s} />
+                  <div key={i} style={{ flex: 1, height: 3, borderRadius: 2, background: i <= sec ? M.gold : M.s2, opacity: i < sec ? 0.45 : i === sec ? 1 : 0.55, boxShadow: i === sec ? `0 0 8px ${M.gold}40` : 'none', transition: 'all .35s ease' }} title={s} />
                 ))}
               </div>
             </div>
@@ -1930,7 +2389,7 @@ export default function Page() {
                 display: 'flex', justifyContent: 'space-between', alignItems: 'center',
               }}>
                 <span style={{ fontFamily: M.mono, fontSize: 10, letterSpacing: 2.5, textTransform: 'uppercase', color: M.t4 }}>Twoja strata / 6 mies.</span>
-                <span style={{ fontFamily: M.mono, fontSize: 18, fontWeight: 700, color: M.gold, textShadow: `0 0 12px ${M.gold}25` }}>{C.total.toLocaleString('pl-PL')} zł</span>
+                <span style={{ fontFamily: M.mono, fontSize: 16, fontWeight: 700, letterSpacing: '-0.01em', color: M.gold, fontVariantNumeric: 'tabular-nums' }}>{C.total.toLocaleString('pl-PL')} zł</span>
               </div>
             )}
 
@@ -1971,34 +2430,71 @@ export default function Page() {
                       background: M.gold + '10', borderRadius: 20, fontWeight: 700,
                       boxShadow: `0 0 12px ${M.gold}15`,
                     }} className="border-glow">
-                      5 minut &middot; liczby których jeszcze nikt Ci nie pokazał
+                      {BADGE_V[cfg.badge]}
                     </div>
                     <h1 style={{
-                      fontSize: 34, fontWeight: 900, lineHeight: 1.02, letterSpacing: -0.8, marginBottom: 20,
-                      color: M.t1, textShadow: '0 0 24px rgba(255,255,255,.1), 0 1px 3px rgba(0,0,0,.5)',
+                      fontFamily: M.serif, fontSize: cfg.heroSize === 'L' ? 'clamp(46px, 13vw, 64px)' : 'clamp(40px, 11vw, 56px)', fontWeight: 400, lineHeight: 1.0, letterSpacing: '-0.01em', marginBottom: 20,
+                      color: M.t1, textShadow: '0 0 24px rgba(255,255,255,.08)',
                       textWrap: 'balance',
                     }}>
-                      Ile lat ma{' '}
+                      {HERO_H1[cfg.heroH1].pre}{' '}
                       <span style={{
                         color: M.gold,
-                        fontWeight: 900,
+                        fontStyle: 'italic',
                       }}>
-                        Twój mózg dzisiaj?
+                        {HERO_H1[cfg.heroH1].gold}
                       </span>
                     </h1>
-                    <p style={{ color: M.t2, fontSize: 16, lineHeight: 1.55, fontWeight: 500, maxWidth: 400, margin: '0 auto 20px' }}>
-                      Liczę dokładnie ile zł, lat mózgu i testosteronu ucieka Ci co miesiąc.
+                    {/* Symptom stack + insight "to nie 5 problemow" + obietnica + odkrycia (wersja Michala, promise-payoff match z wynikiem) */}
+                    <div style={{ color: M.t1, fontSize: 16, lineHeight: 1.75, fontWeight: 600, maxWidth: 400, margin: '0 auto 14px' }}>
+                      {['Sen, który nie regeneruje', 'Zjazd energii w ciągu dnia', 'Wieczorny głód', 'Odpadający trening', 'Brak efektów mimo kolejnych prób'].map((s, i) => (
+                        <div key={i}>{s}</div>
+                      ))}
+                    </div>
+                    <p style={{ fontFamily: M.serif, fontStyle: 'italic', color: M.gold, fontSize: 19, lineHeight: 1.35, fontWeight: 400, maxWidth: 400, margin: '0 auto 14px' }}>
+                      To nie musi być pięć osobnych problemów.
                     </p>
-                    <div style={{ fontFamily: M.mono, fontSize: 10, color: M.t4, letterSpacing: 1.5, marginTop: 4 }}>Poufne. 180 facetów już przez to przeszło. 5.0 na Google.</div>
+                    <div style={{ maxWidth: 384, margin: '4px auto 20px', textAlign: 'left', display: 'flex', flexDirection: 'column', gap: 9 }}>
+                      {[
+                        'Zobaczysz moment, od którego rozjeżdża się reszta dnia',
+                        'Odkryjesz swój największy hamulec',
+                        'Dostaniesz priorytet na najbliższe 14 dni',
+                      ].map((b, i) => (
+                        <div key={i} style={{ display: 'flex', gap: 10, alignItems: 'flex-start', fontSize: 14.5, color: M.t2, lineHeight: 1.45 }}>
+                          <span style={{ color: M.gold, fontWeight: 800, flexShrink: 0, marginTop: 1 }}>&rarr;</span>
+                          <span>{b}</span>
+                        </div>
+                      ))}
+                    </div>
+                    <button
+                      onClick={() => { vibe(10); if (typeof window !== 'undefined') window.scrollBy({ top: Math.round(window.innerHeight * 0.72), behavior: 'smooth' }); }}
+                      className="shimmer-btn"
+                      style={{ width: '100%', maxWidth: 360, padding: '16px 28px', background: `linear-gradient(135deg, ${M.gold}, #a08a3e)`, color: M.bg, border: 'none', fontFamily: M.sans, fontSize: 15, fontWeight: 800, letterSpacing: 1, textTransform: 'uppercase', cursor: 'pointer', borderRadius: 14, boxShadow: '0 4px 24px rgba(200,168,78,0.28)', minHeight: 52 }}
+                    >
+                      Sprawdzam, co mnie blokuje &rarr;
+                    </button>
+                    <div style={{ fontFamily: M.mono, fontSize: 11, color: M.t4, letterSpacing: 1.2, marginTop: 14 }}>
+                      5 minut &middot; za darmo &middot; <span style={{ color: M.gold, fontWeight: 700 }}>1200+ facetów już sprawdziło</span>
+                    </div>
+                    {/* Pętla powrotu: poprzedni wynik = pretekst do retestu i porównania */}
+                    {lastRes && (Date.now() - lastRes.ts) > 86400000 && (
+                      <div style={{ margin: '18px auto 0', maxWidth: 380, padding: '12px 16px', borderRadius: 12, background: M.s1, border: `1px solid ${M.gold}30`, textAlign: 'left' }}>
+                        <div style={{ fontFamily: M.mono, fontSize: 9.5, letterSpacing: 2, textTransform: 'uppercase', color: M.gold, fontWeight: 700, marginBottom: 5 }}>Twój poprzedni pomiar</div>
+                        <div style={{ fontSize: 13, color: M.t2, lineHeight: 1.5 }}>
+                          {lastRes.score}/100 &middot; {lastRes.hour} &middot; {Math.floor((Date.now() - lastRes.ts) / 86400000)} dni temu. Zrób jeszcze raz i zobacz, co się ruszyło.
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
               )}
 
               {/* Nagłówek sekcji (nie-hero) */}
               {sec > 0 && (
-                <div className="fade-up" style={{ padding: '28px 0 24px' }}>
-                  <div style={{ fontFamily: M.mono, fontSize: 10, letterSpacing: 2.5, textTransform: 'uppercase', color: M.t4, marginBottom: 8 }}>Sekcja {sec + 1}</div>
-                  <h2 style={{ fontSize: 22, fontWeight: 800, letterSpacing: -0.3, color: M.t1, textShadow: '0 0 20px rgba(255,255,255,.08)' }}>{SECTIONS[sec]}</h2>
+                <div className="fade-up" style={{ padding: '30px 0 26px' }}>
+                  <div style={{ fontFamily: M.mono, fontSize: 10, letterSpacing: 3, textTransform: 'uppercase', color: M.gold, fontWeight: 700, marginBottom: 10 }}>Sekcja {RZYM[sec]} / VII</div>
+                  <h2 style={{ fontFamily: M.serif, fontWeight: 400, fontSize: 38, letterSpacing: '-0.01em', lineHeight: 1, color: M.t1 }}>{SECTIONS[sec]}</h2>
+                  <div aria-hidden="true" style={{ width: 44, height: 1, background: M.gold, marginTop: 14, opacity: 0.65 }} />
                 </div>
               )}
 
@@ -2010,9 +2506,58 @@ export default function Page() {
                   <SH n="01" title="Sen" />
                   <div style={{ fontSize: 14, color: M.t3, fontWeight: 400, paddingLeft: 38, marginBottom: 28 }}>Leżysz 8h. Ile z tego naprawdę śpisz, a ile przewijasz telefon?</div>
                   <Slider label="Ile godzin faktycznie śpisz" min={3} max={9} step={0.5} k="sleep" val={D.sleep} unit="h" note={`Deficyt vs 7.5h: ${Math.max((7.5 - D.sleep) * 7, 0).toFixed(0)}h / tydzień`} ariaLabel="Średni czas snu w nocy w godzinach" />
-                  <SevField label="Budzisz się w nocy, kręcisz, płytki sen?" sub="Możesz przespać 8h i wstać rozbity. Pytam o to drugie." k="sleepQ" val={D.sleepQ} />
-                  <SevField label="Leżysz z telefonem przed snem?" sub="Ekran tłumi melatoninę o 50% na 90 minut." k="screenBed" val={D.screenBed} />
-                  <Slider label="O której wstajesz w tygodniu?" min={4} max={10} step={0.5} k="wakeTime" val={D.wakeTime} unit=":00" ariaLabel="Godzina wstawania w tygodniu" />
+                  {/* Telefon przed snem → screenBed (rozdzielone od jakości snu) */}
+                  <div style={{ marginBottom: 24 }}>
+                    <div style={{ fontSize: 15, color: M.t1, fontWeight: 500, marginBottom: 8, lineHeight: 1.45 }}>
+                      W ilu z ostatnich 7 wieczorów telefon był z Tobą do ostatnich 30 minut przed snem?
+                    </div>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 8 }}>
+                      {([['0-1', 0], ['2-3', 1], ['4-5', 2], ['6-7', 3]] as [string, number][]).map(([l, v]) => {
+                        const on = D.screenBed === v;
+                        return (
+                          <button key={v} onClick={() => upd('screenBed', v)} style={{ padding: '13px 4px', textAlign: 'center', border: `1.5px solid ${on ? M.gold : M.brd2}`, background: on ? M.gold + '0e' : M.s1, color: on ? M.t1 : M.t4, cursor: 'pointer', borderRadius: 10, transition: 'border-color .2s ease, background .2s ease', fontSize: 13, fontWeight: 600, fontFamily: M.sans, minHeight: 48 }}>{l}</button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Jakość snu → sleepQ (rozdzielone od telefonu) */}
+                  <div style={{ marginBottom: 24 }}>
+                    <div style={{ fontSize: 15, color: M.t1, fontWeight: 500, marginBottom: 8, lineHeight: 1.45 }}>
+                      Jak często budzisz się z poczuciem, że sen faktycznie Cię odnowił?
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                      {([['Prawie codziennie', 0], ['3-4 razy w tygodniu', 1], ['1-2 razy w tygodniu', 2], ['Prawie nigdy', 3]] as [string, number][]).map(([l, v]) => {
+                        const on = D.sleepQ === v;
+                        return (
+                          <button key={v} onClick={() => upd('sleepQ', v)} style={{ padding: '13px 14px', textAlign: 'left', border: `1.5px solid ${on ? M.gold : M.brd2}`, background: on ? M.gold + '0e' : M.s1, color: on ? M.t1 : M.t3, cursor: 'pointer', borderRadius: 12, transition: 'all .2s ease', fontSize: 13.5, fontWeight: 600, fontFamily: M.sans, lineHeight: 1.4 }}>{l}</button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Moment pęknięcia dnia → breakWindow (zastępuje zmyślaną godzinę yourHour) */}
+                  <div style={{ marginBottom: 26 }}>
+                    <div style={{ fontSize: 15, color: M.t1, fontWeight: 500, marginBottom: 8, lineHeight: 1.45 }}>
+                      Kiedy zaczyna się pierwszy moment, po którym dzień się sypie?<span style={{ display: 'block', fontSize: 12.5, color: M.t3, marginTop: 4, fontWeight: 400 }}>Chodzi o pierwszy ruch, po którym reszta się rozjeżdża, zanim jeszcze widać skutki.</span>
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                      {([
+                        ['Zaraz po przebudzeniu. Budzik, telefon, kawa, start na minusie.', 0],
+                        ['Między 10:00 a 14:00. Odpływam, odkładam pierwsze ważne rzeczy.', 1],
+                        ['Między 14:00 a 18:00. Kończy się skupienie, dowożę już tylko minimum.', 2],
+                        ['Między 18:00 a 21:00. Odpada trening, normalny posiłek albo plan na wieczór.', 3],
+                        ['Po 21:00. Telefon, lodówka i przesuwanie snu przejmują stery.', 4],
+                        ['Dopiero weekend. W tygodniu trzymam, piątek albo sobota kasuje rytm.', 5],
+                        ['Nie ma jednego momentu. Rozsypuje się różnie.', 6],
+                      ] as [string, number][]).map(([l, v]) => {
+                        const on = D.breakWindow === v;
+                        return (
+                          <button key={v} onClick={() => upd('breakWindow', v)} style={{ padding: '13px 14px', textAlign: 'left', border: `1.5px solid ${on ? M.gold : M.brd2}`, background: on ? M.gold + '12' : M.s1, color: on ? M.t1 : M.t3, cursor: 'pointer', borderRadius: 12, transition: 'all .2s ease', fontSize: 13.5, fontWeight: 600, fontFamily: M.sans, lineHeight: 1.4 }}>{l}</button>
+                        );
+                      })}
+                    </div>
+                  </div>
                 </div>
               )}
 
@@ -2022,59 +2567,70 @@ export default function Page() {
                   <div style={{ borderLeft: `3px solid ${M.gold}`, padding: '8px 12px', marginBottom: 20, background: `${M.gold}08`, borderRadius: '0 8px 8px 0', maxWidth: '100%', margin: '0 auto 20px' }}>
                     <p style={{ fontSize: 12, color: M.t3, margin: 0, lineHeight: 1.5, textAlign: 'center' }}>Twój sen: brakuje <strong style={{ color: M.gold }}>{Math.max((7.5 - D.sleep) * 7, 0).toFixed(0)}h</strong> w tygodniu. To <strong style={{ color: M.gold }}>{Math.round(Math.max((7.5 - D.sleep) * 7 * 52, 0))}h</strong> rocznie pod alarmem.</p>
                   </div>
-                  <SevField label="Stres siedzi w ciele?" sub="Kark, żołądek, myśli o pracy po 22." k="stress" val={D.stress} />
-                  <SevField label="Wypalenie" sub="Wstajesz i już nie masz siły. Trzecia kawa nic nie zmienia." k="energy" val={D.energy} />
-                  <SevField label="Głód dopaminowy" sub="Otwierasz telefon co 3 minuty. Na nudnym zadaniu nie wytrzymujesz 10 minut." k="dopamine" val={D.dopamine} />
-                  <Slider label="Ile godzin dziennie lecisz na pół mocy?" min={0} max={4} step={0.5} k="lost" val={D.lost} unit="h" ariaLabel="Liczba godzin traconych dziennie przez mgłę umysłową" />
-                  {/* Średni przychód netto */}
-                  <div style={{ marginBottom: 28 }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 10 }}>
-                      <span style={{ fontSize: 15, color: M.t1, fontWeight: 500, lineHeight: 1.45 }}>Średni przychód netto / miesiąc</span>
-                      <span style={{ fontFamily: M.mono, fontSize: 17, fontWeight: 700, color: M.gold, minWidth: 80, textAlign: 'right' }}>{salaryInput.toLocaleString('pl-PL')} zł</span>
+                  {/* Napięcie → stress (scena + częstotliwość, 0-3) */}
+                  <div style={{ marginBottom: 22 }}>
+                    <div style={{ fontSize: 15, color: M.t1, fontWeight: 500, marginBottom: 8, lineHeight: 1.45 }}>
+                      W ilu z ostatnich 7 wieczorów ciało już siedziało, a głowa dalej była w robocie?
                     </div>
-                    <div style={{ position: 'relative', height: 48, display: 'flex', alignItems: 'center' }}>
-                      <div style={{ position: 'absolute', left: 0, right: 0, height: 6, background: M.s3, borderRadius: 3, top: '50%', marginTop: -3 }} />
-                      <div style={{ position: 'absolute', left: 0, height: 6, width: `${((salaryInput - 4000) / (50000 - 4000)) * 100}%`, background: M.gold, borderRadius: 3, transition: 'width .2s cubic-bezier(.4,0,.2,1)', top: '50%', marginTop: -3, opacity: 0.8 }} />
-                      <input
-                        type="range"
-                        min={4000}
-                        max={50000}
-                        step={500}
-                        value={salaryInput}
-                        aria-label="Średni przychód netto miesięcznie w złotych"
-                        aria-valuenow={salaryInput}
-                        aria-valuemin={4000}
-                        aria-valuemax={50000}
-                        onChange={e => {
-                          const v = parseFloat(e.target.value);
-                          setSalaryInput(v);
-                          upd('rate', Math.round(v / 168));
-                        }}
-                        style={{ width: '100%', height: 48, WebkitAppearance: 'none', background: 'transparent', position: 'relative', zIndex: 2, cursor: 'pointer', margin: 0, padding: 0 }}
-                      />
-                    </div>
-                    <div style={{ textAlign: 'right', fontFamily: M.mono, fontSize: 11, color: M.t3, marginTop: 6 }}>
-                      = {D.rate} zł/godz. netto
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 8 }}>
+                      {([['0-1', 0], ['2-3', 1], ['4-5', 2], ['6-7', 3]] as [string, number][]).map(([l, v]) => {
+                        const on = D.stress === v;
+                        return (<button key={v} onClick={() => upd('stress', v)} style={{ padding: '13px 4px', textAlign: 'center', border: `1.5px solid ${on ? M.gold : M.brd2}`, background: on ? M.gold + '0e' : M.s1, color: on ? M.t1 : M.t4, cursor: 'pointer', borderRadius: 10, transition: 'border-color .2s ease, background .2s ease', fontSize: 13, fontWeight: 600, fontFamily: M.sans, minHeight: 48 }}>{l}</button>);
+                      })}
                     </div>
                   </div>
-                  <Slider label="Ile godzin pracujesz dziennie?" min={4} max={14} step={1} k="workHours" val={D.workHours} unit="h" ariaLabel="Liczba godzin pracy dziennie" />
-                  {/* Postępy w życiu */}
+
+                  {/* Zmęczenie od rana → energy (częstotliwość poranków, 0-3) */}
+                  <div style={{ marginBottom: 22 }}>
+                    <div style={{ fontSize: 15, color: M.t1, fontWeight: 500, marginBottom: 8, lineHeight: 1.45 }}>
+                      Jak często budzisz się z poczuciem, że spałbyś od razu jeszcze dwie godziny?
+                    </div>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2,1fr)', gap: 8 }}>
+                      {([['Prawie nigdy', 0], ['1-2 poranki w tygodniu', 1], ['3-4 poranki', 2], ['5-7 poranków', 3]] as [string, number][]).map(([l, v]) => {
+                        const on = D.energy === v;
+                        return (<button key={v} onClick={() => upd('energy', v)} style={{ padding: '13px 10px', textAlign: 'left', border: `1.5px solid ${on ? M.gold : M.brd2}`, background: on ? M.gold + '0e' : M.s1, color: on ? M.t1 : M.t3, cursor: 'pointer', borderRadius: 10, transition: 'border-color .2s ease, background .2s ease', fontSize: 12.5, fontWeight: 600, fontFamily: M.sans, minHeight: 48, lineHeight: 1.35 }}>{l}</button>);
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Ucieczka od trudnego zadania → dopamine (scena zachowania, 0-3) */}
+                  <div style={{ marginBottom: 24 }}>
+                    <div style={{ fontSize: 15, color: M.t1, fontWeight: 500, marginBottom: 8, lineHeight: 1.45 }}>
+                      Co się dzieje, gdy trafiasz na nudne albo trudne zadanie?
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                      {([
+                        ['Zostaję przy nim bez sięgania po telefon.', 0],
+                        ['Po kilku minutach zaczynam szukać przerwy.', 1],
+                        ['Łapię telefon przy prawie każdym postoju.', 2],
+                        ['Bez dodatkowego bodźca nie wytrzymuję nawet 15-20 minut.', 3],
+                      ] as [string, number][]).map(([l, v]) => {
+                        const on = D.dopamine === v;
+                        return (<button key={v} onClick={() => upd('dopamine', v)} style={{ padding: '13px 14px', textAlign: 'left', border: `1.5px solid ${on ? M.gold : M.brd2}`, background: on ? M.gold + '0e' : M.s1, color: on ? M.t1 : M.t3, cursor: 'pointer', borderRadius: 12, transition: 'all .2s ease', fontSize: 13.5, fontWeight: 600, fontFamily: M.sans, lineHeight: 1.4 }}>{l}</button>);
+                      })}
+                    </div>
+                  </div>
+                  <div style={{ fontSize: 15, color: M.t1, fontWeight: 600, marginBottom: 4, marginTop: 4 }}>Praca</div>
+                  <div style={{ fontSize: 12.5, color: M.t3, marginBottom: 16 }}>Dwie liczby. Z nich wychodzi, ile ten stan kosztuje Cię w robocie.</div>
+                  <Slider label="Ile godzin dziennie pracujesz?" min={4} max={14} step={1} k="workHours" val={D.workHours} unit="h" ariaLabel="Liczba godzin pracy dziennie" />
+                  <Slider label="Ile z nich lecisz na pół mocy?" min={0} max={4} step={0.5} k="lost" val={D.lost} unit="h" note="Siedzisz przy ekranie, klikasz, ale głowy tam nie ma. Policz te godziny." ariaLabel="Liczba godzin na pół mocy dziennie" />
+                  {/* Pensja i podwyżka usunięte z przeglądu: kotwica liczy tylko realny wydatek + czas, nie zmyśloną utraconą pensję. */}
+                  {/* Postępy: forma i energia (zawężone, nie „życie ogólnie") */}
                   <div style={{ marginBottom: 26 }}>
                     <div style={{ fontSize: 15, color: M.t1, fontWeight: 500, marginBottom: 6, lineHeight: 1.45 }}>
-                      Poczucie progresu<span style={{ display: 'block', fontSize: 12.5, color: M.t3, marginTop: 4, fontWeight: 400 }}>Rok temu vs teraz. Idziesz do przodu?</span>
+                      Ostatnie trzy miesiące: forma i energia idą w dobrą stronę?
                     </div>
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 10 }}>
-                      {[{ n: '✓', l: 'Tak', v: 0 }, { n: '~', l: 'Trochę', v: 1 }, { n: '✗', l: 'Nie', v: 2 }].map(o => {
+                      {[{ n: '✓', l: 'Wyraźnie tak', v: 0 }, { n: '~', l: 'Minimalnie', v: 1 }, { n: '✗', l: 'Stoją', v: 2 }].map(o => {
                         const on = D.progress === o.v;
                         const col = o.v === 0 ? M.grn : o.v === 1 ? M.yel : M.red;
                         return (
                           <button key={o.v} onClick={() => upd('progress', o.v)} style={{
                             padding: '16px 4px', textAlign: 'center',
-                            border: `1.5px solid ${on ? col : M.brd2}`,
-                            background: on ? col + '12' : M.s1,
-                            cursor: 'pointer', borderRadius: 12, transition: 'all .25s ease',
-                            transform: on ? 'scale(1.03)' : 'scale(1)', minHeight: 58,
-                            boxShadow: on ? `0 0 14px ${col}25` : 'none',
+                            border: `1.5px solid ${on ? M.gold : M.brd2}`,
+                            background: on ? M.gold + '0e' : M.s1,
+                            cursor: 'pointer', borderRadius: 12, transition: 'border-color .2s ease, background .2s ease',
+                            minHeight: 58,
                           }}>
                             <span style={{ fontSize: 20, fontWeight: 700, display: 'block', marginBottom: 4, color: on ? col : M.t3 }}>{o.n}</span>
                             <span style={{ fontSize: 11, fontWeight: 600, color: on ? col : M.t4, textTransform: 'uppercase', letterSpacing: 0.8 }}>{o.l}</span>
@@ -2090,10 +2646,61 @@ export default function Page() {
                 <div className="fade-up">
                   {/* Micro-reward: insight z poprzedniej sekcji */}
                   <div style={{ borderLeft: `3px solid ${M.gold}`, padding: '8px 12px', marginBottom: 20, background: `${M.gold}08`, borderRadius: '0 8px 8px 0', maxWidth: '100%', margin: '0 auto 20px' }}>
-                    <p style={{ fontSize: 12, color: M.t3, margin: 0, lineHeight: 1.5, textAlign: 'center' }}>Tracisz w pracy: ~<strong style={{ color: M.gold }}>{Math.round(D.lost * D.rate * 22).toLocaleString('pl-PL')} zł</strong> miesięcznie. Rocznie: <strong style={{ color: M.gold }}>{Math.round(D.lost * D.rate * 22 * 12).toLocaleString('pl-PL')} zł</strong> w kieszeń.</p>
+                    <p style={{ fontSize: 12, color: M.t3, margin: 0, lineHeight: 1.5, textAlign: 'center' }}>Na pół mocy schodzi Ci <strong style={{ color: M.gold }}>{Math.round(D.lost * 220)}h</strong> w roku. To około <strong style={{ color: M.gold }}>{Math.round(D.lost * 220 / 8)} dni roboczych</strong> obok własnej roboty.</p>
                   </div>
-                  <SevField label="Chaos w jedzeniu" sub="Do 15 sama kawa, wieczorem zjadasz pół lodówki." k="dietChaos" val={D.dietChaos} />
-                  <SevField label="Objadanie się" sub="Trzymasz się do wieczora, potem leci wszystko co jest w domu. Rano wyrzuty i od nowa." k="binge" val={D.binge} />
+                  {/* Wieczorne jedzenie → binge (scala rozjechane jedzenie + objadanie w jedno pytanie o zachowanie) */}
+                  <div style={{ marginBottom: 24 }}>
+                    <div style={{ fontSize: 15, color: M.t1, fontWeight: 500, marginBottom: 8, lineHeight: 1.45 }}>
+                      Co najczęściej dzieje się z jedzeniem między 18:00 a snem?
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                      {([
+                        ['Jem zaplanowany posiłek i temat jest zamknięty.', 0],
+                        ['Dochodzi jedna nieplanowana przekąska.', 1],
+                        ['1-2 razy w tygodniu jem znacznie więcej, niż planowałem.', 2],
+                        ['3 albo więcej wieczorów kończy się jedzeniem bez kontroli.', 3],
+                        ['Każdy wieczór wygląda inaczej, nie mam żadnego rytmu.', 4],
+                      ] as [string, number][]).map(([l, v]) => {
+                        const on = D.binge === v;
+                        return (<button key={v} onClick={() => upd('binge', v)} style={{ padding: '13px 14px', textAlign: 'left', border: `1.5px solid ${on ? M.gold : M.brd2}`, background: on ? M.gold + '0e' : M.s1, color: on ? M.t1 : M.t3, cursor: 'pointer', borderRadius: 12, transition: 'all .2s ease', fontSize: 13.5, fontWeight: 600, fontFamily: M.sans, lineHeight: 1.4 }}>{l}</button>);
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Jakosc zywienia - warzywa/owoce (kwalifikator) */}
+                  <div style={{ marginBottom: 24, marginTop: 8 }}>
+                    <div style={{ fontSize: 15, color: M.t1, fontWeight: 500, marginBottom: 8, lineHeight: 1.45 }}>
+                      W ilu z ostatnich 7 dni jadłeś warzywa lub owoce przynajmniej 3 razy?
+                    </div>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 8 }}>
+                      {([['6-7 dni', 0], ['2-5 dni', 1], ['0-1 dni', 2]] as [string, number][]).map(([l, v]) => {
+                        const on = D.veggies === v;
+                        return (
+                          <button key={v} onClick={() => upd('veggies', v)} style={{ padding: '13px 4px', textAlign: 'center', border: `1.5px solid ${on ? M.gold : M.brd2}`, background: on ? M.gold + '0e' : M.s1, color: on ? M.t1 : M.t4, cursor: 'pointer', borderRadius: 10, transition: 'border-color .2s ease, background .2s ease', fontSize: 12, fontWeight: 600, fontFamily: M.sans, lineHeight: 1.3, minHeight: 48 }}>{l}</button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Bialko + regularne posilki */}
+                  <div style={{ marginBottom: 24 }}>
+                    <div style={{ fontSize: 15, color: M.t1, fontWeight: 500, marginBottom: 8, lineHeight: 1.45 }}>
+                      W ilu z ostatnich 7 dni miałeś 3 normalne posiłki z konkretnym białkiem?
+                      <span style={{ display: 'block', fontSize: 12.5, color: M.t3, marginTop: 4, fontWeight: 400 }}>Mięso, ryby, jajka, nabiał. Nie „coś się zjadło".</span>
+                    </div>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 8 }}>
+                      {([['6-7 dni', 0], ['2-5 dni', 1], ['0-1 dni', 2]] as [string, number][]).map(([l, v]) => {
+                        const on = D.protein === v;
+                        return (
+                          <button key={v} onClick={() => upd('protein', v)} style={{ padding: '13px 4px', textAlign: 'center', border: `1.5px solid ${on ? M.gold : M.brd2}`, background: on ? M.gold + '0e' : M.s1, color: on ? M.t1 : M.t4, cursor: 'pointer', borderRadius: 10, transition: 'border-color .2s ease, background .2s ease', fontSize: 12, fontWeight: 600, fontFamily: M.sans, lineHeight: 1.3, minHeight: 48 }}>{l}</button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Suplementy usunięte z diagnostyki: nie kwalifikują i nie pokazują głównego problemu. */}
+
+                  <Slider label="Ile miesięcznie idzie na dowóz i jedzenie na mieście?" min={0} max={1000} step={50} k="junk" val={D.junk} unit=" zł" note={`Glovo, kebab pod blokiem, gotowce z Żabki. To liczba, którą sam podajesz, i tylko ona wchodzi do rachunku.`} ariaLabel="Miesięczne wydatki na dowóz i jedzenie na mieście" />
                 </div>
               )}
 
@@ -2103,26 +2710,80 @@ export default function Page() {
                   <div style={{ borderLeft: `3px solid ${M.gold}`, padding: '8px 12px', marginBottom: 20, background: `${M.gold}08`, borderRadius: '0 8px 8px 0', maxWidth: '100%', margin: '0 auto 20px' }}>
                     <p style={{ fontSize: 12, color: M.t3, margin: 0, lineHeight: 1.5, textAlign: 'center' }}>Śmieciowe jedzenie / dowóz: <strong style={{ color: M.gold }}>{(D.junk * 6).toLocaleString('pl-PL')} zł</strong> w 6 miesięcy</p>
                   </div>
-                  <div style={{ fontSize: 13.5, color: M.t3, fontWeight: 400, marginBottom: 20, lineHeight: 1.6 }}>Zero moralizowania. Policzę co Cię to kosztuje w złotówkach i testosteronie.</div>
-                  <Slider label="Ile weekendów w miesiącu imprezujesz?" min={0} max={4} step={1} k="wknd" val={D.wknd} unit="" ariaLabel="Liczba imprezowych weekendów w miesiącu" />
-                  <Slider label="Ile drinków w typowy weekend?" min={0} max={20} step={1} k="drinks" val={D.drinks} unit="" note={D.drinks > 5 ? `${D.drinks} drinków = ~${Math.round(D.drinks * 3.4)}% spadek testosteronu w 12h (Vingren 2013)` : ''} ariaLabel="Średnia liczba drinków na imprezie" />
-                  <Slider label="Ile wydajesz na wyjścia (alkohol, kluby, taksówki)" min={0} max={800} step={50} k="cash" val={D.cash} unit=" zł" note={`Suma 6 mies.: ${(D.cash * D.wknd * 6).toLocaleString('pl-PL')} zł`} ariaLabel="Wydatki na imprezie w złotych" />
-                  <Slider label="Ile wydajesz na substancje" min={0} max={800} step={50} k="subs" val={D.subs} unit=" zł" ariaLabel="Miesięczne wydatki na substancje w złotych" />
-                  {D.subs > 0 && (
-                    <div style={{ padding: '12px 16px', background: M.s1, borderRadius: 12, border: `1px solid ${M.brd}`, marginTop: -12, marginBottom: 28 }}>
-                      <div style={{ fontSize: 11, color: M.t4, fontFamily: M.mono, letterSpacing: 0.5, marginBottom: 8 }}>Co to znaczy dla Twojego organizmu</div>
-                      <div style={{ fontSize: 12.5, color: M.t3, lineHeight: 1.7 }}>
-                        {D.subs > 0 && D.subs <= 200 && '• Okazjonalne użycie. Serotonina potrzebuje 2-4 tyg. na regenerację, a przy regularnym cyklu to okno nigdy się nie zamyka.'}
-                        {D.subs > 200 && D.subs <= 500 && '• Regularne wydatki. Wyczerpanie serotoniny i dopaminy sprawia, że mózg przesuwa wzorzec: bez kreski czuje, że jest za mało. Trening i odżywianie tracą na efektywności.'}
-                        {D.subs > 500 && '• Poważne wydatki. Układ nerwowy jest w trybie ciągłej kompensacji, regeneracja po weekendzie zajmuje cały tydzień, a forma stoi w miejscu.'}
-                      </div>
+                  <div style={{ fontSize: 13.5, color: M.t3, fontWeight: 400, marginBottom: 20, lineHeight: 1.6 }}>Zero moralizowania. Liczę tylko, co to robi z formą i kieszenią.</div>
+
+                  {/* Wpływ weekendu na rytm → wknd (odłączone od dawki alkoholu, częstotliwość != dawka) */}
+                  <div style={{ marginBottom: 24 }}>
+                    <div style={{ fontSize: 15, color: M.t1, fontWeight: 500, marginBottom: 8, lineHeight: 1.45 }}>
+                      Jak często weekend wyraźnie rusza Ci sen, jedzenie albo poziom ruchu?
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                      {([
+                        ['Prawie nigdy', 0],
+                        ['Raz w miesiącu', 1],
+                        ['2-3 weekendy w miesiącu', 2],
+                        ['Prawie każdy weekend', 4],
+                      ] as [string, number][]).map(([l, wk]) => {
+                        const on = D.wknd === wk;
+                        return (
+                          <button key={l} onClick={() => upd('wknd', wk)} style={{ padding: '13px 14px', textAlign: 'left', border: `1.5px solid ${on ? M.gold : M.brd2}`, background: on ? M.gold + '0e' : M.s1, color: on ? M.t1 : M.t3, cursor: 'pointer', borderRadius: 12, transition: 'border-color .2s ease, background .2s ease', fontSize: 13.5, fontWeight: 600, fontFamily: M.sans, lineHeight: 1.4 }}>{l}</button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Dawka alkoholu → drinks (osobne, opcjonalne, NIE liczone z częstotliwości) */}
+                  <div style={{ marginBottom: 24 }}>
+                    <div style={{ fontSize: 15, color: M.t1, fontWeight: 500, marginBottom: 8, lineHeight: 1.45 }}>
+                      Jeśli pijesz, ile porcji zwykle wypada na jedno wyjście?<span style={{ display: 'block', fontSize: 12.5, color: M.t3, marginTop: 4, fontWeight: 400 }}>Opcjonalne. Piwo, drink, kieliszek, to jedna porcja.</span>
+                    </div>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 8 }}>
+                      {([['Nie piję', 0], ['1-2', 2], ['3-5', 4], ['6-8', 7], ['9+', 10]] as [string, number][]).map(([l, dr]) => {
+                        const on = D.drinks === dr;
+                        return (
+                          <button key={l} onClick={() => upd('drinks', dr)} style={{ padding: '12px 4px', textAlign: 'center', border: `1.5px solid ${on ? M.gold : M.brd2}`, background: on ? M.gold + '0e' : M.s1, color: on ? M.t1 : M.t4, cursor: 'pointer', borderRadius: 10, transition: 'border-color .2s ease, background .2s ease', fontSize: 12.5, fontWeight: 600, fontFamily: M.sans, minHeight: 46, lineHeight: 1.3 }}>{l}</button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* JEDNA kwota za wyjscie: alkohol + kluby + taksowki + substancje scalone */}
+                  {D.wknd > 0 && (
+                    <Slider label="Ile schodzi, jak już wyjdziesz?" min={0} max={800} step={50} k="cash" val={D.cash} unit=" zł" note={`Alkohol, kluby, taksówki, jedzenie, cokolwiek. Jedno typowe wyjście. Rok: ${(D.cash * D.wknd * 12).toLocaleString('pl-PL')} zł`} ariaLabel="Ile wydajesz na typowe wyjście" />
+                  )}
+                  {D.drinks >= 10 && (
+                    <div style={{ fontSize: 11.5, color: M.org, fontStyle: 'italic', marginTop: -8, marginBottom: 24, lineHeight: 1.5 }}>
+                      Przy tej częstotliwości wątroba i testosteron nie wracają między jednym a drugim wyjściem do poziomu wyjściowego (szacunek).
                     </div>
                   )}
-                  {D.drinks > 10 && (
-                    <div style={{ fontSize: 11.5, color: M.org, fontStyle: 'italic', marginTop: -16, marginBottom: 24, lineHeight: 1.5 }}>
-                      {D.drinks}+ drinków regularnie. Wątroba potrzebuje ~72h na pełną regenerację. Przy 2+ weekendach - nigdy nie wraca do poziomu wyjściowego.
+                  {/* Poniedziałek po weekendzie - combo: mondayFeel + weekendWork (v2, ożywia 2 martwe pola) */}
+                  <div style={{ marginBottom: 26, marginTop: 4 }}>
+                    <div style={{ fontSize: 15, color: M.t1, fontWeight: 500, marginBottom: 8, lineHeight: 1.45 }}>
+                      Kiedy po weekendzie sen, energia i głowa wracają do normy?<span style={{ display: 'block', fontSize: 12.5, color: M.t3, marginTop: 4, fontWeight: 400 }}>Żeby było jak w środku tygodnia.</span>
                     </div>
-                  )}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                      {([
+                        ['Od poniedziałkowego rana', 0, 0],
+                        ['W poniedziałek po południu', 1, 1],
+                        ['Dopiero we wtorek', 2, 1],
+                        ['W środę albo później', 3, 2],
+                      ] as [string, number, number][]).map(([l, mf, ww], i) => {
+                        const on = D.mondayFeel === mf && D.weekendWork === ww;
+                        return (
+                          <button key={i} onClick={() => { upd('mondayFeel', mf); upd('weekendWork', ww); }} style={{
+                            padding: '13px 14px', textAlign: 'left',
+                            border: `1.5px solid ${on ? M.gold : M.brd2}`,
+                            background: on ? M.gold + '12' : M.s1,
+                            color: on ? M.t1 : M.t3,
+                            cursor: 'pointer', borderRadius: 12, transition: 'all .2s ease',
+                            fontSize: 13.5, fontWeight: 600, fontFamily: M.sans, lineHeight: 1.4,
+                          }}>
+                            {l}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
                 </div>
               )}
 
@@ -2130,12 +2791,37 @@ export default function Page() {
                 <div className="fade-up">
                   {/* Micro-reward: insight z poprzedniej sekcji */}
                   <div style={{ borderLeft: `3px solid ${M.gold}`, padding: '8px 12px', marginBottom: 20, background: `${M.gold}08`, borderRadius: '0 8px 8px 0', maxWidth: '100%', margin: '0 auto 20px' }}>
-                    <p style={{ fontSize: 12, color: M.t3, margin: 0, lineHeight: 1.5, textAlign: 'center' }}>Twój weekend: <strong style={{ color: M.gold }}>{(D.cash * D.wknd).toLocaleString('pl-PL')} zł</strong> z konta {D.drinks > 5 ? <>+ <strong style={{ color: M.gold }}>{Math.round(D.drinks * 3.4)}%</strong> spadku T po każdym</> : 'miesięcznie'}. Rok = <strong style={{ color: M.gold }}>{(D.cash * D.wknd * 12).toLocaleString('pl-PL')} zł</strong> z kasy.</p>
+                    <p style={{ fontSize: 12, color: M.t3, margin: 0, lineHeight: 1.5, textAlign: 'center' }}>Twój weekend: <strong style={{ color: M.gold }}>{(D.cash * D.wknd).toLocaleString('pl-PL')} zł</strong> z konta {D.drinks > 5 ? <>+ <strong style={{ color: M.gold }}>mocna presja na testosteron</strong> po każdym</> : 'miesięcznie'}. Rok = <strong style={{ color: M.gold }}>{(D.cash * D.wknd * 12).toLocaleString('pl-PL')} zł</strong> z kasy.</p>
                   </div>
-                  <Slider label="Ile płacisz za siłownię miesięcznie?" min={0} max={500} step={50} k="gym" val={D.gym} unit=" zł" ariaLabel="Miesięczny koszt siłowni w złotych" />
-                  <Slider label="Ile treningów planujesz tygodniowo?" min={0} max={7} step={1} k="plan" val={D.plan} unit="" ariaLabel="Liczba planowanych treningów w tygodniu" />
-                  <Slider label="Ile odpuszczasz bo zmęczenie, kac, brak motywacji?" min={0} max={4} step={1} k="miss" val={D.miss} unit="" note={`Tracisz: ${D.miss * 4 * 6} treningów w 6 mies.`} ariaLabel="Liczba treningów opuszczanych tygodniowo przez zmęczenie lub kaca" />
+                  {/* Koszt siłowni usunięty: podbijał rachunek, nie pomagał dobrać prowadzenia. */}
+                  <div style={{ fontSize: 15, color: M.t1, fontWeight: 600, marginBottom: 4 }}>Plan vs życie</div>
+                  <div style={{ fontSize: 12.5, color: M.t3, marginBottom: 16 }}>Dwie liczby, między którymi mieszka cała prawda o Twojej formie. Zero treningów to też odpowiedź.</div>
+                  <Slider label="Ile treningów w tygodniu sobie zakładasz?" min={0} max={7} step={1} k="plan" val={D.plan} unit="" ariaLabel="Liczba planowanych treningów w tygodniu" />
+                  <Slider label="Ile z nich zwykle wypada przez zmęczenie, brak czasu, rozsypany tydzień?" min={0} max={Math.max(D.plan, 0)} step={1} k="miss" val={D.miss} unit="" note={D.plan > 0 ? `Nie policzy się więcej, niż planujesz (${D.plan}/tydz).` : 'Najpierw ustaw, ile planujesz.'} ariaLabel="Liczba treningów, które wypadają tygodniowo" />
                   <Slider label="Od ilu lat trenujesz?" min={0} max={15} step={1} k="trainYears" val={D.trainYears} unit=" lat" ariaLabel="Liczba lat treningu" />
+                  {/* trainHappy - emocjonalny closer sekcji (v2, ożywia najgęściej wpięte martwe pole) */}
+                  <div style={{ marginBottom: 26 }}>
+                    <div style={{ fontSize: 15, color: M.t1, fontWeight: 500, marginBottom: 8, lineHeight: 1.45 }}>
+                      Widać po Tobie te lata treningu?<span style={{ display: 'block', fontSize: 12.5, color: M.t3, marginTop: 4, fontWeight: 400 }}>Szczerze. Nikt tego nie widzi poza Tobą.</span>
+                    </div>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2,1fr)', gap: 10 }}>
+                      {[{ l: 'Tak, jestem zadowolony', v: 0 }, { l: 'Częściowo, powinno być lepiej', v: 1 }, { l: 'Nie, wkładam dużo więcej niż widać', v: 2 }, { l: 'Dopiero zaczynam, za wcześnie oceniać', v: 3 }].map(o => {
+                        const on = D.trainHappy === o.v;
+                        const col = o.v === 0 ? M.grn : o.v === 1 ? M.yel : o.v === 2 ? M.red : M.t3;
+                        return (
+                          <button key={o.v} onClick={() => upd('trainHappy', o.v)} style={{
+                            padding: '14px 4px', textAlign: 'center',
+                            border: `1.5px solid ${on ? M.gold : M.brd2}`,
+                            background: on ? M.gold + '0e' : M.s1,
+                            cursor: 'pointer', borderRadius: 12, transition: 'border-color .2s ease, background .2s ease',
+                            minHeight: 52,
+                          }}>
+                            <span style={{ fontSize: 11.5, fontWeight: 600, color: on ? col : M.t4, letterSpacing: 0.4 }}>{o.l}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
                 </div>
               )}
 
@@ -2143,30 +2829,36 @@ export default function Page() {
                 <div className="fade-up">
                   {/* Micro-reward: insight z poprzedniej sekcji */}
                   <div style={{ borderLeft: `3px solid ${M.gold}`, padding: '8px 12px', marginBottom: 20, background: `${M.gold}08`, borderRadius: '0 8px 8px 0', maxWidth: '100%', margin: '0 auto 20px' }}>
-                    <p style={{ fontSize: 12, color: M.t3, margin: 0, lineHeight: 1.5, textAlign: 'center' }}>Tracisz <strong style={{ color: M.gold }}>{D.miss * 4 * 6}</strong> treningów = <strong style={{ color: M.gold }}>{(D.miss * 4 * 6 * (D.gym / 16 || 25)).toLocaleString('pl-PL', { maximumFractionDigits: 0 })} zł</strong> karnetu w błotem. Plus rok stagnacji formy.</p>
+                    <p style={{ fontSize: 12, color: M.t3, margin: 0, lineHeight: 1.5, textAlign: 'center' }}>Przy tym rytmie w rok wypada Ci <strong style={{ color: M.gold }}>{D.miss * 4 * 12}</strong> treningów. Nie z braku karnetu, z rozsypanego tygodnia.</p>
                   </div>
-                  <div style={{ fontSize: 15, color: M.t2, fontWeight: 500, marginBottom: 18, lineHeight: 1.5 }}>Zaznacz każdy objaw który masz w tym tygodniu.</div>
+                  {/* Poranny wzwod - marker hormonalny z narzedzia hormonow (mocny kwalifikator, pytany wprost) */}
+                  <div style={{ marginBottom: 24 }}>
+                    <div style={{ fontSize: 15, color: M.t1, fontWeight: 500, marginBottom: 8, lineHeight: 1.45 }}>
+                      Opcjonalnie: jak często w ostatnich 4 tygodniach zdarzał się poranny wzwód?
+                      <span style={{ display: 'block', fontSize: 12.5, color: M.t3, marginTop: 4, fontWeight: 400 }}>Jeden z kilku sygnałów snu i zdrowia seksualnego. Sam nie mówi, jaki masz testosteron. Możesz pominąć.</span>
+                    </div>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 8 }}>
+                      {([['4+ razy w tygodniu', 0], ['1-3 razy w tygodniu', 1], ['Rzadziej', 2]] as [string, number][]).map(([l, v]) => {
+                        const on = D.morningWood === v;
+                        return (
+                          <button key={v} onClick={() => upd('morningWood', v)} style={{ padding: '13px 4px', textAlign: 'center', border: `1.5px solid ${on ? M.gold : M.brd2}`, background: on ? M.gold + '0e' : M.s1, color: on ? M.t1 : M.t4, cursor: 'pointer', borderRadius: 10, transition: 'border-color .2s ease, background .2s ease', fontSize: 12, fontWeight: 600, fontFamily: M.sans, lineHeight: 1.3, minHeight: 48 }}>{l}</button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                  <div style={{ fontSize: 15, color: M.t2, fontWeight: 500, marginBottom: 6, lineHeight: 1.5 }}>Które sygnały przeszkadzały Ci najbardziej w ostatnich tygodniach?</div>
+                  <div style={{ fontSize: 12.5, color: M.t4, marginBottom: 16, lineHeight: 1.5 }}>Wybierz maksymalnie 3. {D.tags.size}/3 zaznaczone. Objawy czysto medyczne (bóle głowy, stawy, tętno) omawia się z lekarzem, nie zalicza do wyniku.</div>
                   {([
-                    ['fatigue', 'Zmęczony mimo 8h snu. Kawa nie pomaga.'],
-                    ['mood', 'Wahania nastroju. Z 0 do 100 bez powodu.'],
-                    ['libido', 'Libido spadło. Mniej chęci, mniej myśli o seksie.'],
-                    ['belly', 'Brzuch nie schodzi mimo treningu i diety.'],
-                    ['brain', 'Mgła mózgowa. Czytasz zdanie 3 razy.'],
-                    ['anxiety', 'Niepokój bez powodu. Myśli kręcą się w kółko.'],
-                    ['joints', 'Stawy bolą. Kolana, barki, łokcie.'],
-                    ['skin', 'Cera gorsza niż kiedyś. Wypryski, suchość.'],
-                    ['motivation', 'Zero motywacji. Robisz minimum.'],
-                    ['digest', 'Wzdęcia, problemy z trawieniem.'],
-                    ['cravings', 'Wieczorny głód na słodycze albo fast food.'],
-                    ['recovery', 'Po treningu boli 3+ dni. Kiedyś było szybciej.'],
-                    ['focus', '20 minut skupienia i głowa odpływa.'],
-                    ['headaches', 'Bóle głowy co kilka dni.'],
-                    ['sweating', 'Nocne poty. Budzisz się mokry.'],
-                    ['heartRate', 'Tętno spoczynkowe powyżej 75 bpm.'],
-                    ['procrastination', 'Odkładasz rzeczy na później. Codziennie.'],
-                    ['impatience', 'Nie wytrzymujesz w kolejce. Irytuje Cię wszystko.'],
-                    ['memory', 'Zapominasz o czym myślałeś 5 sekund temu.'],
-                    ['confidence', 'Mniej pewny siebie niż rok temu.'],
+                    ['fatigue', 'Zmęczenie mimo wystarczającej liczby godzin snu.'],
+                    ['focus', 'Trudność z utrzymaniem skupienia.'],
+                    ['cravings', 'Wieczorne jedzenie bez kontroli, głód na słodkie.'],
+                    ['belly', 'Brak efektów sylwetkowych mimo regularnych prób.'],
+                    ['recovery', 'Wolniejsza regeneracja po treningu.'],
+                    ['libido', 'Spadek libido albo zainteresowania seksem.'],
+                    ['anxiety', 'Napięcie i rozdrażnienie, które nie schodzą wieczorem.'],
+                    ['digest', 'Problemy z trawieniem albo częste wzdęcia.'],
+                    ['motivation', 'Napęd siada, robisz tylko minimum.'],
+                    ['confidence', 'Mniej pewny siebie niż rok temu, unikasz luster.'],
                   ] as [ChipKey, string][]).map(([k, l]) => <Chip key={k} t={k} label={l} />)}
                 </div>
               )}
@@ -2175,26 +2867,25 @@ export default function Page() {
                 <div className="fade-up">
                   {/* Micro-reward: insight z poprzedniej sekcji */}
                   <div style={{ borderLeft: `3px solid ${M.gold}`, padding: '8px 12px', marginBottom: 20, background: `${M.gold}08`, borderRadius: '0 8px 8px 0', maxWidth: '100%', margin: '0 auto 20px' }}>
-                    <p style={{ fontSize: 12, color: M.t3, margin: 0, lineHeight: 1.5, textAlign: 'center' }}>Zaznaczono <strong style={{ color: M.gold }}>{D.tags.size}</strong> objawów. Każdy zjada ~<strong style={{ color: M.gold }}>400 zł</strong> w 6 miesięcy: ~<strong style={{ color: M.gold }}>{(D.tags.size * 400).toLocaleString('pl-PL')} zł</strong> niewidzialnego kosztu.</p>
+                    <p style={{ fontSize: 12, color: M.t3, margin: 0, lineHeight: 1.5, textAlign: 'center' }}>Zaznaczyłeś <strong style={{ color: M.gold }}>{D.tags.size}</strong> {D.tags.size === 1 ? 'sygnał' : 'sygnałów'}. Bez liczenia ich na złotówki: to lista tego, co ciągnie Cię w dół każdego dnia.</p>
                   </div>
                   <div style={{ fontSize: 13.5, color: M.t3, fontWeight: 400, marginBottom: 20, lineHeight: 1.6 }}>Ostatnia sekcja. 60 sekund i masz liczby.</div>
                   {/* Próby zmiany */}
                   <div style={{ marginBottom: 26 }}>
                     <div style={{ fontSize: 15, color: M.t1, fontWeight: 500, marginBottom: 6, lineHeight: 1.45 }}>
-                      Próby zmiany<span style={{ display: 'block', fontSize: 12.5, color: M.t3, marginTop: 4, fontWeight: 400 }}>Ile razy zaczynałeś „od poniedziałku” i odpuszczałeś?</span>
+                      Próby zmiany<span style={{ display: 'block', fontSize: 12.5, color: M.t3, marginTop: 4, fontWeight: 400 }}>Ile razy w ostatnich 12 miesiącach zaczynałeś plan, który wytrzymał krócej niż 4 tygodnie?</span>
                     </div>
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 10 }}>
-                      {[{ n: '0', l: 'Nie', v: 0 }, { n: '1', l: 'Raz-dwa', v: 1 }, { n: '2', l: 'Wiele razy', v: 2 }].map(o => {
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2,1fr)', gap: 10 }}>
+                      {[{ n: '0', l: 'Ani razu', v: 0 }, { n: '1-2', l: 'razy', v: 1 }, { n: '3-4', l: 'razy', v: 2 }, { n: '5+', l: 'razy', v: 3 }].map(o => {
                         const on = D.triedBefore === o.v;
-                        const col = o.v === 0 ? M.t4 : o.v === 1 ? M.yel : M.org;
+                        const col = o.v === 0 ? M.t4 : o.v === 1 ? M.yel : o.v === 2 ? M.org : M.red;
                         return (
                           <button key={o.v} onClick={() => upd('triedBefore', o.v)} style={{
                             padding: '16px 4px', textAlign: 'center',
-                            border: `1.5px solid ${on ? col : M.brd2}`,
-                            background: on ? col + '12' : M.s1,
-                            cursor: 'pointer', borderRadius: 12, transition: 'all .25s ease',
-                            transform: on ? 'scale(1.03)' : 'scale(1)', minHeight: 58,
-                            boxShadow: on ? `0 0 14px ${col}25` : 'none',
+                            border: `1.5px solid ${on ? M.gold : M.brd2}`,
+                            background: on ? M.gold + '0e' : M.s1,
+                            cursor: 'pointer', borderRadius: 12, transition: 'border-color .2s ease, background .2s ease',
+                            minHeight: 58,
                           }}>
                             <span style={{ fontSize: 20, fontWeight: 700, display: 'block', marginBottom: 4, color: on ? col : M.t3 }}>{o.n}</span>
                             <span style={{ fontSize: 11, fontWeight: 600, color: on ? col : M.t4, textTransform: 'uppercase', letterSpacing: 0.8 }}>{o.l}</span>
@@ -2203,14 +2894,61 @@ export default function Page() {
                       })}
                     </div>
                   </div>
+                  {/* Odkładane decyzje - scena, nie deklaracja (dowód wolnej głowy do wyniku i DM) */}
+                  <div style={{ marginBottom: 26 }}>
+                    <div style={{ fontSize: 15, color: M.t1, fontWeight: 500, marginBottom: 8, lineHeight: 1.45 }}>
+                      W ostatnim tygodniu: ile ważnych rzeczy odłożyłeś, bo nie miałeś głowy, chociaż czas teoretycznie był?
+                    </div>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 8 }}>
+                      {([['0', 0], ['1-2', 1], ['3-5', 2], ['Codziennie coś wisi', 3]] as [string, number][]).map(([l, v]) => {
+                        const on = D.defer === v;
+                        return (
+                          <button key={v} onClick={() => upd('defer', v)} style={{
+                            padding: '13px 4px', textAlign: 'center',
+                            border: `1.5px solid ${on ? M.gold : M.brd2}`,
+                            background: on ? M.gold + '0e' : M.s1,
+                            cursor: 'pointer', borderRadius: 10, transition: 'border-color .2s ease, background .2s ease',
+                            fontSize: 11.5, fontWeight: 600, color: on ? M.t1 : M.t4, fontFamily: M.sans, lineHeight: 1.3, minHeight: 50,
+                          }}>
+                            {l}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Odpuszczona rozmowa - pewność siebie przez scenę wycofania (omija filtr self-reportu) */}
+                  <div style={{ marginBottom: 26 }}>
+                    <div style={{ fontSize: 15, color: M.t1, fontWeight: 500, marginBottom: 8, lineHeight: 1.45 }}>
+                      Kiedy ostatnio odpuściłeś ważną rozmowę, na której Ci zależało, bo nie miałeś na nią głowy?
+                    </div>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+                      {([['W tym tygodniu', 0], ['W tym miesiącu', 1], ['Dawno, nie pamiętam', 2], ['Ciągle tak mam', 3]] as [string, number][]).map(([l, v]) => {
+                        const on = D.retreat === v;
+                        return (
+                          <button key={v} onClick={() => upd('retreat', v)} style={{
+                            padding: '12px 10px', textAlign: 'left',
+                            border: `1.5px solid ${on ? M.gold : M.brd2}`,
+                            background: on ? M.gold + '0e' : M.s1,
+                            color: on ? M.t1 : M.t3,
+                            cursor: 'pointer', borderRadius: 10, transition: 'border-color .2s ease, background .2s ease',
+                            fontSize: 12.5, fontWeight: 600, fontFamily: M.sans, lineHeight: 1.35, minHeight: 48,
+                          }}>
+                            {l}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
                   {/* Pytania otwarte - climax sekcji, dane jakościowe (własne słowa leada) */}
                   <div style={{ borderTop: `1px solid ${M.brd}`, paddingTop: 22, marginTop: 4 }}>
                     <div style={{ fontSize: 13, color: M.gold, fontFamily: M.mono, letterSpacing: 0.5, marginBottom: 4 }}>OSTATNIE TRZY. TWOIMI SŁOWAMI.</div>
                     <div style={{ fontSize: 13.5, color: M.t3, fontWeight: 400, marginBottom: 20, lineHeight: 1.6 }}>Liczby już mam. Teraz chcę usłyszeć Ciebie. To z tego czytam najwięcej.</div>
                     {[
                       { v: pain, set: setPain, label: 'Co Cię w tym wszystkim najbardziej wkurwia?', sub: 'Jedno zdanie, własnymi słowami. Bez ładnego pisania.', ph: 'np. budzę się zmęczony i wieczorem znowu nie mam na nic siły...' },
-                      { v: trigger, set: setTrigger, label: 'Czemu akurat teraz to sprawdzasz?', sub: 'Coś pękło, coś się zadziało? Napisz krótko.', ph: 'np. zobaczyłem zdjęcie z wakacji...' },
-                      { v: selfDx, set: setSelfDx, label: 'Jak myślisz, co Cię trzyma w miejscu?', sub: 'Za chwilę zobaczysz, czy trafiłeś.', ph: 'np. brak konsekwencji, weekendy, robota...' },
+                      { v: trigger, set: setTrigger, label: 'Co się musiało wydarzyć, że sprawdzasz to dziś, a nie za miesiąc?', sub: 'Zdjęcie, impreza, badania, czyjś tekst. Jedna scena.', ph: 'np. zobaczyłem zdjęcie z wakacji...' },
+                      { v: selfDx, set: setSelfDx, label: 'Czego już próbowałeś i w którym momencie zwykle się to rozsypywało?', sub: 'Jedna rzecz, która miała pomóc, i moment, w którym przestawała działać.', ph: 'np. dieta trzymała 2 tygodnie, potem weekend i koniec...' },
                     ].map((q, i) => (
                       <div key={i} style={{ marginBottom: 22 }}>
                         <div style={{ fontSize: 15, color: M.t1, fontWeight: 500, marginBottom: 8, lineHeight: 1.45 }}>
@@ -2242,12 +2980,12 @@ export default function Page() {
                     onClick={back}
                     aria-label="Poprzednia sekcja"
                     style={{
-                      flex: 1, padding: 16, background: M.s1, color: M.t3,
-                      border: `1.5px solid ${M.brd2}`, fontSize: 14, fontWeight: 600,
-                      cursor: 'pointer', borderRadius: 12, minHeight: 48,
+                      flex: 1, padding: 16, background: 'transparent', color: M.t4,
+                      border: `1px solid ${M.brd2}`, fontSize: 13.5, fontWeight: 600,
+                      cursor: 'pointer', borderRadius: 12, minHeight: 50,
                     }}
                   >
-                    Wstecz
+                    &larr; Wstecz
                   </button>
                 )}
                 <button
@@ -2258,13 +2996,12 @@ export default function Page() {
                     flex: 2, padding: '16px 32px',
                     background: `linear-gradient(135deg, #c8a84e, #a08a3e)`,
                     color: '#0a0a0a',
-                    border: 'none', fontFamily: M.sans, fontSize: 15, fontWeight: 700,
-                    textTransform: 'uppercase', letterSpacing: 2.5, cursor: 'pointer', borderRadius: 12,
-                    minHeight: 48,
-                    boxShadow: '0 4px 20px rgba(200,168,78,0.2)',
+                    border: 'none', fontFamily: M.sans, fontSize: 14, fontWeight: 800,
+                    textTransform: 'uppercase', letterSpacing: 1.2, cursor: 'pointer', borderRadius: 12,
+                    minHeight: 50,
                   }}
                 >
-                  {sec === SECTIONS.length - 1 ? 'Pokaż raport' : 'Dalej'}
+                  {sec === SECTIONS.length - 1 ? 'Pokaż raport' : 'Dalej →'}
                 </button>
               </div>
             </div>
@@ -2307,10 +3044,10 @@ export default function Page() {
                 borderRadius: 16,
               }}>
                 <h2 style={{ fontSize: 22, fontWeight: 800, lineHeight: 1.25, letterSpacing: -0.5, marginBottom: 10, color: M.t1, textShadow: '0 0 20px rgba(255,255,255,.1)' }}>
-                  {SC >= 60 ? 'Plasujesz się niżej niż 4 z 5 facetów w Twoim wieku.' : SC >= 40 ? 'Wynik średni. Większość Twoich rówieśników płaci taką samą cenę i nawet o tym nie wie.' : 'Baza trzyma. Brakuje 2-3 ruchów żeby zostawić rówieśników w tyle.'}
+                  {SC >= 60 ? 'Twój tydzień pracuje mocno przeciwko Tobie. Dobra wiadomość: większość tego to styl życia, nie geny.' : SC >= 40 ? 'Wynik średni. Kilka miejsc cieknie po cichu i łatwo je przegapić.' : 'Baza trzyma. Brakuje 2-3 ruchów, żeby zrobić realną różnicę.'}
                 </h2>
                 <p style={{ fontSize: 14, color: M.t3, lineHeight: 1.6, marginBottom: 24, fontWeight: 400 }}>
-                  Pełny raport pokazuje <strong style={{ color: M.t1 }}>szacunkowy wiek mózgu, hormony do sprawdzenia i priorytet nr 1</strong> od razu na ekranie. Email zostaje u mnie. Jak widzę że pasujemy, odzywam się w DM.
+                  Pełny raport pokazuje <strong style={{ color: M.t1 }}>gdzie i kiedy pęka Twój tydzień, sygnały do sprawdzenia i priorytet nr 1</strong> od razu na ekranie. Email zostaje u mnie. Jak widzę że pasujemy, odzywam się w DM.
                 </p>
 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 10, textAlign: 'left' }}>
@@ -2397,6 +3134,47 @@ export default function Page() {
               </div>
             </div>
 
+            {/* ═══ KOTWICA ROCZNA - realny wydatek (podany przez usera) + czas na pół mocy. Zero zmyślonej pensji/podwyżki. ═══ */}
+            {(() => {
+              const ar = anchorRok(D);
+              // Pokaż tylko gdy jest z czego: realny wydatek >= 3000 zł albo wyraźny czas (>= 5 dni)
+              if (ar.hardYear < 3000 && ar.dni < 5) return null;
+              const dowod = D.defer >= 2 || D.binge >= 3;
+              return (
+                <Reveal delay={70}>
+                  <div style={{ padding: '28px 20px 24px', marginBottom: 16, borderRadius: 16, width: '100%', boxSizing: 'border-box', background: `linear-gradient(160deg, #141210, ${M.gold}0a)`, border: `1px solid ${M.gold}45`, boxShadow: `0 0 44px ${M.gold}0d` }}>
+                    <div style={{ fontFamily: M.mono, fontSize: 10, letterSpacing: 3, textTransform: 'uppercase', color: M.gold, fontWeight: 700, marginBottom: 14 }}>Rachunek roku · z Twoich odpowiedzi</div>
+                    <div style={{ fontFamily: M.serif, fontSize: 'clamp(28px, 7.5vw, 38px)', color: M.t1, lineHeight: 1.12, marginBottom: 4 }}>
+                      Około <em style={{ fontStyle: 'italic', color: M.gold }}>{ar.dni} dni roboczych</em> w roku
+                    </div>
+                    <p style={{ fontSize: 14.5, color: M.t2, lineHeight: 1.6, marginBottom: 16 }}>
+                      siedzisz przy biurku, ale Cię tam nie ma. Głowa mieli wszystko poza tym, co masz zrobić.
+                    </p>
+                    <div style={{ marginBottom: 14 }}>
+                      {ar.hours > 0 && (
+                        <div style={{ display: 'flex', gap: 10, alignItems: 'baseline', padding: '7px 0', borderBottom: ar.hardYear >= 3000 ? `1px solid ${M.brd}` : 'none' }}>
+                          <span style={{ fontFamily: M.mono, fontSize: 13.5, fontWeight: 700, color: M.org, whiteSpace: 'nowrap', fontVariantNumeric: 'tabular-nums' }}>~{ar.hours} h</span>
+                          <span style={{ fontSize: 12.5, color: M.t3, lineHeight: 1.45 }}>na pół mocy w roku, czyli około {ar.dni} dni roboczych obok własnej roboty</span>
+                        </div>
+                      )}
+                      {ar.hardYear >= 3000 && (
+                        <div style={{ display: 'flex', gap: 10, alignItems: 'baseline', padding: '7px 0' }}>
+                          <span style={{ fontFamily: M.mono, fontSize: 13.5, fontWeight: 700, color: M.t2, whiteSpace: 'nowrap', fontVariantNumeric: 'tabular-nums' }}>{ar.hardYear.toLocaleString('pl-PL')} zł</span>
+                          <span style={{ fontSize: 12.5, color: M.t3, lineHeight: 1.45 }}>na wyjścia i dowozy, tyle sam podałeś (i to jest okej)</span>
+                        </div>
+                      )}
+                    </div>
+                    <p style={{ fontSize: 11.5, color: M.t4, lineHeight: 1.55, fontStyle: 'italic', marginBottom: 16 }}>
+                      Czas liczony ostrożnie: rok roboczy to 220 dni, nie 365. Żadnej zmyślonej utraconej pensji.
+                    </p>
+                    <p style={{ fontSize: 15, color: M.t2, lineHeight: 1.7, margin: 0 }}>
+                      Na wyjścia wydawaj ile chcesz, to Twoje życie i nie zabieram Ci go. Tylko że dziś <strong style={{ color: M.t1 }}>płacisz za weekend dwa razy: raz kartą, raz dniami, w których się zbierasz.</strong> To się skraca, a piątek zostaje piątkiem.{dowod ? ' Zresztą sam to zaznaczyłeś minutę temu.' : ''}
+                    </p>
+                  </div>
+                </Reveal>
+              );
+            })()}
+
             {/* ═══ SCREEN 1: WOW MOMENT - 3 metryki DUŻE + brain insight + before/after ═══ */}
             <Reveal delay={80}>
               <div style={{
@@ -2414,67 +3192,327 @@ export default function Page() {
                     const imieD = imie.trim() ? capName(imie.trim()) : 'Stary';
                     // Top 3 najgorszych kategorii (wyciek tygodnia)
                     const top3 = [...catScores].sort((a, b) => a.pct - b.pct).slice(0, 3).map(c => c.label.toLowerCase());
+                    const w0full = [...catScores].sort((a, b) => a.pct - b.pct)[0]?.label || '';
+                    const hourStr = hourRange(D);
+                    const hasWindow = D.breakWindow >= 0 && D.breakWindow <= 5; // 6 = brak stałej pory → nie rysujemy znacznika
+                    const hourPos = breakPos(D);
+                    const hourLabelPos = Math.min(Math.max(hourPos, 10), 86);
                     return (
                       <>
-                        <h2 style={{ fontSize: 26, fontWeight: 900, lineHeight: 1.12, letterSpacing: '-0.01em', color: M.t1, marginBottom: 8, textAlign: 'left' }}>
-                          {imieD}, tu nie brakuje planu.<br/>
-                          <span style={{ color: M.gold }}>Tu wycieka tydzień.</span>
+                        <div style={{ fontFamily: M.mono, fontSize: 10, letterSpacing: 2.5, textTransform: 'uppercase', color: M.gold, fontWeight: 700, marginBottom: 12, textAlign: 'left' }}>
+                          Twój wynik
+                        </div>
+                        <h2 style={{ fontFamily: M.serif, fontSize: 'clamp(32px, 8.5vw, 52px)', fontWeight: 400, lineHeight: 1.06, letterSpacing: '-0.01em', color: M.t1, marginBottom: 12, textAlign: 'left' }}>
+                          {good
+                            ? <>Twój tydzień <em style={{ fontStyle: 'italic', color: M.gold }}>trzyma się mocno.</em></>
+                            : <>Twój tydzień pęka <em style={{ fontStyle: 'italic', color: M.gold }}>{hourStr}.</em></>}
                         </h2>
-                        <p style={{ fontSize: 14, color: M.t3, lineHeight: 1.55, marginBottom: 22, textAlign: 'left' }}>
-                          Największy wyciek: <strong style={{ color: M.t1 }}>{top3.join(' + ')}</strong>.
+                        <p style={{ fontSize: 14.5, color: M.t3, lineHeight: 1.6, marginBottom: 20, textAlign: 'left' }}>
+                          {good
+                            ? <>{imieD !== 'Stary' ? `${imieD}, to` : 'To'} solidna baza. Większość Twoich odpowiedzi wygląda dobrze. Zostają drobiazgi do dopięcia, nie naprawa.</>
+                            : <>{hasWindow ? 'O tej porze najczęściej tracisz ster.' : 'Rozsypuje się różnie, więc tym bardziej trzeba go poukładać.'} {imieD !== 'Stary' ? `${imieD}, tu` : 'Tu'} nie brakuje planu. Tu wycieka tydzień: <strong style={{ color: M.t1 }}>{top3.join(' + ')}</strong>.</>}
                         </p>
+
+                        {/* DOBA: oś 0-24h z pęknięciem o JEGO godzinie (sygnatura wizualna, personalizowana pozycją) */}
+                        <div style={{ margin: '4px 0 26px' }}>
+                          <div style={{ position: 'relative', height: 40 }}>
+                            <div style={{ position: 'absolute', left: 0, right: 0, top: 19, height: 3, borderRadius: 2, background: `linear-gradient(90deg, ${M.s3} 0%, ${M.s3} ${Math.max(hourPos - 24, 0)}%, rgba(232,146,58,0.5) ${Math.max(hourPos - 9, 0)}%, ${M.red} ${hourPos}%, ${M.s3} ${Math.min(hourPos + 6, 100)}%, ${M.s3} 100%)` }} />
+                            {[0, 6, 12, 18, 24].map(h => (
+                              <span key={h} style={{ position: 'absolute', top: 27, left: `${(h / 24) * 100}%`, transform: h === 0 ? 'none' : h === 24 ? 'translateX(-100%)' : 'translateX(-50%)', fontFamily: M.mono, fontSize: 8.5, color: M.t4, letterSpacing: 0.5 }}>{h}:00</span>
+                            ))}
+                            {hasWindow && !good && <>
+                            <span style={{ position: 'absolute', top: 10, left: `calc(${hourPos}% - 1.5px)`, width: 3, height: 21, borderRadius: 2, background: M.red, boxShadow: '0 0 12px rgba(220,68,68,.65)' }} />
+                            <span style={{ position: 'absolute', top: 0, left: `${hourLabelPos}%`, transform: 'translateX(-50%)', fontFamily: M.mono, fontSize: 9, fontWeight: 800, letterSpacing: 1.5, color: M.red, whiteSpace: 'nowrap' }}>TU PĘKASZ</span>
+                            </>}
+                          </div>
+                        </div>
 
                         {/* LICZBA jako dowod */}
                         <div className="diag-verdict-num" style={{ fontFamily: M.mono, fontSize: 'clamp(64px, 18vw, 120px)', fontWeight: 900, lineHeight: .9, letterSpacing: '-0.03em', marginBottom: 4 }}>
                           {countersActive ? animScore : SC}<span style={{ fontSize: '0.45em', color: M.t4, fontWeight: 700 }}>/100</span>
                         </div>
-                        <div style={{ fontFamily: M.mono, fontSize: 11, letterSpacing: 2.5, textTransform: 'uppercase', color: M.t4, marginBottom: 16, fontWeight: 700 }}>Indeks przeciążenia tygodnia</div>
+                        <div style={{ fontFamily: M.mono, fontSize: 11, letterSpacing: 2.5, textTransform: 'uppercase', color: M.t4, marginBottom: 14, fontWeight: 700 }}>Indeks przeciążenia tygodnia</div>
+                        {/* Payoff hero: „największy hamulec" + koszt tygodnia (promise-payoff match z landingiem) */}
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, justifyContent: 'center', marginBottom: lastRes && (Date.now() - lastRes.ts) > 3600000 ? 8 : 16 }}>
+                          <span style={{ fontFamily: M.mono, fontSize: 11.5, color: M.t2, padding: '6px 12px', borderRadius: 8, background: M.s1, border: `1px solid ${M.brd2}` }}>
+                            {good ? 'Najmocniej' : 'Największy hamulec'}: <strong style={{ color: M.gold }}>{good ? ([...catScores].sort((a, b) => b.pct - a.pct)[0]?.label || 'Sen') : (w0full || 'Sen')}</strong>
+                          </span>
+                          <span style={{ fontFamily: M.mono, fontSize: 11.5, color: M.t2, padding: '6px 12px', borderRadius: 8, background: M.s1, border: `1px solid ${M.brd2}` }}>
+                            Koszt tygodnia: <strong style={{ color: SC >= 60 ? M.red : SC >= 40 ? M.org : M.grn }}>{SC >= 60 ? 'wysoki' : SC >= 40 ? 'średni' : 'niski'}</strong>
+                          </span>
+                        </div>
+                        {lastRes && (Date.now() - lastRes.ts) > 3600000 && (
+                          <div style={{ fontFamily: M.mono, fontSize: 11.5, color: lastRes.score > SC ? M.grn : lastRes.score < SC ? M.red : M.t4, marginBottom: 16, fontVariantNumeric: 'tabular-nums' }}>
+                            poprzednio {lastRes.score}/100 &rarr; dziś {SC}/100 {lastRes.score > SC ? '(lepiej)' : lastRes.score < SC ? '(gorzej)' : '(bez zmian)'}
+                          </div>
+                        )}
 
-                        {bioAge > D.age + 1 && (
+                        {SC >= 55 && (
                           <div style={{ fontSize: 14, color: M.t2, lineHeight: 1.55, marginBottom: 12, textAlign: 'left' }}>
-                            Masz <strong style={{ color: M.t1 }}>{D.age}</strong>. Ale z odpowiedzi wychodzi, że <strong style={{ color: M.org }}>Twój tydzień działa jak dużo starsza, bardziej zmęczona wersja Ciebie.</strong>
+                            Masz <strong style={{ color: M.t1 }}>{D.age}</strong> lat, a z odpowiedzi wychodzi tydzień, w którym <strong style={{ color: M.org }}>bierzesz z siebie więcej, niż oddajesz</strong>. I robisz tak od miesięcy, nie od wczoraj.
                           </div>
                         )}
 
                         {/* Dyskretny disclaimer */}
                         <div style={{ fontSize: 10.5, color: M.t4, lineHeight: 1.45, fontStyle: 'italic', marginBottom: 14, opacity: 0.8, textAlign: 'left' }}>
-                          Szacunek z Twoich odpowiedzi, nie diagnoza lekarska.
+                          Policzone z Twoich odpowiedzi, nie z badań krwi.
                         </div>
 
                         {/* ── W praktyce - ludzkie, nie AI-scenka ── */}
                         {losYears >= 3 && (
                           <div style={{ fontSize: 13.5, color: M.t3, lineHeight: 1.6, marginBottom: 18, padding: '11px 14px', background: 'rgba(220,68,68,0.05)', border: '1px solid rgba(220,68,68,0.15)', borderRadius: 8, textAlign: 'left' }}>
-                            W praktyce: rano udajesz, że jest okej, po 14:00 lecisz na resztkach, a wieczorem lodówka robi za terapię.
+                            Rano kawa robi za rozruch, po 14:00 jedziesz na oparach, wieczorem nadrabiasz jedzeniem to, czego nie dał sen. I tak w kółko, od poniedziałku do poniedziałku.
                           </div>
                         )}
 
-                        {/* ── 2 supporting tiles - dowody, nie haki ── */}
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-                          {recoverableYears > 0 && (
-                            <div style={{ padding: '12px 8px', background: 'rgba(122,176,95,.08)', border: '1px solid rgba(122,176,95,.2)', borderRadius: 10, textAlign: 'center' }}>
-                              <div style={{ fontFamily: M.mono, fontSize: 'clamp(22px, 5.5vw, 30px)', fontWeight: 800, color: M.grn, lineHeight: 1 }}>-{recoverableYears} lat</div>
-                              <div style={{ fontFamily: M.mono, fontSize: 9, letterSpacing: 1.2, textTransform: 'uppercase', color: M.t4, marginTop: 4 }}>cofniesz w 90 dni</div>
-                            </div>
-                          )}
-                          {costPerYear > 0 && (
-                            <div style={{ padding: '12px 8px', background: 'rgba(220,68,68,.07)', border: '1px solid rgba(220,68,68,.18)', borderRadius: 10, textAlign: 'center' }}>
-                              <div style={{ fontFamily: M.mono, fontSize: 'clamp(22px, 5.5vw, 30px)', fontWeight: 800, color: M.red, lineHeight: 1 }}>{costPerYear.toLocaleString('pl-PL')} zł</div>
-                              <div style={{ fontFamily: M.mono, fontSize: 9, letterSpacing: 1.2, textTransform: 'uppercase', color: M.t4, marginTop: 4 }}>szacunek chaosu rocznie</div>
-                            </div>
-                          )}
-                        </div>
-
-                        {/* Wyjasnienie kosztu - anti scam-vibes */}
-                        {costPerYear > 0 && (
-                          <div style={{ fontSize: 11.5, color: M.t4, lineHeight: 1.55, marginTop: 12, fontStyle: 'italic', textAlign: 'left', paddingTop: 10, borderTop: `1px solid ${M.brd}` }}>
-                            Nikt Ci takiej faktury nie wystawi. Ta kwota rozchodzi się po cichu: jedzenie na zmęczeniu, odpuszczone treningi, słabsza robota i poniedziałki, które zaczynają się dopiero w środę.
-                          </div>
-                        )}
+                        {/* „-X lat cofniesz w 90 dni" usunięte: to był zmyślony pomiar wieku, nie dane. */}
                       </>
                     );
                   })()}
                 </div>
               </div>
+            </Reveal>
+
+            {/* Cienki link „Następny krok" usunięty: konkurował z blokiem intencji, który jest teraz głównym, mocnym wyjściem. */}
+
+            {/* ═══ SMACZEK 2: ZASKOCZENIE - belief-shift z realnych odpowiedzi (myślisz X, a to Y) ═══ */}
+            <Reveal delay={82}>
+              {(() => {
+                const scz = [...catScores].sort((a, b) => a.pct - b.pct);
+                const zw = scz[0]?.label || ''; const zs = scz[1]?.label || '';
+                if (!zw) return null;
+                const zbest = [...catScores].sort((a, b) => b.pct - a.pct)[0]?.label || zw;
+                const acc = good ? M.gold : M.org;
+                return (
+                  <div style={{ marginBottom: 16, padding: '20px 18px', borderRadius: 16, width: '100%', boxSizing: 'border-box', background: `linear-gradient(160deg, rgba(19,19,19,0.95), ${acc}12)`, border: `1px solid ${acc}35` }}>
+                    <div style={{ fontFamily: M.mono, fontSize: 10, letterSpacing: 3, textTransform: 'uppercase', color: acc, fontWeight: 700, marginBottom: 10 }}>{good ? 'Co masz mocne' : 'Zaskoczenie'}</div>
+                    <p style={{ fontSize: 15.5, color: M.t1, lineHeight: 1.65, margin: 0, fontWeight: 500 }}>
+                      {good ? zaskoczenieDobry(zbest) : zaskoczenie(zw, zs)}
+                    </p>
+                  </div>
+                );
+              })()}
+            </Reveal>
+
+            {/* ═══ TIER 3: CO DALEJ - intencja + miękki kontakt (po wartości, jeden wymagany kanał) ═══ */}
+            <Reveal delay={83}>
+              <div style={{ marginBottom: 20, padding: '24px 20px', borderRadius: 16, width: '100%', boxSizing: 'border-box', background: 'linear-gradient(160deg, rgba(19,19,19,0.95), rgba(200,168,78,0.06))', border: `1px solid ${M.gold}35` }}>
+                {captured ? (
+                  <div style={{ textAlign: 'center', padding: '6px 0' }}>
+                    <div style={{ fontFamily: M.mono, fontSize: 10, letterSpacing: 3, textTransform: 'uppercase', color: M.grn, fontWeight: 700, marginBottom: 10 }}>Zapisane</div>
+                    <p style={{ fontSize: 15, color: M.t2, lineHeight: 1.6, margin: '0 0 16px' }}>
+                      Mam Twój wynik{imie.trim() ? `, ${capName(imie.trim())}` : ''}. {intent === 2 ? 'Odezwę się w DM z konkretem, zwykle w 24h. W międzyczasie zobacz, jak wygląda prowadzenie.' : intent === 1 ? 'Zobacz teraz, jak dokładnie wygląda prowadzenie.' : 'Pierwszy ruch masz w raporcie niżej. Jak zechcesz ułożyć to razem, zacznij tutaj.'}
+                    </p>
+                    <a
+                      href="https://nabor.talerzihantle.com?utm_source=diagnostyka&utm_content=captured"
+                      target="_blank" rel="noopener noreferrer"
+                      onClick={() => trackEvent('diag_cta_click', { target: 'nabor_captured', score: SC, intent })}
+                      className="shimmer-btn"
+                      style={{ display: 'block', textAlign: 'center', background: `linear-gradient(135deg, ${M.gold}, #a08a3e)`, color: M.bg, textDecoration: 'none', padding: '17px', borderRadius: 14, fontWeight: 800, fontSize: 15, letterSpacing: 1, boxShadow: '0 4px 24px rgba(200,168,78,0.28)' }}
+                    >ZOBACZ, JAK WYGLĄDA PROWADZENIE &rarr;</a>
+                    <div style={{ fontSize: 11.5, color: M.t4, marginTop: 8, fontFamily: M.mono, letterSpacing: 0.5 }}>3 minuty czytania &middot; bez płatności</div>
+                  </div>
+                ) : (
+                  <>
+                    <div style={{ fontFamily: M.mono, fontSize: 10, letterSpacing: 3, textTransform: 'uppercase', color: M.gold, fontWeight: 700, marginBottom: 12 }}>Co dalej</div>
+                    <h3 style={{ fontSize: 21, fontWeight: 800, lineHeight: 1.25, color: M.t1, marginBottom: 10, letterSpacing: '-0.01em' }}>Masz wynik. Co chcesz z nim zrobić?</h3>
+                    <p style={{ fontSize: 14, color: M.t3, lineHeight: 1.6, marginBottom: 16 }}>
+                      Raport pokazuje pierwszy ruch. Jak widzę, że problem pasuje do mojego prowadzenia, mogę sprawdzić, czy ma sens ułożyć to razem.
+                    </p>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                      {[
+                        'Chcę działać sam. Pokaż mi raport i pierwszy ruch.',
+                        'Chcę najpierw zobaczyć, jak wygląda pomoc i czego wymaga.',
+                        'Jeżeli uznasz, że pasujemy, napisz mi konkretnie, co możemy zrobić razem.',
+                        'Nie wiem jeszcze. Chcę tylko zobaczyć wynik.',
+                      ].map((l, v) => {
+                        const on = intent === v;
+                        return (
+                          <button key={v} onClick={() => { vibe(8); setIntent(v); trackEvent('diag_intent', { intent: v, score: SC }); }} style={{ padding: '13px 14px', textAlign: 'left', border: `1.5px solid ${on ? M.gold : M.brd2}`, background: on ? M.gold + '12' : M.s1, color: on ? M.t1 : M.t3, cursor: 'pointer', borderRadius: 12, transition: 'all .2s ease', fontSize: 13.5, fontWeight: 600, fontFamily: M.sans, lineHeight: 1.4 }}>{l}</button>
+                        );
+                      })}
+                    </div>
+
+                    {(intent === 1 || intent === 2) && (
+                      <div style={{ marginTop: 18 }}>
+                        <div style={{ fontSize: 14, color: M.t1, fontWeight: 600, marginBottom: 8, lineHeight: 1.4 }}>Jeżeli po rozmowie uznasz, że to ma sens, kiedy faktycznie chcesz zacząć?</div>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2,1fr)', gap: 8 }}>
+                          {['W ciągu 7 dni', 'W ciągu 30 dni', 'Za 2-3 miesiące', 'Na razie tylko sprawdzam'].map((l, v) => {
+                            const on = startWhen === v;
+                            return (<button key={v} onClick={() => { vibe(6); setStartWhen(v); }} style={{ padding: '12px 8px', textAlign: 'center', border: `1.5px solid ${on ? M.gold : M.brd2}`, background: on ? M.gold + '0e' : M.s1, color: on ? M.t1 : M.t4, cursor: 'pointer', borderRadius: 10, fontSize: 12, fontWeight: 600, fontFamily: M.sans, minHeight: 46, lineHeight: 1.3 }}>{l}</button>);
+                          })}
+                        </div>
+                      </div>
+                    )}
+
+                    {intent === 2 && (
+                      <div style={{ marginTop: 18 }}>
+                        <div style={{ fontSize: 14, color: M.t1, fontWeight: 600, marginBottom: 6, lineHeight: 1.4 }}>Co musiałoby być prawdą, żeby prowadzenie było dobrą decyzją?</div>
+                        <div style={{ fontSize: 12.5, color: M.t4, marginBottom: 8, lineHeight: 1.5 }}>Jedno zdanie. Ustawia naszą pierwszą rozmowę tak, że nie zgaduję.</div>
+                        <textarea value={hotWhy} onChange={e => setHotWhy(e.target.value.slice(0, 300))} rows={2} placeholder="np. muszę wiedzieć, że da się to pogodzić z moją pracą..." style={{ width: '100%', boxSizing: 'border-box', resize: 'vertical', fontFamily: M.sans, fontSize: 13.5 }} />
+                      </div>
+                    )}
+
+                    {intent !== null && (
+                      <div style={{ marginTop: 18, paddingTop: 18, borderTop: `1px solid ${M.brd}`, display: 'flex', flexDirection: 'column', gap: 10 }}>
+                        <div>
+                          <div style={{ fontSize: 14, color: M.t1, fontWeight: 700, marginBottom: 4 }}>{intent === 2 ? 'Gdzie mam się do Ciebie odezwać?' : intent === 1 ? 'Gdzie wysłać zapis raportu?' : 'Chcesz zapis raportu na później?'}</div>
+                          <p style={{ fontSize: 12.5, color: M.t3, lineHeight: 1.5, margin: 0 }}>Email zostaje u mnie, raport idzie na skrzynkę.{intent === 1 || intent === 2 ? ' IG podaj, żebym mógł odpisać w DM.' : ''}</p>
+                        </div>
+                        <div>
+                          <div style={{ fontSize: 11, color: M.t3, fontWeight: 600, marginBottom: 5, fontFamily: M.mono, letterSpacing: 0.5 }}>Email *</div>
+                          <input type="email" placeholder="twoj@email.com" value={email} aria-label="Adres email" onChange={e => { setEmail(e.target.value); setEmailErr(''); }} style={{ borderColor: emailErr ? M.red : undefined }} />
+                          {emailErr && <div role="alert" style={{ fontSize: 11, color: M.red, fontFamily: M.mono, marginTop: 4 }}>{emailErr}</div>}
+                        </div>
+                        <div>
+                          <div style={{ fontSize: 11, color: M.t4, fontWeight: 600, marginBottom: 5, fontFamily: M.mono, letterSpacing: 0.5 }}>Instagram {intent === 1 || intent === 2 ? '(żebym odpisał w DM)' : '(opcjonalnie)'}</div>
+                          <input type="text" placeholder="@twojnick" value={igHandle} aria-label="Nick na Instagramie" onChange={e => setIgHandle(e.target.value)} />
+                        </div>
+                        <div>
+                          <div style={{ fontSize: 11, color: M.t4, fontWeight: 600, marginBottom: 5, fontFamily: M.mono, letterSpacing: 0.5 }}>Imię (opcjonalne)</div>
+                          <input type="text" placeholder="Jak masz na imię?" value={imie} aria-label="Imię" onChange={e => setImie(e.target.value.slice(0, 50))} />
+                        </div>
+                        <button onClick={submit} disabled={loading} className={!loading ? 'shimmer-btn' : ''} style={{ width: '100%', padding: '15px 24px', marginTop: 4, background: loading ? M.brd2 : 'linear-gradient(135deg, #c8a84e, #a08a3e)', color: loading ? M.t4 : '#0a0a0a', border: 'none', fontFamily: M.sans, fontSize: 14, fontWeight: 700, letterSpacing: 1.5, textTransform: 'uppercase', cursor: loading ? 'not-allowed' : 'pointer', borderRadius: 12, minHeight: 48 }}>
+                          {loading ? 'Zapisuję...' : intent === 2 ? 'Wyślij, odezwij się do mnie →' : 'Zapisz mój raport →'}
+                        </button>
+                        <p style={{ fontSize: 11.5, color: M.t4, lineHeight: 1.5, textAlign: 'center', margin: '2px 0 0', fontStyle: 'italic' }}>Czytam sam, odpisuję w 24h, a jak nie pasujesz mówię wprost zamiast wciskać.</p>
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
+            </Reveal>
+
+            {/* ═══ REJESTR - co podałeś, surowe dane bez komentarza ═══ */}
+            <Reveal delay={82}>
+              <div style={{ marginBottom: 16, padding: '22px 20px', borderRadius: 16, width: '100%', boxSizing: 'border-box', background: M.s1, border: `1px solid ${M.brd2}` }}>
+                <div style={{ fontFamily: M.mono, fontSize: 10, letterSpacing: 3, textTransform: 'uppercase', color: M.t4, fontWeight: 700, marginBottom: 14 }}>Co podałeś</div>
+                {(() => {
+                  const phoneMap = ['nie', 'zdarza się', 'często', 'co wieczór'];
+                  const rows = [
+                    { k: 'sen', v: `${D.sleep} h`, bad: D.sleep < 6.5 },
+                    { k: 'praca', v: `${D.workHours} h dziennie`, bad: D.workHours > 9 },
+                    { k: 'treningi odpuszczane', v: `${D.miss} / tydzień`, bad: D.miss >= 2 },
+                    { k: 'weekend', v: `${D.drinks} drinków`, bad: D.drinks >= 6 },
+                    { k: 'telefon w łóżku', v: phoneMap[Math.min(D.screenBed, 3)] || 'nie', bad: D.screenBed >= 2 },
+                    { k: 'objawy', v: `${D.tags.size} zaznaczonych`, bad: D.tags.size >= 5 },
+                  ];
+                  return rows.map((r, i) => (
+                    <div key={i} style={{ display: 'flex', alignItems: 'baseline', fontFamily: M.mono, fontSize: 13, padding: '8px 0', borderBottom: i < rows.length - 1 ? `1px solid ${M.brd}` : 'none' }}>
+                      <span style={{ color: M.t4 }}>{r.k}</span>
+                      <span style={{ flex: 1 }} />
+                      <span style={{ color: r.bad ? M.red : M.t1, fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>{r.v}</span>
+                    </div>
+                  ));
+                })()}
+              </div>
+            </Reveal>
+
+            {/* ═══ ROZBIEŻNOŚĆ - przyłapanie na sprzeczności (rozpoznanie, nie osąd) ═══ */}
+            {(() => {
+              const cx = contradiction(D, selfDx);
+              if (!cx) return null;
+              return (
+                <Reveal delay={84}>
+                  <div style={{ marginBottom: 16 }}>
+                    <div style={{ padding: '20px 18px', borderRadius: 16, width: '100%', boxSizing: 'border-box', background: M.s1, border: `1px solid ${M.gold}35`, boxShadow: `0 0 30px ${M.gold}08` }}>
+                      <div style={{ fontFamily: M.mono, fontSize: 10, letterSpacing: 3, textTransform: 'uppercase', color: M.gold, fontWeight: 700, marginBottom: 14 }}>Rozbieżność</div>
+                      <div style={{ fontFamily: M.serif, fontStyle: 'italic', fontSize: 15, color: M.t4, marginBottom: 7 }}>Jedna Twoja odpowiedź:</div>
+                      <div style={{ fontSize: 16, fontWeight: 700, color: M.t1, lineHeight: 1.5 }}>{cx.said}</div>
+                      <div style={{ borderTop: `1px solid ${M.brd}`, margin: '15px 0', paddingTop: 15 }}>
+                        <div style={{ fontFamily: M.serif, fontStyle: 'italic', fontSize: 15, color: M.t4, marginBottom: 7 }}>I druga, też Twoja:</div>
+                        <div style={{ fontFamily: M.mono, fontSize: 13.5, color: M.t2, lineHeight: 1.55 }}>{cx.body}</div>
+                      </div>
+                      <p style={{ fontFamily: M.serif, fontSize: 22, lineHeight: 1.3, color: M.t1, margin: 0, paddingTop: 15, borderTop: `1px solid ${M.brd}` }}>
+                        Jedno z tych zdań kłamie. <em style={{ fontStyle: 'italic', color: M.gold }}>Oba są Twoje.</em>
+                      </p>
+                    </div>
+                  </div>
+                </Reveal>
+              );
+            })()}
+
+            {/* ═══ TWÓJ TYP - archetyp z wzorca odpowiedzi (identity + share hook) ═══ */}
+            <Reveal delay={85}>
+              {(() => {
+                const worst = [...catScores].sort((a, b) => a.pct - b.pct)[0]?.label || '';
+                const best = [...catScores].sort((a, b) => b.pct - a.pct)[0]?.label || '';
+                const arch = good ? archetypeGood(best) : pickArchetype(D, worst);
+                return (
+                  <div style={{
+                    marginBottom: 16, padding: '24px 20px', borderRadius: 16, width: '100%', boxSizing: 'border-box',
+                    background: 'linear-gradient(160deg, rgba(19,19,19,0.95), rgba(200,168,78,0.07))',
+                    border: `1px solid ${M.gold}30`,
+                  }}>
+                    <div style={{ fontFamily: M.mono, fontSize: 10, letterSpacing: 3, textTransform: 'uppercase', color: M.gold, fontWeight: 700, marginBottom: 12 }}>Twój typ</div>
+                    <div style={{ fontFamily: M.serif, fontSize: 36, fontWeight: 400, lineHeight: 1.08, letterSpacing: '-0.01em', color: M.t1, marginBottom: 10 }}>
+                      „{arch.label}"
+                    </div>
+                    <div style={{ fontSize: 15, color: M.gold, fontWeight: 600, lineHeight: 1.5, marginBottom: 14 }}>
+                      {arch.tagline}
+                    </div>
+                    <p style={{ fontSize: 14.5, color: M.t2, lineHeight: 1.65, margin: 0 }}>
+                      {arch.mirror}
+                    </p>
+                  </div>
+                );
+              })()}
+            </Reveal>
+
+            {/* ═══ MIĘDZY NAMI - wstyd/rozpoznanie, peak emocji przed decyzją ═══ */}
+            <Reveal delay={90}>
+              {(() => {
+                if (good) return null; // dobry tydzień: żadnego bloku wstydu, nie ma za co
+                const imieD = imie.trim() ? capName(imie.trim()) : '';
+                {/* Body-copy TYLKO przy twardych danych o ciele (belly tag). Score/bioAge NIE wystarcza - zero zgadywania czy facet jest gruby. */}
+                const showBody = D.tags.has('belly');
+                const brokePromise = D.triedBefore >= 2;
+                const worstL = [...catScores].sort((a, b) => a.pct - b.pct)[0]?.label || 'Głowa';
+                return (
+                  <div style={{
+                    marginBottom: 16, padding: '26px 20px', borderRadius: 16, width: '100%', boxSizing: 'border-box',
+                    background: 'linear-gradient(160deg, rgba(19,19,19,0.92), rgba(220,68,68,0.07))',
+                    border: '1px solid rgba(220,68,68,0.22)',
+                  }}>
+                    <div style={{ fontFamily: M.mono, fontSize: 10, letterSpacing: 3, textTransform: 'uppercase', color: M.red, fontWeight: 700, marginBottom: 16 }}>Między nami</div>
+
+                    <p style={{ fontSize: 15, color: M.t2, lineHeight: 1.65, marginBottom: 14 }}>
+                      Liczby wyżej to jedno. Druga rzecz to ta, której nie wpisujesz do żadnego formularza.
+                    </p>
+
+                    <p style={{ fontSize: 15, color: M.t2, lineHeight: 1.7, marginBottom: 14 }}>
+                      {SCENE_LINE[worstL]}
+                    </p>
+
+                    {showBody && (
+                      <p style={{ fontSize: 15, color: M.t2, lineHeight: 1.7, marginBottom: 14 }}>
+                        Że na ostatniej wspólnej fotce ustawiłeś się tak, żeby brzuch był za kimś. Że koszulkę na basenie zdejmujesz ostatni, albo już wolisz nie iść. Że kupujesz o numer za duże, żeby nie opinało. Że mijasz swoje odbicie w witrynie i od razu patrzysz gdzie indziej.
+                      </p>
+                    )}
+
+                    <p style={{ fontSize: 15.5, color: M.t1, lineHeight: 1.7, marginBottom: 14, fontWeight: 600 }}>
+                      Najgorsze nie jest to, że nie wiesz, co robić. Najgorsze jest to, że <span style={{ color: M.gold }}>wiesz wszystko</span>, i dalej wyglądasz jak ktoś, kto nie wie nic. I to piecze najmocniej, bo nie masz się przed sobą czym wytłumaczyć.
+                    </p>
+
+                    {brokePromise && (
+                      <p style={{ fontSize: 15, color: M.t2, lineHeight: 1.7, marginBottom: 14 }}>
+                        „Od poniedziałku" powtarzałeś sobie tyle razy, że sam już w to nie wierzysz. Twoje ciało przestało wierzyć jeszcze wcześniej.
+                      </p>
+                    )}
+
+                    <div style={{ borderLeft: `3px solid ${M.red}`, paddingLeft: 16, marginTop: 18 }}>
+                      <p style={{ fontSize: 15.5, color: M.t1, lineHeight: 1.7, fontWeight: 600, margin: 0 }}>
+                        {tier === 'low'
+                          ? `${imieD ? imieD + ', u' : 'U'} Ciebie nie ma dramatu. I to jest pułapka. Za rok otwierasz tę samą apkę, dostajesz ten sam wynik i dalej jest „w sumie okej". Nikt Ci nie powie, że stoisz w miejscu. Sam też sobie nie powiesz.`
+                          : `${imieD ? imieD + ', za' : 'Za'} rok, jeśli dziś nic nie ruszysz, otwierasz tę samą apkę, dostajesz ten sam wynik i czujesz dokładnie to samo co teraz. Tylko rok starszy i o rok bardziej pewny, że już tak zostanie.`}
+                      </p>
+                      <p style={{ fontFamily: M.serif, fontStyle: 'italic', fontSize: 21, color: M.gold, lineHeight: 1.5, fontWeight: 400, margin: '12px 0 0' }}>
+                        To się odkręca. Ale nie kolejnym planem z internetu.
+                      </p>
+                    </div>
+                  </div>
+                );
+              })()}
             </Reveal>
 
             {/* ═══ DECYZJA - hot CTA zaraz pod hero (council recommendation) ═══ */}
@@ -2492,17 +3530,47 @@ export default function Page() {
                   const worstCat = catScores.reduce((a, b) => a.pct < b.pct ? a : b, catScores[0]);
                   const topCatLabel = worstCat.label;
                   const imieDisplay = imie.trim() ? capName(imie.trim()) : 'Stary';
-                  const dmText = `${topCatLabel.toLowerCase()} ciągnie, mózg pokazał ${Math.round(brainAge)} przy moich ${D.age}. ruszysz to ze mną?`;
+                  const arD = anchorRok(D);
+                  const dmText = arD.hardYear >= 3000
+                    ? `${topCatLabel.toLowerCase()} ciągnie, ${arD.display} rocznie mi ucieka. ruszysz to ze mną?`
+                    : `${topCatLabel.toLowerCase()} ciągnie, wynik ${SC}/100, pęka mi ${hourRange(D)}. ruszysz to ze mną?`;
                   const dmHref = `https://ig.me/m/hantleitalerz?text=${encodeURIComponent(dmText)}`;
+                  // Wycieki tylko tam, gdzie faktycznie cieknie (pct < 78) - zero uniwersalnej diagnozy
+                  const leaksSorted = [...catScores].sort((a, b) => a.pct - b.pct);
+                  const leaks = (() => { const s = leaksSorted.filter(c => c.pct < 78).slice(0, 3); return s.length ? s : leaksSorted.slice(0, 1); })();
+                  const benefits180 = pickBenefits180(D, badaniaWysoki.length);
                   return (
                     <div style={{ position: 'relative' }}>
                       <div style={{ fontFamily: M.mono, fontSize: 10, letterSpacing: 2.5, textTransform: 'uppercase', color: M.gold, fontWeight: 700, marginBottom: 14 }}>
                         Twój ruch
                       </div>
                       <h3 style={{ fontSize: 26, fontWeight: 900, lineHeight: 1.15, marginBottom: 18, color: M.t1, letterSpacing: '-0.01em' }}>
-                        {imieDisplay}, tu nie brakuje Ci planu.<br/>
-                        <span style={{ color: M.gold }}>Tu wycieka tydzień.</span>
+                        {good
+                          ? <>{imieDisplay}, tu nie ma czego ratować.<br/><span style={{ color: M.gold }}>Jest co podkręcić.</span></>
+                          : <>{imieDisplay}, tu nie brakuje Ci planu.<br/><span style={{ color: M.gold }}>Tu wycieka tydzień.</span></>}
                       </h3>
+
+                      {/* Z FORMULARZY - doslowne wpisy facetow (kopalnia real-voice, anonimowe). Dla good: bez lustra bolu. */}
+                      {!good && (
+                      <div style={{ padding: '16px 18px', marginBottom: 18, background: M.s1, border: `1px solid ${M.brd}`, borderRadius: 12 }}>
+                        <div style={{ fontFamily: M.mono, fontSize: 9.5, letterSpacing: 2.5, textTransform: 'uppercase', color: M.t4, fontWeight: 700, marginBottom: 12 }}>Z tego formularza, dosłownie</div>
+                        {[
+                          '„Tłumaczenie się przed samym sobą, dlaczego znowu nie wyszło."',
+                          '„Patrzenie w lustro po weekendzie. Znowu od zera."',
+                          '„Zrywy: 2 tygodnie idealnie, potem odpuszczenie."',
+                        ].map((q, i) => (
+                          <p key={i} style={{ fontFamily: M.serif, fontStyle: 'italic', fontSize: 15.5, color: M.t2, lineHeight: 1.5, margin: i < 2 ? '0 0 10px' : 0 }}>{q}</p>
+                        ))}
+                        <p style={{ fontSize: 12.5, color: M.t4, lineHeight: 1.5, margin: '12px 0 0', paddingTop: 10, borderTop: `1px solid ${M.brd}` }}>
+                          Tak piszą faceci, zanim zaczniemy. Jeśli którekolwiek mogłoby być Twoje, to dokładnie z tym pracuję.
+                        </p>
+                      </div>
+                      )}
+                      {good && (
+                      <p style={{ fontSize: 14.5, color: M.t2, lineHeight: 1.65, marginBottom: 18 }}>
+                        Bazę masz. I dlatego prowadzenie u Ciebie działa szybciej: od pierwszego tygodnia pracujemy na wynik, zamiast najpierw gasić pożary. Z dobrą bazą pół roku pracy nad detalami daje więcej, niż innym daje rok.
+                      </p>
+                      )}
 
                       {/* MICRO-PORTRAIT: micro-trust signal przy bio */}
                       <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 16 }}>
@@ -2532,11 +3600,10 @@ export default function Page() {
                           Po 30 dniach
                         </div>
                         <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 16px', display: 'flex', flexDirection: 'column', gap: 7 }}>
-                          {[
-                            'Sen głębszy, rano wstajesz przed alarmem',
-                            'Energia trzyma do wieczora bez kawy na ratunek',
-                            'Weekend kosztuje Cię jeden dzień, nie trzy',
-                          ].map((b, i) => (
+                          {(good
+                            ? ['Trening i jedzenie ustawione pod wynik, nie pod utrzymanie', 'Wiesz, który parametr podkręcamy pierwszy i dlaczego']
+                            : leaks.map(c => BENEFIT_30[c.label] || '').filter(Boolean)
+                          ).map((b, i) => (
                             <li key={i} style={{ fontSize: 14, color: M.t2, lineHeight: 1.55, paddingLeft: 18, position: 'relative' }}>
                               <span style={{ position: 'absolute', left: 0, top: 0, color: M.gold, fontWeight: 700 }}>·</span>
                               {b}
@@ -2548,11 +3615,10 @@ export default function Page() {
                           Po 6 miesiącach
                         </div>
                         <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 16px', display: 'flex', flexDirection: 'column', gap: 7 }}>
-                          {[
-                            'Brzuch schodzi i widać to w lustrze',
-                            'Libido wraca, panel krwi w normie',
-                            'Rytm tygodnia trzyma się sam, bez pilnowania',
-                          ].map((b, i) => (
+                          {(good
+                            ? ['Sylwetka, po której widać, że to nie przypadek', 'Panel krwi zrobiony i omówiony, zero zgadywania', 'Forma rośnie, zamiast stać na dobrym poziomie']
+                            : benefits180
+                          ).map((b, i) => (
                             <li key={i} style={{ fontSize: 14, color: M.t1, lineHeight: 1.55, paddingLeft: 18, position: 'relative', fontWeight: 500 }}>
                               <span style={{ position: 'absolute', left: 0, top: 0, color: M.gold, fontWeight: 700 }}>·</span>
                               {b}
@@ -2565,31 +3631,67 @@ export default function Page() {
                         180 facetów przeszło tę drogę przed Tobą. Nie wymyślasz jej na nowo.
                       </p>
 
-                      {/* 3 MIEJSCA - dynamiczna diagnoza z worst categories */}
+                      {/* WYCIEKI - tylko kategorie realnie poza norma + pierwszy ruch per wyciek. Dla good: nie wymyślamy wycieków. */}
+                      {!good && (
                       <div style={{ padding: '14px 16px', marginBottom: 22, background: `${M.gold}08`, borderRadius: 12, borderLeft: `3px solid ${M.gold}` }}>
                         <div style={{ fontSize: 13.5, color: M.t2, lineHeight: 1.6, marginBottom: 12 }}>
-                          Z Twoich odpowiedzi widzę 3 miejsca:
+                          {leaks.length === 1 ? 'Z Twoich odpowiedzi widzę jedno miejsce:' : `Z Twoich odpowiedzi widzę ${leaks.length} miejsca:`}
                         </div>
-                        <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 8 }}>
-                          {(() => {
-                            const diagnozaMap: Record<string, string> = {
-                              'Sen': 'sen nie ładuje Cię do końca',
-                              'Stres': 'stres siedzi nawet wieczorem i blokuje regenerację',
-                              'Żywienie': 'wieczór kasuje to, co budujesz w dzień',
-                              'Weekend': 'weekend kosztuje Cię więcej niż sam wieczór',
-                              'Trening': 'trening ciągnie resztę za sobą, zamiast działać na gotowym organizmie',
-                              'Głowa': 'głowa pracuje na półfali, decyzje wieczorem przesuwają się na rano',
-                            };
-                            const top3 = [...catScores].sort((a, b) => a.pct - b.pct).slice(0, 3);
-                            return top3.map((cat, i) => (
-                              <li key={i} style={{ fontSize: 13.5, color: M.t2, lineHeight: 1.55, paddingLeft: 16, position: 'relative' }}>
-                                <span style={{ position: 'absolute', left: 0, top: 0, color: M.gold, fontWeight: 700 }}>·</span>
-                                {diagnozaMap[cat.label] || cat.label.toLowerCase()}
-                              </li>
-                            ));
-                          })()}
+                        <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 12 }}>
+                          {leaks.map((cat, i) => (
+                            <li key={i} style={{ fontSize: 13.5, color: M.t2, lineHeight: 1.55, paddingLeft: 16, position: 'relative' }}>
+                              <span style={{ position: 'absolute', left: 0, top: 0, color: M.gold, fontWeight: 700 }}>·</span>
+                              {LEAK_LINE[cat.label] || cat.label.toLowerCase()}
+                              <span style={{ display: 'block', fontSize: 12, marginTop: 4, lineHeight: 1.5 }}>
+                                <span style={{ fontFamily: M.mono, fontSize: 9.5, letterSpacing: 1.5, textTransform: 'uppercase', color: M.gold, fontWeight: 700 }}>Pierwszy ruch</span>
+                                <span style={{ color: M.t3 }}> {LEAK_MOVE[cat.label]}</span>
+                              </span>
+                            </li>
+                          ))}
                         </ul>
                       </div>
+                      )}
+
+                      {/* KOSZT STANIA W MIEJSCU - projekcja 12 mies z JEGO liczb. Dla good: brak, nie ma czym straszyć. */}
+                      {!good && (() => {
+                        const missYear = D.miss * 4 * 12;
+                        const sleepDebt = Math.round(Math.max((7.5 - D.sleep) * 7 * 52, 0));
+                        const lostYear = Math.round(D.lost * 22 * 12);
+                        const drinksYear = D.drinks * D.wknd * 12;
+                        const hourLabel = hourRange(D);
+                        const rows: [string, string][] = [];
+                        if (missYear > 0) rows.push(['treningi w plecy', `${missYear}`]);
+                        if (sleepDebt > 0) rows.push(['godzin snu długu', `${sleepDebt} h`]);
+                        if (lostYear > 0) rows.push(['godzin w robocie na pół mocy', `${lostYear} h`]);
+                        if (drinksYear > 0) rows.push(['drinków, które kasują tydzień', `${drinksYear}`]);
+                        return (
+                          <div style={{ padding: '18px', marginBottom: 18, background: 'rgba(220,68,68,0.05)', border: '1px solid rgba(220,68,68,0.2)', borderRadius: 12 }}>
+                            <div style={{ fontFamily: M.mono, fontSize: 10, letterSpacing: 2.5, textTransform: 'uppercase', color: M.red, fontWeight: 700, marginBottom: 12 }}>
+                              Jeśli nic nie ruszysz
+                            </div>
+                            <p style={{ fontSize: 14, color: M.t2, lineHeight: 1.6, margin: '0 0 12px' }}>
+                              {tier === 'low'
+                                ? 'U Ciebie się nie pali. Cieknie. A cieknący zawór przez rok robi swoje. Twoje odpowiedzi przeliczone na rok:'
+                                : '„Przemyślę to" też ma cennik. Te liczby to Twoje odpowiedzi przeliczone na rok:'}
+                            </p>
+                            <div style={{ marginBottom: 14 }}>
+                              {rows.map(([k, v], i) => (
+                                <div key={i} style={{ display: 'flex', alignItems: 'baseline', fontFamily: M.mono, fontSize: 12.5, padding: '7px 0', borderBottom: i < rows.length - 1 ? `1px solid ${M.brd}` : 'none' }}>
+                                  <span style={{ color: M.t4 }}>{k}</span>
+                                  <span style={{ flex: 1 }} />
+                                  <span style={{ color: M.red, fontWeight: 700, fontVariantNumeric: 'tabular-nums' }}>{v}</span>
+                                </div>
+                              ))}
+                            </div>
+                            <p style={{ fontSize: 14, color: M.t2, lineHeight: 1.65, margin: '0 0 10px' }}>
+                              To tabelka. Gorsza jest część, której nie policzę: za rok masz {D.age + 1} lat, tę samą fotkę, ten sam widok w lustrze i tę samą myśl „od poniedziałku". Tylko że w tego poniedziałka wierzysz już coraz mniej.{D.triedBefore >= 2 ? ' Wiesz o tym, bo już to przerabiałeś.' : ''}
+                            </p>
+                            <p style={{ fontSize: 14.5, color: M.t1, lineHeight: 1.6, margin: 0, fontWeight: 600 }}>
+                              I to jest w tym najbardziej wkurwiające: Ty to wszystko wiesz. Ten moment, {hourLabel}, sam nie zniknie. Za rok to będzie ta sama pora, tylko z wyższym rachunkiem.
+                            </p>
+                          </div>
+                        );
+                      })()}
 
                       {/* MOST DO APLIKACJI - selekcja zamiast sprzedazy */}
                       <div style={{ padding: '16px 18px', marginBottom: 18, background: `rgba(19,19,19,0.55)`, border: `1px solid ${M.brd2}`, borderRadius: 12 }}>
@@ -2597,7 +3699,7 @@ export default function Page() {
                           Nie będę Ci sprzedawał prowadzenia z jednego wyniku quizu.
                         </p>
                         <p style={{ fontSize: 13.5, color: M.t2, lineHeight: 1.6, margin: '0 0 8px' }}>
-                          Ten raport pokazuje <strong style={{ color: M.t1 }}>kierunek</strong>. Aplikacja pokaże, czy Twój tydzień da się ułożyć w proces.
+                          Prowadzenie to ktoś, kto regularnie patrzy na Twój tydzień i mówi, co ruszyć najpierw. Żaden plik z planem, który wyląduje w szufladzie. Ten wynik pokazuje <strong style={{ color: M.t1 }}>kierunek</strong>, resztę zobaczysz na stronie prowadzenia.
                         </p>
                         <p style={{ fontSize: 13.5, color: M.t3, lineHeight: 1.6, margin: 0 }}>
                           Jak widzę że pasujesz, odpisuję konkretnie. Jak nie, mówię od czego zacząć zamiast brać kasę za coś bez sensu.
@@ -2611,9 +3713,9 @@ export default function Page() {
                         </div>
                         <ol style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 10 }}>
                           {[
-                            'Wypełniasz 13 pytań. 10 minut, bez płatności, bez telefonu.',
-                            'Czytam całość sam, ten sam wieczór.',
-                            'Odpisuję w 24h w DM: bierzemy się, dopytam o dwie rzeczy, albo to nie Twój moment.',
+                            'Wchodzisz na stronę prowadzenia: co robię, jak pracuję, co dostajesz. 3 minuty.',
+                            'Jak siada, wypełniasz formularz z tej strony. 10 minut, bez telefonu.',
+                            'Czytam sam i odpisuję w 24h w DM: bierzemy się, albo mówię wprost, że to nie ten moment.',
                           ].map((step, i) => (
                             <li key={i} style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
                               <span style={{ fontFamily: M.mono, fontSize: 13, fontWeight: 800, color: M.gold, minWidth: 18, lineHeight: 1.5 }}>{i + 1}.</span>
@@ -2623,6 +3725,11 @@ export default function Page() {
                         </ol>
                       </div>
 
+                      {arD.hardYear >= 3000 && (
+                        <div style={{ fontSize: 12.5, color: M.t3, lineHeight: 1.55, textAlign: 'center', marginBottom: 10 }}>
+                          Twój wynik i ta kwota idą ze mną do formularza. Nie tłumaczysz niczego drugi raz.
+                        </div>
+                      )}
                       {/* TRUST PRE-CTA: relief frame zanim user kliknie (nie po) */}
                       <div style={{ fontSize: 12, color: M.t3, lineHeight: 1.5, textAlign: 'center', marginBottom: 12, fontStyle: 'italic' }}>
                         Czytam osobiście, odpisuję w 24h, a jak nie pasujesz mówię wprost zamiast wciskać.
@@ -2630,11 +3737,11 @@ export default function Page() {
 
                       {/* PRIMARY: Jotform - pelna aplikacja, ciepły lead po quizie */}
                       <a
-                        href="https://form.jotform.com/252274061537051?utm_source=diagnostyka"
+                        href="https://nabor.talerzihantle.com?utm_source=diagnostyka&utm_content=primary"
                         target="_blank"
                         rel="noopener noreferrer"
                         className="shimmer-btn"
-                        onClick={() => { trackEvent('diag_cta_click', { target: 'jotform_primary', score: SC, category: topCatLabel }); fbqTrack('AddToCart', { content_name: 'jotform_aplikacja', content_category: 'high_ticket', value: SC, currency: 'PLN' }); }}
+                        onClick={() => { trackEvent('diag_cta_click', { target: 'nabor_primary', score: SC, category: topCatLabel }); fbqTrack('AddToCart', { content_name: 'nabor_prowadzenie', content_category: 'high_ticket', value: SC, currency: 'PLN' }); }}
                         style={{
                           display: 'block', textAlign: 'center',
                           background: `linear-gradient(135deg, ${M.gold}, #a08a3e)`,
@@ -2646,19 +3753,23 @@ export default function Page() {
                         } as React.CSSProperties}
                       >
                         <span style={{ fontSize: 15, fontWeight: 800, letterSpacing: 1.2 }}>
-                          POKAŻ MI CAŁY TYDZIEŃ
+                          {CTA_LBL[cfg.cta]}
                         </span>
                         <span style={{ display: 'block', fontSize: 11, fontWeight: 600, letterSpacing: 1.5, marginTop: 4, opacity: 0.9 }}>
-                          13 pytań &middot; bez płatności &middot; bez telefonu &middot; decyzja w 24h
+                          3 minuty czytania &middot; bez płatności &middot; potem sam decydujesz
                         </span>
                       </a>
 
                       {/* SECONDARY: nabor LP - ciepły landing dla wahających się */}
                       <a
-                        href="https://nabor.talerzihantle.com?utm_source=diagnostyka_secondary"
+                        href={`https://form.jotform.com/252274061537051?${new URLSearchParams({
+                          q3_adresEmail: email,
+                          q6_ltstronggttwojeImieltstronggt: imie.trim() ? capName(imie.trim()) : '',
+                          q125_skadWszedles: `Diagnostyka: ${hourRange(D)} · ${pickArchetype(D, worstCat.label).label} · ${arD.display} · score ${SC}/100`,
+                        }).toString()}&utm_source=diagnostyka&utm_content=secondary`}
                         target="_blank"
                         rel="noopener noreferrer"
-                        onClick={() => trackEvent('diag_cta_click', { target: 'nabor_secondary', score: SC, category: topCatLabel })}
+                        onClick={() => trackEvent('diag_cta_click', { target: 'jotform_secondary', score: SC, category: topCatLabel })}
                         style={{
                           display: 'flex', alignItems: 'center', justifyContent: 'center',
                           padding: '14px 16px', minHeight: 44,
@@ -2668,7 +3779,7 @@ export default function Page() {
                           marginBottom: 10,
                         }}
                       >
-                        Najpierw zobacz, jak działa prowadzenie &rarr;
+                        Wiem, po co się zgłaszam: od razu formularz &rarr;
                       </a>
 
                       {/* TERTIARY: DM bezpośrednio - dla gorących leadów co chcą gadać */}
@@ -2688,162 +3799,16 @@ export default function Page() {
                         albo napisz od razu w DM &rarr;
                       </a>
 
-                      {/* TERTIARY: Share PNG (viral mechanic) */}
-                      <button
-                        onClick={async () => {
-                          trackEvent('diag_share_click', { score: SC });
-                          const blob = await genBrainAgeShareCard({
-                            name: imie.trim() ? capName(imie.trim()) : '',
-                            brainAge: Math.round(brainAge),
-                            age: D.age,
-                            bioAge: Math.round(bioAge),
-                          });
-                          if (!blob) return;
-                          const file = new File([blob], 'wiek-mozgu.png', { type: 'image/png' });
-                          // Native share API (mobile) z plikiem
-                          if ((navigator as any).canShare?.({ files: [file] })) {
-                            try {
-                              await (navigator as any).share({
-                                files: [file],
-                                text: `Mój wiek mózgu: ${Math.round(brainAge)}. Sprawdź swój: https://diagnostyka.talerzihantle.com`,
-                              });
-                              trackEvent('diag_share_complete', { method: 'native' });
-                              return;
-                            } catch {}
-                          }
-                          // Fallback: download
-                          const url = URL.createObjectURL(blob);
-                          const a = document.createElement('a');
-                          a.href = url; a.download = 'wiek-mozgu.png';
-                          document.body.appendChild(a);
-                          a.click();
-                          document.body.removeChild(a);
-                          URL.revokeObjectURL(url);
-                          trackEvent('diag_share_complete', { method: 'download' });
-                        }}
-                        style={{
-                          display: 'block', width: '100%', textAlign: 'center', padding: '12px',
-                          background: 'transparent',
-                          border: `1px dashed ${M.gold}40`,
-                          color: M.t3, fontSize: 12.5, fontWeight: 600, fontFamily: M.sans,
-                          borderRadius: 10, cursor: 'pointer',
-                          marginBottom: 14,
-                          transition: 'border-color .2s, color .2s, background .2s',
-                        }}
-                        onMouseEnter={e => { e.currentTarget.style.borderColor = `${M.gold}80`; e.currentTarget.style.color = M.gold; e.currentTarget.style.background = `${M.gold}06`; }}
-                        onMouseLeave={e => { e.currentTarget.style.borderColor = `${M.gold}40`; e.currentTarget.style.color = M.t3; e.currentTarget.style.background = 'transparent'; }}
-                      >
-                        Wyślij ziomkowi swój wynik
-                        <span style={{ display: 'block', fontSize: 10, color: M.t4, marginTop: 3, fontFamily: M.mono, letterSpacing: 1 }}>Pobierze się jako obrazek pod stories i DM</span>
-                      </button>
+                      {/* Share PNG usunięty (decyzja Michała): friction do pobrania obrazka, prawie nikt nie dokończy. */}
 
                       <div style={{ fontSize: 13, color: M.t3, lineHeight: 1.6, textAlign: 'center', paddingTop: 14, borderTop: `1px solid ${M.gold}20`, fontStyle: 'italic' }}>
-                        Imprezujesz w piątek. Poniedziałek ma być Twój.
+                        {TAIL_LINE[topCatLabel] || TAIL_LINE['Głowa']}
                       </div>
                     </div>
                   );
                 })()}
               </div>
             </Reveal>
-
-            {/* Section divider */}
-            <SectionDivider num="03" label="Co dalej · 3 miesiące" />
-
-            {/* Before/After - TERAZ vs PO 3 MIESIĄCACH */}
-            {SC > 15 && (
-              <Reveal delay={90}>
-                <div style={{ display: 'flex', gap: 12, marginBottom: 20, width: '100%' }}>
-                  <div className="diag-ba-box now" style={{ flex: 1, textAlign: 'center', padding: '14px 10px', background: 'rgba(220,68,68,0.08)', borderRadius: 12, border: '1px solid rgba(220,68,68,0.15)' }}>
-                    <div style={{ fontFamily: M.mono, fontSize: 9, color: M.t4, letterSpacing: 2.5, textTransform: 'uppercase', marginBottom: 6 }}>TERAZ</div>
-                    <div style={{ fontFamily: M.mono, fontSize: 24, fontWeight: 800, color: M.red }}>{potential}%</div>
-                    <div style={{ fontSize: 10, color: M.t4, marginTop: 3 }}>potencjału</div>
-                  </div>
-                  <div className="diag-ba-box future" style={{ flex: 1, textAlign: 'center', padding: '14px 10px', background: 'rgba(200,168,78,0.08)', borderRadius: 12, border: '1px solid rgba(200,168,78,0.15)' }}>
-                    <div style={{ fontFamily: M.mono, fontSize: 9, color: M.t4, letterSpacing: 2.5, textTransform: 'uppercase', marginBottom: 6 }}>PO 3 MIESIĄCACH</div>
-                    <div style={{ fontFamily: M.mono, fontSize: 24, fontWeight: 800, color: M.gold }}>{Math.min(potential + Math.round(SC * 0.45), 95)}%</div>
-                    <div style={{ fontSize: 10, color: M.grn, marginTop: 3, fontWeight: 600 }}>+{Math.round(SC * 0.45)}% odzyskane</div>
-                  </div>
-                </div>
-              </Reveal>
-            )}
-
-            {/* ═══ POD TYM CO WPISAŁEŚ - LLM reframe (klasyfikuj-nie-zmysluj). Pokazuje się gdy lead wpisał free-text. Fallback do szablonu po worstCat gdy API zwróci ok:false. ═══ */}
-            {(pain.trim() || selfDx.trim()) && (
-              <Reveal delay={98}>
-                <div style={{
-                  position: 'relative', overflow: 'hidden',
-                  background: `linear-gradient(160deg, rgba(19,19,19,0.96), ${M.gold}0d)`,
-                  border: `2px solid ${M.gold}38`,
-                  padding: '22px 18px', marginBottom: 20, borderRadius: 14, width: '100%', boxSizing: 'border-box',
-                  boxShadow: `0 4px 28px ${M.gold}12`,
-                }}>
-                  <div style={{ fontFamily: M.mono, fontSize: 9, letterSpacing: 3, textTransform: 'uppercase', color: M.gold, marginBottom: 10, display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <span style={{ width: 8, height: 8, borderRadius: 4, background: M.gold, display: 'inline-block', boxShadow: `0 0 8px ${M.gold}60` }} />
-                    Pod tym, co wpisałeś
-                  </div>
-                  <p style={{ fontSize: 12.5, color: M.t4, lineHeight: 1.55, marginBottom: 16 }}>
-                    Wpisałeś to ręcznie. Czytam to razem z resztą Twoich odpowiedzi, nie osobno.
-                  </p>
-                  {reframeLoading && !reframe ? (
-                    <>
-                      {[0, 1, 2].map((i) => (
-                        <div key={i} style={{ height: 12, borderRadius: 6, background: M.s3, marginBottom: 10, width: i === 2 ? '70%' : '100%', animation: `diagPulse 1.4s ease-in-out ${i * 0.18}s infinite` }} />
-                      ))}
-                      <div style={{ fontFamily: M.mono, fontSize: 10, color: M.t4, letterSpacing: 1, marginTop: 4 }}>składam to z Twoich słów...</div>
-                    </>
-                  ) : (() => {
-                    const worstCat = catScores.reduce((a, b) => a.pct < b.pct ? a : b, catScores[0]);
-                    const step1Map: Record<string, string> = {
-                      'Sen': 'najpierw sen i kortyzol',
-                      'Stres': 'najpierw zejście ze stresu',
-                      'Żywienie': 'najpierw rytm jedzenia',
-                      'Weekend': 'najpierw odzysk weekendu',
-                      'Trening': 'najpierw regeneracja między sesjami',
-                      'Głowa': 'najpierw sen i napęd',
-                    };
-                    const step1 = step1Map[worstCat.label] || 'najpierw regeneracja';
-                    const fbMechanizm = 'To, co wpisałeś, to objaw. Przyczyna siedzi głębiej, w kolejności, której jedną zmianą nie ruszysz: gdy regeneracja leży, hormony i napęd nie wejdą, a sylwetka stoi.';
-                    const fbKolejnosc = [step1, 'potem hormony i napęd', 'potem siła i sylwetka'];
-                    const fbPulapka = 'Który trybik ruszyć u Ciebie pierwszy, z samych suwaków tego nie wyczytam. To wychodzi dopiero z 13 odpowiedzi.';
-                    const sd = selfDx.trim();
-                    const pn = pain.trim();
-                    const llmCytat = (reframe?.cytat || '').trim();
-                    const cytatFromPain = !!llmCytat && !!pn && pn.toLowerCase().includes(llmCytat.toLowerCase());
-                    const cytatRaw = cytatFromPain ? sd : (llmCytat || sd);
-                    const showCytat = !!cytatRaw && (!!sd || !pn);
-                    const falszywe = (reframe?.falszywe_zalozenie || '').trim();
-                    const mechanizm = (reframe?.mechanizm || '').trim() || fbMechanizm;
-                    const rfKol = reframe?.kolejnosc;
-                    const kol = (Array.isArray(rfKol) && rfKol.length === 3) ? rfKol : fbKolejnosc;
-                    const pulapka = (reframe?.pulapka || '').trim() || fbPulapka;
-                    return (
-                      <>
-                        {showCytat && (
-                          <div style={{ fontSize: 14.5, color: M.t2, lineHeight: 1.6, fontStyle: 'italic', borderLeft: `3px solid ${M.gold}`, paddingLeft: 14, marginBottom: 14 }}>„{cytatRaw}"</div>
-                        )}
-                        {falszywe && (
-                          <div style={{ display: 'flex', gap: 8, alignItems: 'flex-start', marginBottom: 12 }}>
-                            <span style={{ fontFamily: M.mono, color: M.t4, fontSize: 10, fontWeight: 800, letterSpacing: 1, minWidth: 64, paddingTop: 2 }}>ZAŁOŻENIE</span>
-                            <p style={{ color: M.t3, fontSize: 13, lineHeight: 1.55, margin: 0, fontStyle: 'italic' }}>{falszywe}</p>
-                          </div>
-                        )}
-                        <p style={{ fontSize: 14, color: M.t1, lineHeight: 1.6, fontWeight: 600, marginBottom: 16 }}>{mechanizm}</p>
-                        <div style={{ fontFamily: M.mono, fontSize: 9, letterSpacing: 2.5, textTransform: 'uppercase', color: M.t4, marginBottom: 10 }}>W tej kolejności</div>
-                        <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 8, marginBottom: 16 }}>
-                          {kol.map((k, i) => (
-                            <span key={`k${i}`}>
-                              <span style={{ fontFamily: M.mono, fontSize: 11.5, fontWeight: 700, padding: '6px 11px', borderRadius: 8, background: i === 0 ? M.gold : M.s2, color: i === 0 ? '#000' : M.t2, border: i === 0 ? 'none' : `1px solid ${M.brd2}` }}>{k}</span>
-                              {i < kol.length - 1 && <span style={{ color: M.t4, fontSize: 13, marginLeft: 8 }}>→</span>}
-                            </span>
-                          ))}
-                        </div>
-                        <div style={{ paddingTop: 14, borderTop: `1px solid ${M.gold}22`, fontSize: 13, color: M.t3, lineHeight: 1.6, fontStyle: 'italic' }}>{pulapka}</div>
-                      </>
-                    );
-                  })()}
-                </div>
-              </Reveal>
-            )}
 
             {/* ═══ TWOIMI SŁOWAMI - acknowledgment echo, mirror pain ═══ */}
             {pain.trim() && (
@@ -2892,33 +3857,102 @@ export default function Page() {
               </div>
             </Reveal>
 
-            {/* Section divider */}
-            <SectionDivider num="05" label="Twój profil w 6 osiach" />
-
-            {/* ═══ SCREEN 3: 6 KATEGORII (compact bars) ═══ */}
-            <Reveal delay={110}>
-              <div className="diag-profile diag-card" style={{
-                background: `linear-gradient(180deg, ${M.s1} 0%, #08080a 100%)`, border: `1px solid ${M.brd}`,
-                padding: '18px 16px', marginBottom: 20, borderRadius: 14, width: '100%', boxSizing: 'border-box',
-              }}>
-                <div style={{ fontFamily: M.mono, fontSize: 10, letterSpacing: 2.5, textTransform: 'uppercase', color: M.t4, marginBottom: 16 }}>Twój profil</div>
-                {/* Pain amplification */}
-                {D.sleep < 6 && <div style={{ fontSize: 11, color: M.t4, lineHeight: 1.5, marginBottom: 12, padding: '8px 10px', background: `${M.red}08`, borderRadius: 8, border: `1px solid ${M.red}10` }}>Pod 6h snu mózg nie zdąża się oczyścić, toksyny metaboliczne kumulują się z każdą nocą.</div>}
-                {D.stress >= 3 && D.sleep >= 6 && <div style={{ fontSize: 11, color: M.t4, lineHeight: 1.5, marginBottom: 12, padding: '8px 10px', background: `${M.red}08`, borderRadius: 8, border: `1px solid ${M.red}10` }}>Chroniczny kortyzol nie spada sam, organizm przesuwa normę w górę i im dłużej zwlekasz, tym trudniej go ściągnąć.</div>}
-                {D.weekendWork >= 2 && D.sleep >= 6 && D.stress < 3 && <div style={{ fontSize: 11, color: M.t4, lineHeight: 1.5, marginBottom: 12, padding: '8px 10px', background: `${M.red}08`, borderRadius: 8, border: `1px solid ${M.red}10` }}>2 dni tygodniowo na 60% mocy = 100 dni rocznie. Przez 5 lat masz prawie 2 lata gorszych decyzji.</div>}
-                {catScores.map((cat, i) => (
-                  <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: i < catScores.length - 1 ? 10 : 0 }}>
-                    <span style={{ fontSize: 12, fontWeight: 600, color: M.t2, width: 72, flexShrink: 0 }}>{cat.label}</span>
-                    <div className="diag-progress-bar" style={{ flex: 1, height: 8, background: M.s3, borderRadius: 4, overflow: 'hidden', minWidth: 0, ['--shine-delay' as any]: `${i * 0.4}s` }}>
-                      <div style={{ height: '100%', background: catBarColor(cat.pct), width: `${cat.pct}%`, borderRadius: 4, transition: 'width 1s ease .2s' }} />
-                    </div>
-                    <span style={{ fontFamily: M.mono, fontSize: 12, fontWeight: 700, color: catBarColor(cat.pct), width: 38, flexShrink: 0, textAlign: 'right' }}>{cat.pct}%</span>
-                    {catBadge(cat.pct) && <span style={{ fontFamily: M.mono, fontSize: 8, fontWeight: 800, color: '#000', background: catBadgeColor(cat.pct), padding: '2px 5px', borderRadius: 3, letterSpacing: 0.5, flexShrink: 0 }}>{catBadge(cat.pct)}</span>}
+            {/* ═══ SMACZEK 1: BONUS pod największy hamulec (wzajemność, realny, mało oczywisty ruch) ═══ */}
+            <Reveal delay={102}>
+              {(() => {
+                const bw = [...catScores].sort((a, b) => a.pct - b.pct)[0]?.label || '';
+                const tip = BONUS_HAMULEC[bw];
+                if (!tip) return null;
+                return (
+                  <div style={{ marginBottom: 20, padding: '20px 18px', borderRadius: 16, width: '100%', boxSizing: 'border-box', background: `${M.gold}0a`, border: `1px dashed ${M.gold}55` }}>
+                    <div style={{ fontFamily: M.mono, fontSize: 10, letterSpacing: 2.5, textTransform: 'uppercase', color: M.gold, fontWeight: 700, marginBottom: 10 }}>Bonus &middot; bo Twój hamulec to {bw.toLowerCase()}</div>
+                    <p style={{ fontSize: 14.5, color: M.t2, lineHeight: 1.65, margin: 0 }}>
+                      {tip}
+                    </p>
                   </div>
-                ))}
-              </div>
+                );
+              })()}
             </Reveal>
 
+            {/* ═══ ODCZYT: 6 obszarów jako zakresy referencyjne (spójne z raportem, zero zielonych paskow-procentow) ═══ */}
+            {cfg.showOdczyt && <Reveal delay={110}>
+              <div className="diag-card" style={{
+                background: M.s1, border: `1px solid ${M.brd2}`,
+                padding: '20px 18px', marginBottom: 20, borderRadius: 16, width: '100%', boxSizing: 'border-box',
+              }}>
+                <div style={{ fontFamily: M.mono, fontSize: 10, letterSpacing: 3, textTransform: 'uppercase', color: M.t4, fontWeight: 700, marginBottom: 6 }}>Odczyt · 6 obszarów</div>
+                <div style={{ fontSize: 12, color: M.t4, lineHeight: 1.5, marginBottom: 12 }}>Pasek po prawej to zakres, w którym tydzień się spina. Kreska to Ty.</div>
+                {catScores.map((cat, i) => {
+                  const out = cat.pct < 50;
+                  const edge = cat.pct >= 50 && cat.pct < 72;
+                  return (
+                    <div key={i} style={{ padding: '12px 0', borderBottom: i < catScores.length - 1 ? `1px solid ${M.brd}` : 'none' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 9 }}>
+                        <span style={{ fontFamily: M.mono, fontSize: 11.5, letterSpacing: 1, color: M.t2, fontWeight: 600, textTransform: 'uppercase' }}>{cat.label}</span>
+                        <span style={{ fontFamily: M.mono, fontSize: 9.5, letterSpacing: 1.5, textTransform: 'uppercase', fontWeight: 700, color: out ? M.red : edge ? M.gold : M.t4 }}>{out ? 'poza zakresem' : edge ? 'granica' : 'w normie'}</span>
+                      </div>
+                      <div style={{ position: 'relative', height: 14 }}>
+                        <span style={{ position: 'absolute', top: 6, left: 0, right: 0, height: 2, background: M.s3, borderRadius: 1 }} />
+                        <span style={{ position: 'absolute', top: 5, left: '72%', width: '26%', height: 4, background: 'rgba(200,168,78,.22)', borderRadius: 2 }} />
+                        <span style={{ position: 'absolute', top: 0, width: 3, height: 14, borderRadius: 2, left: `calc(${Math.min(Math.max(cat.pct, 2), 98)}% - 1px)`, background: out ? M.red : M.gold, boxShadow: `0 0 8px ${out ? 'rgba(220,68,68,.4)' : 'rgba(200,168,78,.35)'}` }} />
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </Reveal>}
+
+            {/* ═══ OSIE HORMONALNE POD PRESJĄ - widoczne (nie akordeon), tylko osie z >=2 sygnałami z JEGO danych ═══ */}
+            {(() => {
+              const osie = osieHormonalne(D);
+              if (!osie.length) return null;
+              return (
+                <Reveal delay={112}>
+                  <div style={{ background: M.s1, border: `1px solid ${M.brd2}`, padding: '20px 18px', marginBottom: 20, borderRadius: 16, width: '100%', boxSizing: 'border-box' }}>
+                    <div style={{ fontFamily: M.mono, fontSize: 10, letterSpacing: 3, textTransform: 'uppercase', color: M.gold, fontWeight: 700, marginBottom: 6 }}>Sygnały, które warto sprawdzić</div>
+                    <div style={{ fontSize: 12, color: M.t4, lineHeight: 1.5, marginBottom: 14 }}>Wzorce z Twoich odpowiedzi, które warto potwierdzić badaniem krwi. Z samych odpowiedzi hormonów nie odczytam i nie udaję, że jest inaczej.</div>
+                    {osie.map((o, i) => (
+                      <div key={i} style={{ padding: '12px 0', borderBottom: i < osie.length - 1 ? `1px solid ${M.brd}` : 'none' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 5 }}>
+                          <span style={{ fontFamily: M.serif, fontSize: 19, color: M.t1 }}>{o.n}</span>
+                          <span style={{ fontFamily: M.mono, fontSize: 12, letterSpacing: 2, color: o.lvl === 3 ? M.red : M.org }} aria-label={o.lvl === 3 ? 'mocna presja' : 'presja'}>
+                            {o.lvl === 3 ? '●●●' : '●●○'}
+                          </span>
+                        </div>
+                        <div style={{ fontFamily: M.mono, fontSize: 11.5, color: M.t3, lineHeight: 1.5 }}>{o.why}</div>
+                      </div>
+                    ))}
+                    <div style={{ fontSize: 12.5, color: M.t4, lineHeight: 1.55, marginTop: 14, paddingTop: 12, borderTop: `1px solid ${M.brd}`, fontStyle: 'italic' }}>
+                      Którą oś ruszyć pierwszą i czy potwierdzić krwią, ustawiam już w prowadzeniu, 1:1.
+                    </div>
+                  </div>
+                </Reveal>
+              );
+            })()}
+
+            {/* ═══ SMACZEK 3: LISTA DO PRZYCHODNI - namacalny artefakt (screenshot → lekarz), realna wartość ═══ */}
+            {badaniaUnique.length > 0 && (
+              <Reveal delay={114}>
+                <div style={{ marginBottom: 20, padding: '20px 18px', borderRadius: 16, width: '100%', boxSizing: 'border-box', background: M.s1, border: `1px solid ${M.brd2}` }}>
+                  <div style={{ fontFamily: M.mono, fontSize: 10, letterSpacing: 2.5, textTransform: 'uppercase', color: M.gold, fontWeight: 700, marginBottom: 6 }}>Bonus &middot; lista do przychodni</div>
+                  <div style={{ fontSize: 12.5, color: M.t4, lineHeight: 1.5, marginBottom: 14 }}>Zrób screena i weź do lekarza rodzinnego po skierowania. To, co u Ciebie warto sprawdzić najpierw:</div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                    {[...badaniaWysoki, ...badaniaSredni].slice(0, 4).map((b, i) => (
+                      <div key={i} style={{ display: 'flex', gap: 10, alignItems: 'baseline', padding: '9px 12px', borderRadius: 10, background: M.bg, border: `1px solid ${M.brd}` }}>
+                        <span style={{ fontFamily: M.mono, fontSize: 12, color: M.gold, fontWeight: 800, flexShrink: 0 }}>{i + 1}</span>
+                        <div>
+                          <div style={{ fontSize: 13.5, color: M.t1, fontWeight: 600 }}>{b.nazwa}</div>
+                          <div style={{ fontSize: 11.5, color: M.t3, lineHeight: 1.45, marginTop: 2 }}>{b.dlaczego}</div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  <div style={{ fontSize: 10.5, color: M.t4, lineHeight: 1.5, marginTop: 12, fontStyle: 'italic' }}>Diagnozę stawia lekarz. Ta lista mówi, od czego zacząć sprawdzanie. Kolejność i interpretację z Twoim tygodniem układam w prowadzeniu.</div>
+                </div>
+              </Reveal>
+            )}
+
+            {cfg.showKontekst && <>
             {/* Section divider */}
             <SectionDivider num="06" label="Pełen kontekst · rozwiń jeśli chcesz" />
 
@@ -2937,7 +3971,7 @@ export default function Page() {
               {showDetails && (
                 <div style={{ padding: '16px 18px', background: M.s1, borderRadius: '0 0 12px 12px', border: `1px solid ${M.brd}`, borderTopWidth: 0 }}>
                   <div style={{ fontSize: 13, color: M.t3, lineHeight: 1.6, marginBottom: 12 }}>
-                    Razem <strong style={{ color: M.gold }}>{C.total.toLocaleString('pl-PL')} zł</strong> w 6 miesięcy. Z konta wychodzi <strong style={{ color: M.t2 }}>{C.hardTotal.toLocaleString('pl-PL')} zł</strong>. Reszta, czyli <strong style={{ color: M.t2 }}>{C.hiddenTotal.toLocaleString('pl-PL')} zł</strong>, to treningi które się nie liczą, praca na 60% mocy i regeneracja co zajmuje dwa razy dłużej.
+                    <strong style={{ color: M.gold }}>{C.hardTotal.toLocaleString('pl-PL')} zł</strong> w 6 miesięcy to realny wydatek, który sam podałeś: wyjścia i dowozy. Reszta rachunku nie jest w złotówkach, tylko w godzinach na pół mocy i wieczorach, które się rozsypują. Tego nie przeliczam na kwotę, bo byłby to strzał, nie pomiar.
                   </div>
                   {C.brakes > 0 && C.wastedSessions > 0 && (
                     <div style={{ padding: '12px 14px', background: M.s2, borderRadius: 10, fontSize: 12, color: M.t3, lineHeight: 1.6 }}>
@@ -2996,74 +4030,16 @@ export default function Page() {
                       </>
                     )}
                     <div style={{ marginTop: 4, fontSize: 10.5, color: M.t4, lineHeight: 1.5, fontStyle: 'italic' }}>
-                      Raport nie jest diagnozą lekarską. Pokazuje obszary stylu życia, które mogą wpływać na energię, apetyt, sen, trening i regenerację.
+                      Diagnozy tu nie ma, od tego jest lekarz. Tu widzisz, co w Twoim tygodniu może ciągnąć w dół energię, sen, apetyt i regenerację.
                     </div>
                   </div>
                 )}
               </div>
             )}
 
-            {/* Collapsible: Progresja */}
-            {SC > 20 && (
-              <div style={{ marginBottom: 12 }}>
-                <button onClick={() => setShowProgresja(!showProgresja)} style={{
-                  width: '100%', padding: '14px 18px', background: M.s1, border: `1px solid ${M.brd}`,
-                  borderRadius: showProgresja ? '12px 12px 0 0' : 12, color: M.t2, fontSize: 13, fontWeight: 600, fontFamily: M.sans,
-                  cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                }}>
-                  Co zobaczysz w lustrze za 12 miesięcy
-                  <span style={{ transform: showProgresja ? 'rotate(180deg)' : 'rotate(0)', transition: 'transform 0.3s', fontSize: 12 }}>&#9660;</span>
-                </button>
-                {showProgresja && (
-                  <div style={{ padding: '16px 18px', background: M.s1, borderRadius: '0 0 12px 12px', border: `1px solid ${M.brd}`, borderTopWidth: 0 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
-                      <div style={{ width: 7, height: 7, borderRadius: 4, background: '#dc2626', boxShadow: `0 0 6px #dc262650` }} />
-                      <span style={{ fontFamily: M.mono, fontSize: 11, fontWeight: 700, color: '#dc2626' }}>Za 12 miesięcy bez zmian</span>
-                    </div>
-                    <div style={{ fontSize: 13.5, color: M.t2, lineHeight: 1.65, marginLeft: 15, marginBottom: 8 }}>
-                      Wiek mózgu skacze do <strong style={{ color: M.red }}>{Math.round(brainAge) + 1}</strong>, sprawność spada o <strong style={{ color: M.red }}>~{cognitiveDecayPerYear}%</strong>.
-                    </div>
-                    <div style={{ fontSize: 13.5, color: M.t2, lineHeight: 1.65, marginLeft: 15 }}>
-                      Objawy z „irytujących” stają się tym, co mówi się lekarzowi.
-                    </div>
-                    <div style={{ marginTop: 16, padding: '12px 14px', background: `${M.gold}08`, borderRadius: 10, fontSize: 11.5, color: M.t3, lineHeight: 1.55 }}>
-                      Jak to wygląda miesiąc po miesiącu i gdzie się zatrzymuje, omawiam 1:1.
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
+            {/* Akordeon „za 12 miesięcy" wycięty: generyczny straszak, dublował się z blokiem „Jeśli nic nie ruszysz". */}
 
-            {/* Collapsible: Hormony - TEASER nazwy + strzałki, bez diagnoz */}
-            {hormones.length > 0 && (
-              <div style={{ marginBottom: 20 }}>
-                <button onClick={() => setShowHormony(!showHormony)} style={{
-                  width: '100%', padding: '14px 18px', background: M.s1, border: `1px solid ${M.brd}`,
-                  borderRadius: showHormony ? '12px 12px 0 0' : 12, color: M.t2, fontSize: 13, fontWeight: 600, fontFamily: M.sans,
-                  cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                }}>
-                  Które hormony Ci się świecą ({hormones.length} osi do sprawdzenia)
-                  <span style={{ transform: showHormony ? 'rotate(180deg)' : 'rotate(0)', transition: 'transform 0.3s', fontSize: 12 }}>&#9660;</span>
-                </button>
-                {showHormony && (
-                  <div style={{ padding: '16px 18px', background: M.s1, borderRadius: '0 0 12px 12px', border: `1px solid ${M.brd}`, borderTopWidth: 0 }}>
-                    <div style={{ fontSize: 13, color: M.t3, lineHeight: 1.6, marginBottom: 12 }}>
-                      Po Twoich odpowiedziach <strong style={{ color: M.t1 }}>{hormones.length} osi hormonalnych</strong> wisi w powietrzu:
-                    </div>
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 14 }}>
-                      {hormones.map((h, i) => (
-                        <span key={i} style={{ fontSize: 12, fontWeight: 600, color: M.t1, padding: '6px 12px', background: M.s2, borderRadius: 8, display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-                          <span style={{ fontSize: 13, color: h.c }}>{h.a}</span> {h.n}
-                        </span>
-                      ))}
-                    </div>
-                    <div style={{ padding: '12px 14px', background: `${M.gold}08`, borderRadius: 10, fontSize: 11.5, color: M.t3, lineHeight: 1.55 }}>
-                      Którą oś ruszać pierwszą i jak agresywnie, decyduję jak zobaczę wyniki krwi, 1:1.
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
+            </>}
 
             {/* ═══ DIAGNOZA - co widzę w Twoich odpowiedziach (Kalski) ═══ */}
             <Reveal delay={115}>
@@ -3076,15 +4052,74 @@ export default function Page() {
                   {imie.trim() ? `${capName(imie.trim())}, co tu wyłapuję` : 'Co tu wyłapuję'}
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                  {D.sleep < 7 && <div style={{ fontSize: 14, color: M.t2, lineHeight: 1.6 }}><strong style={{ color: M.t1 }}>Śpisz {D.sleep}h.</strong> Przy takim rytmie kortyzol nie schodzi w nocy, rano startujesz już z niższej pozycji.</div>}
-                  {D.stress >= 2 && <div style={{ fontSize: 14, color: M.t2, lineHeight: 1.6 }}><strong style={{ color: M.t1 }}>Stres na {D.stress}/5.</strong> Organizm przestał odróżniać alarm od normy. Testosteron i kortyzol mają ten sam prekursor, wygrywa zawsze ten bardziej potrzebny.</div>}
-                  {D.mondayFeel >= 1 && <div style={{ fontSize: 14, color: M.t2, lineHeight: 1.6 }}><strong style={{ color: M.t1 }}>Poniedziałek startujesz na minusie.</strong> Piątek zabrał Ci 3 dni regeneracji, czego nie naprawisz przez „mniej pić”.</div>}
-                  {D.trainHappy >= 1 && D.trainYears >= 2 && <div style={{ fontSize: 14, color: M.t2, lineHeight: 1.6 }}><strong style={{ color: M.t1 }}>{D.trainYears} lat trenujesz, a efekty nie idą.</strong> Gdyby trening sam z siebie wystarczył, byłoby widać. Problem siedzi w pozostałych 163 godzinach tygodnia.</div>}
-                  {D.triedBefore >= 2 && <div style={{ fontSize: 14, color: M.t2, lineHeight: 1.6 }}><strong style={{ color: M.t1 }}>Próbowałeś parę razy sam.</strong> Dyscypliny Ci nie brakuje. Brakuje danych z własnego organizmu, żeby wiedzieć, co dokładnie ruszać i w jakiej kolejności.</div>}
+                  {D.sleep < 7 && <div style={{ fontSize: 14, color: M.t2, lineHeight: 1.6 }}><strong style={{ color: M.t1 }}>Śpisz {D.sleep}h.</strong> Przy krótszym śnie łatwiej o to, że rano startujesz już zmęczony i sięgasz po kawę zamiast po energię.</div>}
+                  {D.stress >= 2 && <div style={{ fontSize: 14, color: M.t2, lineHeight: 1.6 }}><strong style={{ color: M.t1 }}>Napięcie nie schodzi wieczorem.</strong> Kiedy głowa nie wychodzi z trybu alarmu, ciało dostaje resztki. Zwykle widać to najpierw po energii, śnie i apetycie.</div>}
+                  {D.mondayFeel >= 1 && <div style={{ fontSize: 14, color: M.t2, lineHeight: 1.6 }}><strong style={{ color: M.t1 }}>Poniedziałek startujesz na minusie.</strong> Po weekendzie sen i rytm wracają dłużej, niż się wydaje, i nie naprawi tego samo „mniej pić".</div>}
+                  {D.triedBefore >= 2 && <div style={{ fontSize: 14, color: M.t2, lineHeight: 1.6 }}><strong style={{ color: M.t1 }}>Próbowałeś parę razy sam.</strong> Dyscypliny Ci nie brakuje. Brakuje danych z własnego organizmu, żeby wiedzieć, co ruszać najpierw i w jakiej kolejności.</div>}
                   <div style={{ fontSize: 14, color: M.t3, lineHeight: 1.6, paddingTop: 12, borderTop: `1px solid ${M.brd}`, marginTop: 4, fontStyle: 'italic' }}>Te rzeczy się zazębiają, ruszysz jedną i reszta natychmiast przesuwa się w miejscu starego balansu.</div>
                 </div>
               </div>
             </Reveal>
+
+            {/* ═══ PĘKNIĘCIA TYGODNIA - samoocena na koniec (commitment: sam odhacza = sam wydaje werdykt) ═══ */}
+            <Reveal delay={118}>
+              {(() => {
+                const order = [...catScores].sort((a, b) => a.pct - b.pct).map(c => c.label);
+                const items = order.map(l => ({ l, txt: CRACK_POOL[l] })).filter(x => x.txt);
+                const n = cracked.size;
+                const total = items.length;
+                const ostry = cfg.crackTone === 'ostry';
+                const verdict = n === 0
+                  ? (good ? 'Zero pęknięć i wynik to potwierdza. Tydzień masz spięty. Teraz pytanie, co z nim zbudujesz.' : ostry ? 'Zaznacz szczerze. Jak faktycznie zero, to tydzień masz spięty. Jak nie umiesz zaznaczyć, to też jest odpowiedź.' : 'Zaznacz szczerze. Zero też jest wynikiem.')
+                  : n <= 2
+                  ? (ostry ? `${n} z ${total}. Jeszcze się nie sypie, ale już ucieka. Teraz łata się najtaniej.` : `${n} z ${total}. Wcześnie. To najlepszy moment, żeby to spiąć.`)
+                  : n <= 4
+                  ? (ostry ? `${n} z ${total}. Tego nie łatasz pojedynczo. Widzisz je od środka, a od środka nie widać wzoru.` : `${n} z ${total}. To już wzór, nie przypadki. Warto na to spojrzeć z zewnątrz.`)
+                  : (ostry ? `${n} z ${total}. Tak wygląda konstrukcja, nie zbieg okoliczności. Sam tego nie załatasz i dobrze o tym wiesz.` : `${n} z ${total}. Cały tydzień pracuje przeciwko Tobie. Tego nie naprawia się w pojedynkę.`);
+                const dmMsg = `DIAGNOZA. ${n}/${total} pęknięć: ${items.filter((_, i) => cracked.has(i)).map(x => x.l.toLowerCase()).join(', ') || 'sprawdzam'}.`;
+                return (
+                  <div style={{ padding: '24px 20px', marginBottom: 14, borderRadius: 16, background: `linear-gradient(160deg, rgba(19,19,19,0.96), ${M.gold}08)`, border: `1px solid ${M.gold}35`, width: '100%', boxSizing: 'border-box' }}>
+                    <div style={{ fontFamily: M.mono, fontSize: 10, letterSpacing: 3, textTransform: 'uppercase', color: M.gold, fontWeight: 700, marginBottom: 10 }}>Pęknięcia tygodnia · sprawdź sam</div>
+                    <div style={{ fontFamily: M.serif, fontSize: 27, color: M.t1, lineHeight: 1.12, marginBottom: 8 }}>Nie wierz mojemu wynikowi. <em style={{ fontStyle: 'italic', color: M.gold }}>Odhacz swój.</em></div>
+                    <p style={{ fontSize: 13, color: M.t3, lineHeight: 1.55, marginBottom: 16 }}>Zaznacz tylko to, co jest z Twojego tygodnia. Nie z tego raportu, z życia.</p>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 7, marginBottom: 16 }}>
+                      {items.map((it, i) => {
+                        const on = cracked.has(i);
+                        return (
+                          <button key={i} onClick={() => { vibe(8); setCracked(p => { const s = new Set(p); if (s.has(i)) { s.delete(i); } else { s.add(i); } trackEvent('diag_crack_toggle', { count: s.size }); return s; }); }} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '13px 14px', textAlign: 'left', background: on ? M.gold + '0e' : M.s1, border: `1px solid ${on ? M.gold + '66' : M.brd2}`, borderRadius: 10, cursor: 'pointer', transition: 'border-color .2s ease, background .2s ease', fontFamily: M.sans }}>
+                            <span style={{ width: 20, height: 20, borderRadius: '50%', border: `1.5px solid ${on ? M.gold : M.brd2}`, background: on ? M.gold : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, transition: 'all .2s ease' }}>{on && <span style={{ fontSize: 10, color: '#0a0a0a', fontWeight: 800, lineHeight: 1 }}>✓</span>}</span>
+                            <span style={{ flex: 1, fontSize: 14, color: on ? M.t1 : M.t2, lineHeight: 1.45, fontWeight: on ? 600 : 400 }}>{it.txt}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'baseline', gap: 12, marginBottom: 10 }}>
+                      <span style={{ fontFamily: M.serif, fontSize: 44, lineHeight: 1, color: n >= 3 ? M.red : M.gold, fontVariantNumeric: 'tabular-nums' }}>{n}<span style={{ fontSize: 22, color: M.t4 }}> / {total}</span></span>
+                      <span style={{ fontFamily: M.mono, fontSize: 9.5, letterSpacing: 2, textTransform: 'uppercase', color: M.t4, fontWeight: 700 }}>pęknięć w Twoim tygodniu</span>
+                    </div>
+                    <p style={{ fontSize: 14.5, color: M.t1, lineHeight: 1.6, fontWeight: 600, marginBottom: 16 }}>{verdict}</p>
+                    <a
+                      href={`https://ig.me/m/hantleitalerz?text=${encodeURIComponent(dmMsg)}`}
+                      target="_blank" rel="noopener noreferrer"
+                      onClick={() => trackEvent('diag_cta_click', { target: 'dm_pekniecia', score: SC, cracks: n })}
+                      style={{ display: 'block', textAlign: 'center', background: `linear-gradient(135deg, ${M.gold}, #a08a3e)`, color: M.bg, textDecoration: 'none', padding: '16px', borderRadius: 12, fontWeight: 800, fontSize: 14, letterSpacing: 1.2, textTransform: 'uppercase', fontFamily: M.sans }}
+                    >Napisz DIAGNOZA &rarr;</a>
+                    <div style={{ fontSize: 11, color: M.t4, textAlign: 'center', marginTop: 8, fontFamily: M.mono, letterSpacing: 0.5 }}>DM otworzy się z gotową wiadomością. Odpisuję sam.</div>
+                    <a
+                      href="https://nabor.talerzihantle.com?utm_source=diagnostyka&utm_content=pekniecia"
+                      target="_blank" rel="noopener noreferrer"
+                      onClick={() => trackEvent('diag_cta_click', { target: 'nabor_pekniecia', score: SC, cracks: n })}
+                      style={{ display: 'block', textAlign: 'center', marginTop: 12, fontSize: 12.5, color: M.t4, textDecoration: 'underline', textUnderlineOffset: 3 }}
+                    >albo najpierw zobacz, jak wygląda prowadzenie &rarr;</a>
+                  </div>
+                );
+              })()}
+            </Reveal>
+
+            {/* Disclaimer - model edukacyjny, nie diagnoza */}
+            <div style={{ padding: '14px 16px', marginBottom: 12, borderRadius: 12, background: M.s1, border: `1px solid ${M.brd}`, fontSize: 12, color: M.t3, lineHeight: 1.6 }}>
+              Ten raport liczę z Twoich odpowiedzi, nie z badań. Lekarza nie zastępuje. Jak coś Cię boli albo wyniki krwi wyglądają dziwnie, idź z tym do lekarza, nie do quizu.
+            </div>
 
             {/* Źródła - kompaktowe */}
             <div style={{ padding: '12px', fontSize: 10, color: M.t4, lineHeight: 1.6, fontFamily: M.mono }}>
@@ -3095,6 +4130,44 @@ export default function Page() {
             {showStickyCta && (
               <StickyCtaBar SC={SC} potential={potential} brainAge={brainAge} userAge={D.age} topCatLabel={catScores.reduce((a, b) => a.pct < b.pct ? a : b, catScores[0]).label} />
             )}
+          </div>
+        )}
+
+        {/* ── KONFIGURATOR (?config=1) - panel wariantów pierwszej i ostatniej strony ── */}
+        {showConfig && (
+          <div style={{ position: 'fixed', right: 10, bottom: 10, zIndex: 9999, width: 264, maxHeight: '82vh', overflowY: 'auto', background: '#0f0f0f', border: `1px solid ${M.gold}50`, borderRadius: 14, padding: '14px 14px 16px', boxShadow: '0 10px 40px rgba(0,0,0,.65)' }}>
+            <div style={{ fontFamily: M.mono, fontSize: 10, letterSpacing: 2, textTransform: 'uppercase', color: M.gold, fontWeight: 700, marginBottom: 12 }}>Konfigurator · zapis auto</div>
+            {([
+              ['Nagłówek hero (kąt)', 'heroH1', [['A', 'godzina'], ['B', 'dyscyplina/diagnoza'], ['C', 'ile kosztuje'], ['D', 'wiesz, forma stoi'], ['E', 'anty-plan']]],
+              ['Zajawka', 'heroSub', [['A', 'godzina+koszt'], ['B', '3 liczby']]],
+              ['Badge', 'badge', [['A', 'zero teorii'], ['B', 'darmowy']]],
+              ['Font nagłówków', 'font', [['instrument', 'Instrument'], ['playfair', 'Playfair'], ['cormorant', 'Cormorant']]],
+              ['Rozmiar hero', 'heroSize', [['M', 'M'], ['L', 'L']]],
+              ['CTA główne', 'cta', [['A', 'zobacz prowadzenie'], ['B', 'jak pracuję 1:1'], ['C', 'czy się łapiesz']]],
+              ['Ton pęknięć', 'crackTone', [['ostry', 'ostry'], ['spokojny', 'spokojny']]],
+            ] as [string, keyof CfgT, [string, string][]][]).map(([label, key, opts]) => (
+              <div key={String(key)} style={{ marginBottom: 11 }}>
+                <div style={{ fontFamily: M.mono, fontSize: 9, letterSpacing: 1.5, textTransform: 'uppercase', color: M.t4, marginBottom: 5 }}>{label}</div>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5 }}>
+                  {opts.map(([v, l]) => {
+                    const on = String(cfg[key]) === v;
+                    return (
+                      <button key={v} onClick={() => setCfg(p => ({ ...p, [key]: v }))} style={{ padding: '5px 9px', borderRadius: 7, fontSize: 10.5, fontWeight: 600, cursor: 'pointer', border: `1px solid ${on ? M.gold : M.brd2}`, background: on ? M.gold + '18' : M.s1, color: on ? M.gold : M.t3, fontFamily: M.sans }}>{l}</button>
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
+            <div style={{ marginBottom: 11 }}>
+              <div style={{ fontFamily: M.mono, fontSize: 9, letterSpacing: 1.5, textTransform: 'uppercase', color: M.t4, marginBottom: 5 }}>Sekcje wyniku</div>
+              {([['showOdczyt', 'Odczyt 6 obszarów'], ['showKontekst', 'Pełen kontekst (akordeony)']] as [keyof CfgT, string][]).map(([k, l]) => {
+                const on = Boolean(cfg[k]);
+                return (
+                  <button key={String(k)} onClick={() => setCfg(p => ({ ...p, [k]: !p[k] }))} style={{ display: 'block', width: '100%', textAlign: 'left', padding: '6px 9px', marginBottom: 4, borderRadius: 7, fontSize: 10.5, fontWeight: 600, cursor: 'pointer', border: `1px solid ${on ? M.gold : M.brd2}`, background: on ? M.gold + '14' : M.s1, color: on ? M.gold : M.t4, fontFamily: M.sans }}>{on ? '✓ ' : '✗ '}{l}</button>
+                );
+              })}
+            </div>
+            <button onClick={() => setCfg({ ...CFG_DEFAULT })} style={{ width: '100%', padding: '7px', borderRadius: 8, fontSize: 10.5, fontWeight: 700, cursor: 'pointer', border: `1px solid ${M.brd2}`, background: 'transparent', color: M.t4, fontFamily: M.sans }}>Reset do domyślnych</button>
           </div>
         )}
 

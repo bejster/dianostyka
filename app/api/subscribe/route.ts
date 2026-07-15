@@ -96,24 +96,19 @@ export async function POST(req: NextRequest) {
     const webhookUrl = process.env.N8N_DIAGNOSTYKA_WEBHOOK;
     if (webhookUrl) {
       try {
+        // Forward CAŁEGO payloadu - żadne pole nie ginie po drodze do n8n/Telegram/Notion.
+        // Spread najpierw, potem fallbacki dla starego formatu i pól wymaganych przez workflow.
         const whRes = await fetch(webhookUrl, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
+            ...body,
             email,
             instagram_handle: instagram_handle || '',
             imie: imie || '',
             wynik_kwota: wynik_kwota || String(totalCost ?? ''),
             wynik_score: wynik_score || String(score ?? ''),
-            wynik_potencjal: wynik_potencjal || '',
-            wynik_niewykorzystany: wynik_niewykorzystany || '',
-            wynik_hamulce: wynik_hamulce || '',
-            wynik_badania_count: wynik_badania_count || '',
-            wynik_badania_priorytet: wynik_badania_priorytet || '',
-            biggest_category: biggest_category || '',
-            priority_lead: priority_lead || '0',
-            commitment_proxy: commitment_proxy || '',
-            budget_proxy: budget_proxy || '',
+            priority_lead: priority_lead ?? '0',
             path: path || 'general',
             timestamp: timestamp || new Date().toISOString(),
             source: source || 'diagnostyka_hit',
@@ -129,13 +124,48 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // 3. Telegram idzie przez n8n workflow (node "Powiadomienie Telegram")
+    // 3. Telegram BEZPOŚREDNIO (niezależnie od n8n) — spersonalizowany wynik leada do Michała
+    let tgOk = false;
+    const tgToken = process.env.TELEGRAM_BOT_TOKEN;
+    const tgChat = process.env.TELEGRAM_CHAT_ID;
+    if (tgToken && tgChat) {
+      try {
+        const o = (odpowiedzi || {}) as Record<string, unknown>;
+        const stan = String(body.wynik_stan || '');
+        const stanIco = stan === 'dobry' ? '🟢' : stan === 'średni' ? '🟡' : '🔴';
+        const q = (v: unknown) => { const s = String(v ?? '').trim(); return s ? `„${s.slice(0, 160)}"` : '—'; };
+        const lines = [
+          `${stanIco} DIAGNOSTYKA — ${String(body.wynik_score ?? '?')}/100 (tydzień ${stan || '?'})`,
+          `${imie || 'bez imienia'} · ${instagram_handle || 'brak IG'} · ${email}`,
+          ``,
+          `Pęka: ${String(body.wynik_godzina || '—')} · Typ: ${String(body.wynik_typ || '—')}`,
+          `Hamulec: ${String(biggest_category || '—')} · Intencja: ${String(body.intencja || '—')}${body.kiedy_start ? ` · start: ${String(body.kiedy_start)}` : ''}`,
+          body.warunek_decyzji ? `Warunek decyzji: ${q(body.warunek_decyzji)}` : '',
+          ``,
+          `Wkurza: ${q(o.pain)}`,
+          `Dlaczego teraz: ${q(o.trigger)}`,
+          `Próbował: ${q(o.selfDx)}`,
+          ``,
+          `Sen ${String(o.sleep ?? '?')}h · praca ${String(o.workHours ?? '?')}h · pół mocy ${String(o.lost ?? '?')}h · treningi ${String(o.plan ?? '?')}/tydz (wypada ${String(o.miss ?? '?')})`,
+        ].filter(l => l !== '');
+        const tgRes = await fetch(`https://api.telegram.org/bot${tgToken}/sendMessage`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ chat_id: tgChat, text: lines.join('\n') }),
+        });
+        tgOk = tgRes.ok;
+        if (!tgRes.ok) console.error('Telegram error:', tgRes.status, await tgRes.text());
+      } catch (tgErr) {
+        console.error('Telegram fetch error:', tgErr);
+      }
+    }
 
     // Zwracamy status — frontend wie czy się udało
     return NextResponse.json({
       ok: true,
       mailerlite: mlOk,
       webhook: webhookOk,
+      telegram: tgOk,
     });
   } catch (e) {
     console.error('Subscribe API error:', e);
