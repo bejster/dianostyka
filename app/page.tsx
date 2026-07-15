@@ -1,15 +1,35 @@
 'use client';
 import { useState, useRef, useEffect, useCallback } from 'react';
+import {
+  buildNaborPilotUrl,
+  FUNNEL_PILOT_VERSION,
+  isFunnelDryRunHost,
+  readSafeFunnelContext,
+  sanitizeAnalyticsData,
+} from './lib/funnel-pilot';
+
+const PILOT_NABOR_DESTINATION = process.env.NEXT_PUBLIC_FUNNEL_NABOR_URL || 'https://nabor.talerzihantle.com/';
 
 // ── Tracking: wysyłka eventów do n8n via sendBeacon ──
 function trackEvent(event: string, data?: Record<string, unknown>) {
   try {
+    const isBrowser = typeof window !== 'undefined';
+    const isDryRun = isBrowser && isFunnelDryRunHost(window.location.hostname);
     const payload = {
       event,
-      ...data,
+      page: 'diagnostyka',
+      funnel_version: FUNNEL_PILOT_VERSION,
+      ...(isBrowser ? readSafeFunnelContext(window.location.search) : {}),
+      ...sanitizeAnalyticsData(data),
       ts: Date.now(),
-      url: typeof window !== 'undefined' ? window.location.href : '',
+      url: isBrowser ? `${window.location.origin}${window.location.pathname}` : '',
     };
+    if (isDryRun) {
+      const localWindow = window as typeof window & { __FUNNEL_PILOT_EVENTS__?: Array<typeof payload> };
+      localWindow.__FUNNEL_PILOT_EVENTS__ ||= [];
+      localWindow.__FUNNEL_PILOT_EVENTS__.push(payload);
+      return;
+    }
     if (typeof navigator !== 'undefined' && navigator.sendBeacon) {
       navigator.sendBeacon(
         'https://n8n.srv1313512.hstgr.cloud/webhook/diagnostyka-events',
@@ -1007,10 +1027,17 @@ async function genBrainAgeShareCard({ name, brainAge, age, bioAge, type, hour }:
 }
 
 // ── STICKY CTA BAR: scroll progress + dual button (forma + DM) ──
-function StickyCtaBar({ SC, potential, brainAge, userAge, topCatLabel }: { SC: number; potential: number; brainAge: number; userAge: number; topCatLabel: string }) {
+function StickyCtaBar({ SC, potential, brainAge, userAge, topCatLabel, incomingSearch }: { SC: number; potential: number; brainAge: number; userAge: number; topCatLabel: string; incomingSearch: string }) {
   const progress = useScrollProgress();
   const dmText = `${topCatLabel.toLowerCase()} ciągnie, wynik ${SC}/100. ruszysz to ze mną?`;
   const dmHref = `https://ig.me/m/hantleitalerz?text=${encodeURIComponent(dmText)}`;
+  const naborHref = buildNaborPilotUrl({
+    destination: PILOT_NABOR_DESTINATION,
+    incomingSearch,
+    placement: 'sticky',
+    score: SC,
+    topCategory: topCatLabel,
+  });
   return (
     <div style={{
       position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 100,
@@ -1031,10 +1058,10 @@ function StickyCtaBar({ SC, potential, brainAge, userAge, topCatLabel }: { SC: n
       {/* SINGLE CTA - jedno mocne CTA Jotform. DM wyciety per user: "wszystkie glowne CTA -> JotForm" */}
       <div style={{ padding: '0 16px', maxWidth: 520, margin: '0 auto' }}>
         <a
-          href="https://nabor.talerzihantle.com?utm_source=diagnostyka&utm_content=sticky"
+          href={naborHref}
           target="_blank"
           rel="noopener noreferrer"
-          onClick={() => { trackEvent('diag_cta_click', { target: 'nabor_sticky', score: SC }); fbqTrack('InitiateCheckout', { content_name: 'nabor_sticky', content_category: 'high_ticket', value: SC, currency: 'PLN' }); }}
+          onClick={() => { trackEvent('primary_cta_click', { cta_id: 'diagnostic_sticky', destination: 'nabor', score_bucket: SC >= 60 ? 'high' : SC >= 40 ? 'mid' : 'low', legacy_event: 'diag_cta_click' }); fbqTrack('InitiateCheckout', { content_name: 'nabor_sticky', content_category: 'high_ticket', value: SC, currency: 'PLN' }); }}
           style={{
             display: 'block', textAlign: 'center', padding: '14px 16px', borderRadius: 12,
             background: `linear-gradient(135deg, ${M.gold}, #a08a3e)`,
@@ -1071,6 +1098,7 @@ export default function Page() {
   const [copied, setCopied] = useState(false); // przycisk share
   const [utmSource, setUtmSource] = useState('');
   const [utmProblem, setUtmProblem] = useState('');
+  const [inboundSearch, setInboundSearch] = useState('');
   const [countersActive, setCountersActive] = useState(false); // uruchom liczniki po wejściu w wyniki
   const [showDetails, setShowDetails] = useState(false); // collapsible cost breakdown
   const [cracked, setCracked] = useState<Set<number>>(new Set()); // pęknięcia tygodnia - samoocena na wyniku
@@ -1094,11 +1122,12 @@ export default function Page() {
   // Efekt wejścia hero + tracking startu + UTM
   useEffect(() => {
     const t = setTimeout(() => setLoaded(true), 80);
-    trackEvent('diag_started');
+    trackEvent('diagnostic_start', { legacy_event: 'diag_started' });
     // Pixel: ViewContent - lead zaczyna formularz diagnostyki
     fbqTrack('ViewContent', { content_name: 'diagnostyka_start', content_category: 'lead_gen' });
     // Odczytaj UTM z URL
     if (typeof window !== 'undefined') {
+      setInboundSearch(window.location.search);
       const params = new URLSearchParams(window.location.search);
       const src = params.get('utm_source') || '';
       const prob = params.get('problem') || '';
@@ -1112,7 +1141,11 @@ export default function Page() {
   useEffect(() => {
     if (phase === 'results') {
       const sc = score(D);
-      trackEvent('diag_results_view', { score: sc });
+      trackEvent('diagnostic_complete', {
+        score_bucket: sc >= 60 ? 'high' : sc >= 40 ? 'mid' : 'low',
+        diagnostic_segment: sc > 60 ? 'goracy' : sc > 40 ? 'cieply' : 'zimny',
+        legacy_event: 'diag_results_view',
+      });
       const t = setTimeout(() => setCountersActive(true), 400);
       // Sticky CTA - pokaż po scrollu 400px
       const onScroll = () => {
@@ -1212,7 +1245,12 @@ export default function Page() {
       setSecTransition('out-left');
       setTimeout(() => {
         const nextSec = sec + 1;
-        trackEvent('diag_section', { section: SECTIONS[nextSec], step: nextSec + 1 });
+        trackEvent('diagnostic_section_complete', {
+          section_id: SECTIONS[sec],
+          next_section_id: SECTIONS[nextSec],
+          step: sec + 1,
+          legacy_event: 'diag_section',
+        });
         setSec(nextSec);
         setSecTransition('in');
         softScrollToForm();
@@ -1222,7 +1260,6 @@ export default function Page() {
       // Tier 3: value-first. Wynik pokazuje się OD RAZU, bez ściany email. Kontakt zbieramy niżej, po intencji.
       const sc = score(D);
       const worst = [...catScores].sort((a, b) => a.pct - b.pct)[0]?.label || '';
-      trackEvent('diag_results_view', { score: sc });
       // Pixel: Lead - skonczyl 7 sekcji i zobaczyl wynik
       fbqTrack('Lead', { content_name: 'diagnostyka_results', content_category: 'lead_gen', value: sc });
       fetchReframe({ pain, selfDx, trigger, worstCat: worst, segment: '', age: D.age });
@@ -1345,7 +1382,7 @@ export default function Page() {
       return Math.round((D.age + penalty) * 10) / 10;
     })();
     // Tracking: email gate submit
-    trackEvent('diag_gate_submit', { email });
+    trackEvent('contact_gate_submit', { contact_channel: 'email', legacy_event: 'diag_gate_submit' });
     // Pochodne v2 (pola bez UI, klucze payloadu zostają): trainPlan z plan, frustration z tekstu leada
     D.trainPlan = D.plan > 0 ? 0 : 1;
     {
@@ -3304,9 +3341,9 @@ export default function Page() {
                       Mam Twój wynik{imie.trim() ? `, ${capName(imie.trim())}` : ''}. {intent === 2 ? 'Odezwę się w DM z konkretem, zwykle w 24h. W międzyczasie zobacz, jak wygląda prowadzenie.' : intent === 1 ? 'Zobacz teraz, jak dokładnie wygląda prowadzenie.' : 'Pierwszy ruch masz w raporcie niżej. Jak zechcesz ułożyć to razem, zacznij tutaj.'}
                     </p>
                     <a
-                      href="https://nabor.talerzihantle.com?utm_source=diagnostyka&utm_content=captured"
+                      href={buildNaborPilotUrl({ destination: PILOT_NABOR_DESTINATION, incomingSearch: inboundSearch, placement: 'captured', score: SC, topCategory: catScores.reduce((a, b) => a.pct < b.pct ? a : b, catScores[0]).label, intent })}
                       target="_blank" rel="noopener noreferrer"
-                      onClick={() => trackEvent('diag_cta_click', { target: 'nabor_captured', score: SC, intent })}
+                      onClick={() => trackEvent('primary_cta_click', { cta_id: 'diagnostic_captured', destination: 'nabor', score_bucket: tier, diagnostic_intent: intent, legacy_event: 'diag_cta_click' })}
                       className="shimmer-btn"
                       style={{ display: 'block', textAlign: 'center', background: `linear-gradient(135deg, ${M.gold}, #a08a3e)`, color: M.bg, textDecoration: 'none', padding: '17px', borderRadius: 14, fontWeight: 800, fontSize: 15, letterSpacing: 1, boxShadow: '0 4px 24px rgba(200,168,78,0.28)' }}
                     >ZOBACZ, JAK WYGLĄDA PROWADZENIE &rarr;</a>
@@ -3737,11 +3774,11 @@ export default function Page() {
 
                       {/* PRIMARY: Jotform - pelna aplikacja, ciepły lead po quizie */}
                       <a
-                        href="https://nabor.talerzihantle.com?utm_source=diagnostyka&utm_content=primary"
+                        href={buildNaborPilotUrl({ destination: PILOT_NABOR_DESTINATION, incomingSearch: inboundSearch, placement: 'primary', score: SC, topCategory: topCatLabel, intent })}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="shimmer-btn"
-                        onClick={() => { trackEvent('diag_cta_click', { target: 'nabor_primary', score: SC, category: topCatLabel }); fbqTrack('AddToCart', { content_name: 'nabor_prowadzenie', content_category: 'high_ticket', value: SC, currency: 'PLN' }); }}
+                        onClick={() => { trackEvent('primary_cta_click', { cta_id: 'diagnostic_primary', destination: 'nabor', score_bucket: tier, diagnostic_top_category: topCatLabel, legacy_event: 'diag_cta_click' }); fbqTrack('AddToCart', { content_name: 'nabor_prowadzenie', content_category: 'high_ticket', value: SC, currency: 'PLN' }); }}
                         style={{
                           display: 'block', textAlign: 'center',
                           background: `linear-gradient(135deg, ${M.gold}, #a08a3e)`,
@@ -3769,7 +3806,7 @@ export default function Page() {
                         }).toString()}&utm_source=diagnostyka&utm_content=secondary`}
                         target="_blank"
                         rel="noopener noreferrer"
-                        onClick={() => trackEvent('diag_cta_click', { target: 'jotform_secondary', score: SC, category: topCatLabel })}
+                        onClick={() => trackEvent('secondary_cta_click', { cta_id: 'diagnostic_form_fallback', destination: 'jotform_252274061537051', score_bucket: tier, diagnostic_top_category: topCatLabel, legacy_event: 'diag_cta_click' })}
                         style={{
                           display: 'flex', alignItems: 'center', justifyContent: 'center',
                           padding: '14px 16px', minHeight: 44,
@@ -3787,7 +3824,7 @@ export default function Page() {
                         href={dmHref}
                         target="_blank"
                         rel="noopener noreferrer"
-                        onClick={() => trackEvent('diag_cta_click', { target: 'dm_tertiary', score: SC, category: topCatLabel })}
+                        onClick={() => trackEvent('secondary_cta_click', { cta_id: 'diagnostic_dm_fallback', destination: 'instagram_dm', score_bucket: tier, diagnostic_top_category: topCatLabel, legacy_event: 'diag_cta_click' })}
                         style={{
                           display: 'flex', alignItems: 'center', justifyContent: 'center',
                           padding: '10px 16px', minHeight: 40,
@@ -4101,14 +4138,14 @@ export default function Page() {
                     <a
                       href={`https://ig.me/m/hantleitalerz?text=${encodeURIComponent(dmMsg)}`}
                       target="_blank" rel="noopener noreferrer"
-                      onClick={() => trackEvent('diag_cta_click', { target: 'dm_pekniecia', score: SC, cracks: n })}
+                      onClick={() => trackEvent('secondary_cta_click', { cta_id: 'diagnostic_dm_cracks', destination: 'instagram_dm', score_bucket: tier, cracks_bucket: n > 2 ? '3_plus' : String(n), legacy_event: 'diag_cta_click' })}
                       style={{ display: 'block', textAlign: 'center', background: `linear-gradient(135deg, ${M.gold}, #a08a3e)`, color: M.bg, textDecoration: 'none', padding: '16px', borderRadius: 12, fontWeight: 800, fontSize: 14, letterSpacing: 1.2, textTransform: 'uppercase', fontFamily: M.sans }}
                     >Napisz DIAGNOZA &rarr;</a>
                     <div style={{ fontSize: 11, color: M.t4, textAlign: 'center', marginTop: 8, fontFamily: M.mono, letterSpacing: 0.5 }}>DM otworzy się z gotową wiadomością. Odpisuję sam.</div>
                     <a
-                      href="https://nabor.talerzihantle.com?utm_source=diagnostyka&utm_content=pekniecia"
+                      href={buildNaborPilotUrl({ destination: PILOT_NABOR_DESTINATION, incomingSearch: inboundSearch, placement: 'pekniecia', score: SC, topCategory: catScores.reduce((a, b) => a.pct < b.pct ? a : b, catScores[0]).label, intent })}
                       target="_blank" rel="noopener noreferrer"
-                      onClick={() => trackEvent('diag_cta_click', { target: 'nabor_pekniecia', score: SC, cracks: n })}
+                      onClick={() => trackEvent('primary_cta_click', { cta_id: 'diagnostic_cracks', destination: 'nabor', score_bucket: tier, cracks_bucket: n > 2 ? '3_plus' : String(n), legacy_event: 'diag_cta_click' })}
                       style={{ display: 'block', textAlign: 'center', marginTop: 12, fontSize: 12.5, color: M.t4, textDecoration: 'underline', textUnderlineOffset: 3 }}
                     >albo najpierw zobacz, jak wygląda prowadzenie &rarr;</a>
                   </div>
@@ -4128,7 +4165,7 @@ export default function Page() {
 
             {/* ═══ STICKY CTA - upgraded: scroll progress + DM-direct (council Expansionist) ═══ */}
             {showStickyCta && (
-              <StickyCtaBar SC={SC} potential={potential} brainAge={brainAge} userAge={D.age} topCatLabel={catScores.reduce((a, b) => a.pct < b.pct ? a : b, catScores[0]).label} />
+              <StickyCtaBar SC={SC} potential={potential} brainAge={brainAge} userAge={D.age} topCatLabel={catScores.reduce((a, b) => a.pct < b.pct ? a : b, catScores[0]).label} incomingSearch={inboundSearch} />
             )}
           </div>
         )}
