@@ -7,6 +7,8 @@ import {
   readSafeFunnelContext,
   sanitizeAnalyticsData,
 } from './lib/funnel-pilot';
+import WeekPage from './components/WeekPage';
+import { buildWeekPlan } from './lib/week-plan';
 
 const PILOT_NABOR_DESTINATION = process.env.NEXT_PUBLIC_FUNNEL_NABOR_URL || 'https://nabor.talerzihantle.com/';
 
@@ -118,6 +120,7 @@ interface FD {
   raise: number;        // ruch w zarobkach 12 mies: -1=brak odp, 0=konkretny, 1=symboliczny, 2=stoi, 3=nie pamięta (gate komponentu C kotwicy)
   defer: number;        // odkładane decyzje/tydzień: -1=brak odp, 0=0, 1=1-2, 2=3-5, 3=codziennie coś wisi
   retreat: number;      // odpuszczona rozmowa (pewność siebie): -1=brak odp, 0=w tym tygodniu, 1=w tym miesiącu, 2=dawno, 3=ciągle
+  wkndWhat: number;     // co sypie się w weekend najmocniej: -1=brak odp, 0=sen/pobudki, 1=jedzenie luzem, 2=zero ruchu, 3=alkohol/regeneracja (pytane gdy wknd>=2)
   veggies: number;      // warzywa/owoce ~500g dziennie: 0=tak, 1=czasem, 2=prawie wcale (jakość żywienia)
   protein: number;      // białko + regularne posiłki: 0=tak, 1=średnio, 2=mało/nieregularnie
   morningWood: number;  // poranny wzwód (marker hormonalny z narzędzia hormonów): 0=regularnie, 1=czasem, 2=rzadko/wcale
@@ -134,7 +137,7 @@ const INIT: FD = {
   wakeTime: 7, alarm: 1, workHours: 8, progress: 0, meals: 3, cooking: 1,
   mondayFeel: 0, weekendWork: 1, trainYears: 3, trainHappy: 0, trainPlan: 0,
   triedBefore: 1, frustration: 1,
-  raise: -1, defer: -1, retreat: -1,
+  raise: -1, defer: -1, retreat: -1, wkndWhat: -1,
   veggies: 0, protein: 0, morningWood: 0, supps: -1,
 };
 
@@ -340,7 +343,7 @@ function pickArchetype(D: FD, worstLabel: string): Archetype {
   if (worstLabel === 'Żywienie' || worstLabel === 'Sen' || D.binge >= 2 || D.screenBed >= 2) {
     return {
       key: 'wieczorny_odpad',
-      label: 'Wieczorny odpad',
+      label: 'Dzień na kredycie',
       tagline: 'W dzień masz kontrolę. Wieczorem organizm odbiera dług.',
       mirror: 'Do osiemnastej jesteś ogarnięty. Potem leci telefon, lodówka i sen po pierwszej. Wieczorem spłacasz rachunek za cały dzień na kawie i stresie. Silna wola nie ma tu nic do gadania.',
     };
@@ -453,6 +456,54 @@ const BONUS_HAMULEC: Record<string, string> = {
   'Trening': 'Zetnij plan do wersji, którą dowieziesz w najgorszy tydzień. Jeden trening 30 minut zrobiony bije idealny 90-minutowy, który odpuścisz.',
   'Głowa': 'Odkładanie bierze się z za wielu otwartych pętli naraz. Wieczorem zapisz jedną decyzję na kartce i zrób ją rano przed telefonem. Jedna zamknięta pętla dziennie odblokowuje resztę.',
 };
+// ── ROADMAPA 1:1: copy per kategoria (workflow roadmapa-copy-engine, zweryfikowane anty-slop + ICP-sceptyk 2026-07-15) ──
+const ROADMAPA_KARTY: Record<string, { dzwignia: string; dno: string; robimy: string; poznasz: string }> = {
+  'Sen': {
+    dzwignia: 'Odblokowujemy poranek i rytm kortyzolu',
+    dno: 'Telefon gaśnie po północy, budzik dzwoni trzy razy, a pierwszą godzinę dnia ciągniesz na kawie, z głową, która włącza się dopiero koło południa.',
+    robimy: 'Ustawiamy Ci światło w pierwszych minutach po wstaniu, bo poranne światło przestawia dobowy rytm kortyzolu mocniej niż dodatkowa godzina snu. Pierwszą kawę odsuwamy od budzika: zaraz po wstaniu kortyzol i tak jest na szczycie, a kofeina wypita na ten szczyt tylko odracza zmęczenie, które wraca zjazdem po południu.',
+    poznasz: 'Wstajesz za pierwszym budzikiem, a kawa wraca do roli przyjemności zamiast rozrusznika.',
+  },
+  'Stres': {
+    dzwignia: 'Uczymy Twój układ nerwowy odwoływać alarm po pracy',
+    dno: 'Ciało siedzi wieczorem na kanapie, głowa wciąż w skrzynce z mailami, a krótki lont odpala się na ludzi, którzy z tą skrzynką nie mają nic wspólnego.',
+    robimy: 'Uczymy Twój układ nerwowy odwoływać alarm: kortyzol działa jak syrena, która sama nie gaśnie od leżenia przed telewizorem, więc ustawiamy rytuał zamknięcia dnia pracy, twardą granicę, po której mózg dostaje sygnał, że zagrożenie minęło. Do tego wydech dłuższy od wdechu (najszybszy hamulec nerwu błędnego) i ruch po robocie, który dopala krążącą adrenalinę.',
+    poznasz: 'Kończysz wieczorem odcinek serialu i umiesz powiedzieć, o czym był, bo głowa siedziała w tym samym pokoju co ciało.',
+  },
+  'Żywienie': {
+    dzwignia: 'Wygaszamy wieczorny głód od strony dnia, nie silnej woli',
+    dno: 'Cały dzień jedziesz na kawie i czymś z automatu, a o 21:30 stoisz w świetle lodówki i zjadasz więcej niż przez cały dzień. Zasypiasz z pełnym brzuchem i cichym wkurwem na siebie.',
+    robimy: 'Przestawiamy białko na początek dnia, 30-40 g w pierwszym posiłku, bo grelina (hormon głodu) po białku spada najmocniej ze wszystkich makroskładników i wieczorne napady wygasają, zanim się zaczną. Największy posiłek wpisujemy tam, gdzie i tak jesz, czyli wieczorem: lodówka po 21 przestaje być wpadką, bo jest w planie.',
+    poznasz: 'Któregoś wieczoru łapiesz się na tym, że minęła 22, a Ty nawet nie zajrzałeś do lodówki, bo nie było po co.',
+  },
+  'Weekend': {
+    dzwignia: 'Ustawiamy powrót po weekendzie tak, żeby poniedziałek był Twój',
+    dno: 'W poniedziałek o 9:00 siedzisz na spotkaniu z trzecią kawą i udajesz, że słuchasz, a w głowie masz jedno: do środy będę spłacał ten weekend.',
+    robimy: 'Piątek zostaje piątkiem, cała robota dzieje się w niedzielę: odsypianie do 12 przesuwa Ci rytm dobowy jak lot przez dwie strefy czasowe i właśnie ten przelot czujesz w poniedziałek rano. Gramy to tak, że w niedzielę wstajesz o swojej porze, w ciągu godziny łapiesz światło dzienne, a brakujący sen oddajesz wcześniejszym pójściem spać.',
+    poznasz: 'Pierwszy poniedziałek, w którym siadasz rano do roboty i głowa działa od razu, mimo że w sobotę wróciłeś grubo po północy.',
+  },
+  'Trening': {
+    dzwignia: 'Przycinamy plan do wersji, która przetrwa zły tydzień',
+    dno: 'Karnet odnawia się kolejny raz, a Ty w szatni dalej ubierasz koszulkę tyłem do lustra, bo po latach dźwigania sylwetka wygląda, jakbyś trenował od pół roku.',
+    robimy: 'Przestawiamy plan na wersję, która przetrwa zły tydzień: mniej serii, ale każda dociągnięta do momentu, w którym robi się naprawdę ciężko, bo dopiero ostatnie 2-3 powtórzenia dają mięśniowi sygnał do wzrostu. Objętość ustawiamy pod Twoją regenerację, bo przy krótkim śnie i stresie organizm tnie odbudowę mięśnia w pierwszej kolejności i dlatego lata treningu potrafią dawać efekt jednego roku.',
+    poznasz: 'Zamykasz pierwszy od miesięcy tydzień z każdą sesją zrobioną i wieczorem dalej masz siłę na normalne życie.',
+  },
+  'Głowa': {
+    dzwignia: 'Zamykamy otwarte pętle decyzji, które zjadają napęd',
+    dno: 'Trzeci wieczór z rzędu przesuwasz tę samą decyzję na jutro, a w ciągu dnia każde trudniejsze zadanie kończy się telefonem w ręce po dwóch minutach.',
+    robimy: 'Ustawiamy wieczorne zamykanie decyzji: każdą przesuwaną rzecz rozpisujesz przed snem w dwie linijki z terminem i pierwszym ruchem, bo otwarta decyzja wraca do głowy cały dzień i ten szum sprawia, że przy trudnym zadaniu ręka sama idzie po telefon. „Od poniedziałku” wycinamy z osobnego powodu: sama deklaracja startu daje mózgowi ulgę zbliżoną do wykonania i napięcie do działania opada.',
+    poznasz: 'Trudne zadanie skończone, a telefon dalej leży tam, gdzie go rano zostawiłeś.',
+  },
+};
+
+// Weekendowe "drugie dno" personalizowane odpowiedzia wkndWhat (co konkretnie sie sypie)
+const WKND_DNO: Record<number, string> = {
+  0: 'Sobota do południa w łóżku, niedziela do jedenastej, a poniedziałkowy budzik o 6:30 uderza jak jet lag po locie przez dwie strefy czasowe.',
+  1: 'Od piątkowego wieczoru jedzenie leci luzem, a w poniedziałek rano patrzysz w lustro i liczysz, ile z tygodnia właśnie oddałeś.',
+  2: 'Cały tydzień pilnujesz kroków i treningów, a weekend to kanapa i telefon, po których ciało w poniedziałek jest sztywne jak po chorobie.',
+  3: 'W poniedziałek o 9:00 siedzisz na spotkaniu z trzecią kawą i udajesz, że słuchasz, a w głowie masz jedno: do środy będę spłacał ten weekend.',
+};
+
 // SMACZEK 2: belief-shift z realnych odpowiedzi (myślisz X, a to Y). HIDDEN = ukryte drivery pod objawami.
 const HIDDEN_DRIVERS = ['Sen', 'Stres', 'Głowa'];
 function zaskoczenie(worst: string, second: string): string {
@@ -1061,7 +1112,7 @@ function StickyCtaBar({ SC, potential, brainAge, userAge, topCatLabel, incomingS
           href={naborHref}
           target="_blank"
           rel="noopener noreferrer"
-          onClick={() => { trackEvent('primary_cta_click', { cta_id: 'diagnostic_sticky', destination: 'nabor', score_bucket: SC >= 60 ? 'high' : SC >= 40 ? 'mid' : 'low', legacy_event: 'diag_cta_click' }); fbqTrack('InitiateCheckout', { content_name: 'nabor_sticky', content_category: 'high_ticket', value: SC, currency: 'PLN' }); }}
+          onClick={() => { trackEvent('primary_cta_click', { cta_id: 'diagnostic_sticky', destination: 'nabor', score_bucket: SC >= 40 ? 'high' : SC >= 20 ? 'mid' : 'low', legacy_event: 'diag_cta_click' }); fbqTrack('InitiateCheckout', { content_name: 'nabor_sticky', content_category: 'high_ticket', value: SC, currency: 'PLN' }); }}
           style={{
             display: 'block', textAlign: 'center', padding: '14px 16px', borderRadius: 12,
             background: `linear-gradient(135deg, ${M.gold}, #a08a3e)`,
@@ -1142,8 +1193,8 @@ export default function Page() {
     if (phase === 'results') {
       const sc = score(D);
       trackEvent('diagnostic_complete', {
-        score_bucket: sc >= 60 ? 'high' : sc >= 40 ? 'mid' : 'low',
-        diagnostic_segment: sc > 60 ? 'goracy' : sc > 40 ? 'cieply' : 'zimny',
+        score_bucket: sc >= 40 ? 'high' : sc >= 20 ? 'mid' : 'low',
+        diagnostic_segment: sc >= 40 ? 'goracy' : sc >= 20 ? 'cieply' : 'zimny',
         legacy_event: 'diag_results_view',
       });
       const t = setTimeout(() => setCountersActive(true), 400);
@@ -1263,6 +1314,26 @@ export default function Page() {
       // Pixel: Lead - skonczyl 7 sekcji i zobaczyl wynik
       fbqTrack('Lead', { content_name: 'diagnostyka_results', content_category: 'lead_gen', value: sc });
       fetchReframe({ pain, selfDx, trigger, worstCat: worst, segment: '', age: D.age });
+      // ANONIMOWY zapis odpowiedzi przy KAZDYM wyniku (bez imienia/maila/IG) - agregaty pod content
+      // ("o ktorej peka tydzien X facetow"), przyszle percentyle i real-voice mine takze od tych, co nie zostawia kontaktu.
+      try {
+        if (typeof navigator !== 'undefined' && navigator.sendBeacon) {
+          navigator.sendBeacon(
+            'https://n8n.srv1313512.hstgr.cloud/webhook/unified-leads',
+            JSON.stringify({
+              event: 'diagnostyka_anon_result',
+              ts: new Date().toISOString(),
+              score: sc,
+              stan: sc < 12 ? 'dobry' : sc < 40 ? 'sredni' : 'zly',
+              godzina: hourRange(D),
+              hamulec: worst,
+              typ: pickArchetype(D, worst).key,
+              odpowiedzi: { ...D, tags: Array.from(D.tags) },
+              pain, trigger, selfDx,
+            })
+          );
+        }
+      } catch {}
       try { localStorage.removeItem('diag_progress_v2'); } catch {}
       try { localStorage.setItem('diag_last_result', JSON.stringify({ ts: Date.now(), score: sc, hour: hourRange(D), typ: pickArchetype(D, worst).label })); } catch {}
       setPhase('results');
@@ -1407,7 +1478,7 @@ export default function Page() {
       trainYears: D.trainYears, trainHappy: D.trainHappy, trainPlan: D.trainPlan,
       rate: D.rate, tags: Array.from(D.tags),
       triedBefore: D.triedBefore, frustration: D.frustration,
-      raise: D.raise, defer: D.defer, retreat: D.retreat,
+      raise: D.raise, defer: D.defer, retreat: D.retreat, wkndWhat: D.wkndWhat,
       veggies: D.veggies, protein: D.protein, morningWood: D.morningWood,
       supps: SUPP_OPTS.filter(([bit]) => D.supps > 0 && (D.supps & bit) !== 0).map(([, l]) => l).join(', ') || (D.supps === 0 ? 'nic' : 'brak odp'),
       breakWindow: D.breakWindow,
@@ -1416,15 +1487,15 @@ export default function Page() {
     const biggest = catData.reduce((a, b) => a.v > b.v ? a : b, catData[0]);
     const payloadBlocked = Math.min(sc, 85);
     // Oblicz segment (GORACY/CIEPELY/ZIMNY) i routed product do payloadu
-    const segment = sc > 60 ? 'GORACY' : sc > 40 ? 'CIEPELY' : 'ZIMNY';
-    // Najgorsza kategoria wg catScores (zsynchronizowane z CTA routing)
+    const segment = sc >= 40 ? 'GORACY' : sc >= 20 ? 'CIEPELY' : 'ZIMNY';
+    // Najgorsza kategoria wg catScores (te same formuly co display, kalibracja 2026-07-15)
     const pCatScores = [
       { label: 'Sen', pct: Math.max(100 - Math.round(((D.sleepQ + D.screenBed) / 6 + (7.5 - Math.min(D.sleep, 7.5)) / 1.5) * 55), 5) },
       { label: 'Stres', pct: Math.max(100 - Math.round(((D.stress + D.energy + (D.workHours > 9 ? 1 : 0)) / 7) * 100), 5) },
-      { label: 'Żywienie', pct: Math.max(100 - Math.round(((D.dietChaos + D.binge + (D.meals <= 1 ? 1 : 0)) / 7) * 100), 5) },
-      { label: 'Weekend', pct: Math.max(100 - Math.round((D.drinks / 12) * 65 + (D.subs > 0 ? 35 : 0)), 5) },
-      { label: 'Trening', pct: Math.max(100 - Math.round(((D.miss * 1.5 + (D.trainHappy >= 1 ? 1 : 0)) / 4) * 100), 5) },
-      { label: 'Głowa', pct: Math.max(100 - Math.round((tagScoreWeighted(D.tags) / 10) * 90), 5) },
+      { label: 'Żywienie', pct: Math.max(100 - Math.round((D.binge / 4) * 70 + (D.veggies + D.protein) * 7), 5) },
+      { label: 'Weekend', pct: Math.max(100 - Math.round((D.drinks / 12) * 40 + D.wknd * 10 + D.mondayFeel * 8 + (D.subs > 0 ? 25 : 0)), 5) },
+      { label: 'Trening', pct: Math.max(100 - Math.round(((D.miss * 1.5 + (D.trainHappy >= 1 && D.trainHappy <= 2 ? 1 : 0)) / 4) * 100), 5) },
+      { label: 'Głowa', pct: Math.max(100 - Math.round((tagScoreWeighted(D.tags) / 10) * 60 + D.defer * 8 + D.dopamine * 6 + (D.triedBefore >= 2 ? 10 : 0)), 5) },
     ];
     const worstCatP = pCatScores.reduce((a, b) => a.pct < b.pct ? a : b, pCatScores[0]);
     // Odpal generacje reframe rownolegle - poleci w tle, gotowe zanim lead doscrolluje
@@ -1436,7 +1507,7 @@ export default function Page() {
     // Bez dodatkowego pytania - wyliczane z istniejacych odpowiedzi
     const commitmentProxy = (D.triedBefore >= 2 ? 2 : D.triedBefore) + (D.frustration >= 3 ? 2 : D.frustration >= 1 ? 1 : 0);
     const budgetProxy = (c.hardTotal >= 3000 ? 3 : c.hardTotal >= 1500 ? 2 : 1);
-    const priorityLead = sc >= 60 && commitmentProxy >= 3 && budgetProxy >= 2;
+    const priorityLead = sc >= 40 && commitmentProxy >= 3 && budgetProxy >= 2;
     // Kotwica roczna do payloadu: ta sama kwota co na hero wyniku, slowo w slowo (rada: jeden rozjazd = zaufanie pada)
     const arP = anchorRok(D);
     const payload = {
@@ -1447,7 +1518,7 @@ export default function Page() {
       kiedy_start: startWhen === null ? '' : ['7dni', '30dni', '2-3mies', 'tylko_sprawdza'][startWhen],
       warunek_decyzji: hotWhy.trim() || '',
       wynik_godzina: hourRange(D),
-      wynik_stan: sc < 30 ? 'dobry' : sc < 60 ? 'średni' : 'zły',
+      wynik_stan: sc < 12 ? 'dobry' : sc < 40 ? 'średni' : 'zły',
       wynik_rok_wydatek: String(arP.hardYear),
       wynik_rok_godziny: String(arP.hours),
       wynik_rok_dni: String(arP.dni),
@@ -1559,10 +1630,11 @@ export default function Page() {
 
   const C = costs(D); const SC = score(D);
   // Tier narracji wyniku: doom musi byc proporcjonalny do wyniku, inaczej niski score czyta doom jako fake
-  const tier: 'low' | 'mid' | 'high' = SC >= 60 ? 'high' : SC >= 40 ? 'mid' : 'low';
-  // STAN tygodnia wg realnego przeciążenia (SC). Niskie SC = DOBRY tydzień. Steruje CAŁĄ narracją wyniku.
-  const good = SC < 30;   // dobry tydzień: mówimy „trzymasz mocno", zero wymyślonych problemów
-  const bad = SC >= 60;   // zły tydzień: mówimy wprost, że tydzień pracuje przeciwko niemu
+  // PROGI SKALIBROWANE symulacją 15 profili (2026-07-15): pojedynczy zajechany obszar daje SC ~20-28,
+  // wiec stary prog good<30 wpuszczal 13/15 realnych profili w strone "wszystko ok" = zero napiecia = zero klikniec.
+  const tier: 'low' | 'mid' | 'high' = SC >= 40 ? 'high' : SC >= 20 ? 'mid' : 'low';
+  const bad = SC >= 40;   // zły tydzień: mówimy wprost, że tydzień pracuje przeciwko niemu
+  // good liczone NIZEJ (po catScores): SC < 12 ORAZ zadna kategoria poza norma
   const pct = Math.round(((sec + 1) / SECTIONS.length) * 100);
   const scoreColor = SC >= 75 ? M.red : SC >= 50 ? M.org : SC >= 25 ? M.yel : M.grn;
 
@@ -2026,11 +2098,13 @@ export default function Page() {
   const catScores = [
     { label: 'Sen', pct: Math.max(100 - Math.round(((D.sleepQ + D.screenBed) / 6 + (7.5 - Math.min(D.sleep, 7.5)) / 1.5) * 55), 5) },
     { label: 'Stres', pct: Math.max(100 - Math.round(((D.stress + D.energy + (D.workHours > 9 ? 1 : 0)) / 7) * 100), 5) },
-    { label: 'Żywienie', pct: Math.max(100 - Math.round(((D.dietChaos + D.binge + (D.meals <= 1 ? 1 : 0)) / 7) * 100), 5) },
-    { label: 'Weekend', pct: Math.max(100 - Math.round((D.drinks / 12) * 65 + (D.subs > 0 ? 35 : 0)), 5) },
-    { label: 'Trening', pct: Math.max(100 - Math.round(((D.miss * 1.5 + (D.trainHappy >= 1 ? 1 : 0)) / 4) * 100), 5) },
-    { label: 'Głowa', pct: Math.max(100 - Math.round((tagScoreWeighted(D.tags) / 10) * 90), 5) },
+    { label: 'Żywienie', pct: Math.max(100 - Math.round((D.binge / 4) * 70 + (D.veggies + D.protein) * 7), 5) },
+    { label: 'Weekend', pct: Math.max(100 - Math.round((D.drinks / 12) * 40 + D.wknd * 10 + D.mondayFeel * 8 + (D.subs > 0 ? 25 : 0)), 5) },
+    { label: 'Trening', pct: Math.max(100 - Math.round(((D.miss * 1.5 + (D.trainHappy >= 1 && D.trainHappy <= 2 ? 1 : 0)) / 4) * 100), 5) },
+    { label: 'Głowa', pct: Math.max(100 - Math.round((tagScoreWeighted(D.tags) / 10) * 60 + D.defer * 8 + D.dopamine * 6 + (D.triedBefore >= 2 ? 10 : 0)), 5) },
   ];
+  // DOBRY tydzien: niski indeks ORAZ zadna kategoria realnie poza norma (kalibracja z symulacji 15 profili)
+  const good = SC < 12 && catScores.every(c => c.pct >= 60);
   // Badge: KRYTYCZNY przy <= 5%, WYSOKI przy <= 20%
   const catBadge = (pct: number) => pct <= 5 ? 'KRYTYCZNY' : pct <= 20 ? 'WYSOKI' : null;
   const catBadgeColor = (pct: number) => pct <= 5 ? M.red : M.org;
@@ -2484,25 +2558,13 @@ export default function Page() {
                     </h1>
                     {/* Symptom stack + insight "to nie 5 problemow" + obietnica + odkrycia (wersja Michala, promise-payoff match z wynikiem) */}
                     <div style={{ color: M.t1, fontSize: 16, lineHeight: 1.75, fontWeight: 600, maxWidth: 400, margin: '0 auto 14px' }}>
-                      {['Sen, który nie regeneruje', 'Zjazd energii w ciągu dnia', 'Wieczorny głód', 'Odpadający trening', 'Brak efektów mimo kolejnych prób'].map((s, i) => (
+                      {['Sen, który nie regeneruje', 'Zjazd energii w ciągu dnia', 'Brak efektów mimo kolejnych prób'].map((s, i) => (
                         <div key={i}>{s}</div>
                       ))}
                     </div>
-                    <p style={{ fontFamily: M.serif, fontStyle: 'italic', color: M.gold, fontSize: 19, lineHeight: 1.35, fontWeight: 400, maxWidth: 400, margin: '0 auto 14px' }}>
-                      To nie musi być pięć osobnych problemów.
+                    <p style={{ fontFamily: M.serif, fontStyle: 'italic', color: M.gold, fontSize: 19, lineHeight: 1.35, fontWeight: 400, maxWidth: 400, margin: '0 auto 22px' }}>
+                      To nie muszą być osobne problemy.
                     </p>
-                    <div style={{ maxWidth: 384, margin: '4px auto 20px', textAlign: 'left', display: 'flex', flexDirection: 'column', gap: 9 }}>
-                      {[
-                        'Zobaczysz moment, od którego rozjeżdża się reszta dnia',
-                        'Odkryjesz swój największy hamulec',
-                        'Dostaniesz priorytet na najbliższe 14 dni',
-                      ].map((b, i) => (
-                        <div key={i} style={{ display: 'flex', gap: 10, alignItems: 'flex-start', fontSize: 14.5, color: M.t2, lineHeight: 1.45 }}>
-                          <span style={{ color: M.gold, fontWeight: 800, flexShrink: 0, marginTop: 1 }}>&rarr;</span>
-                          <span>{b}</span>
-                        </div>
-                      ))}
-                    </div>
                     <button
                       onClick={() => { vibe(10); if (typeof window !== 'undefined') window.scrollBy({ top: Math.round(window.innerHeight * 0.72), behavior: 'smooth' }); }}
                       className="shimmer-btn"
@@ -2652,30 +2714,7 @@ export default function Page() {
                   <Slider label="Ile godzin dziennie pracujesz?" min={4} max={14} step={1} k="workHours" val={D.workHours} unit="h" ariaLabel="Liczba godzin pracy dziennie" />
                   <Slider label="Ile z nich lecisz na pół mocy?" min={0} max={4} step={0.5} k="lost" val={D.lost} unit="h" note="Siedzisz przy ekranie, klikasz, ale głowy tam nie ma. Policz te godziny." ariaLabel="Liczba godzin na pół mocy dziennie" />
                   {/* Pensja i podwyżka usunięte z przeglądu: kotwica liczy tylko realny wydatek + czas, nie zmyśloną utraconą pensję. */}
-                  {/* Postępy: forma i energia (zawężone, nie „życie ogólnie") */}
-                  <div style={{ marginBottom: 26 }}>
-                    <div style={{ fontSize: 15, color: M.t1, fontWeight: 500, marginBottom: 6, lineHeight: 1.45 }}>
-                      Ostatnie trzy miesiące: forma i energia idą w dobrą stronę?
-                    </div>
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 10 }}>
-                      {[{ n: '✓', l: 'Wyraźnie tak', v: 0 }, { n: '~', l: 'Minimalnie', v: 1 }, { n: '✗', l: 'Stoją', v: 2 }].map(o => {
-                        const on = D.progress === o.v;
-                        const col = o.v === 0 ? M.grn : o.v === 1 ? M.yel : M.red;
-                        return (
-                          <button key={o.v} onClick={() => upd('progress', o.v)} style={{
-                            padding: '16px 4px', textAlign: 'center',
-                            border: `1.5px solid ${on ? M.gold : M.brd2}`,
-                            background: on ? M.gold + '0e' : M.s1,
-                            cursor: 'pointer', borderRadius: 12, transition: 'border-color .2s ease, background .2s ease',
-                            minHeight: 58,
-                          }}>
-                            <span style={{ fontSize: 20, fontWeight: 700, display: 'block', marginBottom: 4, color: on ? col : M.t3 }}>{o.n}</span>
-                            <span style={{ fontSize: 11, fontWeight: 600, color: on ? col : M.t4, textTransform: 'uppercase', letterSpacing: 0.8 }}>{o.l}</span>
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
+                  {/* Pytanie o "poczucie progresu" wyciete (audyt osi biznesowych 2026-07-16): nie otwiera DM, nie domyka, nie robi contentu. Pole progress zostaje w FD z defaultem 0 = zero wplywu. */}
                 </div>
               )}
 
@@ -2821,6 +2860,28 @@ export default function Page() {
                       })}
                     </div>
                   </div>
+
+                  {/* Co konkretnie sypie sie w weekend (warunkowe, gdy weekend realnie rusza rytm) - karmi personalizacje fazy Weekend */}
+                  {D.wknd >= 2 && (
+                    <div style={{ marginBottom: 26 }}>
+                      <div style={{ fontSize: 15, color: M.t1, fontWeight: 500, marginBottom: 8, lineHeight: 1.45 }}>
+                        Co się sypie w weekend najmocniej?
+                      </div>
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+                        {([
+                          ['Sen i pobudki, wstaję w południe', 0],
+                          ['Jedzenie leci luzem', 1],
+                          ['Zero ruchu, kanapa i telefon', 2],
+                          ['Alkohol i powrót do siebie', 3],
+                        ] as [string, number][]).map(([l, v]) => {
+                          const on = D.wkndWhat === v;
+                          return (
+                            <button key={v} onClick={() => upd('wkndWhat', v)} style={{ padding: '12px 10px', textAlign: 'left', border: `1.5px solid ${on ? M.gold : M.brd2}`, background: on ? M.gold + '0e' : M.s1, color: on ? M.t1 : M.t3, cursor: 'pointer', borderRadius: 10, transition: 'border-color .2s ease, background .2s ease', fontSize: 12.5, fontWeight: 600, fontFamily: M.sans, lineHeight: 1.35, minHeight: 50 }}>{l}</button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -3081,7 +3142,7 @@ export default function Page() {
                 borderRadius: 16,
               }}>
                 <h2 style={{ fontSize: 22, fontWeight: 800, lineHeight: 1.25, letterSpacing: -0.5, marginBottom: 10, color: M.t1, textShadow: '0 0 20px rgba(255,255,255,.1)' }}>
-                  {SC >= 60 ? 'Twój tydzień pracuje mocno przeciwko Tobie. Dobra wiadomość: większość tego to styl życia, nie geny.' : SC >= 40 ? 'Wynik średni. Kilka miejsc cieknie po cichu i łatwo je przegapić.' : 'Baza trzyma. Brakuje 2-3 ruchów, żeby zrobić realną różnicę.'}
+                  {SC >= 40 ? 'Twój tydzień pracuje mocno przeciwko Tobie. Dobra wiadomość: większość tego to styl życia, nie geny.' : SC >= 20 ? 'Wynik średni. Kilka miejsc cieknie po cichu i łatwo je przegapić.' : 'Baza trzyma. Brakuje 2-3 ruchów, żeby zrobić realną różnicę.'}
                 </h2>
                 <p style={{ fontSize: 14, color: M.t3, lineHeight: 1.6, marginBottom: 24, fontWeight: 400 }}>
                   Pełny raport pokazuje <strong style={{ color: M.t1 }}>gdzie i kiedy pęka Twój tydzień, sygnały do sprawdzenia i priorytet nr 1</strong> od razu na ekranie. Email zostaje u mnie. Jak widzę że pasujemy, odzywam się w DM.
@@ -3161,6 +3222,33 @@ export default function Page() {
         {/* ── RESULTS ── */}
         {phase === 'results' && (
           <div className="fade-up" style={{ padding: '32px 16px 140px', width: '100%', boxSizing: 'border-box' }}>
+
+            {/* ═══ KARTA TYGODNIA — prywatny artefakt: drugie dno, potencjał, plan 7 dni, most (hero wyniku) ═══ */}
+            {!good && (() => {
+              const worstW = [...catScores].sort((a, b) => a.pct - b.pct)[0]?.label || 'Sen';
+              const archW = pickArchetype(D, worstW);
+              const wkPlan = buildWeekPlan({
+                archetypeKey: archW.key, archetypeLabel: archW.label, archetypeTagline: archW.tagline,
+                worstCat: worstW, breakWindow: D.breakWindow, score: SC, costTotal: C.total, wknd: D.wknd,
+                imie, potentialPct: potential, costMonths: C.stagnationMonths,
+                drinks: D.drinks, screenBed: D.screenBed, junk: D.junk, protein: D.protein,
+                sleep: D.sleep, miss: D.miss, binge: D.binge, gym: D.gym,
+                reframe: reframe || undefined,
+              });
+              // naborHref zbudowany lokalnie (był zdefiniowany tylko w StickyCtaBar → ReferenceError)
+              const naborHref = buildNaborPilotUrl({
+                destination: PILOT_NABOR_DESTINATION,
+                incomingSearch: inboundSearch,
+                placement: 'card',
+                score: SC,
+                topCategory: worstW,
+              });
+              return (
+                <div style={{ margin: '0 -16px 20px', borderBottom: `1px solid ${M.brd}` }}>
+                  <WeekPage plan={wkPlan} imie={imie} naborHref={naborHref} />
+                </div>
+              );
+            })()}
 
             {/* Header */}
             <div style={{ textAlign: 'center', marginBottom: 24, paddingBottom: 16, borderBottom: `1px solid ${M.brd}` }}>
@@ -3275,7 +3363,7 @@ export default function Page() {
                             {good ? 'Najmocniej' : 'Największy hamulec'}: <strong style={{ color: M.gold }}>{good ? ([...catScores].sort((a, b) => b.pct - a.pct)[0]?.label || 'Sen') : (w0full || 'Sen')}</strong>
                           </span>
                           <span style={{ fontFamily: M.mono, fontSize: 11.5, color: M.t2, padding: '6px 12px', borderRadius: 8, background: M.s1, border: `1px solid ${M.brd2}` }}>
-                            Koszt tygodnia: <strong style={{ color: SC >= 60 ? M.red : SC >= 40 ? M.org : M.grn }}>{SC >= 60 ? 'wysoki' : SC >= 40 ? 'średni' : 'niski'}</strong>
+                            Koszt tygodnia: <strong style={{ color: SC >= 40 ? M.red : SC >= 12 ? M.org : M.grn }}>{SC >= 40 ? 'wysoki' : SC >= 12 ? 'średni' : 'niski'}</strong>
                           </span>
                         </div>
                         {lastRes && (Date.now() - lastRes.ts) > 3600000 && (
@@ -3284,7 +3372,7 @@ export default function Page() {
                           </div>
                         )}
 
-                        {SC >= 55 && (
+                        {SC >= 40 && (
                           <div style={{ fontSize: 14, color: M.t2, lineHeight: 1.55, marginBottom: 12, textAlign: 'left' }}>
                             Masz <strong style={{ color: M.t1 }}>{D.age}</strong> lat, a z odpowiedzi wychodzi tydzień, w którym <strong style={{ color: M.org }}>bierzesz z siebie więcej, niż oddajesz</strong>. I robisz tak od miesięcy, nie od wczoraj.
                           </div>
@@ -3311,6 +3399,54 @@ export default function Page() {
             </Reveal>
 
             {/* Cienki link „Następny krok" usunięty: konkurował z blokiem intencji, który jest teraz głównym, mocnym wyjściem. */}
+
+            {/* ═══ TOP 3 DO POPRAWY - luki z jego wyniku + naturalne przekierowanie wysoko (Michal: kluczowy redirect na gorze) ═══ */}
+            <Reveal delay={80}>
+              {(() => {
+                const t3 = [...catScores].sort((a, b) => a.pct - b.pct).slice(0, 3);
+                const anyLeak = t3.some(c => c.pct < 78);
+                if (good || !anyLeak) return (
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, margin: '0 0 16px', padding: '13px 16px', borderRadius: 12, border: `1px solid ${M.gold}30`, background: `${M.gold}07`, width: '100%', boxSizing: 'border-box' }}>
+                    <span style={{ fontSize: 13, color: M.t2, lineHeight: 1.4 }}>Baza gra. Do podkręcenia: <strong style={{ color: M.gold }}>{t3[0]?.label.toLowerCase()}</strong>.</span>
+                    <a href="https://nabor.talerzihantle.com?utm_source=diagnostyka&utm_content=top3" target="_blank" rel="noopener noreferrer"
+                      onClick={() => trackEvent('diag_cta_click', { target: 'nabor_top3', score: SC })}
+                      style={{ fontSize: 13, fontWeight: 700, color: M.gold, textDecoration: 'underline', textDecorationColor: `${M.gold}66`, textUnderlineOffset: 3, whiteSpace: 'nowrap' }}
+                    >Jak pracuję na wynik &rarr;</a>
+                  </div>
+                );
+                return (
+                  <div style={{ marginBottom: 16, padding: '20px 18px', borderRadius: 16, width: '100%', boxSizing: 'border-box', background: M.s1, border: `1px solid ${M.gold}35` }}>
+                    <div style={{ fontFamily: M.mono, fontSize: 10, letterSpacing: 3, textTransform: 'uppercase', color: M.gold, fontWeight: 700, marginBottom: 12 }}>Top 3 do poprawy · z Twoich odpowiedzi</div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 9, marginBottom: 14 }}>
+                      {t3.map((c, i) => (
+                        <div key={c.label} style={{ display: 'flex', gap: 10, alignItems: 'baseline' }}>
+                          <span style={{ fontFamily: M.mono, fontSize: 13, fontWeight: 800, color: M.gold, flexShrink: 0 }}>{i + 1}.</span>
+                          <span style={{ fontSize: 14, color: M.t2, lineHeight: 1.5 }}><strong style={{ color: M.t1 }}>{c.label}</strong>: {LEAK_LINE[c.label] || c.label.toLowerCase()}</span>
+                        </div>
+                      ))}
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, paddingTop: 12, borderTop: `1px solid ${M.brd}` }}>
+                      <span style={{ fontSize: 13, color: M.t3, lineHeight: 1.45 }}>Z każdą z tych trzech pracuję w prowadzeniu 1:1. Pełną drogę masz na dole raportu.</span>
+                      <a href="https://nabor.talerzihantle.com?utm_source=diagnostyka&utm_content=top3" target="_blank" rel="noopener noreferrer"
+                        onClick={() => { trackEvent('diag_cta_click', { target: 'nabor_top3', score: SC }); fbqTrack('InitiateCheckout', { content_name: 'nabor_top3', content_category: 'high_ticket', value: SC, currency: 'PLN' }); }}
+                        style={{ fontSize: 13, fontWeight: 700, color: M.gold, textDecoration: 'underline', textDecorationColor: `${M.gold}66`, textUnderlineOffset: 3, whiteSpace: 'nowrap' }}
+                      >Zobacz, jak to robię &rarr;</a>
+                    </div>
+                  </div>
+                );
+              })()}
+            </Reveal>
+
+            {/* ═══ TWOIMI SŁOWAMI - echo bólu zaraz po werdykcie (personalizacja z jego wpisu) ═══ */}
+            {pain.trim() && (
+              <Reveal delay={81}>
+                <div style={{ marginBottom: 16, padding: '18px 18px', borderRadius: 14, width: '100%', boxSizing: 'border-box', background: M.s1, border: `1px solid ${M.brd}` }}>
+                  <div style={{ fontFamily: M.mono, fontSize: 10, letterSpacing: 2.5, textTransform: 'uppercase', color: M.t4, marginBottom: 10 }}>Twoimi słowami</div>
+                  <div style={{ fontSize: 15, color: M.t1, lineHeight: 1.6, fontStyle: 'italic', borderLeft: `3px solid ${M.gold}`, paddingLeft: 14, marginBottom: 8 }}>„{pain.trim()}"</div>
+                  <div style={{ fontSize: 13, color: M.t3, lineHeight: 1.6 }}>Zapisałem słowo w słowo. Wynik wyżej pokazuje to samo. {imie.trim() ? capName(imie.trim()) + ', n' : 'N'}ie wymyśliłeś sobie tego.</div>
+                </div>
+              </Reveal>
+            )}
 
             {/* ═══ SMACZEK 2: ZASKOCZENIE - belief-shift z realnych odpowiedzi (myślisz X, a to Y) ═══ */}
             <Reveal delay={82}>
@@ -3420,31 +3556,6 @@ export default function Page() {
               </div>
             </Reveal>
 
-            {/* ═══ REJESTR - co podałeś, surowe dane bez komentarza ═══ */}
-            <Reveal delay={82}>
-              <div style={{ marginBottom: 16, padding: '22px 20px', borderRadius: 16, width: '100%', boxSizing: 'border-box', background: M.s1, border: `1px solid ${M.brd2}` }}>
-                <div style={{ fontFamily: M.mono, fontSize: 10, letterSpacing: 3, textTransform: 'uppercase', color: M.t4, fontWeight: 700, marginBottom: 14 }}>Co podałeś</div>
-                {(() => {
-                  const phoneMap = ['nie', 'zdarza się', 'często', 'co wieczór'];
-                  const rows = [
-                    { k: 'sen', v: `${D.sleep} h`, bad: D.sleep < 6.5 },
-                    { k: 'praca', v: `${D.workHours} h dziennie`, bad: D.workHours > 9 },
-                    { k: 'treningi odpuszczane', v: `${D.miss} / tydzień`, bad: D.miss >= 2 },
-                    { k: 'weekend', v: `${D.drinks} drinków`, bad: D.drinks >= 6 },
-                    { k: 'telefon w łóżku', v: phoneMap[Math.min(D.screenBed, 3)] || 'nie', bad: D.screenBed >= 2 },
-                    { k: 'objawy', v: `${D.tags.size} zaznaczonych`, bad: D.tags.size >= 5 },
-                  ];
-                  return rows.map((r, i) => (
-                    <div key={i} style={{ display: 'flex', alignItems: 'baseline', fontFamily: M.mono, fontSize: 13, padding: '8px 0', borderBottom: i < rows.length - 1 ? `1px solid ${M.brd}` : 'none' }}>
-                      <span style={{ color: M.t4 }}>{r.k}</span>
-                      <span style={{ flex: 1 }} />
-                      <span style={{ color: r.bad ? M.red : M.t1, fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>{r.v}</span>
-                    </div>
-                  ));
-                })()}
-              </div>
-            </Reveal>
-
             {/* ═══ ROZBIEŻNOŚĆ - przyłapanie na sprzeczności (rozpoznanie, nie osąd) ═══ */}
             {(() => {
               const cx = contradiction(D, selfDx);
@@ -3490,421 +3601,6 @@ export default function Page() {
                     </div>
                     <p style={{ fontSize: 14.5, color: M.t2, lineHeight: 1.65, margin: 0 }}>
                       {arch.mirror}
-                    </p>
-                  </div>
-                );
-              })()}
-            </Reveal>
-
-            {/* ═══ MIĘDZY NAMI - wstyd/rozpoznanie, peak emocji przed decyzją ═══ */}
-            <Reveal delay={90}>
-              {(() => {
-                if (good) return null; // dobry tydzień: żadnego bloku wstydu, nie ma za co
-                const imieD = imie.trim() ? capName(imie.trim()) : '';
-                {/* Body-copy TYLKO przy twardych danych o ciele (belly tag). Score/bioAge NIE wystarcza - zero zgadywania czy facet jest gruby. */}
-                const showBody = D.tags.has('belly');
-                const brokePromise = D.triedBefore >= 2;
-                const worstL = [...catScores].sort((a, b) => a.pct - b.pct)[0]?.label || 'Głowa';
-                return (
-                  <div style={{
-                    marginBottom: 16, padding: '26px 20px', borderRadius: 16, width: '100%', boxSizing: 'border-box',
-                    background: 'linear-gradient(160deg, rgba(19,19,19,0.92), rgba(220,68,68,0.07))',
-                    border: '1px solid rgba(220,68,68,0.22)',
-                  }}>
-                    <div style={{ fontFamily: M.mono, fontSize: 10, letterSpacing: 3, textTransform: 'uppercase', color: M.red, fontWeight: 700, marginBottom: 16 }}>Między nami</div>
-
-                    <p style={{ fontSize: 15, color: M.t2, lineHeight: 1.65, marginBottom: 14 }}>
-                      Liczby wyżej to jedno. Druga rzecz to ta, której nie wpisujesz do żadnego formularza.
-                    </p>
-
-                    <p style={{ fontSize: 15, color: M.t2, lineHeight: 1.7, marginBottom: 14 }}>
-                      {SCENE_LINE[worstL]}
-                    </p>
-
-                    {showBody && (
-                      <p style={{ fontSize: 15, color: M.t2, lineHeight: 1.7, marginBottom: 14 }}>
-                        Że na ostatniej wspólnej fotce ustawiłeś się tak, żeby brzuch był za kimś. Że koszulkę na basenie zdejmujesz ostatni, albo już wolisz nie iść. Że kupujesz o numer za duże, żeby nie opinało. Że mijasz swoje odbicie w witrynie i od razu patrzysz gdzie indziej.
-                      </p>
-                    )}
-
-                    <p style={{ fontSize: 15.5, color: M.t1, lineHeight: 1.7, marginBottom: 14, fontWeight: 600 }}>
-                      Najgorsze nie jest to, że nie wiesz, co robić. Najgorsze jest to, że <span style={{ color: M.gold }}>wiesz wszystko</span>, i dalej wyglądasz jak ktoś, kto nie wie nic. I to piecze najmocniej, bo nie masz się przed sobą czym wytłumaczyć.
-                    </p>
-
-                    {brokePromise && (
-                      <p style={{ fontSize: 15, color: M.t2, lineHeight: 1.7, marginBottom: 14 }}>
-                        „Od poniedziałku" powtarzałeś sobie tyle razy, że sam już w to nie wierzysz. Twoje ciało przestało wierzyć jeszcze wcześniej.
-                      </p>
-                    )}
-
-                    <div style={{ borderLeft: `3px solid ${M.red}`, paddingLeft: 16, marginTop: 18 }}>
-                      <p style={{ fontSize: 15.5, color: M.t1, lineHeight: 1.7, fontWeight: 600, margin: 0 }}>
-                        {tier === 'low'
-                          ? `${imieD ? imieD + ', u' : 'U'} Ciebie nie ma dramatu. I to jest pułapka. Za rok otwierasz tę samą apkę, dostajesz ten sam wynik i dalej jest „w sumie okej". Nikt Ci nie powie, że stoisz w miejscu. Sam też sobie nie powiesz.`
-                          : `${imieD ? imieD + ', za' : 'Za'} rok, jeśli dziś nic nie ruszysz, otwierasz tę samą apkę, dostajesz ten sam wynik i czujesz dokładnie to samo co teraz. Tylko rok starszy i o rok bardziej pewny, że już tak zostanie.`}
-                      </p>
-                      <p style={{ fontFamily: M.serif, fontStyle: 'italic', fontSize: 21, color: M.gold, lineHeight: 1.5, fontWeight: 400, margin: '12px 0 0' }}>
-                        To się odkręca. Ale nie kolejnym planem z internetu.
-                      </p>
-                    </div>
-                  </div>
-                );
-              })()}
-            </Reveal>
-
-            {/* ═══ DECYZJA - hot CTA zaraz pod hero (council recommendation) ═══ */}
-            <Reveal delay={100}>
-              <div style={{
-                position: 'relative', overflow: 'hidden',
-                background: `linear-gradient(160deg, rgba(19,19,19,0.95), rgba(200,168,78,0.08))`,
-                border: `2px solid ${M.gold}40`,
-                padding: '30px 22px', marginBottom: 20, borderRadius: 18, width: '100%', boxSizing: 'border-box',
-                boxShadow: `0 0 40px ${M.gold}10, inset 0 1px 0 ${M.gold}15`,
-              }}>
-                <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%) rotate(-25deg)', fontFamily: M.mono, fontSize: 52, fontWeight: 900, color: `${M.gold}04`, letterSpacing: 8, whiteSpace: 'nowrap', pointerEvents: 'none', userSelect: 'none' }}>HANTLE I TALERZ</div>
-
-                {(() => {
-                  const worstCat = catScores.reduce((a, b) => a.pct < b.pct ? a : b, catScores[0]);
-                  const topCatLabel = worstCat.label;
-                  const imieDisplay = imie.trim() ? capName(imie.trim()) : 'Stary';
-                  const arD = anchorRok(D);
-                  const dmText = arD.hardYear >= 3000
-                    ? `${topCatLabel.toLowerCase()} ciągnie, ${arD.display} rocznie mi ucieka. ruszysz to ze mną?`
-                    : `${topCatLabel.toLowerCase()} ciągnie, wynik ${SC}/100, pęka mi ${hourRange(D)}. ruszysz to ze mną?`;
-                  const dmHref = `https://ig.me/m/hantleitalerz?text=${encodeURIComponent(dmText)}`;
-                  // Wycieki tylko tam, gdzie faktycznie cieknie (pct < 78) - zero uniwersalnej diagnozy
-                  const leaksSorted = [...catScores].sort((a, b) => a.pct - b.pct);
-                  const leaks = (() => { const s = leaksSorted.filter(c => c.pct < 78).slice(0, 3); return s.length ? s : leaksSorted.slice(0, 1); })();
-                  const benefits180 = pickBenefits180(D, badaniaWysoki.length);
-                  return (
-                    <div style={{ position: 'relative' }}>
-                      <div style={{ fontFamily: M.mono, fontSize: 10, letterSpacing: 2.5, textTransform: 'uppercase', color: M.gold, fontWeight: 700, marginBottom: 14 }}>
-                        Twój ruch
-                      </div>
-                      <h3 style={{ fontSize: 26, fontWeight: 900, lineHeight: 1.15, marginBottom: 18, color: M.t1, letterSpacing: '-0.01em' }}>
-                        {good
-                          ? <>{imieDisplay}, tu nie ma czego ratować.<br/><span style={{ color: M.gold }}>Jest co podkręcić.</span></>
-                          : <>{imieDisplay}, tu nie brakuje Ci planu.<br/><span style={{ color: M.gold }}>Tu wycieka tydzień.</span></>}
-                      </h3>
-
-                      {/* Z FORMULARZY - doslowne wpisy facetow (kopalnia real-voice, anonimowe). Dla good: bez lustra bolu. */}
-                      {!good && (
-                      <div style={{ padding: '16px 18px', marginBottom: 18, background: M.s1, border: `1px solid ${M.brd}`, borderRadius: 12 }}>
-                        <div style={{ fontFamily: M.mono, fontSize: 9.5, letterSpacing: 2.5, textTransform: 'uppercase', color: M.t4, fontWeight: 700, marginBottom: 12 }}>Z tego formularza, dosłownie</div>
-                        {[
-                          '„Tłumaczenie się przed samym sobą, dlaczego znowu nie wyszło."',
-                          '„Patrzenie w lustro po weekendzie. Znowu od zera."',
-                          '„Zrywy: 2 tygodnie idealnie, potem odpuszczenie."',
-                        ].map((q, i) => (
-                          <p key={i} style={{ fontFamily: M.serif, fontStyle: 'italic', fontSize: 15.5, color: M.t2, lineHeight: 1.5, margin: i < 2 ? '0 0 10px' : 0 }}>{q}</p>
-                        ))}
-                        <p style={{ fontSize: 12.5, color: M.t4, lineHeight: 1.5, margin: '12px 0 0', paddingTop: 10, borderTop: `1px solid ${M.brd}` }}>
-                          Tak piszą faceci, zanim zaczniemy. Jeśli którekolwiek mogłoby być Twoje, to dokładnie z tym pracuję.
-                        </p>
-                      </div>
-                      )}
-                      {good && (
-                      <p style={{ fontSize: 14.5, color: M.t2, lineHeight: 1.65, marginBottom: 18 }}>
-                        Bazę masz. I dlatego prowadzenie u Ciebie działa szybciej: od pierwszego tygodnia pracujemy na wynik, zamiast najpierw gasić pożary. Z dobrą bazą pół roku pracy nad detalami daje więcej, niż innym daje rok.
-                      </p>
-                      )}
-
-                      {/* MICRO-PORTRAIT: micro-trust signal przy bio */}
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 16 }}>
-                        <img
-                          src="/michal-portrait.jpg"
-                          alt="Michał"
-                          loading="lazy"
-                          style={{
-                            width: 60, height: 60,
-                            borderRadius: '50%',
-                            objectFit: 'cover',
-                            objectPosition: 'center 30%',
-                            border: `2px solid ${M.gold}`,
-                            boxShadow: `0 6px 20px rgba(0,0,0,.5),0 0 16px ${M.gold}25`,
-                            flexShrink: 0,
-                          }}
-                        />
-                        <div>
-                          <div style={{ fontSize: 14, fontWeight: 700, color: M.t1, lineHeight: 1.2, marginBottom: 3 }}>Michał &middot; Hantle i Talerz</div>
-                          <div style={{ fontSize: 12, color: M.t4, lineHeight: 1.4 }}>180 facetów przeszło ten proces &middot; 5.0 na Google &middot; 9 lat prowadzenia</div>
-                        </div>
-                      </div>
-
-                      {/* RESULT-FIRST: TY dostaniesz X. Konkrety. Bez 'co u mnie'. */}
-                      <div style={{ marginBottom: 16 }}>
-                        <div style={{ fontFamily: M.mono, fontSize: 11, letterSpacing: 2, textTransform: 'uppercase', color: M.gold, fontWeight: 700, marginBottom: 10 }}>
-                          Po 30 dniach
-                        </div>
-                        <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 16px', display: 'flex', flexDirection: 'column', gap: 7 }}>
-                          {(good
-                            ? ['Trening i jedzenie ustawione pod wynik, nie pod utrzymanie', 'Wiesz, który parametr podkręcamy pierwszy i dlaczego']
-                            : leaks.map(c => BENEFIT_30[c.label] || '').filter(Boolean)
-                          ).map((b, i) => (
-                            <li key={i} style={{ fontSize: 14, color: M.t2, lineHeight: 1.55, paddingLeft: 18, position: 'relative' }}>
-                              <span style={{ position: 'absolute', left: 0, top: 0, color: M.gold, fontWeight: 700 }}>·</span>
-                              {b}
-                            </li>
-                          ))}
-                        </ul>
-
-                        <div style={{ fontFamily: M.mono, fontSize: 11, letterSpacing: 2, textTransform: 'uppercase', color: M.gold, fontWeight: 700, marginBottom: 10 }}>
-                          Po 6 miesiącach
-                        </div>
-                        <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 16px', display: 'flex', flexDirection: 'column', gap: 7 }}>
-                          {(good
-                            ? ['Sylwetka, po której widać, że to nie przypadek', 'Panel krwi zrobiony i omówiony, zero zgadywania', 'Forma rośnie, zamiast stać na dobrym poziomie']
-                            : benefits180
-                          ).map((b, i) => (
-                            <li key={i} style={{ fontSize: 14, color: M.t1, lineHeight: 1.55, paddingLeft: 18, position: 'relative', fontWeight: 500 }}>
-                              <span style={{ position: 'absolute', left: 0, top: 0, color: M.gold, fontWeight: 700 }}>·</span>
-                              {b}
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-
-                      <p style={{ fontSize: 13.5, color: M.t3, lineHeight: 1.6, marginBottom: 18, fontStyle: 'italic' }}>
-                        180 facetów przeszło tę drogę przed Tobą. Nie wymyślasz jej na nowo.
-                      </p>
-
-                      {/* WYCIEKI - tylko kategorie realnie poza norma + pierwszy ruch per wyciek. Dla good: nie wymyślamy wycieków. */}
-                      {!good && (
-                      <div style={{ padding: '14px 16px', marginBottom: 22, background: `${M.gold}08`, borderRadius: 12, borderLeft: `3px solid ${M.gold}` }}>
-                        <div style={{ fontSize: 13.5, color: M.t2, lineHeight: 1.6, marginBottom: 12 }}>
-                          {leaks.length === 1 ? 'Z Twoich odpowiedzi widzę jedno miejsce:' : `Z Twoich odpowiedzi widzę ${leaks.length} miejsca:`}
-                        </div>
-                        <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 12 }}>
-                          {leaks.map((cat, i) => (
-                            <li key={i} style={{ fontSize: 13.5, color: M.t2, lineHeight: 1.55, paddingLeft: 16, position: 'relative' }}>
-                              <span style={{ position: 'absolute', left: 0, top: 0, color: M.gold, fontWeight: 700 }}>·</span>
-                              {LEAK_LINE[cat.label] || cat.label.toLowerCase()}
-                              <span style={{ display: 'block', fontSize: 12, marginTop: 4, lineHeight: 1.5 }}>
-                                <span style={{ fontFamily: M.mono, fontSize: 9.5, letterSpacing: 1.5, textTransform: 'uppercase', color: M.gold, fontWeight: 700 }}>Pierwszy ruch</span>
-                                <span style={{ color: M.t3 }}> {LEAK_MOVE[cat.label]}</span>
-                              </span>
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                      )}
-
-                      {/* KOSZT STANIA W MIEJSCU - projekcja 12 mies z JEGO liczb. Dla good: brak, nie ma czym straszyć. */}
-                      {!good && (() => {
-                        const missYear = D.miss * 4 * 12;
-                        const sleepDebt = Math.round(Math.max((7.5 - D.sleep) * 7 * 52, 0));
-                        const lostYear = Math.round(D.lost * 22 * 12);
-                        const drinksYear = D.drinks * D.wknd * 12;
-                        const hourLabel = hourRange(D);
-                        const rows: [string, string][] = [];
-                        if (missYear > 0) rows.push(['treningi w plecy', `${missYear}`]);
-                        if (sleepDebt > 0) rows.push(['godzin snu długu', `${sleepDebt} h`]);
-                        if (lostYear > 0) rows.push(['godzin w robocie na pół mocy', `${lostYear} h`]);
-                        if (drinksYear > 0) rows.push(['drinków, które kasują tydzień', `${drinksYear}`]);
-                        return (
-                          <div style={{ padding: '18px', marginBottom: 18, background: 'rgba(220,68,68,0.05)', border: '1px solid rgba(220,68,68,0.2)', borderRadius: 12 }}>
-                            <div style={{ fontFamily: M.mono, fontSize: 10, letterSpacing: 2.5, textTransform: 'uppercase', color: M.red, fontWeight: 700, marginBottom: 12 }}>
-                              Jeśli nic nie ruszysz
-                            </div>
-                            <p style={{ fontSize: 14, color: M.t2, lineHeight: 1.6, margin: '0 0 12px' }}>
-                              {tier === 'low'
-                                ? 'U Ciebie się nie pali. Cieknie. A cieknący zawór przez rok robi swoje. Twoje odpowiedzi przeliczone na rok:'
-                                : '„Przemyślę to" też ma cennik. Te liczby to Twoje odpowiedzi przeliczone na rok:'}
-                            </p>
-                            <div style={{ marginBottom: 14 }}>
-                              {rows.map(([k, v], i) => (
-                                <div key={i} style={{ display: 'flex', alignItems: 'baseline', fontFamily: M.mono, fontSize: 12.5, padding: '7px 0', borderBottom: i < rows.length - 1 ? `1px solid ${M.brd}` : 'none' }}>
-                                  <span style={{ color: M.t4 }}>{k}</span>
-                                  <span style={{ flex: 1 }} />
-                                  <span style={{ color: M.red, fontWeight: 700, fontVariantNumeric: 'tabular-nums' }}>{v}</span>
-                                </div>
-                              ))}
-                            </div>
-                            <p style={{ fontSize: 14, color: M.t2, lineHeight: 1.65, margin: '0 0 10px' }}>
-                              To tabelka. Gorsza jest część, której nie policzę: za rok masz {D.age + 1} lat, tę samą fotkę, ten sam widok w lustrze i tę samą myśl „od poniedziałku". Tylko że w tego poniedziałka wierzysz już coraz mniej.{D.triedBefore >= 2 ? ' Wiesz o tym, bo już to przerabiałeś.' : ''}
-                            </p>
-                            <p style={{ fontSize: 14.5, color: M.t1, lineHeight: 1.6, margin: 0, fontWeight: 600 }}>
-                              I to jest w tym najbardziej wkurwiające: Ty to wszystko wiesz. Ten moment, {hourLabel}, sam nie zniknie. Za rok to będzie ta sama pora, tylko z wyższym rachunkiem.
-                            </p>
-                          </div>
-                        );
-                      })()}
-
-                      {/* MOST DO APLIKACJI - selekcja zamiast sprzedazy */}
-                      <div style={{ padding: '16px 18px', marginBottom: 18, background: `rgba(19,19,19,0.55)`, border: `1px solid ${M.brd2}`, borderRadius: 12 }}>
-                        <p style={{ fontSize: 13.5, color: M.t2, lineHeight: 1.6, margin: '0 0 8px' }}>
-                          Nie będę Ci sprzedawał prowadzenia z jednego wyniku quizu.
-                        </p>
-                        <p style={{ fontSize: 13.5, color: M.t2, lineHeight: 1.6, margin: '0 0 8px' }}>
-                          Prowadzenie to ktoś, kto regularnie patrzy na Twój tydzień i mówi, co ruszyć najpierw. Żaden plik z planem, który wyląduje w szufladzie. Ten wynik pokazuje <strong style={{ color: M.t1 }}>kierunek</strong>, resztę zobaczysz na stronie prowadzenia.
-                        </p>
-                        <p style={{ fontSize: 13.5, color: M.t3, lineHeight: 1.6, margin: 0 }}>
-                          Jak widzę że pasujesz, odpisuję konkretnie. Jak nie, mówię od czego zacząć zamiast brać kasę za coś bez sensu.
-                        </p>
-                      </div>
-
-                      {/* CO SIE STANIE PO KLIKNIECIU - reduce friction */}
-                      <div style={{ marginBottom: 18 }}>
-                        <div style={{ fontFamily: M.mono, fontSize: 10, letterSpacing: 2, textTransform: 'uppercase', color: M.t4, fontWeight: 700, marginBottom: 12 }}>
-                          Co się stanie po kliknięciu
-                        </div>
-                        <ol style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 10 }}>
-                          {[
-                            'Wchodzisz na stronę prowadzenia: co robię, jak pracuję, co dostajesz. 3 minuty.',
-                            'Jak siada, wypełniasz formularz z tej strony. 10 minut, bez telefonu.',
-                            'Czytam sam i odpisuję w 24h w DM: bierzemy się, albo mówię wprost, że to nie ten moment.',
-                          ].map((step, i) => (
-                            <li key={i} style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
-                              <span style={{ fontFamily: M.mono, fontSize: 13, fontWeight: 800, color: M.gold, minWidth: 18, lineHeight: 1.5 }}>{i + 1}.</span>
-                              <span style={{ fontSize: 13, color: M.t2, lineHeight: 1.55 }}>{step}</span>
-                            </li>
-                          ))}
-                        </ol>
-                      </div>
-
-                      {arD.hardYear >= 3000 && (
-                        <div style={{ fontSize: 12.5, color: M.t3, lineHeight: 1.55, textAlign: 'center', marginBottom: 10 }}>
-                          Twój wynik i ta kwota idą ze mną do formularza. Nie tłumaczysz niczego drugi raz.
-                        </div>
-                      )}
-                      {/* TRUST PRE-CTA: relief frame zanim user kliknie (nie po) */}
-                      <div style={{ fontSize: 12, color: M.t3, lineHeight: 1.5, textAlign: 'center', marginBottom: 12, fontStyle: 'italic' }}>
-                        Czytam osobiście, odpisuję w 24h, a jak nie pasujesz mówię wprost zamiast wciskać.
-                      </div>
-
-                      {/* PRIMARY: Jotform - pelna aplikacja, ciepły lead po quizie */}
-                      <a
-                        href={buildNaborPilotUrl({ destination: PILOT_NABOR_DESTINATION, incomingSearch: inboundSearch, placement: 'primary', score: SC, topCategory: topCatLabel, intent })}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="shimmer-btn"
-                        onClick={() => { trackEvent('primary_cta_click', { cta_id: 'diagnostic_primary', destination: 'nabor', score_bucket: tier, diagnostic_top_category: topCatLabel, legacy_event: 'diag_cta_click' }); fbqTrack('AddToCart', { content_name: 'nabor_prowadzenie', content_category: 'high_ticket', value: SC, currency: 'PLN' }); }}
-                        style={{
-                          display: 'block', textAlign: 'center',
-                          background: `linear-gradient(135deg, ${M.gold}, #a08a3e)`,
-                          color: M.bg,
-                          fontFamily: M.sans, textDecoration: 'none', padding: '20px',
-                          marginBottom: 14, borderRadius: 14,
-                          boxShadow: '0 4px 24px rgba(200,168,78,0.25)',
-                          position: 'relative', overflow: 'hidden',
-                        } as React.CSSProperties}
-                      >
-                        <span style={{ fontSize: 15, fontWeight: 800, letterSpacing: 1.2 }}>
-                          {CTA_LBL[cfg.cta]}
-                        </span>
-                        <span style={{ display: 'block', fontSize: 11, fontWeight: 600, letterSpacing: 1.5, marginTop: 4, opacity: 0.9 }}>
-                          3 minuty czytania &middot; bez płatności &middot; potem sam decydujesz
-                        </span>
-                      </a>
-
-                      {/* SECONDARY: nabor LP - ciepły landing dla wahających się */}
-                      <a
-                        href={`https://form.jotform.com/252274061537051?${new URLSearchParams({
-                          q3_adresEmail: email,
-                          q6_ltstronggttwojeImieltstronggt: imie.trim() ? capName(imie.trim()) : '',
-                          q125_skadWszedles: `Diagnostyka: ${hourRange(D)} · ${pickArchetype(D, worstCat.label).label} · ${arD.display} · score ${SC}/100`,
-                        }).toString()}&utm_source=diagnostyka&utm_content=secondary`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        onClick={() => trackEvent('secondary_cta_click', { cta_id: 'diagnostic_form_fallback', destination: 'jotform_252274061537051', score_bucket: tier, diagnostic_top_category: topCatLabel, legacy_event: 'diag_cta_click' })}
-                        style={{
-                          display: 'flex', alignItems: 'center', justifyContent: 'center',
-                          padding: '14px 16px', minHeight: 44,
-                          color: M.t3, fontSize: 13, fontWeight: 600, fontFamily: M.sans,
-                          textDecoration: 'none', borderRadius: 10,
-                          border: `1px solid ${M.brd2}`, background: 'transparent',
-                          marginBottom: 10,
-                        }}
-                      >
-                        Wiem, po co się zgłaszam: od razu formularz &rarr;
-                      </a>
-
-                      {/* TERTIARY: DM bezpośrednio - dla gorących leadów co chcą gadać */}
-                      <a
-                        href={dmHref}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        onClick={() => trackEvent('secondary_cta_click', { cta_id: 'diagnostic_dm_fallback', destination: 'instagram_dm', score_bucket: tier, diagnostic_top_category: topCatLabel, legacy_event: 'diag_cta_click' })}
-                        style={{
-                          display: 'flex', alignItems: 'center', justifyContent: 'center',
-                          padding: '10px 16px', minHeight: 40,
-                          color: M.t4, fontSize: 12, fontWeight: 500, fontFamily: M.sans,
-                          textDecoration: 'underline', textDecorationColor: `${M.t4}55`, textUnderlineOffset: 3,
-                          marginBottom: 10,
-                        }}
-                      >
-                        albo napisz od razu w DM &rarr;
-                      </a>
-
-                      {/* Share PNG usunięty (decyzja Michała): friction do pobrania obrazka, prawie nikt nie dokończy. */}
-
-                      <div style={{ fontSize: 13, color: M.t3, lineHeight: 1.6, textAlign: 'center', paddingTop: 14, borderTop: `1px solid ${M.gold}20`, fontStyle: 'italic' }}>
-                        {TAIL_LINE[topCatLabel] || TAIL_LINE['Głowa']}
-                      </div>
-                    </div>
-                  );
-                })()}
-              </div>
-            </Reveal>
-
-            {/* ═══ TWOIMI SŁOWAMI - acknowledgment echo, mirror pain ═══ */}
-            {pain.trim() && (
-              <Reveal delay={104}>
-                <div style={{ marginBottom: 22, padding: '20px 18px', borderRadius: 14, width: '100%', boxSizing: 'border-box', background: M.s1, border: `1px solid ${M.brd}` }}>
-                  <div style={{ fontFamily: M.mono, fontSize: 10, letterSpacing: 2.5, textTransform: 'uppercase', color: M.t4, marginBottom: 14 }}>Twoimi słowami</div>
-                  <div style={{ fontSize: 14.5, color: M.t2, lineHeight: 1.6, fontStyle: 'italic', borderLeft: `3px solid ${M.gold}`, paddingLeft: 14, marginBottom: 8 }}>„{pain.trim()}"</div>
-                  <div style={{ fontSize: 13, color: M.t3, lineHeight: 1.6 }}>Zapisałem słowo w słowo. Liczby wyżej pokazują to samo. {imie.trim() ? capName(imie.trim()) + ', n' : 'N'}ie wymyśliłeś sobie tego.</div>
-                </div>
-              </Reveal>
-            )}
-
-            {/* Section divider */}
-            <SectionDivider num="04" label="Wąskie gardło" />
-
-            {/* ═══ SCREEN 2: PRIORYTET #1 ═══ */}
-            <Reveal delay={100}>
-              <div className="diag-priority" style={{
-                position: 'relative', overflow: 'hidden',
-                background: `linear-gradient(160deg, rgba(19,19,19,0.95), ${M.gold}0a)`,
-                border: `2px solid ${M.gold}35`,
-                padding: '20px 16px', marginBottom: 20, borderRadius: 14, width: '100%', boxSizing: 'border-box',
-                boxShadow: `0 4px 24px ${M.gold}10`,
-              }}>
-                <div style={{ fontFamily: M.mono, fontSize: 9, letterSpacing: 3, textTransform: 'uppercase', color: M.gold, marginBottom: 12, display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <span style={{ width: 8, height: 8, borderRadius: 4, background: M.gold, display: 'inline-block', boxShadow: `0 0 8px ${M.gold}60` }} />
-                  {imie.trim() ? `${capName(imie.trim())}, Twój priorytet nr 1` : 'Twój priorytet nr 1'}
-                </div>
-                <div style={{ fontSize: 16, fontWeight: 700, color: M.t1, marginBottom: 10, lineHeight: 1.35 }}>
-                  {priority.area}
-                </div>
-                <p style={{ fontSize: 13.5, color: M.t1, lineHeight: 1.55, marginBottom: 10, fontWeight: 500 }}>
-                  {priority.action.lead}
-                </p>
-                <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 14px', display: 'flex', flexDirection: 'column', gap: 7 }}>
-                  {priority.action.bullets.map((b: string, i: number) => (
-                    <li key={i} style={{ fontSize: 12.5, color: M.t3, lineHeight: 1.55, paddingLeft: 16, position: 'relative' }}>
-                      <span style={{ position: 'absolute', left: 0, top: 0, color: M.gold, fontWeight: 700 }}>·</span>
-                      {b}
-                    </li>
-                  ))}
-                </ul>
-                <div style={{ fontFamily: M.mono, fontSize: 10, color: M.grn, letterSpacing: 1, padding: '6px 10px', background: `${M.grn}0c`, border: `1px solid ${M.grn}20`, borderRadius: 8, display: 'inline-block' }}>
-                  {priority.impact}
-                </div>
-              </div>
-            </Reveal>
-
-            {/* ═══ SMACZEK 1: BONUS pod największy hamulec (wzajemność, realny, mało oczywisty ruch) ═══ */}
-            <Reveal delay={102}>
-              {(() => {
-                const bw = [...catScores].sort((a, b) => a.pct - b.pct)[0]?.label || '';
-                const tip = BONUS_HAMULEC[bw];
-                if (!tip) return null;
-                return (
-                  <div style={{ marginBottom: 20, padding: '20px 18px', borderRadius: 16, width: '100%', boxSizing: 'border-box', background: `${M.gold}0a`, border: `1px dashed ${M.gold}55` }}>
-                    <div style={{ fontFamily: M.mono, fontSize: 10, letterSpacing: 2.5, textTransform: 'uppercase', color: M.gold, fontWeight: 700, marginBottom: 10 }}>Bonus &middot; bo Twój hamulec to {bw.toLowerCase()}</div>
-                    <p style={{ fontSize: 14.5, color: M.t2, lineHeight: 1.65, margin: 0 }}>
-                      {tip}
                     </p>
                   </div>
                 );
@@ -3989,165 +3685,164 @@ export default function Page() {
               </Reveal>
             )}
 
-            {cfg.showKontekst && <>
-            {/* Section divider */}
-            <SectionDivider num="06" label="Pełen kontekst · rozwiń jeśli chcesz" />
+            {/* ═══ MIĘDZY NAMI - wstyd/rozpoznanie, peak emocji przed decyzją ═══ */}
+            <Reveal delay={90}>
+              {(() => {
+                if (good) return null; // dobry tydzień: żadnego bloku wstydu, nie ma za co
+                const imieD = imie.trim() ? capName(imie.trim()) : '';
+                {/* Body-copy TYLKO przy twardych danych o ciele (belly tag). Score/bioAge NIE wystarcza - zero zgadywania czy facet jest gruby. */}
+                const showBody = D.tags.has('belly');
+                const brokePromise = D.triedBefore >= 2;
+                const worstL = [...catScores].sort((a, b) => a.pct - b.pct)[0]?.label || 'Głowa';
+                return (
+                  <div style={{
+                    marginBottom: 16, padding: '26px 20px', borderRadius: 16, width: '100%', boxSizing: 'border-box',
+                    background: 'linear-gradient(160deg, rgba(19,19,19,0.92), rgba(220,68,68,0.07))',
+                    border: '1px solid rgba(220,68,68,0.22)',
+                  }}>
+                    <div style={{ fontFamily: M.mono, fontSize: 10, letterSpacing: 3, textTransform: 'uppercase', color: M.red, fontWeight: 700, marginBottom: 16 }}>Między nami</div>
 
-            {/* ═══ SCREEN 4: COLLAPSIBLE SECTIONS ═══ */}
-
-            {/* Collapsible: Koszty - TEASER tylko total + 1 insight */}
-            <div style={{ marginBottom: 12 }}>
-              <button onClick={() => setShowDetails(!showDetails)} className="diag-collapse-btn" style={{
-                width: '100%', padding: '14px 18px', background: `linear-gradient(180deg, ${M.s1} 0%, #08080a 100%)`, border: `1px solid ${M.brd}`,
-                borderRadius: showDetails ? '12px 12px 0 0' : 12, color: M.t2, fontSize: 13, fontWeight: 600, fontFamily: M.sans,
-                cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-              }}>
-                Z czego się składają te {C.total.toLocaleString('pl-PL')} zł / 6 mies.
-                <span style={{ transform: showDetails ? 'rotate(180deg)' : 'rotate(0)', transition: 'transform 0.3s', fontSize: 12 }}>&#9660;</span>
-              </button>
-              {showDetails && (
-                <div style={{ padding: '16px 18px', background: M.s1, borderRadius: '0 0 12px 12px', border: `1px solid ${M.brd}`, borderTopWidth: 0 }}>
-                  <div style={{ fontSize: 13, color: M.t3, lineHeight: 1.6, marginBottom: 12 }}>
-                    <strong style={{ color: M.gold }}>{C.hardTotal.toLocaleString('pl-PL')} zł</strong> w 6 miesięcy to realny wydatek, który sam podałeś: wyjścia i dowozy. Reszta rachunku nie jest w złotówkach, tylko w godzinach na pół mocy i wieczorach, które się rozsypują. Tego nie przeliczam na kwotę, bo byłby to strzał, nie pomiar.
-                  </div>
-                  {C.brakes > 0 && C.wastedSessions > 0 && (
-                    <div style={{ padding: '12px 14px', background: M.s2, borderRadius: 10, fontSize: 12, color: M.t3, lineHeight: 1.6 }}>
-                      <strong style={{ color: M.t1 }}>{C.brakes}/5 hamulców</strong> aktywnych. <strong style={{ color: M.t1 }}>{C.wastedPct}%</strong> wysiłku treningowego idzie w próżnię. <strong style={{ color: M.t1 }}>{C.stagnationMonths} mies.</strong> stagnacji.
-                    </div>
-                  )}
-                  <div style={{ marginTop: 14, padding: '12px 14px', background: `${M.gold}08`, borderRadius: 10, fontSize: 11.5, color: M.t3, lineHeight: 1.55 }}>
-                    Rozbicie kategoriami i kolejność jak to zatrzymać, omawiam 1:1.
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* Sekcja badań - reframe: "Uwaga: 3 badania bez reszty nie powiedzą Ci prawdy" */}
-            {badaniaUnique.length > 0 && (
-              <div style={{ marginBottom: 12 }}>
-                <button onClick={() => setShowBadania(!showBadania)} className="diag-collapse-btn" style={{
-                  width: '100%', padding: '14px 18px', background: `linear-gradient(180deg, ${M.s1} 0%, #08080a 100%)`, border: `1px solid ${M.brd}`,
-                  borderRadius: showBadania ? '12px 12px 0 0' : 12, color: M.t2, fontSize: 13, fontWeight: 600, fontFamily: M.sans,
-                  cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center', textAlign: 'left',
-                }}>
-                  <span><strong style={{ color: M.org }}>Uwaga:</strong> 3 badania bez reszty nie powiedzą Ci prawdy</span>
-                  <span style={{ transform: showBadania ? 'rotate(180deg)' : 'rotate(0)', transition: 'transform 0.3s', fontSize: 12, flexShrink: 0, marginLeft: 8 }}>&#9660;</span>
-                </button>
-                {showBadania && (
-                  <div style={{ padding: '16px 18px', background: M.s1, borderRadius: '0 0 12px 12px', border: `1px solid ${M.brd}`, borderTopWidth: 0 }}>
-                    <p style={{ fontSize: 13, color: M.t2, lineHeight: 1.65, marginBottom: 16 }}>
-                      Kortyzol, lipidogram albo TSH <strong style={{ color: M.t1 }}>bez kontekstu tygodnia</strong> mogą wyglądać okej, a Ty dalej wstajesz zmęczony, wieczorem dojadasz i po weekendzie zbierasz się do środy.
+                    <p style={{ fontSize: 15, color: M.t2, lineHeight: 1.65, marginBottom: 14 }}>
+                      Liczby wyżej to jedno. Druga rzecz to ta, której nie wpisujesz do żadnego formularza.
                     </p>
 
-                    {/* TOP 3 nazwane, personalizowane pod odpowiedzi leada */}
-                    <div style={{ fontFamily: M.mono, fontSize: 9, letterSpacing: 2, textTransform: 'uppercase', color: M.gold, marginBottom: 10, fontWeight: 700 }}>
-                      Top 3 pod Twoje odpowiedzi
-                    </div>
-                    {[...badaniaWysoki, ...badaniaSredni].slice(0, 3).map((b, i) => (
-                      <div key={`top-${i}`} style={{ padding: '10px 0', borderBottom: i < 2 ? `1px solid ${M.brd}` : 'none' }}>
-                        <div style={{ fontSize: 13, fontWeight: 700, color: M.t1 }}>{i + 1}. {b.nazwa}</div>
-                        <div style={{ fontSize: 11.5, color: M.t3, lineHeight: 1.5, marginTop: 4 }}>{b.dlaczego}</div>
-                      </div>
-                    ))}
+                    <p style={{ fontSize: 15, color: M.t2, lineHeight: 1.7, marginBottom: 14 }}>
+                      {SCENE_LINE[worstL]}
+                    </p>
 
-                    {/* RESZTA zamazana. Lead widzi ile, nie widzi co. Hook: sam tego nie ulozysz. */}
-                    {badaniaUnique.length > 3 && (
-                      <>
-                        <div style={{ fontFamily: M.mono, fontSize: 9, letterSpacing: 2, textTransform: 'uppercase', color: M.t4, margin: '18px 0 10px', fontWeight: 700 }}>
-                          Reszta: jeszcze {badaniaUnique.length - 3} {badaniaUnique.length - 3 === 1 ? 'marker' : 'markerów'}
-                        </div>
-                        <div aria-hidden="true" style={{ display: 'flex', flexWrap: 'wrap', gap: 6, filter: 'blur(5.5px)', opacity: 0.5, userSelect: 'none', pointerEvents: 'none', marginBottom: 16 }}>
-                          {badaniaUnique.slice(3).map((b, i) => (
-                            <span key={i} style={{ fontFamily: M.mono, fontSize: 11, padding: '5px 9px', borderRadius: 6, background: M.s2, color: M.t2, border: `1px solid ${M.brd2}` }}>{b.nazwa}</span>
-                          ))}
-                        </div>
-                        <p style={{ fontSize: 12.5, color: M.t3, lineHeight: 1.65, marginBottom: 14 }}>
-                          Resztę zostawiam zamazaną i nie dla efektu. Sama lista nic Ci nie da. Każdy ściągnie pięć badań z internetu i dalej siedzi nad wynikiem jak nad chińskim. Które zrobić u Ciebie najpierw, w jakiej kolejności i co razem znaczą z Twoim tygodniem, układam tylko z chłopakami których prowadzę. Za darmo tego nikomu nie poskładam.
-                        </p>
-                      </>
+                    {showBody && (
+                      <p style={{ fontSize: 15, color: M.t2, lineHeight: 1.7, marginBottom: 14 }}>
+                        Że na ostatniej wspólnej fotce ustawiłeś się tak, żeby brzuch był za kimś. Że koszulkę na basenie zdejmujesz ostatni, albo już wolisz nie iść. Że kupujesz o numer za duże, żeby nie opinało. Że mijasz swoje odbicie w witrynie i od razu patrzysz gdzie indziej.
+                      </p>
                     )}
-                    <div style={{ marginTop: 4, fontSize: 10.5, color: M.t4, lineHeight: 1.5, fontStyle: 'italic' }}>
-                      Diagnozy tu nie ma, od tego jest lekarz. Tu widzisz, co w Twoim tygodniu może ciągnąć w dół energię, sen, apetyt i regenerację.
+
+                    <p style={{ fontSize: 15.5, color: M.t1, lineHeight: 1.7, marginBottom: 14, fontWeight: 600 }}>
+                      Najgorsze nie jest to, że nie wiesz, co robić. Najgorsze jest to, że <span style={{ color: M.gold }}>wiesz wszystko</span>, i dalej wyglądasz jak ktoś, kto nie wie nic. I to piecze najmocniej, bo nie masz się przed sobą czym wytłumaczyć.
+                    </p>
+
+                    {brokePromise && (
+                      <p style={{ fontSize: 15, color: M.t2, lineHeight: 1.7, marginBottom: 14 }}>
+                        „Od poniedziałku" powtarzałeś sobie tyle razy, że sam już w to nie wierzysz. Twoje ciało przestało wierzyć jeszcze wcześniej.
+                      </p>
+                    )}
+
+                    <div style={{ borderLeft: `3px solid ${M.red}`, paddingLeft: 16, marginTop: 18 }}>
+                      <p style={{ fontSize: 15.5, color: M.t1, lineHeight: 1.7, fontWeight: 600, margin: 0 }}>
+                        {tier === 'low'
+                          ? `${imieD ? imieD + ', u' : 'U'} Ciebie nie ma dramatu. I to jest pułapka. Za rok otwierasz tę samą apkę, dostajesz ten sam wynik i dalej jest „w sumie okej". Nikt Ci nie powie, że stoisz w miejscu. Sam też sobie nie powiesz.`
+                          : `${imieD ? imieD + ', za' : 'Za'} rok, jeśli dziś nic nie ruszysz, otwierasz tę samą apkę, dostajesz ten sam wynik i czujesz dokładnie to samo co teraz. Tylko rok starszy i o rok bardziej pewny, że już tak zostanie.`}
+                      </p>
+                      <p style={{ fontFamily: M.serif, fontStyle: 'italic', fontSize: 21, color: M.gold, lineHeight: 1.5, fontWeight: 400, margin: '12px 0 0' }}>
+                        To się odkręca. Ale nie kolejnym planem z internetu.
+                      </p>
                     </div>
                   </div>
-                )}
-              </div>
-            )}
-
-            {/* Akordeon „za 12 miesięcy" wycięty: generyczny straszak, dublował się z blokiem „Jeśli nic nie ruszysz". */}
-
-            </>}
-
-            {/* ═══ DIAGNOZA - co widzę w Twoich odpowiedziach (Kalski) ═══ */}
-            <Reveal delay={115}>
-              <div style={{
-                padding: '22px 18px', marginBottom: 14, borderRadius: 14,
-                background: M.s1,
-                border: `1px solid ${M.brd}`,
-              }}>
-                <div style={{ fontFamily: M.mono, fontSize: 10, letterSpacing: 2.5, color: M.t4, marginBottom: 14, textTransform: 'uppercase', fontWeight: 700 }}>
-                  {imie.trim() ? `${capName(imie.trim())}, co tu wyłapuję` : 'Co tu wyłapuję'}
-                </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                  {D.sleep < 7 && <div style={{ fontSize: 14, color: M.t2, lineHeight: 1.6 }}><strong style={{ color: M.t1 }}>Śpisz {D.sleep}h.</strong> Przy krótszym śnie łatwiej o to, że rano startujesz już zmęczony i sięgasz po kawę zamiast po energię.</div>}
-                  {D.stress >= 2 && <div style={{ fontSize: 14, color: M.t2, lineHeight: 1.6 }}><strong style={{ color: M.t1 }}>Napięcie nie schodzi wieczorem.</strong> Kiedy głowa nie wychodzi z trybu alarmu, ciało dostaje resztki. Zwykle widać to najpierw po energii, śnie i apetycie.</div>}
-                  {D.mondayFeel >= 1 && <div style={{ fontSize: 14, color: M.t2, lineHeight: 1.6 }}><strong style={{ color: M.t1 }}>Poniedziałek startujesz na minusie.</strong> Po weekendzie sen i rytm wracają dłużej, niż się wydaje, i nie naprawi tego samo „mniej pić".</div>}
-                  {D.triedBefore >= 2 && <div style={{ fontSize: 14, color: M.t2, lineHeight: 1.6 }}><strong style={{ color: M.t1 }}>Próbowałeś parę razy sam.</strong> Dyscypliny Ci nie brakuje. Brakuje danych z własnego organizmu, żeby wiedzieć, co ruszać najpierw i w jakiej kolejności.</div>}
-                  <div style={{ fontSize: 14, color: M.t3, lineHeight: 1.6, paddingTop: 12, borderTop: `1px solid ${M.brd}`, marginTop: 4, fontStyle: 'italic' }}>Te rzeczy się zazębiają, ruszysz jedną i reszta natychmiast przesuwa się w miejscu starego balansu.</div>
-                </div>
-              </div>
+                );
+              })()}
             </Reveal>
 
-            {/* ═══ PĘKNIĘCIA TYGODNIA - samoocena na koniec (commitment: sam odhacza = sam wydaje werdykt) ═══ */}
-            <Reveal delay={118}>
+
+            {/* ═══ TWOJA DROGA v2 (werdykt rady): 1 pelna dzwignia 14 dni + tease faz 2-3 + proof + rama egzekucji + JEDEN CTA. Nic po CTA. ═══ */}
+            <Reveal delay={112}>
               {(() => {
-                const order = [...catScores].sort((a, b) => a.pct - b.pct).map(c => c.label);
-                const items = order.map(l => ({ l, txt: CRACK_POOL[l] })).filter(x => x.txt);
-                const n = cracked.size;
-                const total = items.length;
-                const ostry = cfg.crackTone === 'ostry';
-                const verdict = n === 0
-                  ? (good ? 'Zero pęknięć i wynik to potwierdza. Tydzień masz spięty. Teraz pytanie, co z nim zbudujesz.' : ostry ? 'Zaznacz szczerze. Jak faktycznie zero, to tydzień masz spięty. Jak nie umiesz zaznaczyć, to też jest odpowiedź.' : 'Zaznacz szczerze. Zero też jest wynikiem.')
-                  : n <= 2
-                  ? (ostry ? `${n} z ${total}. Jeszcze się nie sypie, ale już ucieka. Teraz łata się najtaniej.` : `${n} z ${total}. Wcześnie. To najlepszy moment, żeby to spiąć.`)
-                  : n <= 4
-                  ? (ostry ? `${n} z ${total}. Tego nie łatasz pojedynczo. Widzisz je od środka, a od środka nie widać wzoru.` : `${n} z ${total}. To już wzór, nie przypadki. Warto na to spojrzeć z zewnątrz.`)
-                  : (ostry ? `${n} z ${total}. Tak wygląda konstrukcja, nie zbieg okoliczności. Sam tego nie załatasz i dobrze o tym wiesz.` : `${n} z ${total}. Cały tydzień pracuje przeciwko Tobie. Tego nie naprawia się w pojedynkę.`);
-                const dmMsg = `DIAGNOZA. ${n}/${total} pęknięć: ${items.filter((_, i) => cracked.has(i)).map(x => x.l.toLowerCase()).join(', ') || 'sprawdzam'}.`;
+                const rank = [...catScores].sort((a, b) => a.pct - b.pct);
+                const fazy = rank.slice(0, 3).map(c => c.label).filter(l => ROADMAPA_KARTY[l]);
+                const glowna = fazy[0] || 'Sen';
+                const tease = fazy.slice(1);
+                const kg = ROADMAPA_KARTY[glowna];
+                const sdx = selfDx.trim();
+                const dnoFor = (label: string, k: { dno: string }) => label === 'Weekend' && D.wkndWhat >= 0 ? (WKND_DNO[D.wkndWhat] || k.dno) : k.dno;
+                const wynik180 = good
+                  ? ['Sylwetka, po której widać, że to nie przypadek', 'Panel krwi zrobiony i omówiony, zero zgadywania', 'Forma rośnie, zamiast stać na dobrym poziomie']
+                  : pickBenefits180(D, badaniaWysoki.length);
                 return (
-                  <div style={{ padding: '24px 20px', marginBottom: 14, borderRadius: 16, background: `linear-gradient(160deg, rgba(19,19,19,0.96), ${M.gold}08)`, border: `1px solid ${M.gold}35`, width: '100%', boxSizing: 'border-box' }}>
-                    <div style={{ fontFamily: M.mono, fontSize: 10, letterSpacing: 3, textTransform: 'uppercase', color: M.gold, fontWeight: 700, marginBottom: 10 }}>Pęknięcia tygodnia · sprawdź sam</div>
-                    <div style={{ fontFamily: M.serif, fontSize: 27, color: M.t1, lineHeight: 1.12, marginBottom: 8 }}>Nie wierz mojemu wynikowi. <em style={{ fontStyle: 'italic', color: M.gold }}>Odhacz swój.</em></div>
-                    <p style={{ fontSize: 13, color: M.t3, lineHeight: 1.55, marginBottom: 16 }}>Zaznacz tylko to, co jest z Twojego tygodnia. Nie z tego raportu, z życia.</p>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 7, marginBottom: 16 }}>
-                      {items.map((it, i) => {
-                        const on = cracked.has(i);
-                        return (
-                          <button key={i} onClick={() => { vibe(8); setCracked(p => { const s = new Set(p); if (s.has(i)) { s.delete(i); } else { s.add(i); } trackEvent('diag_crack_toggle', { count: s.size }); return s; }); }} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '13px 14px', textAlign: 'left', background: on ? M.gold + '0e' : M.s1, border: `1px solid ${on ? M.gold + '66' : M.brd2}`, borderRadius: 10, cursor: 'pointer', transition: 'border-color .2s ease, background .2s ease', fontFamily: M.sans }}>
-                            <span style={{ width: 20, height: 20, borderRadius: '50%', border: `1.5px solid ${on ? M.gold : M.brd2}`, background: on ? M.gold : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, transition: 'all .2s ease' }}>{on && <span style={{ fontSize: 10, color: '#0a0a0a', fontWeight: 800, lineHeight: 1 }}>✓</span>}</span>
-                            <span style={{ flex: 1, fontSize: 14, color: on ? M.t1 : M.t2, lineHeight: 1.45, fontWeight: on ? 600 : 400 }}>{it.txt}</span>
-                          </button>
-                        );
-                      })}
+                  <div style={{ marginBottom: 16, padding: '26px 20px', borderRadius: 16, width: '100%', boxSizing: 'border-box', background: `linear-gradient(160deg, rgba(19,19,19,0.96), ${M.gold}0d)`, border: `2px solid ${M.gold}45`, boxShadow: `0 0 36px ${M.gold}10` }}>
+                    <div style={{ fontFamily: M.mono, fontSize: 10, letterSpacing: 3, textTransform: 'uppercase', color: M.gold, fontWeight: 700, marginBottom: 10 }}>Twoja droga · rozpisana z wyniku</div>
+                    <h3 style={{ fontFamily: M.serif, fontSize: 26, fontWeight: 400, lineHeight: 1.15, color: M.t1, margin: '0 0 18px' }}>
+                      {good ? <>Baza jest. Tak wygląda droga z dobrego na świetne:</> : <>Da się to poukładać. Jedna rzecz naraz, we właściwej kolejności:</>}
+                    </h3>
+
+                    {/* START */}
+                    <div style={{ position: 'relative', paddingLeft: 26, paddingBottom: 22, borderLeft: `2px solid ${M.brd2}` }}>
+                      <span style={{ position: 'absolute', left: -7, top: 0, width: 12, height: 12, borderRadius: 7, background: M.red, boxShadow: '0 0 10px rgba(220,68,68,.6)' }} />
+                      <div style={{ fontFamily: M.mono, fontSize: 10, letterSpacing: 2, textTransform: 'uppercase', color: M.red, fontWeight: 800, marginBottom: 6 }}>Tu jesteś</div>
+                      <div style={{ fontSize: 14, color: M.t2, lineHeight: 1.55 }}>
+                        {SC}/100, najmocniej ciągnie {glowna.toLowerCase()}.{!good && sdx ? <> Sam napisałeś: <em style={{ color: M.t1 }}>„{sdx.slice(0, 90)}{sdx.length > 90 ? '…' : ''}"</em>.</> : null}
+                      </div>
                     </div>
-                    <div style={{ display: 'flex', alignItems: 'baseline', gap: 12, marginBottom: 10 }}>
-                      <span style={{ fontFamily: M.serif, fontSize: 44, lineHeight: 1, color: n >= 3 ? M.red : M.gold, fontVariantNumeric: 'tabular-nums' }}>{n}<span style={{ fontSize: 22, color: M.t4 }}> / {total}</span></span>
-                      <span style={{ fontFamily: M.mono, fontSize: 9.5, letterSpacing: 2, textTransform: 'uppercase', color: M.t4, fontWeight: 700 }}>pęknięć w Twoim tygodniu</span>
+
+                    {/* DZWIGNIA 14 DNI: jedyny pelny protokol na stronie (kasuje dublet z priorytetem) */}
+                    <div style={{ position: 'relative', paddingLeft: 26, paddingBottom: 22, borderLeft: `2px solid ${M.gold}` }}>
+                      <span style={{ position: 'absolute', left: -8, top: 0, width: 14, height: 14, borderRadius: 8, background: M.gold, boxShadow: `0 0 14px ${M.gold}80` }} />
+                      <div style={{ fontFamily: M.mono, fontSize: 10, letterSpacing: 2, textTransform: 'uppercase', color: M.gold, fontWeight: 800, marginBottom: 6 }}>Twoja dźwignia na 14 dni · {glowna}</div>
+                      {!good && <p style={{ fontSize: 13.5, color: M.t3, fontStyle: 'italic', lineHeight: 1.6, margin: '0 0 8px' }}>{dnoFor(glowna, kg)}</p>}
+                      <p style={{ fontSize: 14, color: M.t2, lineHeight: 1.65, margin: '0 0 8px' }}>{kg.robimy}</p>
+                      <p style={{ fontSize: 13, color: M.grn, lineHeight: 1.5, margin: 0 }}><span style={{ fontFamily: M.mono, fontSize: 9.5, letterSpacing: 1.5, textTransform: 'uppercase', fontWeight: 700 }}>Po czym poznasz</span> {kg.poznasz}</p>
                     </div>
-                    <p style={{ fontSize: 14.5, color: M.t1, lineHeight: 1.6, fontWeight: 600, marginBottom: 16 }}>{verdict}</p>
-                    <a
-                      href={`https://ig.me/m/hantleitalerz?text=${encodeURIComponent(dmMsg)}`}
-                      target="_blank" rel="noopener noreferrer"
-                      onClick={() => trackEvent('secondary_cta_click', { cta_id: 'diagnostic_dm_cracks', destination: 'instagram_dm', score_bucket: tier, cracks_bucket: n > 2 ? '3_plus' : String(n), legacy_event: 'diag_cta_click' })}
-                      style={{ display: 'block', textAlign: 'center', background: `linear-gradient(135deg, ${M.gold}, #a08a3e)`, color: M.bg, textDecoration: 'none', padding: '16px', borderRadius: 12, fontWeight: 800, fontSize: 14, letterSpacing: 1.2, textTransform: 'uppercase', fontFamily: M.sans }}
-                    >Napisz DIAGNOZA &rarr;</a>
-                    <div style={{ fontSize: 11, color: M.t4, textAlign: 'center', marginTop: 8, fontFamily: M.mono, letterSpacing: 0.5 }}>DM otworzy się z gotową wiadomością. Odpisuję sam.</div>
-                    <a
-                      href={buildNaborPilotUrl({ destination: PILOT_NABOR_DESTINATION, incomingSearch: inboundSearch, placement: 'pekniecia', score: SC, topCategory: catScores.reduce((a, b) => a.pct < b.pct ? a : b, catScores[0]).label, intent })}
-                      target="_blank" rel="noopener noreferrer"
-                      onClick={() => trackEvent('primary_cta_click', { cta_id: 'diagnostic_cracks', destination: 'nabor', score_bucket: tier, cracks_bucket: n > 2 ? '3_plus' : String(n), legacy_event: 'diag_cta_click' })}
-                      style={{ display: 'block', textAlign: 'center', marginTop: 12, fontSize: 12.5, color: M.t4, textDecoration: 'underline', textUnderlineOffset: 3 }}
-                    >albo najpierw zobacz, jak wygląda prowadzenie &rarr;</a>
+
+                    {/* TEASE FAZ 2-3: nazwa dzwigni bez wykonania (sekwencjonowanie = produkt) */}
+                    {tease.map((label, i) => {
+                      const k = ROADMAPA_KARTY[label];
+                      return (
+                        <div key={label} style={{ position: 'relative', paddingLeft: 26, paddingBottom: 20, borderLeft: `2px solid ${M.gold}45` }}>
+                          <span style={{ position: 'absolute', left: -7, top: 0, width: 12, height: 12, borderRadius: 7, background: 'transparent', border: `2.5px solid ${M.gold}`, boxSizing: 'border-box' }} />
+                          <div style={{ fontFamily: M.mono, fontSize: 10, letterSpacing: 2, textTransform: 'uppercase', color: M.gold, fontWeight: 800, marginBottom: 6 }}>{i === 0 ? 'Faza 2' : 'Faza 3'} · {label}</div>
+                          {!good && <p style={{ fontSize: 13.5, color: M.t3, fontStyle: 'italic', lineHeight: 1.6, margin: '0 0 8px' }}>{dnoFor(label, k)}</p>}
+                          <p style={{ fontSize: 14.5, color: M.t1, fontWeight: 600, lineHeight: 1.5, margin: '0 0 6px' }}>{k.dzwignia}.</p>
+                          <p style={{ fontSize: 13, color: M.grn, lineHeight: 1.5, margin: 0 }}><span style={{ fontFamily: M.mono, fontSize: 9.5, letterSpacing: 1.5, textTransform: 'uppercase', fontWeight: 700 }}>Po czym poznasz</span> {k.poznasz}</p>
+                        </div>
+                      );
+                    })}
+                    <div style={{ position: 'relative', paddingLeft: 26, paddingBottom: 22, borderLeft: `2px solid ${M.gold}45` }}>
+                      <p style={{ fontSize: 13, color: M.t3, lineHeight: 1.6, margin: 0, fontStyle: 'italic' }}>Jak dokładnie, w jakich dawkach i co robić, kiedy tydzień się sypie: to zależy od Twoich wyników i to ustawiamy razem. Kolejność jest połową efektu.</p>
+                    </div>
+
+                    {/* KONIEC: wynik */}
+                    <div style={{ position: 'relative', paddingLeft: 26, paddingBottom: 4 }}>
+                      <span style={{ position: 'absolute', left: -7, top: 0, width: 12, height: 12, borderRadius: 7, background: M.grn, boxShadow: '0 0 10px rgba(60,186,94,.5)' }} />
+                      <div style={{ fontFamily: M.mono, fontSize: 10, letterSpacing: 2, textTransform: 'uppercase', color: M.grn, fontWeight: 800, marginBottom: 6 }}>Miesiąc 4-6 · wynik</div>
+                      <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 6 }}>
+                        {wynik180.map((b, i) => (
+                          <li key={i} style={{ fontSize: 14, color: M.t1, lineHeight: 1.5, paddingLeft: 16, position: 'relative', fontWeight: 500 }}>
+                            <span style={{ position: 'absolute', left: 0, top: 0, color: M.grn, fontWeight: 700 }}>·</span>{b}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+
+                    {/* PROOF przed CTA (werdykt: proof wyzej, przy decyzji) */}
+                    <div style={{ borderTop: `1px solid ${M.gold}25`, marginTop: 20, paddingTop: 16 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 12 }}>
+                        <img src="/michal-portrait.jpg" alt="Michał" loading="lazy" style={{ width: 56, height: 56, borderRadius: '50%', objectFit: 'cover', objectPosition: 'center 30%', border: `2px solid ${M.gold}`, boxShadow: `0 6px 20px rgba(0,0,0,.5),0 0 16px ${M.gold}25`, flexShrink: 0 }} />
+                        <div>
+                          <div style={{ fontSize: 14, fontWeight: 700, color: M.t1, lineHeight: 1.2, marginBottom: 3 }}>Michał &middot; Hantle i Talerz</div>
+                          <div style={{ fontSize: 12, color: M.t4, lineHeight: 1.4 }}>180 facetów przeszło tę drogę &middot; 5.0 na Google &middot; 9 lat prowadzenia</div>
+                        </div>
+                      </div>
+                      {!good && (
+                        <p style={{ fontFamily: M.serif, fontStyle: 'italic', fontSize: 14.5, color: M.t2, lineHeight: 1.55, margin: '0 0 14px' }}>
+                          „Zrywy: 2 tygodnie idealnie, potem odpuszczenie." Tak pisał facet, który jest dziś w zupełnie innym miejscu. Zaczynał od takiego samego wyniku.
+                        </p>
+                      )}
+
+                      {/* RAMA EGZEKUCJI: wiedza nigdy nie byla problemem (tease na niewdrozeniu, nie na tajemnicy) */}
+                      {!good && (
+                        <p style={{ fontSize: 14, color: M.t2, lineHeight: 1.65, margin: '0 0 16px' }}>
+                          Tę dźwignię wyżej pewnie kojarzysz. {D.triedBefore >= 2 ? 'Zaczynałeś już nie raz i wiesz, jak to się kończyło po dwóch tygodniach. ' : ''}Wiedza nigdy nie była u Ciebie problemem. Dowożenie w tygodniu, który się sypie, było. Dokładnie od tego jestem.
+                        </p>
+                      )}
+                      {good && (
+                        <p style={{ fontSize: 14, color: M.t2, lineHeight: 1.65, margin: '0 0 16px' }}>
+                          Z takim tygodniem pół roku pracy nad detalami daje więcej, niż innym daje rok. Zobacz, jak wygląda prowadzenie na wynik.
+                        </p>
+                      )}
+
+                      <a href="https://nabor.talerzihantle.com?utm_source=diagnostyka&utm_content=roadmapa" target="_blank" rel="noopener noreferrer" className="shimmer-btn"
+                        onClick={() => { trackEvent('diag_cta_click', { target: 'nabor_roadmapa', score: SC }); fbqTrack('InitiateCheckout', { content_name: 'nabor_roadmapa', content_category: 'high_ticket', value: SC, currency: 'PLN' }); }}
+                        style={{ display: 'block', textAlign: 'center', background: `linear-gradient(135deg, ${M.gold}, #a08a3e)`, color: M.bg, textDecoration: 'none', padding: '18px', borderRadius: 14, fontWeight: 800, fontSize: 15, letterSpacing: 1, boxShadow: '0 4px 24px rgba(200,168,78,0.3)' }}
+                      >{good ? 'ZOBACZ, JAK PRACUJĘ NA WYNIK' : 'ZOBACZ, JAK TO WYGLĄDA W ŚRODKU'} &rarr;</a>
+                      <div style={{ fontSize: 11.5, color: M.t4, textAlign: 'center', marginTop: 8, fontFamily: M.mono, letterSpacing: 0.5 }}>3 minuty czytania &middot; bez płatności &middot; raport zostaje otwarty</div>
+                    </div>
                   </div>
                 );
               })()}
