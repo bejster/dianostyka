@@ -6,10 +6,11 @@
 
 import React, { useState } from 'react';
 import SingleQuestionFlow from '../components/SingleQuestionFlow';
-import ReportView from '../components/ReportView';
+import WeekPage from '../components/WeekPage';
 import { calculateScoring, type RawAnswers, type ScoringResult } from '../lib/scoring-engine';
 import { answersToFD } from '../lib/answers-to-fd';
-import { score, costs, pickArchetype, tagScoreWeighted, anchorRok, hourRange } from '../lib/diagnostic-core';
+import { score, costs, pickArchetype, tagScoreWeighted } from '../lib/diagnostic-core';
+import { buildWeekPlan } from '../lib/week-plan';
 
 const GOLD = '#c8a84e';
 const BG = '#0e0e0e';
@@ -67,23 +68,24 @@ export default function DiagnozaPage() {
     const arch = pickArchetype(D, worstW);
     const rawImie = answers.imie ?? answers.name;
     const imie = typeof rawImie === 'string' ? rawImie : '';
-    const ah = anchorRok(D);
-    const breakText = hourRange(D);
+    const wkPlan = buildWeekPlan({
+      archetypeKey: arch.key, archetypeLabel: arch.label, archetypeTagline: arch.tagline,
+      worstCat: worstW, breakWindow: D.breakWindow, score: SC, costTotal: C.total, wknd: D.wknd,
+      imie, potentialPct: 100 - SC, costMonths: C.stagnationMonths,
+      drinks: D.drinks, screenBed: D.screenBed, junk: D.junk, protein: D.protein,
+      sleep: D.sleep, miss: D.miss, binge: D.binge, gym: D.gym,
+    });
     return (
       <>
-        <ReportView
-          imie={imie}
-          potential={100 - SC}
-          domains={catScores}
-          archetypeLabel={arch.label}
-          archetypeTagline={arch.tagline}
-          archetypeMirror={arch.mirror}
-          worstLabel={worstW}
-          breakText={breakText}
-          costText={ah.display}
-          costDays={ah.dni}
-          naborHref={'https://nabor.talerzihantle.com/'}
-        />
+        {/* prowadzenie 1:1 na gorze: WeekPage ma most na dole (VII), to dodatkowy cue u szczytu */}
+        <div style={{ position: 'sticky', top: 0, zIndex: 50, background: 'rgba(11,11,12,0.94)', backdropFilter: 'blur(8px)', borderBottom: '1px solid #26262b', padding: '11px 18px', display: 'flex', alignItems: 'center', gap: 12 }}>
+          <span style={{ fontFamily: "'JetBrains Mono', ui-monospace, monospace", fontSize: 10, letterSpacing: 2, textTransform: 'uppercase', color: '#8f887c', fontWeight: 700 }}>Diagnoza gotowa</span>
+          <span style={{ flex: 1 }} />
+          <a href={'https://nabor.talerzihantle.com/'} target="_blank" rel="noopener noreferrer" style={{ fontSize: 12.5, color: '#ece7db', textDecoration: 'none', whiteSpace: 'nowrap' }}>
+            następny krok: <strong style={{ color: '#c8a84e' }}>prowadzenie 1:1</strong> &rarr;
+          </a>
+        </div>
+        <WeekPage plan={wkPlan} imie={imie} naborHref={'https://nabor.talerzihantle.com/'} />
         {/* pasek zapisu: Karta jest widoczna od razu, e-mail dopiero jako opcja pod nia (gate zostaje) */}
         <div style={{ background: '#0b0b0c', borderTop: '1px solid #26262b', padding: '32px 22px 56px', textAlign: 'center' }}>
           <div style={{ maxWidth: 460, margin: '0 auto' }}>
