@@ -245,7 +245,7 @@ export default function WeekPage({ plan, imie, naborHref = 'https://nabor.talerz
           </div>
 
           <p style={{ fontSize: 16, color: C.mute, lineHeight: 1.65, margin: '0 0 26px', maxWidth: 540 }}>
-            Wiesz już gdzie Twój tydzień pęka i dlaczego. Nazwać to potrafi mniej niż jeden na dziesięciu. Ale mapa nie naprawia terenu. Sam wdrożysz dwie, może trzy kotwice, reszta rozejdzie się w pierwszym gorszym tygodniu, bo nikt Cię z niej nie rozlicza. W prowadzeniu 1:1 układam to pod Twój grafik i co tydzień siadamy nad tym, co nie zadziałało. Nie kolejny plan do obejrzenia. Ktoś, kto pilnuje, żebyś go dowiózł.
+            Wiesz już gdzie Twój tydzień pęka i dlaczego. Ale mapa nie naprawia terenu, a kolejne pół roku na własną rękę to nie jest zero. To ten sam tydzień, tylko starszy: sen, regeneracja i hormony nie czekają, aż się w końcu zbierzesz. Rachunek, który zobaczyłeś wyżej, płacisz co roku i nic za niego nie dostajesz. Sam wdrożysz dwie kotwice, reszta rozejdzie się w pierwszym gorszym tygodniu, bo nikt Cię z niej nie rozlicza. Prowadzenie 1:1 robi dokładnie odwrotność: co tydzień układam plan pod Twój grafik i rozliczam Cię z wykonania, więc nie odpuścisz po jednym słabym dniu. To jedyna rzecz, która przerywa tę pętlę: ktoś z zewnątrz, kto pilnuje, żebyś dowiózł.
           </p>
 
           {/* drabina akcji */}
