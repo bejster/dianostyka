@@ -24,7 +24,7 @@ export interface WeekPlanInput {
   drinks?: number; screenBed?: number; junk?: number; protein?: number;
   sleep?: number; miss?: number; binge?: number; gym?: number;
   // reframe z /api/diagnoza (opcjonalny):
-  reframe?: { cytat?: string; falszywe_zalozenie?: string; mechanizm?: string; pulapka?: string };
+  reframe?: { cytat?: string; falszywe_zalozenie?: string; mechanizm?: string; pulapka?: string; kolejnosc?: string[] };
 }
 
 export type DayState = 'good' | 'ok' | 'risk' | 'break';
@@ -72,133 +72,128 @@ const WEEK_BY_ARCHETYPE: Record<string, WeekTemplate> = {
 };
 const WEEK_FALLBACK: WeekTemplate = WEEK_BY_ARCHETYPE.wieczorny_odpad;
 
-// ── DRUGIE DNO: mechanizm neuro/hormonalny, którego lead nigdy nie usłyszał ──
-// Łączy zaznaczone sygnały w jedną pętlę + analogia z życia (reguła Michała: każdy
-// mechanizm neuro musi mieć analogię). Neurofizjologia sprawdzalna, bez zmyślonych liczb.
+// ── DRUGIE DNO: neurofizjologiczny mechanizm wycieku ──
+// Wyjaśniamy mechanizm przyczynowo-skutkowy bez sloganów AI i bez fałszywej psychologii.
 const DEEPER: Record<string, { label: string; body: string; analogy: string }> = {
   weekend_reset: {
-    label: 'Twój poniedziałek jest chemiczny, nie moralny.',
-    body: 'Alkohol w weekend nie dolicza tylko kalorii. Rozbija sen, spłyca go i wybija fazy, przez które się regenerujesz, więc kortyzol schodzi wolniej, a nocna odbudowa testosteronu nie dochodzi do skutku. Skutki ciągną się dłużej niż jedną noc. W poniedziałek za spadek formy nie odpowiada słaba wola, tylko neurochemia, która dalej siedzi w sobotę.',
-    analogy: 'Jak telefon, co pokazuje 100%, a bateria zjechana. Liczba kłamie, a Ty się dziwisz, że gaśnie w południe.',
+    label: 'Poniedziałkowy dół jest fizjologiczny, nie motywacyjny.',
+    body: 'Nieregularny sen w weekend i spadek aktywności zmieniają architekturę snu NREM. Zaburza to naturalny rytm wydzielania kortyzolu rano i obniża nocny pik testosteronu. Efekt nie zika w niedzielę w nocy – organizm potrzebuje 48 do 72 godzin na ponowne zsynchronizowanie zegara biologicznego. Dlatego w poniedziałek i wtorek walczysz nie z brakiem chęci, ale z opóźnioną odpowiedzią stresową układu nerwowego.',
+    analogy: 'Jak jazda autem z rozregulowanym zapłonem: silnik zużywa dwukrotnie więcej paliwa, a auto przyspiesza dwa razy wolniej.',
   },
   wieczorny_odpad: {
-    label: 'Twój wieczór ustawia się rano, nie o 22:00.',
-    body: 'Najazd na lodówkę nie bierze się ze słabego charakteru. Po krótkim śnie mózg mocniej reaguje na jedzenie jak na nagrodę, a grelina i leptyna przestają mówić Ci prawdę o głodzie. Do tego wieczorny kortyzol, który powinien schodzić do dna, u faceta w ciągłym napięciu dalej stoi w górze i trzyma Cię na obrotach. Wieczorem nie walczysz z sobą, walczysz z trzema hormonami, które niedospana doba rozstroiła.',
-    analogy: 'Wieczór to rachunek za cały dzień. Płacisz go w lodówce, a myślisz, że to kwestia silnej woli.',
+    label: 'Wieczorne podjadanie ustawia się w ciągu dnia.',
+    body: 'Brak kontroli nad jedzeniem po 21:00 to rzadko słaby charakter. Po całym dniu pracy w napięciu i przy niedoborze głębokiego snu poziom greliny (hormonu głodu) rośnie, a leptyna (sygnał sytości) spada. Jednocześnie podwyższony wieczorny kortyzol sprawia, że mózg szuka najszybszego bodźca obniżającego napięcie układu nerwowego. Wieczór w lodówce to czysty biologiczny mechanizm samoregulacji spiętego organizmu.',
+    analogy: 'To rachunek za cały dzień pracy na wysokich obrotach. Jeśli nie dasz układowi nerwowemu innego sygnału zejścia z obrotów, sam sięgnie po najszybszy.',
   },
   glowa_zajezdza: {
-    label: 'Kortyzol i testosteron siedzą na jednej huśtawce.',
-    body: 'Napięcie nie zostaje w głowie. Oś HPA trzyma kortyzol w górze, ciało migdałowate nie schodzi z alarmu, więc nie zasypiasz, a rano jest gorzej niż wczoraj. Im wyżej kortyzol, tym niżej testosteron, bo działają przeciwko sobie. Humor nie ma z tym nic wspólnego. To pętla, która sama się napędza.',
-    analogy: 'Alarm, który nie gaśnie, rozładowuje cały budynek, nie jeden pokój.',
+    label: 'Kortyzol i testosteron działają na przeciwstawnych biegunach.',
+    body: 'Ciągłe napięcie psychiczne działa na ciało tak samo jak przewlekły stres fizyczny. Stymulacja osi HPA utrzymuje wysoki kortyzol, co osłabia nocną regenerację i obniża syntezę testosteronu. Gdy wieczorem głowa nadal pracuje na obrotach firmowych, układ nerwowy nie przechodzi w tryb przywspółczulny (odpoczynek), przez co rano wstajesz z mniejszym zasobem energii niż dnia poprzedniego.',
+    analogy: 'Silnik pracujący ciągle na wysokich obrotach bez wymiany oleju w końcu traci moc, bez względu na to, jak dobre paliwo do niego wlewasz.',
   },
   wiedza_bez_wdrozenia: {
-    label: 'Mózg nagradza Cię za oglądanie i olewa robotę.',
-    body: 'Kolejny film o treningu daje dopaminę z samego uczenia się. Mózg dostaje sygnał postępu bez postępu, więc nie domaga się już akcji. Dlatego wiesz coraz więcej i zmieniasz coraz mniej. Bez kogoś, kto Cię z tego rozliczy, ta pętla się nie domyka.',
-    analogy: 'Czytasz menu i wstajesz od stołu najedzony samą kartą dań.',
+    label: 'Mózg nagradza Cię za samą analizę problemu.',
+    body: 'Samo czytanie o treningu, żywieniu czy suplementacji daje szybki wyrzut dopaminy. Mózg rejestruje to jako postęp, mimo że w realnym tygodniu nic się nie zmieniło. W efekcie dysponujesz wiedzą większą niż 90% ludzi na siłowni, ale Twój tydzień wykłada się na najprostszych powtórzeniach, bo brakuje systemu egzekucji dopasowanego do Twojego trybu pracy.',
+    analogy: 'Studiowanie mapy bez wyjścia na szlak dajesz poczucie kontroli, ale nie przybliża do celu ani o jeden kilometr.',
   },
   silnik_bez_paliwa: {
-    label: '„W normie” to nie to samo, co „na swoim maksie”.',
-    body: 'Zaznaczyłeś rzeczy, których pojedynczo nikt by nie ruszył. Razem układają się w cichy wyciek energii: sen bez regeneracji, napęd na niskim biegu, a badania mimo to mogą wyjść „w normie”. Tyle że „w normie” znaczy „jak u większości”, a nie „na Twoim maksie”. Czujesz, że jedziesz poniżej swojego pułapu, nawet jeśli nic nie jest chore.',
-    analogy: 'Silnik, który przechodzi przegląd, ale nigdy nie ciągnie na pełnym.',
+    label: '„Wyniki w normie” to nie to samo co optymalna forma.',
+    body: 'Standardowe zakresy laboratoryjne wykluczają choroby, ale nie definiują wysokiej wydajności. Spłycony sen, ukryta oporność na stres i nieregularne posiłki tworzą cichy wyciek – stan, w którym nie jesteś chory, ale pracujesz na 60-70% swoich realnych możliwości fizycznych i psychicznych.',
+    analogy: 'Komputer z kilkudziesięcioma aplikacjami działającymi w tle: żaden proces go nie zawiesza, ale całe urządzenie działa odczuwalnie wolniej.',
   },
 };
 
 function hiddenCost(input: WeekPlanInput): WeekPlan['hiddenCost'] {
-  const zl = input.costTotal >= 1000 ? `${Math.round(input.costTotal / 1000)} tys zł` : `${Math.round(input.costTotal / 100) * 100} zł`;
-  const kasa = input.costTotal >= 2000 ? ` Do tego ${zl} w pół roku na konsekwencje, nie na sam nawyk.` : '';
-  const mies = input.costMonths && input.costMonths >= 1 ? ` I około ${input.costMonths} miesięcy treningu, które nie ruszyły formy, bo fundament pod spodem nie gra.` : '';
+  const zl = input.costTotal >= 1000 ? `${Math.round(input.costTotal / 1000)} tys. zł` : `${Math.round(input.costTotal / 100) * 100} zł`;
+  const kasa = input.costTotal >= 2000 ? ` Szacowany koszt nieefektywnych wydatków na dowozy i suplementy: około ${zl} w skali pół roku.` : '';
+  const mies = input.costMonths && input.costMonths >= 1 ? ` Do tego około ${input.costMonths} miesięcy treningu bez widocznych efektów sylwetkowych.` : '';
   switch (input.archetypeKey) {
     case 'weekend_reset':
-      return { headline: 'Jeden weekend nie kosztuje Cię dwóch dni. Kosztuje pięciu.', math: `W miesiącu nie tracisz czterech weekendów. Tracisz cztery poniedziałki, cztery wtorki i połowę śród na doganianie.${kasa}${mies}`, multiplier: '1 luźniejszy weekend potrafi kosztować 3 dni zdolności do działania.' };
+      return { headline: 'Jeden rozbity weekend zabiera wysokie obroty przez 3 kolejne dni.', math: `W skali miesiąca to nie 4 luźne dni, ale 8-10 dni roboczych spędzonych na ponownym wchodzeniu w rytm.${kasa}${mies}`, multiplier: 'Rozkojarzony poniedziałek i wtorek to ukryty koszt niespójnego weekendu.' };
     case 'wieczorny_odpad':
-      return { headline: 'Jeden wieczór nie kończy się o północy. Zabiera Ci następny poranek, trening i decyzje do 14:00.', math: `Pięć przekręconych wieczorów to pięć poranków na kawie i dwa, trzy przepuszczone treningi w tygodniu.${kasa}${mies}`, multiplier: '1 wieczór na kredycie i następny dzień jedzie na obniżonych obrotach.' };
+      return { headline: 'Wieczorny wyciek energii obniża jakość decyzji następnego dnia.', math: `Niedospana noc i ciężki żołądek rano obniżają koncentrację w kluczowych godzinach pracy.${kasa}${mies}`, multiplier: 'Brak struktury wieczorem spłaca się gorszym skupieniem do południa.' };
     case 'glowa_zajezdza':
-      return { headline: 'Napięcie nie znika, gdy zamykasz laptopa. Zjada Ci sen, apetyt i cały wieczór.', math: `Pięć dni w trybie alarmu i weekend schodzi na schodzenie z napięcia, nie na życiu.${kasa}${mies}`, multiplier: '1 dzień na kortyzolu = wieczór i noc pod jego dyktando.' };
+      return { headline: 'Brak wyłączenia głowy po pracy zjada regenerację i sen.', math: `Dni w ciągłym napięciu kumulują zmęczenie, przez co wolny czas przeznaczasz na zbieranie sił, a nie na realny odpoczynek.${kasa}${mies}`, multiplier: 'Praca w trybie alarmu niszczy wydajność kolejnego dnia.' };
     case 'wiedza_bez_wdrozenia':
-      return { headline: 'Nie tracisz wiedzy. Tracisz miesiące, bo wiedza bez rozliczenia leży odłogiem.', math: `Rok prób w kółko to rok formy, której nie widać, mimo że wiesz więcej niż większość ludzi na siłowni.${kasa}${mies}`, multiplier: 'Każdy „poniedziałek od nowa” kasuje poprzedni tydzień.' };
+      return { headline: 'Wiedza bez systemu egzekucji to koszt utraconego czasu.', math: `Miesiące prób i błędów bez stałej weryfikacji utrzymują formę w tym samym miejscu mimo dużego nakładu wiedzy.${kasa}${mies}`, multiplier: 'Każdy niedokończony plan zeruje dotychczasowy wkład.' };
     default:
-      return { headline: 'Nie tracisz jednego dnia. Tracisz kilka procent z każdego.', math: `Pół mocy przez trzydzieści dni sumuje się w cały miesiąc na 70%, nie w jedną głośną wpadkę.${kasa}${mies}`, multiplier: 'Cichy wyciek zabiera więcej niż jedna wtopa, którą widać.' };
+      return { headline: 'Cichy wyciek zabiera kilka procent sprawności każdego dnia.', math: `Praca na pół mocy przez miesiąc daje skumulowaną stratę trudną do odrobienia jednym zrywem.${kasa}${mies}`, multiplier: 'Drobne nieszczelności w tygodniu sumują się w istotny spadek formy.' };
   }
 }
 
-// ── POTENCJAŁ NA STOLE: widzimy więcej, niż dziś z siebie wyciąga ──
+// ── POTENCJAŁ NA STOLE ──
 function potentialBlock(input: WeekPlanInput): WeekPlan['potential'] {
-  const used = Math.max(15, Math.min(input.potentialPct ?? (100 - input.score), 90));
+  const used = Math.max(20, Math.min(input.potentialPct ?? (100 - input.score), 85));
   const worst = input.worstCat.toLowerCase();
   return {
     usedPct: used,
-    headline: 'Na podstawie tego, co zaznaczyłeś, sporo zostaje na stole.',
-    body: `Działasz teraz na jakieś ${used}% tego, co masz pod maską. Reszta nie zniknęła. Siedzi zablokowana przez ${worst} i wieczory, i nie widać jej z jednego dnia, dlatego tak łatwo ją olać.`,
-    punch: 'Nie marnujesz czasu. Marnujesz różnicę między tym, kim jesteś, a kim byłbyś bez tego wycieku.',
+    headline: 'Z Twoich odpowiedzi wynika jasny rezerwuar możliwości.',
+    body: `Twój układ działa obecnie na około ${used}% realnej sprawności. Brakująca część nie zniknęła – jest blokowana przez obszar: ${worst} oraz nieefektywną regenerację wieczorną.`,
+    punch: 'Usunięcie głównego punktu oporu w tygodniu uwalnia zasoby bez konieczności rewolucjonizowania całego życia.',
   };
 }
 
 function foodAnchor(i: WeekPlanInput): string {
-  if ((i.protein ?? 0) >= 2) return 'Białko w pierwszym posiłku dnia, o tej samej porze. Ustawia cukier i napęd na resztę dnia, żeby wieczór nie odbijał głodem.';
-  if (i.worstCat === 'Żywienie') return 'Pełny posiłek, zanim wejdziesz wieczorem w telefon. Najedzony mózg nie szuka nagrody w lodówce.';
-  return 'Jeden stały posiłek-kotwica o tej samej porze, reszta dnia może się sypać.';
+  if ((i.protein ?? 0) >= 2) return 'Stała porcja 30-40 g białka w pierwszym posiłku. Stabilizuje poziom glukozy i sytość na resztę dnia.';
+  if (i.worstCat === 'Żywienie') return 'Główny posiłek zjedzony zanim wejdziesz w stan zmęczenia po pracy. Odcina wieczorne skoki apetytu.';
+  return 'Jeden stały posiłek-kotwica o tej samej porze codziennie.';
 }
 function trainAnchor(i: WeekPlanInput): string {
-  if ((i.miss ?? 0) >= 2) return 'Jeden trening w wersji minimum, wpisany w kalendarz jak spotkanie, nie „jak znajdę czas”.';
-  return 'Jeden krótszy trening zrobiony bije idealny plan od poniedziałku.';
+  if ((i.miss ?? 0) >= 2) return 'Trening w wersji skróconej (30-40 min), wpisany w kalendarz na sztywno jak spotkanie biznesowe.';
+  return 'Minimalna wersja treningu wykonana w 100% bije przeładowany plan, z którego odpuszczasz połowę.';
 }
 function stepsAnchor(i: WeekPlanInput): string {
   const floor = (i.worstCat === 'Trening' || (i.miss ?? 0) >= 2) ? 8000 : 7000;
-  return `Minimum ${floor.toLocaleString('pl-PL')} kroków dziennie, też w gorszy dzień. Nie na kalorie, na zejście z kortyzolu i lepszy sen wieczorem.`;
+  return `Stały próg min. ${floor.toLocaleString('pl-PL')} kroków dziennie jako narzędzie wspierające obniżanie kortyzolu przed snem.`;
 }
 function returnAnchor(): string {
-  return 'Po gorszym dniu żadnego karnego treningu. Karny trening po zarwanej nocy tylko dokłada kortyzolu do już rozregulowanego układu. Spacer, woda, normalny posiłek, sen o stałej porze. Wracasz, nie odrabiasz.';
+  return 'Zasada braku karnego treningu po gorszym dniu. Wracasz do normalnej rutyny (spacer, sen, nawodnienie) bez dokładania stresu układowi nerwowemu.';
 }
 function removeAnchor(i: WeekPlanInput): string {
-  if ((i.drinks ?? 0) > 5) return 'Jeden weekend bez alkoholu, żeby zobaczyć, ile z tego zmęczenia to nie Ty.';
-  if ((i.screenBed ?? 0) >= 2) return 'Telefon poza sypialnią przez najbliższe trzy wieczory.';
-  if ((i.junk ?? 0) > 300) return 'Wieczorne podjadanie: jedna rzecz mniej dziennie, nie zero od razu.';
-  if ((i.binge ?? 0) >= 2) return 'Jeden wieczór w tygodniu bez skoku do lodówki po 21:00.';
-  return 'Jedna rzecz, która co wieczór zjada Ci dzień, znika na siedem dni.';
+  if ((i.drinks ?? 0) > 5) return 'Eliminacja alkoholu na 14 dni w celu zmierzenia bazowego poziomu energii i jakości snu.';
+  if ((i.screenBed ?? 0) >= 2) return 'Telefon poza sypialnią na 60 minut przed pójściem spać.';
+  if ((i.junk ?? 0) > 300) return 'Usunięcie wysoko przetworzonych przekąsek z przestrzeni domowej.';
+  if ((i.binge ?? 0) >= 2) return 'Odcięcie jedzenia na 2 godziny przed snem.';
+  return 'Eliminacja jednego bodźca, który najsilniej rozprasza Twój wieczór.';
 }
 function metricLine(i: WeekPlanInput): string {
   switch (i.worstCat) {
-    case 'Sen': return 'Godzina zaśnięcia. Zapisuj przez siedem dni, nic więcej.';
-    case 'Weekend': return 'Ile poniedziałków ruszyło z normalnego miejsca. Cel: 4 na 4.';
-    case 'Żywienie': return 'Wieczory pod kontrolą. Cel: 5 na 7.';
+    case 'Sen': return 'Czas przebywania w łóżku i stała godzina pobudki (monitorowane przez 7 dni).';
+    case 'Weekend': return 'Liczba poniedziałków rozpoczętych w pełnej sprawności (cel: 4/4).';
+    case 'Żywienie': return 'Liczba wieczorów domkniętych zgodnie z założeniem (cel: 5/7).';
     case 'Stres':
-    case 'Głowa': return 'Czy wieczorem zszedłeś z obrotów. Tak albo nie, codziennie.';
-    case 'Trening': return 'Treningi zrobione kontra zaplanowane. Cel: 3 na 3.';
-    default: return 'Jeden wieczór pod kontrolą. Licz do 5 na 7.';
+    case 'Głowa': return 'Wykonanie rytuału zamknięcia dnia pracy (tak/nie).';
+    case 'Trening': return 'Stosunek treningów zrealizowanych do zaplanowanych (cel: 100%).';
+    default: return 'Liczba dni ze zrealizowaną główną kotwicą (cel: 5/7).';
   }
 }
 function buildPlan(i: WeekPlanInput): { plan: PlanAnchor[]; metric: string } {
   const metric = metricLine(i);
   const plan: PlanAnchor[] = [
-    { icon: '🍽️', kind: 'Kotwica jedzenia', text: foodAnchor(i) },
-    { icon: '🏋️', kind: 'Kotwica treningu', text: trainAnchor(i) },
-    { icon: '👟', kind: 'Próg kroków', text: stepsAnchor(i) },
-    { icon: '🔁', kind: 'Powrót po gorszym dniu', text: returnAnchor() },
+    { icon: '🍽️', kind: 'Kotwica żywieniowa', text: foodAnchor(i) },
+    { icon: '🏋️', kind: 'Kotwica treningowa', text: trainAnchor(i) },
+    { icon: '👟', kind: 'Próg aktywności', text: stepsAnchor(i) },
+    { icon: '🔁', kind: 'Protokół powrotu', text: returnAnchor() },
     { icon: '➖', kind: 'Jedna rzecz do usunięcia', text: removeAnchor(i) },
-    { icon: '📊', kind: 'Jeden wskaźnik', text: metric },
+    { icon: '📊', kind: 'Główny wskaźnik', text: metric },
   ];
   return { plan, metric };
 }
 
-// ── ZAPROSZENIE: osobista linia, identity + oferta pomocy, bez gwarancji wyniku ──
+// ── ZAPROSZENIE ──
 function invitationLine(input: WeekPlanInput): string {
-  const hot = (input.potentialPct ?? (100 - input.score)) <= 45; // dużo zablokowanego = duży upside
-  if (hot) return 'Zablokowanego masz sporo i to akurat dobra wiadomość, bo znaczy, że jest co odzyskać, a nie że jesteś na maksie i tyle. Jak zechcesz to poukładać, wiem od czego zacząć i doprowadzam do końca, nie do połowy.';
-  return 'Masz niezłą bazę i widać, że myślisz. Reszta to wyciśnięcie różnicy, którą inni zostawiają na stole. Jak zechcesz po nią sięgnąć, wiem od czego zacząć i idę z Tobą do końca.';
+  const hot = (input.potentialPct ?? (100 - input.score)) <= 45;
+  if (hot) return 'Masz spory rezerwuar nieobsłużonego potencjału. To dobra wiadomość – oznacza, że zmiana struktury tygodnia przyniesie odczuwalny skok energii bez dokładania morderczych obciążeń. Jeśli chcesz to poukładać precyzyjnie, wiem od czego zacząć.';
+  return 'Dysponujesz dobrą bazą wyjściową. Prawdziwa różnica leży teraz w dopracowaniu detali i usunięciu pojedynczych nieszczelności, które obniżają Twój wynik. Gdy zechcesz przejść ten proces ze wsparciem, jestem do dyspozycji.';
 }
 
-// ── MOST: zawsze akcja + routing po bólu, nie ślepy cennik ──
-// Zapis karty jest ZAWSZE pierwszy (uniwersalna akcja). Kolejność reszty zależy od
-// tego, ile user ma zablokowane: dużo bólu -> prowadzenie bliżej; mała baza -> najpierw
-// tani pierwszy krok, prowadzenie na końcu i miękko. Nigdy nie wpychamy najdroższego.
+// ── MOST DO KOLEJNEGO KROKU ──
 function buildBridge(input: WeekPlanInput): WeekPlan['bridge'] {
   const hot = (input.potentialPct ?? (100 - input.score)) <= 45;
-  const save = { tier: 'Zapisz swoją Kartę tygodnia', line: 'Zabierz ją ze sobą. To Twój punkt odniesienia na najbliższe siedem dni, wracasz do niego po każdym gorszym dniu.', kind: 'save' as const };
-  const start = { tier: 'Pierwszy płatny krok na dziś', line: 'Chcesz od razu zamknąć najsłabsze ogniwo, nie czekając na wielki plan. Jeden konkret do wdrożenia dziś, 49 zł.', kind: 'start' as const };
-  const ladder = { tier: 'Spięte w jedno', line: 'Chcesz mieć to poukładane z pomiarem postępu, nie w pięciu miejscach. BAZA, 299 zł.', kind: 'ladder' as const };
-  const coopHot = { tier: 'Dopasowanie co tydzień', line: 'Masz sporo do odzyskania, a to najszybciej idzie, gdy ktoś dopasowuje plan co tydzień do tego, jak naprawdę wygląda Twój tydzień. To jest prowadzenie. Aplikacja, nie zakup.', kind: 'coop' as const };
-  const coopCold = { tier: 'Gdyby sam plan przestał wystarczać', line: 'Gdy zechcesz, żeby ktoś dopasowywał to co tydzień do tego, co naprawdę się u Ciebie dzieje, jest prowadzenie. Bez pośpiechu, wtedy kiedy będziesz gotowy.', kind: 'coop' as const };
-  // hot: prowadzenie tuż po zapisie; cold: najpierw tani krok, prowadzenie na końcu i miękko
+  const save = { tier: '1. Zapisz Kartę Tygodnia (PDF)', line: 'Pobierz ten raport jako punkt odniesienia na najbliższe 7 dni.', kind: 'save' as const };
+  const start = { tier: '2. Wdrożenie samodzielne', line: 'Zastosuj 6 kotwic z raportu i skup się na stabilizacji głównego punktu pęknięcia.', kind: 'start' as const };
+  const ladder = { tier: '3. Konsultacja wyników', line: 'Przeanalizujmy ten raport razem pod kątem Twojego harmonogramu pracy i celów.', kind: 'ladder' as const };
+  const coopHot = { tier: '4. Prowadzenie indywidualne 1:1', line: 'Cotygodniowa korekta planu i indywidualna opieka – dopasowanie strategii do realiów Twojego tygodnia.', kind: 'coop' as const };
+  const coopCold = { tier: '4. Współpraca 1:1', line: 'Gdy uznasz, że potrzebujesz indywidualnego prowadzenia i stałego nadzoru egzekucji.', kind: 'coop' as const };
   return hot ? [save, coopHot, start, ladder] : [save, start, ladder, coopCold];
 }
 
@@ -207,31 +202,45 @@ export function buildWeekPlan(input: WeekPlanInput): WeekPlan {
   const week: WeekDay[] = DAYS.map((day, idx) => ({ day, label: tpl.labels[idx], state: tpl.states[idx] }));
   const problem = {
     name: input.archetypeLabel,
-    oneLiner: input.archetypeTagline,
+    oneLiner: input.reframe?.cytat?.trim() ? `„${input.reframe.cytat.trim()}”` : input.archetypeTagline,
     falseAssumption: input.reframe?.falszywe_zalozenie?.trim() || defaultFalseAssumption(input.archetypeKey),
   };
-  const { plan, metric } = buildPlan(input);
+  const { plan: basePlanArr, metric } = buildPlan(input);
+  const plan = [...basePlanArr];
+  if (input.reframe?.kolejnosc && Array.isArray(input.reframe.kolejnosc) && input.reframe.kolejnosc.length >= 3) {
+    plan[0] = { icon: '🎯', kind: 'Krok 1 (Twój priorytet)', text: input.reframe.kolejnosc[0] };
+    plan[1] = { icon: '⚙️', kind: 'Krok 2 (Twój priorytet)', text: input.reframe.kolejnosc[1] };
+    plan[2] = { icon: '📈', kind: 'Krok 3 (Twój priorytet)', text: input.reframe.kolejnosc[2] };
+  }
+
+  const baseDeeper = DEEPER[input.archetypeKey] || DEEPER.wieczorny_odpad;
+  const deeper = {
+    label: input.reframe?.mechanizm ? 'Indywidualna analiza neurobiologiczna' : baseDeeper.label,
+    body: input.reframe?.mechanizm?.trim() || baseDeeper.body,
+    analogy: input.reframe?.pulapka?.trim() || baseDeeper.analogy,
+  };
+
   return {
     problem,
     week,
-    deeper: DEEPER[input.archetypeKey] || DEEPER.wieczorny_odpad,
-    deeperNote: 'To opis mechanizmu na podstawie tego, co zaznaczyłeś, nie diagnoza. Jeśli coś Cię niepokoi zdrowotnie, potwierdź to u lekarza.',
+    deeper,
+    deeperNote: 'Analiza wygenerowana na podstawie Twojego unikalnego wzorca odpowiedzi i opisanych objawów. Nie stanowi diagnozy medycznej.',
     hiddenCost: hiddenCost(input),
     potential: potentialBlock(input),
     plan,
     metric,
     invitation: invitationLine(input),
     bridge: buildBridge(input),
-    saveNote: 'Zapisujesz stronę do siebie. Nic nie wysyłamy dalej, dopóki sam nie napiszesz.',
+    saveNote: 'Raport wygenerowany dla Ciebie. Dane nie są przekazywane podmiotom trzecim.',
   };
 }
 
 function defaultFalseAssumption(key: string): string {
   switch (key) {
-    case 'weekend_reset': return 'Weekend nie jest problemem. Problem zaczyna się w niedzielę wieczorem, kiedy zakładasz, że w poniedziałek po prostu wrócisz.';
-    case 'wieczorny_odpad': return 'Słaba wola dostaje tu całą winę. A wieczorny zjazd to rachunek za całą dobę, który organizm wystawia po 21:00, kiedy jesteś najsłabszy.';
-    case 'glowa_zajezdza': return 'Szukasz winy na talerzu, a to zaczyna się wyżej: w głowie, która o 22:00 dalej pracuje, choć Ty już leżysz.';
-    case 'wiedza_bez_wdrozenia': return 'Wiesz więcej niż połowa ludzi na siłowni. I dlatego dalej stoisz w miejscu, bo wiedza bez kogoś, kto Cię z niej rozliczy, leży odłogiem.';
-    default: return 'Robisz wszystko z listy i dalej lecisz na pół gwizdka. Coś pod spodem cieknie tak wolno, że z jednego dnia tego nie widać, a przez rok robi różnicę.';
+    case 'weekend_reset': return 'Błędne założenie: myślisz, że weekendowe rozluźnienie kasuje się samo w niedzielę w nocy, podczas gdy organizm spłaca je przez kolejne 2-3 dni.';
+    case 'wieczorny_odpad': return 'Błędne założenie: zrzucasz winę na brak silnej woli wieczorem, ignorując fakt, że wieczorny apetyt to czysta odpowiedź na całodniowe napięcie i krótki sen.';
+    case 'glowa_zajezdza': return 'Błędne założenie: szukasz przyczyn braku efektów w diecie, podczas gdy głównym hamulcem jest nierozładowany stres i stała aktywacja osi HPA.';
+    case 'wiedza_bez_wdrozenia': return 'Błędne założenie: wierzysz, że kolejna przeczytana teoria rozwiąże problem, podczas gdy brakuje Ci wyłącznie stałego systemu egzekucji.';
+    default: return 'Błędne założenie: traktujesz spadek energii jako normę wieku, zamiast usunąć konkretny wyciek regeneracyjny w Twoim tygodniu.';
   }
 }

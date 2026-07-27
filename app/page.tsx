@@ -408,44 +408,44 @@ function contradiction(D: FD, selfDx: string): { said: string; body: string } | 
 
 // ── PERSONALIZACJA WYNIKU: kazdy blok decyzyjny budowany z odpowiedzi usera, zero uniwersalnych obietnic ──
 const LEAK_LINE: Record<string, string> = {
-  'Sen': 'śpisz za krótko, żeby cokolwiek innego miało prawo zadziałać',
-  'Stres': 'napięcie nie schodzi nawet wieczorem, organizm nie wychodzi z trybu alarmu',
-  'Żywienie': 'w dzień kontrola, wieczorem odbijasz wszystko z nawiązką',
-  'Weekend': 'piątek z sobotą kasują to, co wyrobiłeś przez pięć dni',
-  'Trening': 'katujesz zmęczony organizm zamiast trenować wypoczęty',
-  'Głowa': 'głowa na pół mocy, decyzje spadają na jutro, a jutro na pojutrze',
+  'Sen': 'spadek regeneracji NREM obniża energię i koncentrację w ciągu dnia',
+  'Stres': 'utrzymujące się napięcie osi HPA blokuje wieczorny wypoczynek',
+  'Żywienie': 'brak kontroli nad posiłkami w ciągu dnia skutkuje wieczornym apetytem kompensacyjnym',
+  'Weekend': 'zaburzenie rytmu dobowego w weekend przekłada się na mniejszą sprawność w poniedziałek',
+  'Trening': 'przeładowany plan w połączeniu ze stresem hamuje postępy sylwetkowe',
+  'Głowa': 'nagromadzone otwarte pętle decyzyjne zjadają zasoby uwagi',
 };
 const LEAK_MOVE: Record<string, string> = {
-  'Sen': '90 minut bez ekranu przed snem, trzy wieczory z rzędu.',
-  'Stres': '10 minut marszu po robocie, zanim usiądziesz do telefonu.',
-  'Żywienie': 'Pełny posiłek, zanim zaczniesz wieczorne scrollowanie.',
-  'Weekend': 'Poniedziałek bez karnego treningu: spacer, woda, normalne jedzenie.',
-  'Trening': 'Jeden krótszy trening zrobiony bije idealny w głowie.',
-  'Głowa': 'Jedna decyzja zapisana wieczorem, wykonana rano.',
+  'Sen': '60 minut bez ekranów przed pójściem spać przez kolejne 3 wieczory.',
+  'Stres': '15 minut spaceru bez telefonu bezpośrednio po zakończeniu pracy.',
+  'Żywienie': 'Pełnowartościowy posiłek zjedzony zanim wejdziesz w stan zmęczenia wieczornego.',
+  'Weekend': 'Stała pora pobudki w niedzielę z zachowaniem porannego nawodnienia i spaceru.',
+  'Trening': 'Skrócenie sesji do 3-4 kluczowych ćwiczeń o wysokiej jakości.',
+  'Głowa': 'Zapisanie jednego priorytetu na jutro przed zamknięciem dnia.',
 };
 const BENEFIT_30: Record<string, string> = {
-  'Sen': 'Zasypiasz szybciej i budzisz się przed alarmem, nie pod nim',
-  'Stres': 'Wieczorem schodzisz z obrotów, zamiast dojeżdżać na oparach',
-  'Żywienie': 'Wieczór przestaje kasować dzień, koniec nalotów na lodówkę',
-  'Weekend': 'Weekend kosztuje Cię jeden dzień, nie trzy',
-  'Trening': 'Treningi wracają do rytmu i przestają wypadać',
-  'Głowa': 'Skupienie trzyma po 14:00, decyzje zapadają tego samego dnia',
+  'Sen': 'Szybsze zasypianie i pobudka z pełnym zasobem energii przed alarmem',
+  'Stres': 'Płynne przechodzenie w stan wypoczynku po zakończeniu pracy',
+  'Żywienie': 'Pełna kontrola nad wieczornym apetytem bez konieczności używania silnej woli',
+  'Weekend': 'Zachowanie wysokiej wydajności w poniedziałek od samego rana',
+  'Trening': 'Stały progres sylwetkowy przy zoptymalizowanym czasie treningu',
+  'Głowa': 'Wysoka koncentracja w kluczowych godzinach pracy',
 };
 const TAIL_LINE: Record<string, string> = {
-  'Sen': 'Śpisz jak człowiek. Reszta zaczyna się układać sama.',
-  'Stres': 'Napięcie ma schodzić wieczorem, nie na urlopie raz w roku.',
-  'Żywienie': 'Wieczór przestaje być spowiedzią. Zaczyna być odpoczynkiem.',
-  'Weekend': 'Imprezujesz w piątek. Poniedziałek ma być Twój.',
-  'Trening': 'Karnet masz. Czas zbudować tydzień, który z niego korzysta.',
-  'Głowa': 'Głowa wraca na pełną moc. Reszta jedzie za nią.',
+  'Sen': 'Regeneracyjny sen staje się fundamentem efektywności.',
+  'Stres': 'Układ nerwowy odzyskuje zdolność do szybkiej samoregulacji.',
+  'Żywienie': 'Zrównoważone żywienie wspiera Twoje cele bez zbędnych wyrzeczeń.',
+  'Weekend': 'Weekend przynosi realny odpoczynek bez długu regeneracyjnego.',
+  'Trening': 'Treningi przynoszą oczekiwane rezultaty przy zachowaniu zdrowia.',
+  'Głowa': 'Praca staje się bardziej uporządkowana i mniej obciążająca.',
 };
 const SCENE_LINE: Record<string, string> = {
-  'Sen': 'Że budzik przesuwasz trzy razy i wstajesz bardziej zmęczony, niż się kładłeś.',
-  'Stres': 'Że wieczorem niby odpoczywasz, a głowa dalej mieli robotę.',
-  'Żywienie': 'Że po 21 stoisz przy otwartej lodówce, chociaż nie jesteś głodny.',
-  'Weekend': 'Że niedziela wieczorem to lekki dół, bo wiesz, ile ten weekend kosztował.',
-  'Trening': 'Że karnet się odnawia, a Ty coraz częściej mówisz sobie „od jutra".',
-  'Głowa': 'Że proste decyzje przesuwasz na jutro, a jutro robi się pojutrze.',
+  'Sen': 'Pobudka na zmęczeniu i konieczność wspomagania się kofeiną od pierwszych minut dnia.',
+  'Stres': 'Trudność z wyłączeniem myśli o sprawach zawodowych podczas wieczornego odpoczynku.',
+  'Żywienie': 'Sięganie po wysokokaloryczne przekąski po 21:00 jako forma rozładowania napięcia.',
+  'Weekend': 'Odczuwalny spadek energii w poniedziałek rano po szarpanym weekendzie.',
+  'Trening': 'Nieregularne sesje treningowe i brak widocznych efektów mimo spędzonych godzin na siłowni.',
+  'Głowa': 'Odkładanie trudniejszych decyzji na później ze względu na zmęczenie psychiczne.',
 };
 // SMACZEK 1: bonus pod największy hamulec - konkretny, mało oczywisty ruch (wzajemność, realna wartość)
 const BONUS_HAMULEC: Record<string, string> = {
@@ -459,40 +459,40 @@ const BONUS_HAMULEC: Record<string, string> = {
 // ── ROADMAPA 1:1: copy per kategoria (workflow roadmapa-copy-engine, zweryfikowane anty-slop + ICP-sceptyk 2026-07-15) ──
 const ROADMAPA_KARTY: Record<string, { dzwignia: string; dno: string; robimy: string; poznasz: string }> = {
   'Sen': {
-    dzwignia: 'Odblokowujemy poranek i rytm kortyzolu',
-    dno: 'Telefon gaśnie po północy, budzik dzwoni trzy razy, a pierwszą godzinę dnia ciągniesz na kawie, z głową, która włącza się dopiero koło południa.',
-    robimy: 'Ustawiamy Ci światło w pierwszych minutach po wstaniu, bo poranne światło przestawia dobowy rytm kortyzolu mocniej niż dodatkowa godzina snu. Pierwszą kawę odsuwamy od budzika: zaraz po wstaniu kortyzol i tak jest na szczycie, a kofeina wypita na ten szczyt tylko odracza zmęczenie, które wraca zjazdem po południu.',
-    poznasz: 'Wstajesz za pierwszym budzikiem, a kawa wraca do roli przyjemności zamiast rozrusznika.',
+    dzwignia: 'Odblokowanie regeneracji i rytmu dobowego',
+    dno: 'Późne zasypianie i szarpany sen sprawiają, że pierwszą część dnia ciągniesz na porannej kawie, a szczyt koncentracji przesuwa się na późne popołudnie.',
+    robimy: 'Stabilizujemy ekspozycję na światło dzienne rano (naturalny reset kortyzolu) i przesuwamy pierwszą kofeinę o 60-90 minut po wybudzeniu, aby uniknąć popołudniowego zjazdu energii.',
+    poznasz: 'Wstajesz z głową gotową do działania bez konieczności reanimacji kawą.',
   },
   'Stres': {
-    dzwignia: 'Uczymy Twój układ nerwowy odwoływać alarm po pracy',
-    dno: 'Ciało siedzi wieczorem na kanapie, głowa wciąż w skrzynce z mailami, a krótki lont odpala się na ludzi, którzy z tą skrzynką nie mają nic wspólnego.',
-    robimy: 'Uczymy Twój układ nerwowy odwoływać alarm: kortyzol działa jak syrena, która sama nie gaśnie od leżenia przed telewizorem, więc ustawiamy rytuał zamknięcia dnia pracy, twardą granicę, po której mózg dostaje sygnał, że zagrożenie minęło. Do tego wydech dłuższy od wdechu (najszybszy hamulec nerwu błędnego) i ruch po robocie, który dopala krążącą adrenalinę.',
-    poznasz: 'Kończysz wieczorem odcinek serialu i umiesz powiedzieć, o czym był, bo głowa siedziała w tym samym pokoju co ciało.',
+    dzwignia: 'Wyciszenie osi HPA po zakończeniu pracy',
+    dno: 'Mimo zamknięcia komputera układ nerwowy pozostaje w gotowości bojowej, a skumulowane napięcie obniża jakość odpoczynku i utrudnia zasypianie.',
+    robimy: 'Wdrażamy fizyczny protokół przejścia (krótki marsz, wydech dłuższy od wdechu) oraz stałą granicę zakończenia dnia pracy, dając mózgowi sygnał do przejścia w tryb regeneracji.',
+    poznasz: 'Wieczorem potrafisz w pełni odciąć się od spraw zawodowych i zregenerować siły.',
   },
   'Żywienie': {
-    dzwignia: 'Wygaszamy wieczorny głód od strony dnia, nie silnej woli',
-    dno: 'Cały dzień jedziesz na kawie i czymś z automatu, a o 21:30 stoisz w świetle lodówki i zjadasz więcej niż przez cały dzień. Zasypiasz z pełnym brzuchem i cichym wkurwem na siebie.',
-    robimy: 'Przestawiamy białko na początek dnia, 30-40 g w pierwszym posiłku, bo grelina (hormon głodu) po białku spada najmocniej ze wszystkich makroskładników i wieczorne napady wygasają, zanim się zaczną. Największy posiłek wpisujemy tam, gdzie i tak jesz, czyli wieczorem: lodówka po 21 przestaje być wpadką, bo jest w planie.',
-    poznasz: 'Któregoś wieczoru łapiesz się na tym, że minęła 22, a Ty nawet nie zajrzałeś do lodówki, bo nie było po co.',
+    dzwignia: 'Stabilizacja apetytu w ciągu dnia zamiast walki z głodem wieczorem',
+    dno: 'Nieregularne posiłki w trakcie intensywnego dnia pracy prowadzą do głodu kompensacyjnego i podjadania po 21:00.',
+    robimy: 'Podnosimy udział białka do 30-40 g w pierwszym posiłku (obniżenie greliny) oraz planujemy sytą kolację bez poczucia winy, eliminując chaotyczne sięganie po przekąski.',
+    poznasz: 'Wieczorny apetyt jest pod pełną kontrolą bez używania silnej woli.',
   },
   'Weekend': {
-    dzwignia: 'Ustawiamy powrót po weekendzie tak, żeby poniedziałek był Twój',
-    dno: 'W poniedziałek o 9:00 siedzisz na spotkaniu z trzecią kawą i udajesz, że słuchasz, a w głowie masz jedno: do środy będę spłacał ten weekend.',
-    robimy: 'Piątek zostaje piątkiem, cała robota dzieje się w niedzielę: odsypianie do 12 przesuwa Ci rytm dobowy jak lot przez dwie strefy czasowe i właśnie ten przelot czujesz w poniedziałek rano. Gramy to tak, że w niedzielę wstajesz o swojej porze, w ciągu godziny łapiesz światło dzienne, a brakujący sen oddajesz wcześniejszym pójściem spać.',
-    poznasz: 'Pierwszy poniedziałek, w którym siadasz rano do roboty i głowa działa od razu, mimo że w sobotę wróciłeś grubo po północy.',
+    dzwignia: 'Ochrona rytmu dobowego podczas luźniejszych dni',
+    dno: 'Znaczne przesunięcie pory snu i posiłków w weekend skutkuje jet-lagiem społecznym w poniedziałek rano.',
+    robimy: 'Utrzymujemy stałą porę pobudki w niedzielę i stosujemy ukierunkowany protokół nawodnienia oraz spaceru, dzięki czemu poniedziałek rozpoczynasz bez długu regeneracyjnego.',
+    poznasz: 'W poniedziałek rano wchodzisz w pracę od razu na pełnych obrotach.',
   },
   'Trening': {
-    dzwignia: 'Przycinamy plan do wersji, która przetrwa zły tydzień',
-    dno: 'Karnet odnawia się kolejny raz, a Ty w szatni dalej ubierasz koszulkę tyłem do lustra, bo po latach dźwigania sylwetka wygląda, jakbyś trenował od pół roku.',
-    robimy: 'Przestawiamy plan na wersję, która przetrwa zły tydzień: mniej serii, ale każda dociągnięta do momentu, w którym robi się naprawdę ciężko, bo dopiero ostatnie 2-3 powtórzenia dają mięśniowi sygnał do wzrostu. Objętość ustawiamy pod Twoją regenerację, bo przy krótkim śnie i stresie organizm tnie odbudowę mięśnia w pierwszej kolejności i dlatego lata treningu potrafią dawać efekt jednego roku.',
-    poznasz: 'Zamykasz pierwszy od miesięcy tydzień z każdą sesją zrobioną i wieczorem dalej masz siłę na normalne życie.',
+    dzwignia: 'Dopasowanie objętości treningowej do zdolności regeneracyjnych',
+    dno: 'Przeładowany plan treningowy w połączeniu ze stresem zawodowym prowadzi do przetrenowania, braku postępów sylwetkowych i odpuszczania sesji.',
+    robimy: 'Redukujemy objętość do 3-4 kluczowych serii roboczych o wysokiej intensywności, dając mięśniom bodziec do wzrostu bez przeciążania układu nerwowego.',
+    poznasz: 'Treningi przynoszą widoczne efekty sylwetkowe, a po wyjściu z siłowni masz siłę na resztę dnia.',
   },
   'Głowa': {
-    dzwignia: 'Zamykamy otwarte pętle decyzji, które zjadają napęd',
-    dno: 'Trzeci wieczór z rzędu przesuwasz tę samą decyzję na jutro, a w ciągu dnia każde trudniejsze zadanie kończy się telefonem w ręce po dwóch minutach.',
-    robimy: 'Ustawiamy wieczorne zamykanie decyzji: każdą przesuwaną rzecz rozpisujesz przed snem w dwie linijki z terminem i pierwszym ruchem, bo otwarta decyzja wraca do głowy cały dzień i ten szum sprawia, że przy trudnym zadaniu ręka sama idzie po telefon. „Od poniedziałku” wycinamy z osobnego powodu: sama deklaracja startu daje mózgowi ulgę zbliżoną do wykonania i napięcie do działania opada.',
-    poznasz: 'Trudne zadanie skończone, a telefon dalej leży tam, gdzie go rano zostawiłeś.',
+    dzwignia: 'Zamykanie otwartych pętli decyzyjnych',
+    dno: 'Wielozadaniowość i ciągłe rozpraszacze zużywają energię psychiczną, prowadząc do odkładania kluczowych zadań na później.',
+    robimy: 'Stosujemy wieczorną sekwencję planowania (1 kluczowe zadanie na rano) oraz pracę w bloku głębokim bez powiadomień.',
+    poznasz: 'Realizujesz najważniejsze zadania w pierwszej kolejności bez prokrastynacji.',
   },
 };
 
@@ -3383,10 +3383,10 @@ export default function Page() {
                           Policzone z Twoich odpowiedzi, nie z badań krwi.
                         </div>
 
-                        {/* ── W praktyce - ludzkie, nie AI-scenka ── */}
+                        {/* ── W praktyce ── */}
                         {losYears >= 3 && (
-                          <div style={{ fontSize: 13.5, color: M.t3, lineHeight: 1.6, marginBottom: 18, padding: '11px 14px', background: 'rgba(220,68,68,0.05)', border: '1px solid rgba(220,68,68,0.15)', borderRadius: 8, textAlign: 'left' }}>
-                            Rano kawa robi za rozruch, po 14:00 jedziesz na oparach, wieczorem nadrabiasz jedzeniem to, czego nie dał sen. I tak w kółko, od poniedziałku do poniedziałku.
+                          <div style={{ fontSize: 13.5, color: M.t3, lineHeight: 1.6, marginBottom: 18, padding: '11px 14px', background: 'rgba(200,168,78,0.05)', border: '1px solid rgba(200,168,78,0.15)', borderRadius: 8, textAlign: 'left' }}>
+                            Praca w stałym napięciu i spłycony sen NREM obniżają koncentrację popołudniu, co zwiększa wieczorny apetyt i przesuwa porę zaśnięcia.
                           </div>
                         )}
 
@@ -3571,8 +3571,8 @@ export default function Page() {
                         <div style={{ fontFamily: M.serif, fontStyle: 'italic', fontSize: 15, color: M.t4, marginBottom: 7 }}>I druga, też Twoja:</div>
                         <div style={{ fontFamily: M.mono, fontSize: 13.5, color: M.t2, lineHeight: 1.55 }}>{cx.body}</div>
                       </div>
-                      <p style={{ fontFamily: M.serif, fontSize: 22, lineHeight: 1.3, color: M.t1, margin: 0, paddingTop: 15, borderTop: `1px solid ${M.brd}` }}>
-                        Jedno z tych zdań kłamie. <em style={{ fontStyle: 'italic', color: M.gold }}>Oba są Twoje.</em>
+                      <p style={{ fontFamily: M.serif, fontSize: 19, lineHeight: 1.4, color: M.t1, margin: 0, paddingTop: 15, borderTop: `1px solid ${M.brd}` }}>
+                        Te dwa parametry stoją ze sobą w fizycznej sprzeczności – <em style={{ fontStyle: 'italic', color: M.gold }}>i to dokładnie w tym punkcie powstaje ukryty wyciek w Twoim tygodniu.</em>
                       </p>
                     </div>
                   </div>
@@ -3685,61 +3685,7 @@ export default function Page() {
               </Reveal>
             )}
 
-            {/* ═══ MIĘDZY NAMI - wstyd/rozpoznanie, peak emocji przed decyzją ═══ */}
-            <Reveal delay={90}>
-              {(() => {
-                if (good) return null; // dobry tydzień: żadnego bloku wstydu, nie ma za co
-                const imieD = imie.trim() ? capName(imie.trim()) : '';
-                {/* Body-copy TYLKO przy twardych danych o ciele (belly tag). Score/bioAge NIE wystarcza - zero zgadywania czy facet jest gruby. */}
-                const showBody = D.tags.has('belly');
-                const brokePromise = D.triedBefore >= 2;
-                const worstL = [...catScores].sort((a, b) => a.pct - b.pct)[0]?.label || 'Głowa';
-                return (
-                  <div style={{
-                    marginBottom: 16, padding: '26px 20px', borderRadius: 16, width: '100%', boxSizing: 'border-box',
-                    background: 'linear-gradient(160deg, rgba(19,19,19,0.92), rgba(220,68,68,0.07))',
-                    border: '1px solid rgba(220,68,68,0.22)',
-                  }}>
-                    <div style={{ fontFamily: M.mono, fontSize: 10, letterSpacing: 3, textTransform: 'uppercase', color: M.red, fontWeight: 700, marginBottom: 16 }}>Między nami</div>
 
-                    <p style={{ fontSize: 15, color: M.t2, lineHeight: 1.65, marginBottom: 14 }}>
-                      Liczby wyżej to jedno. Druga rzecz to ta, której nie wpisujesz do żadnego formularza.
-                    </p>
-
-                    <p style={{ fontSize: 15, color: M.t2, lineHeight: 1.7, marginBottom: 14 }}>
-                      {SCENE_LINE[worstL]}
-                    </p>
-
-                    {showBody && (
-                      <p style={{ fontSize: 15, color: M.t2, lineHeight: 1.7, marginBottom: 14 }}>
-                        Że na ostatniej wspólnej fotce ustawiłeś się tak, żeby brzuch był za kimś. Że koszulkę na basenie zdejmujesz ostatni, albo już wolisz nie iść. Że kupujesz o numer za duże, żeby nie opinało. Że mijasz swoje odbicie w witrynie i od razu patrzysz gdzie indziej.
-                      </p>
-                    )}
-
-                    <p style={{ fontSize: 15.5, color: M.t1, lineHeight: 1.7, marginBottom: 14, fontWeight: 600 }}>
-                      Najgorsze nie jest to, że nie wiesz, co robić. Najgorsze jest to, że <span style={{ color: M.gold }}>wiesz wszystko</span>, i dalej wyglądasz jak ktoś, kto nie wie nic. I to piecze najmocniej, bo nie masz się przed sobą czym wytłumaczyć.
-                    </p>
-
-                    {brokePromise && (
-                      <p style={{ fontSize: 15, color: M.t2, lineHeight: 1.7, marginBottom: 14 }}>
-                        „Od poniedziałku" powtarzałeś sobie tyle razy, że sam już w to nie wierzysz. Twoje ciało przestało wierzyć jeszcze wcześniej.
-                      </p>
-                    )}
-
-                    <div style={{ borderLeft: `3px solid ${M.red}`, paddingLeft: 16, marginTop: 18 }}>
-                      <p style={{ fontSize: 15.5, color: M.t1, lineHeight: 1.7, fontWeight: 600, margin: 0 }}>
-                        {tier === 'low'
-                          ? `${imieD ? imieD + ', u' : 'U'} Ciebie nie ma dramatu. I to jest pułapka. Za rok otwierasz tę samą apkę, dostajesz ten sam wynik i dalej jest „w sumie okej". Nikt Ci nie powie, że stoisz w miejscu. Sam też sobie nie powiesz.`
-                          : `${imieD ? imieD + ', za' : 'Za'} rok, jeśli dziś nic nie ruszysz, otwierasz tę samą apkę, dostajesz ten sam wynik i czujesz dokładnie to samo co teraz. Tylko rok starszy i o rok bardziej pewny, że już tak zostanie.`}
-                      </p>
-                      <p style={{ fontFamily: M.serif, fontStyle: 'italic', fontSize: 21, color: M.gold, lineHeight: 1.5, fontWeight: 400, margin: '12px 0 0' }}>
-                        To się odkręca. Ale nie kolejnym planem z internetu.
-                      </p>
-                    </div>
-                  </div>
-                );
-              })()}
-            </Reveal>
 
 
             {/* ═══ TWOJA DROGA v2 (werdykt rady): 1 pelna dzwignia 14 dni + tease faz 2-3 + proof + rama egzekucji + JEDEN CTA. Nic po CTA. ═══ */}

@@ -8,7 +8,7 @@ import SaveCardButton from './SaveCardButton';
 
 const C = {
   ink: '#0b0b0c', panel: '#141416', panel2: '#1a1a1d', line: '#26262b', line2: '#33333a',
-  gold: '#c8a84e', goldBright: '#e8cc80', goldDeep: '#8a7535', numGold: '#ab9147',
+  gold: '#c8a84e', goldBright: '#e8cc80', goldDeep: '#8a7535', goldGlow: 'rgba(200,168,78,0.18)', numGold: '#ab9147',
   amber: '#e0812e', hot: '#e0552e',
   paper: '#ece7db', mute: '#a49e92', faint: '#8f887c',
   mono: "'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, Consolas, monospace",
@@ -217,7 +217,7 @@ export default function WeekPage({ plan, imie, naborHref = 'https://nabor.talerz
         <section className="wp-rise" style={{ marginBottom: 72 }}>
           <Eyebrow n="VI">Pierwsze kroki</Eyebrow>
           <p style={{ fontSize: 15, color: C.faint, margin: '0 0 26px', lineHeight: 1.55, maxWidth: 500 }}>
-            {hi}nie pełna rozpiska. Sześć kotwic, które trzymają tydzień, gdy pierwszy dzień się sypie.
+            {hi}to zestaw 6 kotwic stabilizujących, które trzymają układ w ryzach i zapobiegają rozlewaniu się wycieku energii na kolejne dni.
           </p>
           <div style={{ display: 'grid', gap: 1, background: C.line, border: `1px solid ${C.line}`, borderRadius: 14, overflow: 'hidden' }}>
             {plan.plan.map((a, i) => (
@@ -234,21 +234,21 @@ export default function WeekPage({ plan, imie, naborHref = 'https://nabor.talerz
 
         {/* VII. MOST */}
         <section className="wp-rise" style={{ marginBottom: 20 }}>
-          <Eyebrow n="VII">Most</Eyebrow>
+          <Eyebrow n="VII">Krok dalej</Eyebrow>
 
-          {/* zaproszenie osobiste - ukryta psychologia: widzę w Tobie więcej */}
+          {/* zaproszenie osobiste */}
           <div className="wp-noprint" style={{ background: `linear-gradient(180deg, ${C.goldGlow}, transparent)`, border: `1px solid ${C.line2}`, borderRadius: 18, padding: 'clamp(22px, 5vw, 32px)', marginBottom: 34 }}>
-            <div style={{ fontFamily: C.mono, fontSize: 10, letterSpacing: 2.5, textTransform: 'uppercase', color: C.gold, marginBottom: 14 }}>Od Michała</div>
+            <div style={{ fontFamily: C.mono, fontSize: 10, letterSpacing: 2.5, textTransform: 'uppercase', color: C.gold, marginBottom: 14 }}>Podsumowanie diagnozy</div>
             <p style={{ fontFamily: C.serif, fontSize: 'clamp(22px, 4.4vw, 30px)', lineHeight: 1.32, color: C.paper, margin: 0, fontWeight: 400 }}>
               {plan.invitation}
             </p>
           </div>
 
           <p style={{ fontSize: 16, color: C.mute, lineHeight: 1.65, margin: '0 0 26px', maxWidth: 540 }}>
-            To jest mapa problemu. Prowadzenie zaczyna się tam, gdzie tę mapę trzeba co tydzień dopasować do tego, co naprawdę wydarzyło się w Twoim tygodniu. Każda ścieżka daje Ci ruch już dziś.
+            Ta Karta Tygodnia to mapa Twojego głównego wycieku. Samodzielna praca zaczyna się od wdrożenia 6 kotwic. Jeśli natomiast chcesz przełożyć tę diagnozę na indywidualny plan z cotygodniową korektą – zobacz, jak pracujemy w 1:1.
           </p>
 
-          {/* drabina akcji: zawsze jest następny krok, nie tylko najdroższy */}
+          {/* drabina akcji */}
           <div style={{ display: 'grid', gap: 12, marginBottom: 30 }}>
             {plan.bridge.map((b, i) => (
               <div key={i} style={{ display: 'flex', gap: 14, alignItems: 'flex-start', background: b.kind === 'coop' ? C.panel2 : C.ink, border: `1px solid ${b.kind === 'coop' ? C.line2 : C.line}`, borderRadius: 12, padding: '16px 16px' }}>
@@ -262,11 +262,25 @@ export default function WeekPage({ plan, imie, naborHref = 'https://nabor.talerz
             ))}
           </div>
 
-          <a href={naborHref} className="wp-cta wp-noprint">
-            Zobacz, jak wygląda dopasowanie co tydzień <span aria-hidden>&rarr;</span>
-          </a>
+          {/* Przycisk bezpośredniego kontaktu w DM i Prowadzenia */}
+          {(() => {
+            const dmMsg = imie?.trim()
+              ? `Cześć Michał, jestem ${imie.trim()}. Zrobiłem diagnostykę na stronie (${plan.problem.name}). Chcę omówić z Tobą mój wynik.`
+              : `Cześć Michał, zrobiłem diagnostykę na stronie (${plan.problem.name}). Chcę omówić z Tobą mój wynik.`;
+            const dmUrl = `https://ig.me/m/hantleitalerz?text=${encodeURIComponent(dmMsg)}`;
+            return (
+              <div className="wp-noprint" style={{ display: 'grid', gap: 12 }}>
+                <a href={dmUrl} target="_blank" rel="noopener noreferrer" className="wp-cta" style={{ background: `linear-gradient(135deg, ${C.gold}, ${C.goldBright})`, color: C.ink, fontWeight: 800 }}>
+                  Napisz do mnie bezpośrednio w DM na Instagramie <span aria-hidden>&rarr;</span>
+                </a>
+                <a href={naborHref} target="_blank" rel="noopener noreferrer" className="wp-cta" style={{ background: C.panel2, color: C.paper, border: `1px solid ${C.line2}` }}>
+                  Zobacz, jak wygląda prowadzenie 1:1 <span aria-hidden>&rarr;</span>
+                </a>
+              </div>
+            );
+          })()}
           <p className="wp-noprint" style={{ fontSize: 12.5, color: C.faint, textAlign: 'center', margin: '14px 0 0', lineHeight: 1.55 }}>
-            {plan.saveNote} Ta sama zasada co w rolce: fragment prowadzenia dostajesz, zanim je kupisz.
+            {plan.saveNote} Odpisuję osobiście w 24h na każdą wiadomość z wynikiem diagnostyki.
           </p>
         </section>
 
