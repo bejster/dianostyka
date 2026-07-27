@@ -1,6 +1,6 @@
 'use client';
 
-// ResultTeaser.tsx — Wynik widoczny PRZED mailem (spec §10/§12).
+// ResultTeaser.tsx, Wynik widoczny PRZED mailem (spec §10/§12).
 // Pokazuje: Odporność Tygodnia, profil, główne domino, kluczowe odkrycie,
 // 6 domen (mini-wizualizacja) i pierwszy ruch. CTA prowadzi do pełnego raportu.
 
@@ -23,7 +23,7 @@ function resilienceWord(score: number): { word: string; color: string } {
   return { word: 'Kruchy', color: '#d98a5b' };
 }
 
-// Pierwszy ruch zależny od głównego domina — konkretny, osadzony w czasie, bez pustych porad
+// Pierwszy ruch zależny od głównego domina, konkretny, osadzony w czasie, bez pustych porad
 const FIRST_MOVE: Record<DomainKey, string> = {
   sleep: 'Dziś ustaw jedną godzinę gaszenia ekranu: 30 minut przed snem telefon ląduje poza zasięgiem ręki.',
   energy: 'Jutro rano zablokuj pierwsze 90 minut na jedno ważne zadanie, zanim wejdą maile i telefony.',
@@ -80,7 +80,7 @@ export default function ResultTeaser({ result, onWantFullReport }: Props) {
           </div>
         </div>
 
-        {/* Profil — nazwa + tagline (kluczowe odkrycie) */}
+        {/* Profil, nazwa + tagline (kluczowe odkrycie) */}
         <div style={{ marginBottom: 26 }}>
           <h1 style={{ fontFamily: 'Georgia, serif', fontSize: 'clamp(26px, 6.4vw, 34px)', fontWeight: 400, lineHeight: 1.2, color: '#fff', marginBottom: 12, letterSpacing: '-0.01em' }}>
             {profile.title}
@@ -106,7 +106,7 @@ export default function ResultTeaser({ result, onWantFullReport }: Props) {
           </div>
         </div>
 
-        {/* 6 domen — mini-wizualizacja (od najsłabszej) */}
+        {/* 6 domen, mini-wizualizacja (od najsłabszej) */}
         <div style={{ marginBottom: 28 }}>
           <div style={{ fontFamily: 'monospace', fontSize: 10, letterSpacing: 2, textTransform: 'uppercase', color: '#888', fontWeight: 700, marginBottom: 14 }}>
             Sześć obszarów tygodnia

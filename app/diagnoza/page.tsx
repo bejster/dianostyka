@@ -1,6 +1,6 @@
 'use client';
 
-// /diagnoza — żywy flow Diagnostyki V2 (integracja Faz 1-2 + teaser Fazy 3).
+// /diagnoza, żywy flow Diagnostyki V2 (integracja Faz 1-2 + teaser Fazy 3).
 // intake (1 pytanie/ekran) -> teaser (wynik przed mailem) -> gate (email) -> potwierdzenie.
 // Stare "/" (v1) zostaje nietknięte do czasu pełnego QA i cutoveru.
 

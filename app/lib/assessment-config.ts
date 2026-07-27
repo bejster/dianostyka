@@ -1,4 +1,4 @@
-// assessment-config.ts — Wersjonowana konfiguracja pytań, domen i profili Diagnostyki Tygodnia V2
+// assessment-config.ts, Wersjonowana konfiguracja pytań, domen i profili Diagnostyki Tygodnia V2
 
 export const ASSESSMENT_VERSION = '2.0.0';
 
@@ -158,10 +158,10 @@ export const QUESTIONS: QuestionDef[] = [
     upstreamWeight: 0.90,
     crossDomainImpact: 0.95,
     options: [
-      { id: 'st_low', label: 'Niskie — mam pełną kontrolę i spokój', value: 0 },
-      { id: 'st_mid', label: 'Umiarkowane — bywają spięte momenty, ale dowożę', value: 40 },
-      { id: 'st_high', label: 'Wysokie — stały pośpiech i ciągłe gaszenie pożarów', value: 80 },
-      { id: 'st_max', label: 'Ekstremalne — żyję w stanie ciągłego alarmu', value: 100 },
+      { id: 'st_low', label: 'Niskie, mam pełną kontrolę i spokój', value: 0 },
+      { id: 'st_mid', label: 'Umiarkowane, bywają spięte momenty, ale dowożę', value: 40 },
+      { id: 'st_high', label: 'Wysokie, stały pośpiech i ciągłe gaszenie pożarów', value: 80 },
+      { id: 'st_max', label: 'Ekstremalne, żyję w stanie ciągłego alarmu', value: 100 },
     ],
   },
   {
@@ -175,12 +175,12 @@ export const QUESTIONS: QuestionDef[] = [
     upstreamWeight: 0.80,
     crossDomainImpact: 0.80,
     options: [
-      { id: 'bw_morning', label: 'Rano — zaraz po przebudzeniu', value: 60 },
+      { id: 'bw_morning', label: 'Rano, zaraz po przebudzeniu', value: 60 },
       { id: 'bw_midday', label: 'Między 10:00 a 14:00 (południe)', value: 50 },
       { id: 'bw_afternoon', label: 'Między 14:00 a 18:00 (po pracy)', value: 75 },
       { id: 'bw_evening', label: 'Po 21:00 (wieczór w domu)', value: 90 },
       { id: 'bw_weekend', label: 'W weekendy (zmiana rytmu)', value: 85 },
-      { id: 'bw_varies', label: 'Różnie — bez stałej pory', value: 70 },
+      { id: 'bw_varies', label: 'Różnie, bez stałej pory', value: 70 },
     ],
   },
 
@@ -232,7 +232,7 @@ export const QUESTIONS: QuestionDef[] = [
       { id: 'wp_same', label: 'Trzymam ten sam rytm co w tygodniu', value: 0 },
       { id: 'wp_slight', label: 'Śpię godzinę dłużej, jedzenie nieco luźniejsze', value: 35 },
       { id: 'wp_shifted', label: 'Chodzę spać 2-3h później i podjadam bez planu', value: 75 },
-      { id: 'wp_reset', label: 'Pełny reset — alkohol, późne noce i odcięcie', value: 100 },
+      { id: 'wp_reset', label: 'Pełny reset, alkohol, późne noce i odcięcie', value: 100 },
     ],
   },
   {
@@ -265,7 +265,7 @@ export const QUESTIONS: QuestionDef[] = [
     upstreamWeight: 0.70,
     crossDomainImpact: 0.65,
     options: [
-      { id: 'gm_never', label: 'Rzadko — dowożę 90%+ planu', value: 0 },
+      { id: 'gm_never', label: 'Rzadko, dowożę 90%+ planu', value: 0 },
       { id: 'gm_sometimes', label: 'Odpuszczam 1 trening w tygodniu, gdy jestem zmęczony', value: 40 },
       { id: 'gm_frequent', label: 'Wypadam z rytmu po 2-3 tygodniach prób', value: 80 },
       { id: 'gm_no_plan', label: 'Nie mam stałego planu, trenuję zrywami', value: 100 },
