@@ -145,7 +145,7 @@ export default function WeekPage({ plan, imie, naborHref = 'https://nabor.talerz
           </p>
         </section>
 
-        {/* II. TWÓJ TYDZIEŃ — sygnatura */}
+        {/* II. TWOJ TYDZIEN: sygnatura */}
         <section className="wp-rise" style={{ marginBottom: 72 }}>
           <Eyebrow n="II">Twój tydzień</Eyebrow>
           <div style={{ background: `linear-gradient(180deg, ${C.panel}, ${C.ink})`, border: `1px solid ${C.line}`, borderRadius: 18, padding: '20px 14px 8px' }}>
@@ -245,7 +245,7 @@ export default function WeekPage({ plan, imie, naborHref = 'https://nabor.talerz
           </div>
 
           <p style={{ fontSize: 16, color: C.mute, lineHeight: 1.65, margin: '0 0 26px', maxWidth: 540 }}>
-            Ta Karta Tygodnia to mapa Twojego głównego wycieku. Samodzielna praca zaczyna się od wdrożenia 6 kotwic. Jeśli natomiast chcesz przełożyć tę diagnozę na indywidualny plan z cotygodniową korektą – zobacz, jak pracujemy w 1:1.
+            Wiesz już gdzie Twój tydzień pęka i dlaczego. Nazwać to potrafi mniej niż jeden na dziesięciu. Ale mapa nie naprawia terenu. Sam wdrożysz dwie, może trzy kotwice, reszta rozejdzie się w pierwszym gorszym tygodniu, bo nikt Cię z niej nie rozlicza. W prowadzeniu 1:1 układam to pod Twój grafik i co tydzień siadamy nad tym, co nie zadziałało. Nie kolejny plan do obejrzenia. Ktoś, kto pilnuje, żebyś go dowiózł.
           </p>
 
           {/* drabina akcji */}

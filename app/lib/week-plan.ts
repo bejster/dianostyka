@@ -77,7 +77,7 @@ const WEEK_FALLBACK: WeekTemplate = WEEK_BY_ARCHETYPE.wieczorny_odpad;
 const DEEPER: Record<string, { label: string; body: string; analogy: string }> = {
   weekend_reset: {
     label: 'Poniedziałkowy dół jest fizjologiczny, nie motywacyjny.',
-    body: 'Nieregularny sen w weekend i spadek aktywności zmieniają architekturę snu NREM. Zaburza to naturalny rytm wydzielania kortyzolu rano i obniża nocny pik testosteronu. Efekt nie zika w niedzielę w nocy – organizm potrzebuje 48 do 72 godzin na ponowne zsynchronizowanie zegara biologicznego. Dlatego w poniedziałek i wtorek walczysz nie z brakiem chęci, ale z opóźnioną odpowiedzią stresową układu nerwowego.',
+    body: 'Nieregularny sen w weekend i spadek aktywności zmieniają architekturę snu NREM. Zaburza to naturalny rytm wydzielania kortyzolu rano i obniża nocny pik testosteronu. Efekt nie znika w niedzielę w nocy, organizm potrzebuje 48 do 72 godzin na ponowne zsynchronizowanie zegara biologicznego. Dlatego w poniedziałek i wtorek walczysz nie z brakiem chęci, ale z opóźnioną odpowiedzią stresową układu nerwowego.',
     analogy: 'Jak jazda autem z rozregulowanym zapłonem: silnik zużywa dwukrotnie więcej paliwa, a auto przyspiesza dwa razy wolniej.',
   },
   wieczorny_odpad: {
@@ -97,7 +97,7 @@ const DEEPER: Record<string, { label: string; body: string; analogy: string }> =
   },
   silnik_bez_paliwa: {
     label: '„Wyniki w normie” to nie to samo co optymalna forma.',
-    body: 'Standardowe zakresy laboratoryjne wykluczają choroby, ale nie definiują wysokiej wydajności. Spłycony sen, ukryta oporność na stres i nieregularne posiłki tworzą cichy wyciek – stan, w którym nie jesteś chory, ale pracujesz na 60-70% swoich realnych możliwości fizycznych i psychicznych.',
+    body: 'Standardowe zakresy laboratoryjne wykluczają choroby, ale nie definiują wysokiej wydajności. Spłycony sen, ukryta oporność na stres i nieregularne posiłki tworzą cichy wyciek, stan w którym nie jesteś chory, ale pracujesz na 60-70% swoich realnych możliwości fizycznych i psychicznych.',
     analogy: 'Komputer z kilkudziesięcioma aplikacjami działającymi w tle: żaden proces go nie zawiesza, ale całe urządzenie działa odczuwalnie wolniej.',
   },
 };
@@ -127,7 +127,7 @@ function potentialBlock(input: WeekPlanInput): WeekPlan['potential'] {
   return {
     usedPct: used,
     headline: 'Z Twoich odpowiedzi wynika jasny rezerwuar możliwości.',
-    body: `Twój układ działa obecnie na około ${used}% realnej sprawności. Brakująca część nie zniknęła – jest blokowana przez obszar: ${worst} oraz nieefektywną regenerację wieczorną.`,
+    body: `Twój układ działa obecnie na około ${used}% realnej sprawności. Brakująca część nie zniknęła, jest blokowana przez obszar: ${worst} oraz nieefektywną regenerację wieczorną.`,
     punch: 'Usunięcie głównego punktu oporu w tygodniu uwalnia zasoby bez konieczności rewolucjonizowania całego życia.',
   };
 }
@@ -182,8 +182,8 @@ function buildPlan(i: WeekPlanInput): { plan: PlanAnchor[]; metric: string } {
 // ── ZAPROSZENIE ──
 function invitationLine(input: WeekPlanInput): string {
   const hot = (input.potentialPct ?? (100 - input.score)) <= 45;
-  if (hot) return 'Masz spory rezerwuar nieobsłużonego potencjału. To dobra wiadomość – oznacza, że zmiana struktury tygodnia przyniesie odczuwalny skok energii bez dokładania morderczych obciążeń. Jeśli chcesz to poukładać precyzyjnie, wiem od czego zacząć.';
-  return 'Dysponujesz dobrą bazą wyjściową. Prawdziwa różnica leży teraz w dopracowaniu detali i usunięciu pojedynczych nieszczelności, które obniżają Twój wynik. Gdy zechcesz przejść ten proces ze wsparciem, jestem do dyspozycji.';
+  if (hot) return 'Rezerwa, którą dziś blokujesz, jest spora. To akurat dobra wiadomość: nie musisz się katować, wystarczy odetkać jedno miejsce, żeby poczuć różnicę w energii. Sam będziesz to odkładał, bo nie boli wystarczająco, żeby ruszyć dziś. Z kimś, kto tego pilnuje, ruszasz w tym tygodniu.';
+  return 'Bazę masz dobrą, więc nie potrzebujesz rewolucji. Cały wynik zjadają Ci dwa, trzy miejsca, które co tydzień puszczają w tym samym punkcie. Sam ich nie domkniesz, bo osobno wyglądają na drobiazg. Razem domykamy je w dwa tygodnie.';
 }
 
 // ── MOST DO KOLEJNEGO KROKU ──
@@ -192,8 +192,8 @@ function buildBridge(input: WeekPlanInput): WeekPlan['bridge'] {
   const save = { tier: '1. Zapisz Kartę Tygodnia (PDF)', line: 'Pobierz ten raport jako punkt odniesienia na najbliższe 7 dni.', kind: 'save' as const };
   const start = { tier: '2. Wdrożenie samodzielne', line: 'Zastosuj 6 kotwic z raportu i skup się na stabilizacji głównego punktu pęknięcia.', kind: 'start' as const };
   const ladder = { tier: '3. Konsultacja wyników', line: 'Przeanalizujmy ten raport razem pod kątem Twojego harmonogramu pracy i celów.', kind: 'ladder' as const };
-  const coopHot = { tier: '4. Prowadzenie indywidualne 1:1', line: 'Cotygodniowa korekta planu i indywidualna opieka – dopasowanie strategii do realiów Twojego tygodnia.', kind: 'coop' as const };
-  const coopCold = { tier: '4. Współpraca 1:1', line: 'Gdy uznasz, że potrzebujesz indywidualnego prowadzenia i stałego nadzoru egzekucji.', kind: 'coop' as const };
+  const coopHot = { tier: '4. Prowadzenie indywidualne 1:1', line: 'Układam plan pod Twój grafik i co tydzień koryguję to, co nie zadziałało. Rozliczam Cię z wykonania, więc nie odpuścisz w pierwszy gorszy dzień.', kind: 'coop' as const };
+  const coopCold = { tier: '4. Współpraca 1:1', line: 'Gdy chcesz, żeby ktoś dopiął detale i trzymał Cię przy planie w gorszy tydzień, nie tylko w dobry.', kind: 'coop' as const };
   return hot ? [save, coopHot, start, ladder] : [save, start, ladder, coopCold];
 }
 
@@ -231,7 +231,7 @@ export function buildWeekPlan(input: WeekPlanInput): WeekPlan {
     metric,
     invitation: invitationLine(input),
     bridge: buildBridge(input),
-    saveNote: 'Raport wygenerowany dla Ciebie. Dane nie są przekazywane podmiotom trzecim.',
+    saveNote: 'To trafia tylko do mnie. Bez automatów i bez list mailingowych.',
   };
 }
 
