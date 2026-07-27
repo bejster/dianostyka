@@ -13,7 +13,7 @@
 | 0 | Audit + plan + scoring docs | ✅ done (`108c1b3`, `8a388f8`) |
 | 1 | Single-question shell (`SingleQuestionFlow.tsx`), autosave, progress, back | ✅ done (`7f7fdea`) |
 | 2 | Config-driven (`assessment-config.ts`) + `scoring-engine.ts` + unit testy | ✅ done + **naprawione** (patrz niżej) |
-| 3 | Result teaser (wynik przed mailem) + raport online + 4 wizualizacje + CTA po lead-fit | ⏳ następna |
+| 3 | Result teaser + raport online + 4 wizualizacje + CTA po lead-fit | 🔶 w toku: integracja + teaser done; raport online TODO |
 | 4 | Email gate + PDF (jeden model danych) + MailerLite | ⛔ blocker: sekrety |
 | 5 | Analytics (bez surowych odpowiedzi) + privacy/noindex + performance | ◻️ pending |
 | 6 | E2E + screenshoty + preview + deploy/rollback guide | ◻️ pending |
