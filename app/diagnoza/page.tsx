@@ -6,8 +6,11 @@
 
 import React, { useState } from 'react';
 import SingleQuestionFlow from '../components/SingleQuestionFlow';
-import ResultTeaser from '../components/ResultTeaser';
+import WeekPage from '../components/WeekPage';
 import { calculateScoring, type RawAnswers, type ScoringResult } from '../lib/scoring-engine';
+import { answersToFD } from '../lib/answers-to-fd';
+import { score, costs, pickArchetype, tagScoreWeighted } from '../lib/diagnostic-core';
+import { buildWeekPlan } from '../lib/week-plan';
 
 const GOLD = '#c8a84e';
 const BG = '#0e0e0e';
@@ -17,13 +20,15 @@ type Phase = 'intake' | 'teaser' | 'gate' | 'done';
 export default function DiagnozaPage() {
   const [phase, setPhase] = useState<Phase>('intake');
   const [result, setResult] = useState<ScoringResult | null>(null);
+  const [answers, setAnswers] = useState<RawAnswers | null>(null);
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [reportConsent, setReportConsent] = useState(false);
   const [error, setError] = useState('');
 
-  const handleComplete = (answers: RawAnswers) => {
-    const scored = calculateScoring(answers);
+  const handleComplete = (raw: RawAnswers) => {
+    const scored = calculateScoring(raw);
+    setAnswers(raw);
     setResult(scored);
     setPhase('teaser');
     if (typeof window !== 'undefined') window.scrollTo({ top: 0 });
@@ -45,8 +50,53 @@ export default function DiagnozaPage() {
     return <SingleQuestionFlow onComplete={handleComplete} />;
   }
 
-  if (phase === 'teaser' && result) {
-    return <ResultTeaser result={result} onWantFullReport={() => { setPhase('gate'); if (typeof window !== 'undefined') window.scrollTo({ top: 0 }); }} />;
+  if (phase === 'teaser' && answers) {
+    // ── Wynik przed mailem: bogata Karta Tygodnia z istniejacego silnika (FD -> score/costs/archetyp) ──
+    const D = answersToFD(answers);
+    const SC = score(D);
+    const C = costs(D);
+    // najslabsza kategoria (worstCat) liczona z FD tak samo jak w page.tsx (v1), zeby dobrac archetyp i szablon tygodnia
+    const catScores = [
+      { label: 'Sen', pct: Math.max(100 - Math.round(((D.sleepQ + D.screenBed) / 6 + (7.5 - Math.min(D.sleep, 7.5)) / 1.5) * 55), 5) },
+      { label: 'Stres', pct: Math.max(100 - Math.round(((D.stress + D.energy + (D.workHours > 9 ? 1 : 0)) / 7) * 100), 5) },
+      { label: 'Żywienie', pct: Math.max(100 - Math.round((D.binge / 4) * 70 + (D.veggies + D.protein) * 7), 5) },
+      { label: 'Weekend', pct: Math.max(100 - Math.round((D.drinks / 12) * 40 + D.wknd * 10 + D.mondayFeel * 8 + (D.subs > 0 ? 25 : 0)), 5) },
+      { label: 'Trening', pct: Math.max(100 - Math.round(((D.miss * 1.5 + (D.trainHappy >= 1 && D.trainHappy <= 2 ? 1 : 0)) / 4) * 100), 5) },
+      { label: 'Głowa', pct: Math.max(100 - Math.round((tagScoreWeighted(D.tags) / 10) * 60 + D.defer * 8 + D.dopamine * 6 + (D.triedBefore >= 2 ? 10 : 0)), 5) },
+    ];
+    const worstW = [...catScores].sort((a, b) => a.pct - b.pct)[0]?.label || 'Sen';
+    const arch = pickArchetype(D, worstW);
+    const rawImie = answers.imie ?? answers.name;
+    const imie = typeof rawImie === 'string' ? rawImie : '';
+    const wkPlan = buildWeekPlan({
+      archetypeKey: arch.key, archetypeLabel: arch.label, archetypeTagline: arch.tagline,
+      worstCat: worstW, breakWindow: D.breakWindow, score: SC, costTotal: C.total, wknd: D.wknd,
+      imie, potentialPct: 100 - SC, costMonths: C.stagnationMonths,
+      drinks: D.drinks, screenBed: D.screenBed, junk: D.junk, protein: D.protein,
+      sleep: D.sleep, miss: D.miss, binge: D.binge, gym: D.gym,
+    });
+    return (
+      <>
+        <WeekPage plan={wkPlan} imie={imie} naborHref={'https://nabor.talerzihantle.com/'} />
+        {/* pasek zapisu: Karta jest widoczna od razu, e-mail dopiero jako opcja pod nia (gate zostaje) */}
+        <div style={{ background: '#0b0b0c', borderTop: '1px solid #26262b', padding: '32px 22px 56px', textAlign: 'center' }}>
+          <div style={{ maxWidth: 460, margin: '0 auto' }}>
+            <p style={{ fontFamily: 'Georgia, serif', fontSize: 21, color: '#ece7db', lineHeight: 1.4, margin: '0 0 8px', fontWeight: 400 }}>
+              Chcesz mieć tę Kartę Tygodnia zawsze pod ręką?
+            </p>
+            <p style={{ fontSize: 14, color: '#a49e92', lineHeight: 1.55, margin: '0 0 20px' }}>
+              Wyślę Ci pełny raport na e-mail, żebyś wrócił do niego w dowolnym momencie tygodnia.
+            </p>
+            <button
+              onClick={() => { setPhase('gate'); if (typeof window !== 'undefined') window.scrollTo({ top: 0 }); }}
+              style={{ width: '100%', maxWidth: 360, padding: '16px', borderRadius: 14, border: 'none', cursor: 'pointer', background: 'linear-gradient(135deg, #c8a84e, #8a7535)', color: '#0b0b0c', fontWeight: 800, fontSize: 15, letterSpacing: 0.5 }}
+            >
+              Wyślij mi raport na e-mail &rarr;
+            </button>
+          </div>
+        </div>
+      </>
+    );
   }
 
   if (phase === 'gate' && result) {
