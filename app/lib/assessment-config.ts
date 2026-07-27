@@ -207,7 +207,7 @@ export const QUESTIONS: QuestionDef[] = [
     section: 'Apetyt i jedzenie',
     sectionNum: 'III',
     title: 'Ile miesięcznie wydajesz na dowozy jedzenia, knajpy i szybkie przekąski?',
-    subtitle: 'Nieregularność w żywieniu generuje bezpośredni wyciek finansowy.',
+    subtitle: 'Dowóz, knajpy, gotowce z Żabki. Strzel realną miesięczną kwotę.',
     type: 'number',
     domain: 'nutrition',
     min: 0,
