@@ -1,6 +1,6 @@
 // scoring-engine.ts — Pure function calculation engine for Diagnostyka Tygodnia V2
 
-import { DOMAINS, DomainKey, PROFILES, ProfileDef, QUESTIONS } from './assessment-config';
+import { DOMAINS, type DomainKey, PROFILES, type ProfileDef, QUESTIONS } from './assessment-config.ts';
 
 export interface RawAnswers {
   sleep_hours?: number;

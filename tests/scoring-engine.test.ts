@@ -2,7 +2,7 @@
 
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { calculateScoring, RawAnswers } from '../app/lib/scoring-engine';
+import { calculateScoring, type RawAnswers } from '../app/lib/scoring-engine.ts';
 
 test('sleep_debt_michal persona -> Profile A (Zaczynasz dzień na minusie)', () => {
   const answers: RawAnswers = {
