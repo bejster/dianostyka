@@ -1,43 +1,45 @@
-# DIAGNOSTYKA TYGODNIA V2 — STATUS
+# DIAGNOSTYKA TYGODNIA V2 — STATUS / HANDOFF
 
-**Branch:** `feat/diagnostyka-v2`
-**Ostatnia aktualizacja:** 2026-07-27
-**Stack:** Next.js 16 (Turbopack) · React 19 · Netlify · testy: `node --experimental-strip-types --test`
+**Branch:** `feat/diagnostyka-v2` · **Repo:** `lejek-audit/_dianostyka` · **Ostatni commit:** `e30ead8`
+**Aktualizacja:** 2026-07-28 · **Stack:** Next 16 (Turbopack), React 19, Netlify. Testy: `node --experimental-strip-types --test tests/*.test.ts`
 
-> Źródło prawdy o produkcie: `docs/DIAGNOSTYKA_V2_MASTER_SPEC.md`. Ten plik = bieżący stan techniczny (§22).
+## Jak wznowić w nowym oknie (przeczytaj to pierwsze)
+1. Dev server: `cd _dianostyka && npx next dev -p 3011` → **live V2 na `http://localhost:3011/diagnoza`**.
+2. Prod `/` (v1, monolit `app/page.tsx`) **NIETKNIĘTY** poza wspólnymi plikami (patrz niżej). Nie deployujemy.
+3. Mocny profil podglądu (pełne dane, do porównania): `http://localhost:3011/?resultPreview=1`.
+4. Weryfikacja przed commitem: `npx tsc --noEmit; echo EXIT=$?` (MUSI 0) + `node --experimental-strip-types --test tests/*.test.ts` (13/0).
 
-## Status faz
+## Architektura V2 (po pivocie D1 — patrz DIAGNOSTYKA_V2_DECISIONS.md)
+Flow: `SingleQuestionFlow` (1 pytanie/ekran, 30 pytań, autosave) → `answersToFD` → **istniejący bogaty silnik** (`diagnostic-core.ts`: score/costs/pickArchetype + `week-plan.ts` buildWeekPlan) → **`WeekPage`** (Karta Tygodnia: krzywa napięcia „TU PĘKA", I-VII) → email gate.
+- `app/diagnoza/page.tsx` — orkiestracja flow + reframe LLM fetch.
+- `app/components/WeekPage.tsx` — Karta (WSPÓLNA z prod `/`! zmiana copy tu rusza też v1 — OK na branchu).
+- `app/lib/week-plan.ts` — cała treść Karty (problem/deeper/hiddenCost/potencjał/plan/invitation/bridge/firstMove). WSPÓLNA z prod.
+- `app/lib/diagnostic-core.ts` — wyciągnięty z monolitu silnik (FD/score/costs/pickArchetype/anchorRok/hourRange). WSPÓLNY.
+- `app/lib/assessment-config.ts` — 30 pytań (port z żywej `/`). `answers-to-fd.ts` — mapa RawAnswers→FD (30/42 pól, reszta INIT świadomie).
+- MARTWY kod (do usunięcia): `ResultTeaser.tsx`, `report-content.ts`, `scoring-engine.ts` (chudy V2, tylko testy + typ RawAnswers używany).
 
-| Faza | Zakres | Stan |
-|---|---|---|
-| 0 | Audit + plan + scoring docs | ✅ done (`108c1b3`, `8a388f8`) |
-| 1 | Single-question shell (`SingleQuestionFlow.tsx`), autosave, progress, back | ✅ done (`7f7fdea`) |
-| 2 | Config-driven (`assessment-config.ts`) + `scoring-engine.ts` + unit testy | ✅ done + **naprawione** (patrz niżej) |
-| 3 | Result teaser + raport online + 4 wizualizacje + CTA po lead-fit | 🔁 PIVOT (D1): flow zostaje, wynik przepięty na istniejący bogaty silnik (Karta+reframe+archetyp) + mapa tygodnia |
-| 4 | Email gate + PDF (jeden model danych) + MailerLite | ⛔ blocker: sekrety |
-| 5 | Analytics (bez surowych odpowiedzi) + privacy/noindex + performance | ◻️ pending |
-| 6 | E2E + screenshoty + preview + deploy/rollback guide | ◻️ pending |
+## Cel: 10/10 lead magnet ocieplający ZIMNEGO leada. Status planu:
+1. ✅ **Precyzja** — pełne 30 pytań, diagnoza na pełnym FD (commit `a4df295`).
+2. ⏳ **Dowód** — BLOCKER: potrzebne realne zdjęcia klientów. Michał wrzuca do `public/proof/` (`case1-before.jpg`+`case1-after.jpg`...). Mam już `public/michal-portrait.jpg`. NIE zmyślać testimoniali.
+3. ✅ **Jeden win na jutro** — box „Zacznij tu, jutro rano" w Karcie VI (commit `7dff7cf`).
+4. ◻️ **Arc ocieplenia** — cold dostaje lżejszy krok (eksperyment 14 dni) zamiast pushu na 1:1; hot → 1:1. Logika hot/cold jest w `buildBridge`/`invitationLine` (próg potentialPct<=45), ale płytka — do pogłębienia.
 
-## Zweryfikowane (2026-07-27)
+## Copy — stan (perswazja + komisja-copy przeszły money-lines)
+Most/oferta = **frame kwalifikacji, nie obietnicy** (Michał: „nie wiem czy mogę pomóc, bardzo bym chciał, zobacz jak pomagam innym, napiszę czy widzę potencjał"). Ból/koszt czekania/wstyd/loss-framing na wejściu, takeaway na końcu. Reframe z własnych słów usera (LLM `/api/diagnoza`) wpięty — patrz blocker klucza niżej.
 
-- `npm test` → **13/13 pass** (persona A/B/C + leadFit hot + week-plan).
-- `npx tsc --noEmit` → **exit 0**, zero błędów typów.
+## Blokery / gotchas
+- **Reframe LLM** działa tylko z kluczem OpenRouter w env (dev). Bez klucza → fallback deterministyczny (Karta stoi). Klucz = sekret Fazy 4, wymaga OK Michała.
+- **~30 pytań 1/ekran = długo** dla zimnego leada. Kandydat na branching (warunkowe pytania, cel 16-20). `SingleQuestionFlow` NIE honoruje pola `condition` (pokazuje zawsze) — do zrobienia jeśli branching.
+- **Dług `gym_miss`**: `calculateScoring` (chudy silnik) czyta legacy `gym_miss` którego flow nie zbiera → w bramce e-mail może częściej pokazywać Profil D. NIE dotyka głównej Karty (ta liczy z pełnego FD). Nisko-priorytet.
+- **Nie da się wyciągnąć zdjęć z czatu na dysk** — Michał musi wrzucić pliki do repo.
+- **Background subagenci giną na granicy sesji** — używaj `run_in_background: false` (synchronicznie) na długie zadania.
+- Śmieci untracked w repo (`Sam`, `Sen`, `(dla`, `.sim-*`, mojibake) — NIE commitować, można usunąć.
+- Reguły języka Michała utwardzone tu: zero em-dash/en-dash, zero `, i` (przecinek przed „i"), zero banów (proces/system/chaos/potencjał-frazes/transformacja/realnie...). Suwak odmienia `lat`→rok/lata/lat.
 
-## Naprawione w tej sesji
-
-- 🔴→✅ Testy `scoring-engine.test.ts` się NIE URUCHAMIAŁY (`ERR_MODULE_NOT_FOUND`). Systemowy bug importów bez rozszerzeń pod `node --strip-types`:
-  - `tests/scoring-engine.test.ts` — dodane `.ts` + marker `type` na `RawAnswers`.
-  - `app/lib/scoring-engine.ts` — import `./assessment-config.ts` + `type` na `DomainKey`/`ProfileDef`.
-  - `tsconfig.json` — `allowImportingTsExtensions: true` (legalizuje `.ts` w importach; `noEmit` już był; typecheck czysty).
-- `package.json` — zacommitowane luźne `jose ^6.2.4` (pod secure-token `/w/[token]`), zostawione niezacommitowane przez prior sesję.
-
-## Blokery (wymagają decyzji/sekretów właściciela)
-
-- **Faza 4 — email + MailerLite:** `/api/subscribe` istnieje, ale potrzebny klucz MailerLite + provider maila transakcyjnego (env, nie do repo). Do ustalenia: stub (mock lokalny) vs realne klucze test.
-- **RODO / `LEGAL_REVIEW_REQUIRED`:** teksty zgód (raport vs marketing) — implementacja techniczna OK, treść do weryfikacji prawnej.
-
-## Następny krok (Faza 3)
-
-1. Result teaser: wynik główny + profil + główne domino + 1 odkrycie + 1 ruch — WIDOCZNE PRZED mailem.
-2. Raport online: personalizacja per profil (nie tylko liczba) + mapa tygodnia (najważniejsza wizualizacja) + 6 domen + łańcuch + 3 ruchy/14 dni + „czego nie robić" + case + CTA po lead-fit.
-3. Min. 4 dynamiczne wizualizacje. Po fazie: test + typecheck + browser QA (390×844) + screenshoty + commit.
+## Następne kroki (kolejka dla nowego okna)
+1. **Niezależny audyt konwersji** (content-critic / red-team, świeże oczy) — czy realnie ociepla zimnego leada.
+2. **#2 Dowód** — gdy będą zdjęcia w `public/proof/`, zbuduj sekcję before/after w WeekPage (styl brand, Instrument Serif).
+3. **#4 Arc ocieplenia** — pogłębić rozdział cold vs hot (cold: eksperyment 14 dni; hot: 1:1).
+4. **Branching pytań** — skrócić do 16-20 (honorować `condition` w SingleQuestionFlow).
+5. Faza 4 (sekrety, OK Michała): MailerLite `/api/subscribe`, mail transakcyjny, klucz OpenRouter.
+6. Sprzątnąć martwy kod + śmieci.
