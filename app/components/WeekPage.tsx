@@ -245,7 +245,7 @@ export default function WeekPage({ plan, imie, naborHref = 'https://nabor.talerz
           </div>
 
           <p style={{ fontSize: 16, color: C.mute, lineHeight: 1.65, margin: '0 0 26px', maxWidth: 540 }}>
-            Wiesz już gdzie Twój tydzień pęka i dlaczego. Ale mapa nie naprawia terenu. Kolejne pół roku na własną rękę to nie jest zero. To ten sam tydzień, tylko starszy. Sen, hormony i regeneracja nie czekają, aż się w końcu zbierzesz. Rachunek, który zobaczyłeś wyżej, płacisz co roku i nic za niego nie masz. Sam wdrożysz dwie kotwice. Reszta rozejdzie się w pierwszym gorszym tygodniu, bo nikt Cię z niej nie rozlicza, a po trzecim dniu znowu zaczynasz omijać lustro. W prowadzeniu 1:1 co tydzień układam plan pod Twój grafik i rozliczam Cię z wykonania. Nie odpuścisz po jednym słabym dniu, bo ktoś to widzi. Za rok wrócisz do formy, w której czułeś się jak Ty, albo usiądziesz z następnym trenerem i opowiesz mu dokładnie ten sam wynik.
+            Wiesz już gdzie Twój tydzień pęka i dlaczego. Ale mapa nie naprawia terenu. Kolejne pół roku na własną rękę to nie jest zero. To ten sam tydzień, tylko starszy. Sen, hormony i regeneracja nie czekają, aż się w końcu zbierzesz. Rachunek, który zobaczyłeś wyżej, płacisz co roku i nic za niego nie masz, a po trzecim gorszym dniu znowu zaczynasz omijać lustro. Nie obiecam Ci, że Cię wezmę i naprawię to w miesiąc. Nie każdemu jestem w stanie pomóc i nie chcę Ci wciskać czegoś, co u Ciebie może nie usiąść. Ale bardzo bym chciał, żeby usiadło. Zobacz najpierw, jak pracuję z chłopakami, którzy siedzieli dokładnie tu, gdzie Ty teraz. Jak poczujesz, że to Twoje, napisz do mnie z tym wynikiem. Popatrzę na Twój tydzień i powiem Ci wprost, czy widzę tu potencjał, żeby Cię ruszyć, i czy mogę Ci pomóc.
           </p>
 
           {/* drabina akcji */}
@@ -271,10 +271,10 @@ export default function WeekPage({ plan, imie, naborHref = 'https://nabor.talerz
             return (
               <div className="wp-noprint" style={{ display: 'grid', gap: 12 }}>
                 <a href={dmUrl} target="_blank" rel="noopener noreferrer" className="wp-cta" style={{ background: `linear-gradient(135deg, ${C.gold}, ${C.goldBright})`, color: C.ink, fontWeight: 800 }}>
-                  Napisz do mnie bezpośrednio w DM na Instagramie <span aria-hidden>&rarr;</span>
+                  Napisz do mnie z tym wynikiem na Instagramie <span aria-hidden>&rarr;</span>
                 </a>
                 <a href={naborHref} target="_blank" rel="noopener noreferrer" className="wp-cta" style={{ background: C.panel2, color: C.paper, border: `1px solid ${C.line2}` }}>
-                  Zobacz, jak wygląda prowadzenie 1:1 <span aria-hidden>&rarr;</span>
+                  Zobacz, jak pracuję z innymi w 1:1 <span aria-hidden>&rarr;</span>
                 </a>
               </div>
             );
