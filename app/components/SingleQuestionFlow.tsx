@@ -12,6 +12,19 @@ interface Props {
 const STORAGE_KEY = 'diagnostyka_v2_session_answers';
 const STEP_KEY = 'diagnostyka_v2_session_step';
 
+// Polska odmiana jednostek w suwaku. Sztywny unit lamal "4 lat" zamiast "4 lata", "1 rok".
+function fmtVal(val: number, unit?: string): string {
+  const u = (unit || '').trim();
+  if (u === 'lat') {
+    const n = Math.round(val);
+    const d = n % 10, dd = n % 100;
+    if (n === 1) return '1 rok';
+    if (d >= 2 && d <= 4 && (dd < 10 || dd >= 20)) return `${n} lata`;
+    return `${n} lat`;
+  }
+  return u ? `${val} ${u}` : `${val}`;
+}
+
 export default function SingleQuestionFlow({ onComplete, initialAnswers }: Props) {
   const [answers, setAnswers] = useState<RawAnswers>(() => {
     if (initialAnswers && Object.keys(initialAnswers).length > 0) return initialAnswers;
@@ -248,7 +261,7 @@ export default function SingleQuestionFlow({ onComplete, initialAnswers }: Props
               textAlign: 'center', fontFamily: 'monospace', fontSize: 48, fontWeight: 900,
               color: '#c8a84e', marginBottom: 20, fontVariantNumeric: 'tabular-nums',
             }}>
-              {Number(answers[currentQ.id] ?? currentQ.min ?? 7)} {currentQ.unit}
+              {fmtVal(Number(answers[currentQ.id] ?? currentQ.min ?? 7), currentQ.unit)}
             </div>
 
             <input
@@ -265,8 +278,8 @@ export default function SingleQuestionFlow({ onComplete, initialAnswers }: Props
             />
 
             <div style={{ display: 'flex', justifyContent: 'space-between', fontFamily: 'monospace', fontSize: 11, color: '#666', marginTop: 12 }}>
-              <span>{currentQ.min} {currentQ.unit}</span>
-              <span>{currentQ.max} {currentQ.unit}</span>
+              <span>{fmtVal(currentQ.min ?? 0, currentQ.unit)}</span>
+              <span>{fmtVal(currentQ.max ?? 0, currentQ.unit)}</span>
             </div>
 
             <button
@@ -359,7 +372,7 @@ export default function SingleQuestionFlow({ onComplete, initialAnswers }: Props
                 letterSpacing: 1, textTransform: 'uppercase',
               }}
             >
-              Dalej ({Array.isArray(answers.symptoms_chips) ? answers.symptoms_chips.length : 0} wybrane) &rarr;
+              Dalej ({Array.isArray(answers.symptoms_chips) ? answers.symptoms_chips.length : 0}) &rarr;
             </button>
           </div>
         )}
