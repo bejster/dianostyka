@@ -216,6 +216,10 @@ export default function WeekPage({ plan, imie, naborHref = 'https://nabor.talerz
         {/* VI. PIERWSZE KROKI */}
         <section className="wp-rise" style={{ marginBottom: 72 }}>
           <Eyebrow n="VI">Pierwsze kroki</Eyebrow>
+          <div style={{ background: `linear-gradient(180deg, ${C.goldGlow}, transparent)`, border: `1px solid ${C.line2}`, borderRadius: 14, padding: '20px 22px', marginBottom: 24 }}>
+            <div style={{ fontFamily: C.mono, fontSize: 10, letterSpacing: 2, textTransform: 'uppercase', color: C.gold, fontWeight: 700, marginBottom: 9 }}>Zacznij tu, jutro rano</div>
+            <p style={{ fontFamily: C.serif, fontSize: 20, lineHeight: 1.4, color: C.paper, margin: 0 }}>{plan.firstMove}</p>
+          </div>
           <p style={{ fontSize: 15, color: C.faint, margin: '0 0 26px', lineHeight: 1.55, maxWidth: 500 }}>
             {hi}to zestaw 6 kotwic stabilizujących, które trzymają układ w ryzach i zapobiegają rozlewaniu się wycieku energii na kolejne dni.
           </p>

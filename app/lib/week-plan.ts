@@ -43,6 +43,7 @@ export interface WeekPlan {
   invitation: string;           // osobista linia "widzę tu potencjał"
   bridge: { tier: string; line: string; kind: 'save' | 'start' | 'ladder' | 'coop' }[];
   saveNote: string;             // pod przyciskiem zapisu
+  firstMove: string;            // jeden konkretny ruch na jutro (darmowy win od razu, reciprocity)
 }
 
 const DAYS = ['Pon', 'Wt', 'Śr', 'Czw', 'Pt', 'Sob', 'Ndz'] as const;
@@ -198,6 +199,17 @@ function buildBridge(input: WeekPlanInput): WeekPlan['bridge'] {
   return hot ? [save, coopHot, start, ladder] : [save, start, ladder, coopCold];
 }
 
+// ── JEDEN RUCH NA JUTRO: darmowy win od razu, zanim user wejdzie w 6 kotwic ──
+const FIRST_MOVE_BY_CAT: Record<string, string> = {
+  'Sen': 'Dziś wieczorem telefon ląduje poza sypialnią na godzinę przed snem. Jeden ruch, największy zwrot, bo sen ciągnie za sobą resztę.',
+  'Stres': 'Jutro po pracy 10 minut na zejście z obrotów, zanim wejdziesz w wieczór. Spacer bez telefonu albo prysznic w ciszy.',
+  'Żywienie': 'Jutro rano 30 do 40 g białka w pierwszym posiłku. Wieczorny głód zaczyna się od niedojedzonego poranka.',
+  'Weekend': 'W ten weekend trzymaj pobudkę w granicy godziny wobec dni roboczych. To ratuje poniedziałek i wtorek.',
+  'Trening': 'Wpisz na jutro wersję minimum treningu: 20 minut, które zrobisz nawet w najgorszy dzień.',
+  'Głowa': 'Zapisz jedną procedurę powrotu: co dokładnie robisz następnego dnia po gorszym, bez czekania na poniedziałek.',
+};
+function firstMoveFor(worst: string): string { return FIRST_MOVE_BY_CAT[worst] || FIRST_MOVE_BY_CAT['Sen']; }
+
 export function buildWeekPlan(input: WeekPlanInput): WeekPlan {
   const tpl = WEEK_BY_ARCHETYPE[input.archetypeKey] || WEEK_FALLBACK;
   const week: WeekDay[] = DAYS.map((day, idx) => ({ day, label: tpl.labels[idx], state: tpl.states[idx] }));
@@ -233,6 +245,7 @@ export function buildWeekPlan(input: WeekPlanInput): WeekPlan {
     invitation: invitationLine(input),
     bridge: buildBridge(input),
     saveNote: 'To trafia tylko do mnie. Bez automatów i bez list mailingowych.',
+    firstMove: firstMoveFor(input.worstCat),
   };
 }
 
