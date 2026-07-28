@@ -17,6 +17,16 @@ const BG = '#0e0e0e';
 
 type Phase = 'intake' | 'teaser' | 'gate' | 'done';
 
+// Reframe z wlasnych slow usera (LLM /api/diagnoza). Ksztalt zgodny z json.reframe
+// z route.ts oraz z opcjonalnym polem `reframe` w WeekPlanInput (week-plan.ts).
+interface ReframeData {
+  cytat?: string;
+  falszywe_zalozenie?: string;
+  mechanizm?: string;
+  kolejnosc?: string[];
+  pulapka?: string;
+}
+
 export default function DiagnozaPage() {
   const [phase, setPhase] = useState<Phase>('intake');
   const [result, setResult] = useState<ScoringResult | null>(null);
@@ -25,6 +35,8 @@ export default function DiagnozaPage() {
   const [email, setEmail] = useState('');
   const [reportConsent, setReportConsent] = useState(false);
   const [error, setError] = useState('');
+  // Reframe personalizujacy Karte Tygodnia. Dochodzi w tle po LLM, re-renderuje teaser.
+  const [reframe, setReframe] = useState<ReframeData | null>(null);
 
   const handleComplete = (raw: RawAnswers) => {
     const scored = calculateScoring(raw);
@@ -32,6 +44,42 @@ export default function DiagnozaPage() {
     setResult(scored);
     setPhase('teaser');
     if (typeof window !== 'undefined') window.scrollTo({ top: 0 });
+
+    // ── Reframe z wlasnych slow usera (LLM) ──
+    // Fire-and-forget: Karta jest widoczna od razu (fallback deterministyczny w week-plan.ts),
+    // reframe dochodzi w tle i re-renderuje teaser. Cichy fallback gdy fetch padnie.
+    const painText = typeof raw.user_pain === 'string' ? raw.user_pain.trim() : '';
+    if (painText) {
+      const D = answersToFD(raw);
+      // worstCat liczony tak samo jak w teaser branch (te same wagi FD), zeby prompt trafil w kategorie
+      const catScores = [
+        { label: 'Sen', pct: Math.max(100 - Math.round(((D.sleepQ + D.screenBed) / 6 + (7.5 - Math.min(D.sleep, 7.5)) / 1.5) * 55), 5) },
+        { label: 'Stres', pct: Math.max(100 - Math.round(((D.stress + D.energy + (D.workHours > 9 ? 1 : 0)) / 7) * 100), 5) },
+        { label: 'Żywienie', pct: Math.max(100 - Math.round((D.binge / 4) * 70 + (D.veggies + D.protein) * 7), 5) },
+        { label: 'Weekend', pct: Math.max(100 - Math.round((D.drinks / 12) * 40 + D.wknd * 10 + D.mondayFeel * 8 + (D.subs > 0 ? 25 : 0)), 5) },
+        { label: 'Trening', pct: Math.max(100 - Math.round(((D.miss * 1.5 + (D.trainHappy >= 1 && D.trainHappy <= 2 ? 1 : 0)) / 4) * 100), 5) },
+        { label: 'Głowa', pct: Math.max(100 - Math.round((tagScoreWeighted(D.tags) / 10) * 60 + D.defer * 8 + D.dopamine * 6 + (D.triedBefore >= 2 ? 10 : 0)), 5) },
+      ];
+      const worstCat = [...catScores].sort((a, b) => a.pct - b.pct)[0]?.label || 'Sen';
+      const sc = score(D);
+      // segment wg score, spojnie z analityka page.tsx (v1): zly wynik = goracy lead
+      const segment = sc >= 40 ? 'goracy' : sc >= 20 ? 'cieply' : 'zimny';
+      // trigger/selfDx nie sa zbierane w flow /diagnoza (brak pol w RawAnswers) -> puste;
+      // route.ts akceptuje puste, wymaga tylko niepustego pain LUB selfDx (mamy user_pain).
+      void (async () => {
+        try {
+          const res = await fetch('/api/diagnoza', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ pain: painText, selfDx: '', trigger: '', worstCat, segment, age: D.age }),
+          });
+          const json = await res.json();
+          if (json?.ok && json.reframe) setReframe(json.reframe as ReframeData);
+        } catch {
+          // cisza: bez reframe Karta i tak stoi (fallback deterministyczny)
+        }
+      })();
+    }
   };
 
   const handleGateSubmit = (e: React.FormEvent) => {
@@ -74,6 +122,7 @@ export default function DiagnozaPage() {
       imie, potentialPct: 100 - SC, costMonths: C.stagnationMonths,
       drinks: D.drinks, screenBed: D.screenBed, junk: D.junk, protein: D.protein,
       sleep: D.sleep, miss: D.miss, binge: D.binge, gym: D.gym,
+      reframe: reframe || undefined,
     });
     return (
       <>

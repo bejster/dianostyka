@@ -183,8 +183,8 @@ function buildPlan(i: WeekPlanInput): { plan: PlanAnchor[]; metric: string } {
 function invitationLine(input: WeekPlanInput): string {
   const hot = (input.potentialPct ?? (100 - input.score)) <= 45;
   const mies = input.costMonths && input.costMonths >= 2 ? `${input.costMonths} miesięcy już zeszło, a sylwetka stoi w tym samym miejscu. ` : '';
-  if (hot) return `Wiedzę masz, plan trzymasz teraz w tej Karcie. ${mies}Więc dlaczego za rok będziesz dokładnie tu, gdzie jesteś dziś? Bo sam, po trzecim gorszym dniu, wracasz do starego tygodnia i mówisz sobie: od poniedziałku. Ten poniedziałek nie przyszedł jeszcze ani razu. To nigdy nie była kwestia tego, czego nie wiesz.`;
-  return `Bazę masz dobrą, teoria siedzi. ${mies}A i tak co tydzień pękasz w tym samym punkcie. Nie dlatego, że czegoś nie wiesz. Dlatego, że nie masz kto Cię z tego rozliczy, więc pierwszy gorszy dzień kasuje Ci cały tydzień, a Ty zaczynasz od zera w poniedziałek.`;
+  if (hot) return `Wiedzę masz, plan trzymasz teraz w tej Karcie. ${mies}Więc czemu za rok będziesz dokładnie tu, gdzie jesteś dziś? Bo sam, po trzecim gorszym dniu, wracasz do starego tygodnia i mówisz sobie: od poniedziałku. Ten poniedziałek nie przyszedł ani razu. Parę lat temu czułeś się w swoim ciele lżej. Tamten stan wciąż siedzi pod tym jednym wyciekiem, wystarczy go odetkać.`;
+  return `Bazę masz dobrą, teoria siedzi. ${mies}A i tak co tydzień pękasz w tym samym punkcie. Sam tego nie domkniesz, bo osobno każdy z tych błędów wygląda na drobiazg. Pierwszy gorszy dzień kasuje Ci cały tydzień i wracasz na start w poniedziałek. Z kimś, kto to widzi i rozlicza, domykasz to w dwa tygodnie.`;
 }
 
 // ── MOST DO KOLEJNEGO KROKU ──
