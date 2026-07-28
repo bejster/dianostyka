@@ -194,7 +194,7 @@ function buildBridge(input: WeekPlanInput): WeekPlan['bridge'] {
   const start = { tier: '2. Wdrożenie samodzielne', line: 'Zastosuj 6 kotwic z raportu i skup się na stabilizacji głównego punktu pęknięcia.', kind: 'start' as const };
   const ladder = { tier: '3. Konsultacja wyników', line: 'Przeanalizujmy ten raport razem pod kątem Twojego harmonogramu pracy i celów.', kind: 'ladder' as const };
   const coopHot = { tier: '4. Prowadzenie indywidualne 1:1', line: 'Jeśli po Twoim wyniku uznam, że mogę Cię ruszyć, biorę Cię na pokład: układam tydzień pod Twój grafik i prowadzę Cię co tydzień.', kind: 'coop' as const };
-  const coopCold = { tier: '4. Współpraca 1:1', line: 'Gdy zobaczysz, jak pracuję z innymi, i uznasz, że to Twoja droga, odezwij się do mnie z tym wynikiem.', kind: 'coop' as const };
+  const coopCold = { tier: '4. Współpraca 1:1', line: 'Gdy zobaczysz, jak pracuję z innymi i uznasz, że to Twoja droga, odezwij się do mnie z tym wynikiem.', kind: 'coop' as const };
   return hot ? [save, coopHot, start, ladder] : [save, start, ladder, coopCold];
 }
 

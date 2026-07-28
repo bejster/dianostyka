@@ -301,7 +301,7 @@ function zaskoczenie(worst: string, second: string): string {
   if (HIDDEN_DRIVERS.includes(worst)) {
     return `Większość na Twoim miejscu obwinia jedzenie i trening. Twoje odpowiedzi pokazują, że najpierw wysiada Ci ${worst.toLowerCase()}, a dopiero to rozwala apetyt, energię i motywację. Naprawiasz skutki, nie źródło.`;
   }
-  return `${worst} wygląda na Twój główny problem. Ale to raczej objaw. Pod spodem ciągnie ${second.toLowerCase()}, i dopóki to gra przeciw Tobie, ${worst.toLowerCase()} będzie wracać.`;
+  return `${worst} wygląda na Twój główny problem. Ale to raczej objaw. Pod spodem ciągnie ${second.toLowerCase()} i dopóki to gra przeciw Tobie, ${worst.toLowerCase()} będzie wracać.`;
 }
 // DOBRY TYDZIEŃ: zaskoczenie i archetyp po pozytywnej stronie (Michał: dobrze = piszemy dobrze, nie wymyślamy problemów)
 function zaskoczenieDobry(best: string): string {
@@ -2567,7 +2567,7 @@ export default function Page() {
 
                   {/* Suplementy usunięte z diagnostyki: nie kwalifikują i nie pokazują głównego problemu. */}
 
-                  <Slider label="Ile miesięcznie idzie na dowóz i jedzenie na mieście?" min={0} max={1000} step={50} k="junk" val={D.junk} unit=" zł" note={`Glovo, kebab pod blokiem, gotowce z Żabki. To liczba, którą sam podajesz, i tylko ona wchodzi do rachunku.`} ariaLabel="Miesięczne wydatki na dowóz i jedzenie na mieście" />
+                  <Slider label="Ile miesięcznie idzie na dowóz i jedzenie na mieście?" min={0} max={1000} step={50} k="junk" val={D.junk} unit=" zł" note={`Glovo, kebab pod blokiem, gotowce z Żabki. To liczba, którą sam podajesz i tylko ona wchodzi do rachunku.`} ariaLabel="Miesięczne wydatki na dowóz i jedzenie na mieście" />
                 </div>
               )}
 
@@ -2837,7 +2837,7 @@ export default function Page() {
                     {[
                       { v: pain, set: setPain, label: 'Co Cię w tym wszystkim najbardziej wkurwia?', sub: 'Jedno zdanie, własnymi słowami. Bez ładnego pisania.', ph: 'np. budzę się zmęczony i wieczorem znowu nie mam na nic siły...' },
                       { v: trigger, set: setTrigger, label: 'Co się musiało wydarzyć, że sprawdzasz to dziś, a nie za miesiąc?', sub: 'Zdjęcie, impreza, badania, czyjś tekst. Jedna scena.', ph: 'np. zobaczyłem zdjęcie z wakacji...' },
-                      { v: selfDx, set: setSelfDx, label: 'Czego już próbowałeś i w którym momencie zwykle się to rozsypywało?', sub: 'Jedna rzecz, która miała pomóc, i moment, w którym przestawała działać.', ph: 'np. dieta trzymała 2 tygodnie, potem weekend i koniec...' },
+                      { v: selfDx, set: setSelfDx, label: 'Czego już próbowałeś i w którym momencie zwykle się to rozsypywało?', sub: 'Jedna rzecz, która miała pomóc i moment, w którym przestawała działać.', ph: 'np. dieta trzymała 2 tygodnie, potem weekend i koniec...' },
                     ].map((q, i) => (
                       <div key={i} style={{ marginBottom: 22 }}>
                         <div style={{ fontSize: 15, color: M.t1, fontWeight: 500, marginBottom: 8, lineHeight: 1.45 }}>

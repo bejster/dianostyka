@@ -309,7 +309,7 @@ export const QUESTIONS: QuestionDef[] = [
     section: 'Apetyt',
     sectionNum: 'IV',
     title: 'Ile miesięcznie idzie na dowóz i jedzenie na mieście?',
-    subtitle: 'Glovo, kebab pod blokiem, gotowce z Żabki. To liczba, którą sam podajesz, i tylko ona wchodzi do rachunku.',
+    subtitle: 'Glovo, kebab pod blokiem, gotowce z Żabki. To liczba, którą sam podajesz i tylko ona wchodzi do rachunku.',
     type: 'slider',
     domain: 'nutrition',
     min: 0,
