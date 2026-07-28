@@ -1,20 +1,44 @@
-// scoring-engine.ts — Pure function calculation engine for Diagnostyka Tygodnia V2
+// scoring-engine.ts Pure function calculation engine for Diagnostyka Tygodnia V2
 
 import { DOMAINS, type DomainKey, PROFILES, type ProfileDef, QUESTIONS } from './assessment-config.ts';
 
 export interface RawAnswers {
+  // kontekst
+  age?: number;
+  // sen
   sleep_hours?: number;
   sleep_quality?: string;
   screen_bed?: string;
+  break_window?: string;
+  // energia / obciazenie
   work_hours?: number;
   stress_level?: string;
-  break_window?: string;
+  energy_mornings?: string;
+  dopamine_pull?: string;
+  half_power_hours?: number;
+  // apetyt / jedzenie
   evening_eating?: string;
+  veggies_days?: string;
+  protein_days?: string;
   takeout_cost?: number;
+  // trening
+  planned_trainings?: number;
+  missed_trainings?: number;
+  train_years?: number;
+  train_happy?: string;
+  gym_miss?: string; // legacy (czyta calculateScoring); flow /diagnoza go nie zbiera
+  // weekend
   weekend_pattern?: string;
   alcohol_intake?: string;
-  gym_miss?: string;
+  weekend_cash?: number;
+  monday_recovery?: string;
+  weekend_break?: string;
+  // glowa / sygnaly
   symptoms_chips?: string[];
+  morning_wood?: string;
+  tried_before?: string;
+  defer_count?: string;
+  retreat_when?: string;
   user_pain?: string;
   [key: string]: unknown;
 }
