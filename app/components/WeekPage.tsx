@@ -245,7 +245,7 @@ export default function WeekPage({ plan, imie, naborHref = 'https://nabor.talerz
           </div>
 
           <p style={{ fontSize: 16, color: C.mute, lineHeight: 1.65, margin: '0 0 26px', maxWidth: 540 }}>
-            Wiesz już gdzie Twój tydzień pęka i dlaczego. Ale mapa nie naprawia terenu, a kolejne pół roku na własną rękę to nie jest zero. To ten sam tydzień, tylko starszy: sen, regeneracja i hormony nie czekają, aż się w końcu zbierzesz. Rachunek, który zobaczyłeś wyżej, płacisz co roku i nic za niego nie dostajesz. Sam wdrożysz dwie kotwice, reszta rozejdzie się w pierwszym gorszym tygodniu, bo nikt Cię z niej nie rozlicza. Prowadzenie 1:1 robi dokładnie odwrotność: co tydzień układam plan pod Twój grafik i rozliczam Cię z wykonania, więc nie odpuścisz po jednym słabym dniu. To jedyna rzecz, która przerywa tę pętlę: ktoś z zewnątrz, kto pilnuje, żebyś dowiózł.
+            Wiesz już gdzie Twój tydzień pęka i dlaczego. Ale mapa nie naprawia terenu, a kolejne pół roku na własną rękę to nie jest zero. To ten sam tydzień, tylko starszy: sen, regeneracja i hormony nie czekają, aż się w końcu zbierzesz. Rachunek, który zobaczyłeś wyżej, płacisz co roku i nic za niego nie dostajesz. Sam wdrożysz dwie kotwice, reszta rozejdzie się w pierwszym gorszym tygodniu, bo nikt Cię z niej nie rozlicza. Prowadzenie 1:1 robi dokładnie odwrotność: co tydzień układam plan pod Twój grafik i rozliczam Cię z wykonania, więc nie odpuścisz po jednym słabym dniu. To jedyna rzecz, która przerywa tę pętlę: ktoś z zewnątrz, kto pilnuje, żebyś dowiózł. Za rok albo będziesz z tego wyjęty, albo opowiesz następnemu trenerowi dokładnie ten sam wynik. Różnicy nie robi wiedza. Robi ją to, czy ktoś Cię z niej rozliczał.
           </p>
 
           {/* drabina akcji */}
@@ -280,7 +280,7 @@ export default function WeekPage({ plan, imie, naborHref = 'https://nabor.talerz
             );
           })()}
           <p className="wp-noprint" style={{ fontSize: 12.5, color: C.faint, textAlign: 'center', margin: '14px 0 0', lineHeight: 1.55 }}>
-            {plan.saveNote} Odpisuję osobiście w 24h na każdą wiadomość z wynikiem diagnostyki.
+            {plan.saveNote} Od 9 lat przeprowadziłem przez to ponad 180 facetów. Piszesz do mnie, odpisuję ja, nie zespół, w 24h.
           </p>
         </section>
 

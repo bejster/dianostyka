@@ -182,8 +182,9 @@ function buildPlan(i: WeekPlanInput): { plan: PlanAnchor[]; metric: string } {
 // ── ZAPROSZENIE ──
 function invitationLine(input: WeekPlanInput): string {
   const hot = (input.potentialPct ?? (100 - input.score)) <= 45;
-  if (hot) return 'Wiedzę masz, plan trzymasz teraz w tej Karcie. Więc dlaczego za rok będziesz dokładnie tu, gdzie jesteś dziś? Bo sam, po trzecim gorszym dniu, wracasz do starego tygodnia i mówisz sobie: od poniedziałku. Ten poniedziałek nie przyszedł jeszcze ani razu. To nigdy nie była kwestia tego, czego nie wiesz.';
-  return 'Bazę masz dobrą, teoria siedzi. A i tak co tydzień pękasz w tym samym punkcie. Nie dlatego, że czegoś nie wiesz. Dlatego, że nie masz kto Cię z tego rozliczy, więc pierwszy gorszy dzień kasuje Ci cały tydzień, a Ty zaczynasz od zera w poniedziałek.';
+  const mies = input.costMonths && input.costMonths >= 2 ? `${input.costMonths} miesięcy już zeszło, a sylwetka stoi w tym samym miejscu. ` : '';
+  if (hot) return `Wiedzę masz, plan trzymasz teraz w tej Karcie. ${mies}Więc dlaczego za rok będziesz dokładnie tu, gdzie jesteś dziś? Bo sam, po trzecim gorszym dniu, wracasz do starego tygodnia i mówisz sobie: od poniedziałku. Ten poniedziałek nie przyszedł jeszcze ani razu. To nigdy nie była kwestia tego, czego nie wiesz.`;
+  return `Bazę masz dobrą, teoria siedzi. ${mies}A i tak co tydzień pękasz w tym samym punkcie. Nie dlatego, że czegoś nie wiesz. Dlatego, że nie masz kto Cię z tego rozliczy, więc pierwszy gorszy dzień kasuje Ci cały tydzień, a Ty zaczynasz od zera w poniedziałek.`;
 }
 
 // ── MOST DO KOLEJNEGO KROKU ──
