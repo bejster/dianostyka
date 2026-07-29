@@ -1,5 +1,6 @@
 import type { WeekPlan, DayState } from '../lib/week-plan';
 import SaveCardButton from './SaveCardButton';
+import { PROOF } from '../lib/proof';
 
 // ── KARTA TYGODNIA ──
 // Sygnatura: krzywa napięcia tygodnia (linia jak z odczytu kortyzolu/tętna),
@@ -240,6 +241,28 @@ export default function WeekPage({ plan, imie, naborHref = 'https://nabor.talerz
             ))}
           </div>
         </section>
+
+        {/* DOWÓD: before/after klientów (renderuje się tylko gdy są realne wpisy w proof.ts) */}
+        {PROOF.length > 0 && (
+          <section className="wp-rise" style={{ marginBottom: 72 }}>
+            <Eyebrow n="✦">Efekt u innych</Eyebrow>
+            <div style={{ display: 'grid', gap: 22 }}>
+              {PROOF.map((p, i) => (
+                <figure key={i} style={{ margin: 0 }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2, borderRadius: 14, overflow: 'hidden', border: `1px solid ${C.line}` }}>
+                    <img src={p.before} alt="Przed" loading="lazy" style={{ width: '100%', display: 'block', aspectRatio: '3 / 4', objectFit: 'cover' }} />
+                    <img src={p.after} alt="Po" loading="lazy" style={{ width: '100%', display: 'block', aspectRatio: '3 / 4', objectFit: 'cover' }} />
+                  </div>
+                  {p.caption && (
+                    <figcaption style={{ fontFamily: C.serif, fontSize: 16.5, fontStyle: 'italic', color: C.mute, marginTop: 12, lineHeight: 1.4 }}>
+                      {p.caption}
+                    </figcaption>
+                  )}
+                </figure>
+              ))}
+            </div>
+          </section>
+        )}
 
         {/* VII. MOST */}
         <section className="wp-rise" style={{ marginBottom: 20 }}>

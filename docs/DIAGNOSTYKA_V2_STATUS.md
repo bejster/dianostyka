@@ -55,7 +55,7 @@ Most/oferta = **frame kwalifikacji, nie obietnicy** (Michał: „nie wiem czy mo
 ## Następne kroki (kolejka dla nowego okna)
 1. **TELEGRAM (Michał, 2 min)**: utwórz kanał/grupę „HiT Leady", dodaj bota (ten sam `TELEGRAM_BOT_TOKEN`), weź chat_id, ustaw env `TELEGRAM_LEADS_CHAT_ID`. Bot NIE utworzy kanału sam. Bez tego leady lecą na wspólny `TELEGRAM_CHAT_ID`.
 2. **DECYZJA**: copy mówi „bez zapisu na listę", a Faza 4 planuje MailerLite (=lista). Albo email = osobisty one-off, albo zmień copy.
-3. **#1 ekran INTRO przed Q1** — start od slidera WIEKU jest zimny. Intro: obietnica Karty + „~4 min" + „wynik bez maila". Największy skok konwersji.
+3. ✅ **Ekran INTRO przed Q1** — DONE (2026-07-28). Hook „Trenujesz, a forma i tak stoi", ~4 min, payoff preview, „wynik bez maila". Nowa faza `intro` w `page.tsx`.
 4. **#4 Arc ocieplenia** — pogłębić (cold=eksperyment 14 dni); teraz `qualified` steruje tylko wariantem mostu.
-5. **#2 Dowód** — BLOCKER na zdjęciach w `public/proof/`. Scaffold before/after gotowy do zbudowania.
+5. **#2 Dowód** — scaffold DONE: sekcja „Efekt u innych" w `WeekPage` + `app/lib/proof.ts` (pusta tablica = nie renderuje). Michał wrzuca zdjęcia do `public/proof/` i dopisuje wpisy → zapala się sama.
 6. Hard-delete 13 wyciętych pytań (teraz `condition:()=>false`). Faza 4 sekrety. Sprzątnąć martwy kod.

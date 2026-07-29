@@ -15,7 +15,7 @@ import { buildWeekPlan } from '../lib/week-plan';
 const GOLD = '#c8a84e';
 const BG = '#0e0e0e';
 
-type Phase = 'intake' | 'teaser' | 'gate' | 'done';
+type Phase = 'intro' | 'intake' | 'teaser' | 'gate' | 'done';
 
 // Reframe z wlasnych slow usera (LLM /api/diagnoza). Ksztalt zgodny z json.reframe
 // z route.ts oraz z opcjonalnym polem `reframe` w WeekPlanInput (week-plan.ts).
@@ -43,7 +43,7 @@ function qualify(raw: RawAnswers, triedBefore: number, sc: number, hardTotal: nu
 }
 
 export default function DiagnozaPage() {
-  const [phase, setPhase] = useState<Phase>('intake');
+  const [phase, setPhase] = useState<Phase>('intro');
   const [result, setResult] = useState<ScoringResult | null>(null);
   const [answers, setAnswers] = useState<RawAnswers | null>(null);
   const [name, setName] = useState('');
@@ -128,6 +128,45 @@ export default function DiagnozaPage() {
     setPhase('done');
     if (typeof window !== 'undefined') window.scrollTo({ top: 0 });
   };
+
+  if (phase === 'intro') {
+    return (
+      <div style={{ minHeight: '100vh', background: BG, color: '#ece7db', fontFamily: '"Inter", sans-serif', display: 'flex', flexDirection: 'column', justifyContent: 'center', padding: '32px 22px', boxSizing: 'border-box' }}>
+        <div style={{ maxWidth: 480, margin: '0 auto', width: '100%' }}>
+          <div style={{ fontFamily: "'JetBrains Mono', ui-monospace, monospace", fontSize: 11, letterSpacing: 3, textTransform: 'uppercase', color: GOLD, fontWeight: 700, marginBottom: 22 }}>
+            Diagnostyka tygodnia &middot; ~4 min
+          </div>
+          <h1 style={{ fontFamily: "'Instrument Serif', Georgia, serif", fontSize: 'clamp(34px, 8vw, 52px)', lineHeight: 1.08, fontWeight: 400, color: '#fff', margin: '0 0 20px', letterSpacing: '-0.01em' }}>
+            Trenujesz, a forma i tak stoi. Zobaczmy, gdzie Twój tydzień pęka.
+          </h1>
+          <p style={{ fontSize: 16, color: '#a49e92', lineHeight: 1.6, margin: '0 0 26px' }}>
+            Kilkanaście pytań. Na końcu masz Kartę Tygodnia: w którym dniu tydzień się sypie, ile Cię to kosztuje i co zrobić jutro rano. Wynik widzisz od razu, bez podawania maila.
+          </p>
+          <div style={{ display: 'grid', gap: 12, marginBottom: 30 }}>
+            {[
+              'Gdzie w tygodniu pękasz i dlaczego',
+              'Ile Cię ten jeden wyciek kosztuje rocznie',
+              'Pierwszy ruch, który robisz jutro rano',
+            ].map((t, i) => (
+              <div key={i} style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
+                <span style={{ color: GOLD, fontWeight: 800, flexShrink: 0 }}>&rsaquo;</span>
+                <span style={{ fontSize: 15, color: '#d8d2c6', lineHeight: 1.45 }}>{t}</span>
+              </div>
+            ))}
+          </div>
+          <button
+            onClick={() => { setPhase('intake'); if (typeof window !== 'undefined') window.scrollTo({ top: 0 }); }}
+            style={{ width: '100%', padding: '17px', borderRadius: 14, border: 'none', cursor: 'pointer', background: `linear-gradient(135deg, ${GOLD}, #8a7535)`, color: BG, fontWeight: 800, fontSize: 16, letterSpacing: 0.5 }}
+          >
+            Zaczynamy &rarr;
+          </button>
+          <p style={{ fontSize: 12.5, color: '#8f887c', lineHeight: 1.55, margin: '16px 2px 0', textAlign: 'center' }}>
+            Od 9 lat, ponad 180 facetów, którzy pracują głową. Piszę ja, nie zespół.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   if (phase === 'intake') {
     return <SingleQuestionFlow onComplete={handleComplete} />;
