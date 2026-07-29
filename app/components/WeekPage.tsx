@@ -302,8 +302,10 @@ export default function WeekPage({ plan, imie, naborHref = 'https://nabor.talerz
             const dmUrl = `https://ig.me/m/hantleitalerz?text=${encodeURIComponent(dmMsg)}`;
             const goldStyle = { background: `linear-gradient(135deg, ${C.gold}, ${C.goldBright})`, color: C.ink, fontWeight: 800 };
             const softStyle = { background: C.panel2, color: C.paper, border: `1px solid ${C.line2}` };
+            // Złoty (mocny) przycisk tylko dla skwalifikowanego leada. Zimny widzi same miękkie opcje
+            // + swoją Kartę do zapisania: ociepla, nie pcha na najdroższe zanim jest gotów.
             const dm = (
-              <a key="dm" href={dmUrl} target="_blank" rel="noopener noreferrer" className="wp-cta" style={qualified ? softStyle : goldStyle}>
+              <a key="dm" href={dmUrl} target="_blank" rel="noopener noreferrer" className="wp-cta" style={softStyle}>
                 Napisz do mnie z tym wynikiem na Instagramie <span aria-hidden>&rarr;</span>
               </a>
             );
