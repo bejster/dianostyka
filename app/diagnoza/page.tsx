@@ -9,7 +9,7 @@ import SingleQuestionFlow from '../components/SingleQuestionFlow';
 import WeekPage from '../components/WeekPage';
 import { calculateScoring, type RawAnswers, type ScoringResult } from '../lib/scoring-engine';
 import { answersToFD } from '../lib/answers-to-fd';
-import { score, costs, pickArchetype, tagScoreWeighted } from '../lib/diagnostic-core';
+import { score, costs, pickArchetype, tagScoreWeighted, hourRange } from '../lib/diagnostic-core';
 import { buildWeekPlan } from '../lib/week-plan';
 
 const GOLD = '#c8a84e';
@@ -25,6 +25,21 @@ interface ReframeData {
   mechanizm?: string;
   kolejnosc?: string[];
   pulapka?: string;
+}
+
+// ── Kwalifikacja leada na prowadzenie 1:1 (niewidoczna dla usera) ──
+// budżet z realnego wydatku (hardTotal, bez pytania o zarobki), gotowość z intencji + kiedy chce ruszyć + ile razy próbował.
+// priorityLead = mocny ból + budżet + gotowość. wantsHelp = miękki sygnał (chce z kimś, nie sam) -> routing na współpracę.
+function qualify(raw: RawAnswers, triedBefore: number, sc: number, hardTotal: number) {
+  const intent = typeof raw.intent === 'string' ? raw.intent : '';
+  const startWhen = typeof raw.start_when === 'string' ? raw.start_when : '';
+  const budgetProxy = hardTotal >= 3000 ? 3 : hardTotal >= 1500 ? 2 : 1;
+  const intentPts = intent === 'in_prowadz' ? 2 : intent === 'in_zobacz' ? 1 : 0;
+  const startPts = (startWhen === 'sw_7dni' || startWhen === 'sw_30dni') ? 1 : 0;
+  const commitment = Math.min((triedBefore >= 2 ? 2 : triedBefore) + intentPts + startPts, 5);
+  const priorityLead = sc >= 40 && commitment >= 3 && budgetProxy >= 2;
+  const wantsHelp = intent === 'in_prowadz' || intent === 'in_zobacz';
+  return { intent, startWhen, budgetProxy, commitment, priorityLead, wantsHelp };
 }
 
 export default function DiagnozaPage() {
@@ -45,27 +60,47 @@ export default function DiagnozaPage() {
     setPhase('teaser');
     if (typeof window !== 'undefined') window.scrollTo({ top: 0 });
 
-    // ── Reframe z wlasnych slow usera (LLM) ──
-    // Fire-and-forget: Karta jest widoczna od razu (fallback deterministyczny w week-plan.ts),
-    // reframe dochodzi w tle i re-renderuje teaser. Cichy fallback gdy fetch padnie.
+    // Jeden komplet liczb dla powiadomienia i reframe (te same wagi FD co w teaser branch).
+    const D = answersToFD(raw);
+    const catScores = [
+      { label: 'Sen', pct: Math.max(100 - Math.round(((D.sleepQ + D.screenBed) / 6 + (7.5 - Math.min(D.sleep, 7.5)) / 1.5) * 55), 5) },
+      { label: 'Stres', pct: Math.max(100 - Math.round(((D.stress + D.energy + (D.workHours > 9 ? 1 : 0)) / 7) * 100), 5) },
+      { label: 'Żywienie', pct: Math.max(100 - Math.round((D.binge / 4) * 70 + (D.veggies + D.protein) * 7), 5) },
+      { label: 'Weekend', pct: Math.max(100 - Math.round((D.drinks / 12) * 40 + D.wknd * 10 + D.mondayFeel * 8 + (D.subs > 0 ? 25 : 0)), 5) },
+      { label: 'Trening', pct: Math.max(100 - Math.round(((D.miss * 1.5 + (D.trainHappy >= 1 && D.trainHappy <= 2 ? 1 : 0)) / 4) * 100), 5) },
+      { label: 'Głowa', pct: Math.max(100 - Math.round((tagScoreWeighted(D.tags) / 10) * 60 + D.defer * 8 + D.dopamine * 6 + (D.triedBefore >= 2 ? 10 : 0)), 5) },
+    ];
+    const worstCat = [...catScores].sort((a, b) => a.pct - b.pct)[0]?.label || 'Sen';
+    const sc = score(D);
+    const C = costs(D);
+    const q = qualify(raw, D.triedBefore, sc, C.hardTotal);
+    const segment = sc >= 40 ? 'goracy' : sc >= 20 ? 'cieply' : 'zimny';
     const painText = typeof raw.user_pain === 'string' ? raw.user_pain.trim() : '';
+    const rawImie = raw.imie ?? raw.name;
+
+    // ── Powiadomienie leada na Telegram: ZAWSZE, gdy ktoś skończył quiz (Michał chce wiedzieć od razu) ──
+    void fetch('/api/lead-notify', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        score: sc,
+        segment: segment.toUpperCase(),
+        worstCat,
+        archetyp: pickArchetype(D, worstCat).label,
+        godzina: hourRange(D),
+        kwota: C.total,
+        priority_lead: q.priorityLead,
+        budget_proxy: q.budgetProxy,
+        commitment: q.commitment,
+        intencja: q.intent,
+        kiedy_start: q.startWhen,
+        pain: painText,
+        imie: typeof rawImie === 'string' ? rawImie : '',
+      }),
+    }).catch(() => {});
+
+    // ── Reframe z wlasnych slow usera (LLM), tylko gdy coś napisał. Fire-and-forget, Karta stoi bez niego. ──
     if (painText) {
-      const D = answersToFD(raw);
-      // worstCat liczony tak samo jak w teaser branch (te same wagi FD), zeby prompt trafil w kategorie
-      const catScores = [
-        { label: 'Sen', pct: Math.max(100 - Math.round(((D.sleepQ + D.screenBed) / 6 + (7.5 - Math.min(D.sleep, 7.5)) / 1.5) * 55), 5) },
-        { label: 'Stres', pct: Math.max(100 - Math.round(((D.stress + D.energy + (D.workHours > 9 ? 1 : 0)) / 7) * 100), 5) },
-        { label: 'Żywienie', pct: Math.max(100 - Math.round((D.binge / 4) * 70 + (D.veggies + D.protein) * 7), 5) },
-        { label: 'Weekend', pct: Math.max(100 - Math.round((D.drinks / 12) * 40 + D.wknd * 10 + D.mondayFeel * 8 + (D.subs > 0 ? 25 : 0)), 5) },
-        { label: 'Trening', pct: Math.max(100 - Math.round(((D.miss * 1.5 + (D.trainHappy >= 1 && D.trainHappy <= 2 ? 1 : 0)) / 4) * 100), 5) },
-        { label: 'Głowa', pct: Math.max(100 - Math.round((tagScoreWeighted(D.tags) / 10) * 60 + D.defer * 8 + D.dopamine * 6 + (D.triedBefore >= 2 ? 10 : 0)), 5) },
-      ];
-      const worstCat = [...catScores].sort((a, b) => a.pct - b.pct)[0]?.label || 'Sen';
-      const sc = score(D);
-      // segment wg score, spojnie z analityka page.tsx (v1): zly wynik = goracy lead
-      const segment = sc >= 40 ? 'goracy' : sc >= 20 ? 'cieply' : 'zimny';
-      // trigger/selfDx nie sa zbierane w flow /diagnoza (brak pol w RawAnswers) -> puste;
-      // route.ts akceptuje puste, wymaga tylko niepustego pain LUB selfDx (mamy user_pain).
       void (async () => {
         try {
           const res = await fetch('/api/diagnoza', {
@@ -116,8 +151,11 @@ export default function DiagnozaPage() {
     const arch = pickArchetype(D, worstW);
     const rawImie = answers.imie ?? answers.name;
     const imie = typeof rawImie === 'string' ? rawImie : '';
+    const q = qualify(answers, D.triedBefore, SC, C.hardTotal);
+    const qualified = q.priorityLead || q.wantsHelp;
     const wkPlan = buildWeekPlan({
-      archetypeKey: arch.key, archetypeLabel: arch.label, archetypeTagline: arch.tagline,
+      archetypeKey: arch.key, archetypeLabel: arch.label, archetypeTagline: arch.tagline, mirror: arch.mirror,
+      qualified,
       worstCat: worstW, breakWindow: D.breakWindow, score: SC, costTotal: C.total, wknd: D.wknd,
       imie, potentialPct: 100 - SC, costMonths: C.stagnationMonths,
       drinks: D.drinks, screenBed: D.screenBed, junk: D.junk, protein: D.protein,
@@ -131,18 +169,18 @@ export default function DiagnozaPage() {
           <span style={{ fontFamily: "'JetBrains Mono', ui-monospace, monospace", fontSize: 10, letterSpacing: 2, textTransform: 'uppercase', color: '#8f887c', fontWeight: 700 }}>Diagnoza gotowa</span>
           <span style={{ flex: 1 }} />
           <a href={'https://nabor.talerzihantle.com/'} target="_blank" rel="noopener noreferrer" style={{ fontSize: 12.5, color: '#ece7db', textDecoration: 'none', whiteSpace: 'nowrap' }}>
-            następny krok: <strong style={{ color: '#c8a84e' }}>prowadzenie 1:1</strong> &rarr;
+            {qualified ? 'zobacz, jak wygląda współpraca' : 'zobacz, jak pracuję z innymi'} &rarr;
           </a>
         </div>
-        <WeekPage plan={wkPlan} imie={imie} naborHref={'https://nabor.talerzihantle.com/'} />
+        <WeekPage plan={wkPlan} imie={imie} qualified={qualified} naborHref={'https://nabor.talerzihantle.com/'} />
         {/* pasek zapisu: Karta jest widoczna od razu, e-mail dopiero jako opcja pod nia (gate zostaje) */}
         <div style={{ background: '#0b0b0c', borderTop: '1px solid #26262b', padding: '32px 22px 56px', textAlign: 'center' }}>
           <div style={{ maxWidth: 460, margin: '0 auto' }}>
             <p style={{ fontFamily: 'Georgia, serif', fontSize: 21, color: '#ece7db', lineHeight: 1.4, margin: '0 0 8px', fontWeight: 400 }}>
-              Chcesz mieć tę Kartę Tygodnia zawsze pod ręką?
+              Chcesz mieć tę Kartę Tygodnia też w skrzynce?
             </p>
             <p style={{ fontSize: 14, color: '#a49e92', lineHeight: 1.55, margin: '0 0 20px' }}>
-              Wyślę Ci pełny raport na e-mail, żebyś wrócił do niego w dowolnym momencie tygodnia.
+              Wyślę Ci ją na e-mail osobiście, żebyś wrócił do niej w środku tygodnia. Bez zapisu na żadną listę.
             </p>
             <button
               onClick={() => { setPhase('gate'); if (typeof window !== 'undefined') window.scrollTo({ top: 0 }); }}
@@ -164,10 +202,10 @@ export default function DiagnozaPage() {
             Krok ostatni &middot; Profil {result.profile.code}
           </div>
           <h1 style={{ fontFamily: 'Georgia, serif', fontSize: 28, fontWeight: 400, lineHeight: 1.25, color: '#fff', marginBottom: 12 }}>
-            Odbierz pełną mapę tygodnia i plan na 14 dni
+            Wyślę Ci tę Kartę na e-mail
           </h1>
           <p style={{ fontSize: 14.5, color: '#aaa', lineHeight: 1.55, marginBottom: 28 }}>
-            Sześć obszarów, mapa pęknięcia tygodnia, łańcuch przyczynowy i trzy ruchy dopasowane do profilu {result.profile.code}. Raport online plus PDF.
+            Masz ją już przed sobą i pobierzesz jako PDF. Zostaw e-mail, jeśli chcesz ją mieć też w skrzynce, żeby wrócić do niej w środku tygodnia. Wysyłam ja, bez zapisu na żadną listę.
           </p>
 
           <form onSubmit={handleGateSubmit}>
@@ -208,10 +246,10 @@ export default function DiagnozaPage() {
       <div style={{ maxWidth: 440, padding: '40px 24px' }}>
         <div style={{ fontSize: 40, marginBottom: 16 }}>&#10003;</div>
         <h1 style={{ fontFamily: 'Georgia, serif', fontSize: 28, fontWeight: 400, color: '#fff', marginBottom: 12 }}>
-          Raport jest w drodze{name.trim() ? `, ${name.trim()}` : ''}.
+          Mam Twój wynik{name.trim() ? `, ${name.trim()}` : ''}.
         </h1>
         <p style={{ fontSize: 15, color: '#aaa', lineHeight: 1.55 }}>
-          Wysyłamy pełną mapę tygodnia dla profilu {result?.profile.code} na {email || 'Twój e-mail'}. Sprawdź skrzynkę za chwilę.
+          Wrzucę Ci tę Kartę Tygodnia na {email || 'Twój e-mail'} osobiście, nie przez automat. Jak coś w niej nie usiądzie, odpisz mi wprost.
         </p>
         <div style={{ marginTop: 20, fontFamily: 'monospace', fontSize: 11, color: '#555' }}>
           {/* TODO Faza 4: realna wysyłka. Teraz: potwierdzenie UI (backend niepodłączony). */}

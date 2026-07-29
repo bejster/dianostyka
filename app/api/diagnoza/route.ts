@@ -18,9 +18,12 @@ Twoje zadanie: przeanalizuj tekst leada i wyciągnij Z JEGO REALNEJ SYTUACJI (ze
 ZASADY TONU MICHAŁA (TWARDE):
 - WYLACZNIE polski alfabet lacinski. ZERO cyrylicy, zero obcych alfabetow.
 - Głos praktyka rozmawiającego z jednym inteligentnym facetem. Szacunek dla jego czasu i inteligencji.
-- ZAKAZ wyrazów slopowych: kluczowe, holistycznie, game changer, transformacja, najlepsza wersja, mindset, ekspert, realnie, super, świetnie, wspaniale.
+- ZAKAZ wyrazów slopowych: kluczowe, kluczowy, holistycznie, game changer, transformacja, najlepsza wersja, mindset, ekspert, realnie, super, świetnie, wspaniale, proces, system, chaos, potencjał, optymalizacja, efektywność, nieefektywny, wsparcie, podejście, aspekt, element, dedykowany, podróż, wyzwanie, zapewnia, umożliwia, stanowi, odblokuj, uwolnij.
 - ZAKAZ binarnego sloganu: "To nie X. To Y." oraz "Nie chodzi o X, chodzi o Y."
-- ZAKAZ długich myślników (em-dash —). Stosuj przecinki, kropki i dwukropki.
+- ZAKAZ długich myślników em-dash (—) ORAZ półpauzy en-dash (–). Stosuj przecinki, kropki i dwukropki. ZAKAZ przecinka tuż przed spójnikiem „i".
+- ZAKAZ asekuracji i lania wody: może, często, zazwyczaj, zwykle, wydaje się, warto, pamiętaj, wpływa na, odgrywa rolę, znacząco. Pisz twierdząco.
+- Zdania krótkie, max 12-14 słów. Zero jednego długiego akapitu w polu. Mów jak do jednego kumpla przy kawie, nie jak podręcznik.
+- FIZJOLOGIA OSTROŻNIE: zero zmyślonych procentów i liczby godzin podanych jako pewnik. Nie twierdź, że jeden weekend albo jedna noc zmienia hormony. Mów o wzorcu, nie o epizodzie. Przyczyny stawiaj miękko (podcina, przygasza, rozjeżdża), nie kategorycznie.
 - ZAKAZ coachingowego klepania po plecach i zmyślonego podziwu. Pisz konkret, mechanizm i wniosek.
 - ZAKAZ moralizowania o żywieniu, ciele czy nawykach.
 
@@ -29,7 +32,11 @@ KONTEKST USERA:
 - Segment: {segment}
 - Wiek: {age}
 
-ZWROC TYLKO PURE JSON, BEZ MARKDOWN, BEZ BACKTICKOW:
+PRZYKŁAD RYTMU I GŁOSU (naśladuj ton i długość zdań, NIE treść, dopasuj do realnej sytuacji leada):
+{"cytat":"po 21 zjadam pół lodówki i nie wiem czemu","falszywe_zalozenie":"Myślisz, że to brak silnej woli wieczorem.","mechanizm":"Do osiemnastej trzymasz wszystko na kawie i napięciu. Wieczorem układ nerwowy szuka najszybszego zejścia z obrotów. Lodówka jest pod ręką. To rachunek za cały dzień, nie słaby charakter.","kolejnosc":["Białko w pierwszym posiłku","Zejście z obrotów przed 21","Telefon poza sypialnią"],"pulapka":"Kolejna dieta z internetu tego nie ruszy. Ona celuje w talerz, a Twój wieczór rozkręca napięcie z całego dnia."}
+{"cytat":"trenuję latami, a po ciele nie widać","falszywe_zalozenie":"Myślisz, że brakuje Ci wiedzy albo lepszego planu.","mechanizm":"Wiesz o treningu więcej niż większość ludzi na sali. Wiedzy masz nadto. Tydzień wykłada się na wykonaniu, bo pierwszy gorszy dzień kasuje resztę i nikt nie pilnuje kolejności.","kolejnosc":["Wersja minimum na gorszy dzień","Jeden stały posiłek kotwica","Rozliczenie co tydzień"],"pulapka":"Kolejny plan z internetu nie zadziała. Wiedzę już masz, brakuje kogoś, kto Cię z wykonania rozliczy."}
+
+ZWROC TYLKO PURE JSON, BEZ MARKDOWN, BEZ BACKTICKOW, dokladnie tymi kluczami:
 {"cytat":"...","falszywe_zalozenie":"...","mechanizm":"...","kolejnosc":["krok1","krok2","krok3"],"pulapka":"..."}`;
 
 export async function POST(req: NextRequest) {
@@ -107,9 +114,10 @@ export async function POST(req: NextRequest) {
         lastReason = 'invalid_structure'; continue;
       }
 
-      // Guard: cyrylica, chinskie znaki albo em-dash = krzaki u leada, retry/fallback
+      // Guard: cyrylica, chinskie znaki, em/en-dash albo utwardzone bany = krzaki/slop u leada, retry/fallback
       const allText = JSON.stringify(parsed);
-      if (/[Ѐ-ӿ]/.test(allText) || /[一-鿿　-〿]/.test(allText) || allText.includes('—')) {
+      const bannedWords = /(kluczow|holistyczn|transformacj|mindset|\bproces\b|\bsystem\b|\bchaos\b|potencjał|optymalizacj|nieefektywn|świetnie|wspaniale)/i;
+      if (/[Ѐ-ӿ]/.test(allText) || /[一-鿿　-〿]/.test(allText) || allText.includes('—') || allText.includes('–') || bannedWords.test(allText)) {
         lastReason = 'lang_leak'; continue;
       }
 

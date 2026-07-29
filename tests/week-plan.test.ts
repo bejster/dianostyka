@@ -72,8 +72,8 @@ test('most zawsze zaczyna od zapisu, nigdy nie wpycha współpracy na wejściu',
 test('twarde sygnały zmieniają kotwicę do usunięcia', () => {
   const booze = buildWeekPlan(baseInput({ drinks: 12 }));
   const phone = buildWeekPlan(baseInput({ drinks: 0, screenBed: 3 }));
-  const remBooze = booze.plan.find(p => p.kind === 'Jedna rzecz do usunięcia')!;
-  const remPhone = phone.plan.find(p => p.kind === 'Jedna rzecz do usunięcia')!;
+  const remBooze = booze.plan.find(p => p.kind === 'Co wycinasz')!;
+  const remPhone = phone.plan.find(p => p.kind === 'Co wycinasz')!;
   assert.ok(remBooze.text.toLowerCase().includes('alkohol'));
   assert.ok(remPhone.text.toLowerCase().includes('telefon'));
 });

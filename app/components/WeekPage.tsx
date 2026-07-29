@@ -114,7 +114,7 @@ function Eyebrow({ n, children }: { n: string; children: React.ReactNode }) {
   );
 }
 
-export default function WeekPage({ plan, imie, naborHref = 'https://nabor.talerzihantle.com/' }: { plan: WeekPlan; imie?: string; naborHref?: string }) {
+export default function WeekPage({ plan, imie, naborHref = 'https://nabor.talerzihantle.com/', qualified = false }: { plan: WeekPlan; imie?: string; naborHref?: string; qualified?: boolean }) {
   const hi = imie?.trim() ? `${imie.trim()}, ` : '';
   return (
     <div className="wp" style={{ background: C.ink, color: C.paper, fontFamily: C.sans, minHeight: '100vh' }}>
@@ -140,6 +140,11 @@ export default function WeekPage({ plan, imie, naborHref = 'https://nabor.talerz
           <p style={{ fontFamily: C.serif, fontSize: 'clamp(20px, 4vw, 26px)', fontStyle: 'italic', color: C.gold, margin: '0 0 26px', lineHeight: 1.3 }}>
             {plan.problem.oneLiner}
           </p>
+          {plan.problem.mirror && (
+            <p style={{ fontSize: 17, color: C.paper, lineHeight: 1.7, maxWidth: 540, margin: '0 0 26px' }}>
+              {plan.problem.mirror}
+            </p>
+          )}
           <p style={{ fontSize: 16.5, color: C.mute, lineHeight: 1.65, maxWidth: 540, margin: 0, paddingLeft: 18, borderLeft: `2px solid ${C.goldDeep}` }}>
             {plan.problem.falseAssumption}
           </p>
@@ -194,7 +199,7 @@ export default function WeekPage({ plan, imie, naborHref = 'https://nabor.talerz
 
         {/* V. POTENCJAŁ NA STOLE */}
         <section className="wp-rise" style={{ marginBottom: 72 }}>
-          <Eyebrow n="V">Potencjał na stole</Eyebrow>
+          <Eyebrow n="V">Zapas na stole</Eyebrow>
           <div style={{ display: 'flex', alignItems: 'baseline', gap: 14, marginBottom: 18, flexWrap: 'wrap' }}>
             <span style={{ fontFamily: C.serif, fontSize: 'clamp(64px, 16vw, 108px)', lineHeight: 0.9, color: C.gold, fontWeight: 400 }}>{plan.potential.usedPct}%</span>
             <span style={{ fontFamily: C.mono, fontSize: 12, letterSpacing: 1.5, textTransform: 'uppercase', color: C.faint, maxWidth: 190, lineHeight: 1.5 }}>tyle z siebie dziś wyciągasz</span>
@@ -221,7 +226,7 @@ export default function WeekPage({ plan, imie, naborHref = 'https://nabor.talerz
             <p style={{ fontFamily: C.serif, fontSize: 20, lineHeight: 1.4, color: C.paper, margin: 0 }}>{plan.firstMove}</p>
           </div>
           <p style={{ fontSize: 15, color: C.faint, margin: '0 0 26px', lineHeight: 1.55, maxWidth: 500 }}>
-            {hi}to zestaw 6 kotwic stabilizujących, które trzymają układ w ryzach i zapobiegają rozlewaniu się wycieku energii na kolejne dni.
+            {hi}to sześć rzeczy, które trzymają tydzień tak, żeby jeden gorszy dzień nie zabrał Ci pięciu następnych.
           </p>
           <div style={{ display: 'grid', gap: 1, background: C.line, border: `1px solid ${C.line}`, borderRadius: 14, overflow: 'hidden' }}>
             {plan.plan.map((a, i) => (
@@ -242,14 +247,14 @@ export default function WeekPage({ plan, imie, naborHref = 'https://nabor.talerz
 
           {/* zaproszenie osobiste */}
           <div className="wp-noprint" style={{ background: `linear-gradient(180deg, ${C.goldGlow}, transparent)`, border: `1px solid ${C.line2}`, borderRadius: 18, padding: 'clamp(22px, 5vw, 32px)', marginBottom: 34 }}>
-            <div style={{ fontFamily: C.mono, fontSize: 10, letterSpacing: 2.5, textTransform: 'uppercase', color: C.gold, marginBottom: 14 }}>Podsumowanie diagnozy</div>
+            <div style={{ fontFamily: C.mono, fontSize: 10, letterSpacing: 2.5, textTransform: 'uppercase', color: C.gold, marginBottom: 14 }}>Ode mnie, na koniec</div>
             <p style={{ fontFamily: C.serif, fontSize: 'clamp(22px, 4.4vw, 30px)', lineHeight: 1.32, color: C.paper, margin: 0, fontWeight: 400 }}>
               {plan.invitation}
             </p>
           </div>
 
           <p style={{ fontSize: 16, color: C.mute, lineHeight: 1.65, margin: '0 0 26px', maxWidth: 540 }}>
-            Wiesz już gdzie Twój tydzień pęka i dlaczego. Ale mapa nie naprawia terenu. Kolejne pół roku na własną rękę to nie jest zero. To ten sam tydzień, tylko starszy. Sen, hormony i regeneracja nie czekają, aż się w końcu zbierzesz. Rachunek, który zobaczyłeś wyżej, płacisz co roku i nic za niego nie masz, a po trzecim gorszym dniu znowu zaczynasz omijać lustro. Nie obiecam Ci, że Cię wezmę i naprawię to w miesiąc. Nie każdemu jestem w stanie pomóc i nie chcę Ci wciskać czegoś, co u Ciebie może nie usiąść. Ale bardzo bym chciał, żeby usiadło. Zobacz najpierw, jak pracuję z chłopakami, którzy siedzieli dokładnie tu, gdzie Ty teraz. Jak poczujesz, że to Twoje, napisz do mnie z tym wynikiem. Popatrzę na Twój tydzień i powiem Ci wprost, czy widzę tu potencjał, żeby Cię ruszyć i czy mogę Ci pomóc.
+            Ale mapa nie naprawia terenu. Kolejne pół roku na własną rękę to nie jest zero, to ten sam tydzień, tylko starszy. Twoje ciało nie czeka, aż się w końcu zbierzesz. Rachunek, który zobaczyłeś wyżej, płacisz co roku i nic za niego nie masz. Nie obiecam Ci, że Cię wezmę i naprawię to w miesiąc. Nie każdemu jestem w stanie pomóc i nie chcę Ci wciskać czegoś, co u Ciebie może nie usiąść. Ale bardzo bym chciał, żeby usiadło. Zobacz najpierw, jak pracuję z chłopakami, którzy siedzieli dokładnie tu, gdzie Ty teraz. Jak poczujesz, że to Twoje, napisz do mnie z tym wynikiem. Popatrzę na Twój tydzień i powiem Ci wprost, czy widzę tu potencjał, żeby Cię ruszyć i czy mogę Ci pomóc.
           </p>
 
           {/* drabina akcji */}
@@ -272,14 +277,21 @@ export default function WeekPage({ plan, imie, naborHref = 'https://nabor.talerz
               ? `Cześć Michał, jestem ${imie.trim()}. Zrobiłem diagnostykę na stronie (${plan.problem.name}). Chcę omówić z Tobą mój wynik.`
               : `Cześć Michał, zrobiłem diagnostykę na stronie (${plan.problem.name}). Chcę omówić z Tobą mój wynik.`;
             const dmUrl = `https://ig.me/m/hantleitalerz?text=${encodeURIComponent(dmMsg)}`;
+            const goldStyle = { background: `linear-gradient(135deg, ${C.gold}, ${C.goldBright})`, color: C.ink, fontWeight: 800 };
+            const softStyle = { background: C.panel2, color: C.paper, border: `1px solid ${C.line2}` };
+            const dm = (
+              <a key="dm" href={dmUrl} target="_blank" rel="noopener noreferrer" className="wp-cta" style={qualified ? softStyle : goldStyle}>
+                Napisz do mnie z tym wynikiem na Instagramie <span aria-hidden>&rarr;</span>
+              </a>
+            );
+            const nabor = (
+              <a key="nabor" href={naborHref} target="_blank" rel="noopener noreferrer" className="wp-cta" style={qualified ? goldStyle : softStyle}>
+                {qualified ? 'Zobacz, jak wygląda współpraca 1:1' : 'Zobacz, jak pracuję z innymi w 1:1'} <span aria-hidden>&rarr;</span>
+              </a>
+            );
             return (
               <div className="wp-noprint" style={{ display: 'grid', gap: 12 }}>
-                <a href={dmUrl} target="_blank" rel="noopener noreferrer" className="wp-cta" style={{ background: `linear-gradient(135deg, ${C.gold}, ${C.goldBright})`, color: C.ink, fontWeight: 800 }}>
-                  Napisz do mnie z tym wynikiem na Instagramie <span aria-hidden>&rarr;</span>
-                </a>
-                <a href={naborHref} target="_blank" rel="noopener noreferrer" className="wp-cta" style={{ background: C.panel2, color: C.paper, border: `1px solid ${C.line2}` }}>
-                  Zobacz, jak pracuję z innymi w 1:1 <span aria-hidden>&rarr;</span>
-                </a>
+                {qualified ? [nabor, dm] : [dm, nabor]}
               </div>
             );
           })()}

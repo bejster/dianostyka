@@ -68,7 +68,12 @@ export default function SingleQuestionFlow({ onComplete, initialAnswers }: Props
   }, [answers, currentIndex]);
 
   const currentQ: QuestionDef = QUESTIONS[currentIndex] || QUESTIONS[0];
-  const progressPct = Math.round(((currentIndex + 1) / QUESTIONS.length) * 100);
+  // Pytania warunkowe (np. wydatki weekendowe) pokazujemy tylko gdy warunek spełniony.
+  // Licznik i pasek liczą po WIDOCZNYCH pytaniach, nie po całej tablicy, więc długość maleje.
+  const visibleQuestions = QUESTIONS.filter(q => !q.condition || q.condition(answers as Record<string, unknown>));
+  const visiblePos = Math.max(1, visibleQuestions.findIndex(q => q.id === currentQ.id) + 1);
+  const visibleTotal = visibleQuestions.length;
+  const progressPct = Math.round((visiblePos / visibleTotal) * 100);
 
   // Haptic feedback na mobile
   const vibe = useCallback((pattern: number | number[] = 8) => {
@@ -80,11 +85,17 @@ export default function SingleQuestionFlow({ onComplete, initialAnswers }: Props
   }, []);
 
   const goToNext = useCallback(() => {
-    if (currentIndex < QUESTIONS.length - 1) {
+    let next = currentIndex + 1;
+    while (next < QUESTIONS.length) {
+      const c = QUESTIONS[next].condition;
+      if (!c || c(answers as Record<string, unknown>)) break;
+      next++;
+    }
+    if (next < QUESTIONS.length) {
       vibe(12);
       setTransitionState('out');
       setTimeout(() => {
-        setCurrentIndex(prev => prev + 1);
+        setCurrentIndex(next);
         setTransitionState('in');
         setTimeout(() => setTransitionState('idle'), 250);
       }, 200);
@@ -95,16 +106,22 @@ export default function SingleQuestionFlow({ onComplete, initialAnswers }: Props
   }, [currentIndex, answers, onComplete, vibe]);
 
   const goToPrev = useCallback(() => {
-    if (currentIndex > 0) {
+    let prev = currentIndex - 1;
+    while (prev >= 0) {
+      const c = QUESTIONS[prev].condition;
+      if (!c || c(answers as Record<string, unknown>)) break;
+      prev--;
+    }
+    if (prev >= 0) {
       vibe(8);
       setTransitionState('out');
       setTimeout(() => {
-        setCurrentIndex(prev => prev - 1);
+        setCurrentIndex(prev);
         setTransitionState('in');
         setTimeout(() => setTransitionState('idle'), 250);
       }, 200);
     }
-  }, [currentIndex, vibe]);
+  }, [currentIndex, answers, vibe]);
 
   const handleSingleSelect = (opt: QuestionOption) => {
     vibe(10);
@@ -186,7 +203,7 @@ export default function SingleQuestionFlow({ onComplete, initialAnswers }: Props
           </div>
 
           <div style={{ fontFamily: 'monospace', fontSize: 11, color: '#888', fontVariantNumeric: 'tabular-nums' }}>
-            {currentIndex + 1} / {QUESTIONS.length}
+            {visiblePos} / {visibleTotal}
           </div>
         </div>
       </div>
@@ -404,7 +421,7 @@ export default function SingleQuestionFlow({ onComplete, initialAnswers }: Props
                 letterSpacing: 1, textTransform: 'uppercase',
               }}
             >
-              Generuj Raport &rarr;
+              Dalej &rarr;
             </button>
           </div>
         )}

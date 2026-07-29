@@ -44,7 +44,7 @@ export const DOMAINS: Record<DomainKey, DomainDef> = {
   },
   chaos: {
     key: 'chaos',
-    label: 'Odporność systemu na chaos',
+    label: 'Odporność, gdy tydzień się sypie',
     shortLabel: 'Głowa',
     description: 'Reakcja na brak idealnych warunków, prokrastynacja i powrót do planu.',
   },
@@ -93,7 +93,8 @@ export const QUESTIONS: QuestionDef[] = [
     id: 'age',
     section: 'Kontekst',
     sectionNum: 'I',
-    title: 'Twój wiek',
+    title: 'Ile masz lat?',
+    subtitle: 'Ciało czasem twierdzi, że więcej.',
     type: 'slider',
     domain: 'sleep',
     min: 18,
@@ -122,6 +123,7 @@ export const QUESTIONS: QuestionDef[] = [
   },
   {
     id: 'screen_bed',
+    condition: () => false, // wyciete z krotszej wersji (2026-07-28)
     section: 'Sen',
     sectionNum: 'II',
     title: 'W ilu z ostatnich 7 wieczorów telefon był z Tobą do ostatnich 30 minut przed snem?',
@@ -130,10 +132,10 @@ export const QUESTIONS: QuestionDef[] = [
     upstreamWeight: 0.75,
     crossDomainImpact: 0.70,
     options: [
-      { id: 'sb_60min', label: '0-1', value: 0 },
-      { id: 'sb_30min', label: '2-3', value: 30 },
-      { id: 'sb_bed', label: '4-5', value: 70 },
-      { id: 'sb_fallasleep', label: '6-7', value: 100 },
+      { id: 'sb_60min', label: '0-1, telefon zostaje poza łóżkiem', value: 0 },
+      { id: 'sb_30min', label: '2-3, czasem mnie wciągnie', value: 30 },
+      { id: 'sb_bed', label: '4-5, scroll to rytuał przed snem', value: 70 },
+      { id: 'sb_fallasleep', label: '6-7, zasypiam z nim w ręce', value: 100 },
     ],
   },
   {
@@ -185,14 +187,15 @@ export const QUESTIONS: QuestionDef[] = [
     upstreamWeight: 0.70,
     crossDomainImpact: 0.75,
     options: [
-      { id: 'st_low', label: '0-1', value: 0 },
-      { id: 'st_mid', label: '2-3', value: 40 },
-      { id: 'st_high', label: '4-5', value: 80 },
-      { id: 'st_max', label: '6-7', value: 100 },
+      { id: 'st_low', label: '0-1, głowa gaśnie razem ze światłem', value: 0 },
+      { id: 'st_mid', label: '2-3, czasem mielę jeszcze robotę', value: 40 },
+      { id: 'st_high', label: '4-5, leżę i planuję jutro', value: 80 },
+      { id: 'st_max', label: '6-7, zasypiam z listą w głowie', value: 100 },
     ],
   },
   {
     id: 'energy_mornings',
+    condition: () => false, // wyciete z krotszej wersji (2026-07-28)
     section: 'Energia',
     sectionNum: 'III',
     title: 'Jak często budzisz się z poczuciem, że spałbyś od razu jeszcze dwie godziny?',
@@ -209,6 +212,7 @@ export const QUESTIONS: QuestionDef[] = [
   },
   {
     id: 'dopamine_pull',
+    condition: () => false, // wyciete z krotszej wersji (2026-07-28)
     section: 'Energia',
     sectionNum: 'III',
     title: 'Co się dzieje, gdy trafiasz na nudne albo trudne zadanie?',
@@ -225,6 +229,7 @@ export const QUESTIONS: QuestionDef[] = [
   },
   {
     id: 'work_hours',
+    condition: () => false, // wyciete z krotszej wersji (2026-07-28)
     section: 'Energia',
     sectionNum: 'III',
     title: 'Ile godzin dziennie pracujesz?',
@@ -240,6 +245,7 @@ export const QUESTIONS: QuestionDef[] = [
   },
   {
     id: 'half_power_hours',
+    condition: () => false, // wyciete z krotszej wersji (2026-07-28)
     section: 'Energia',
     sectionNum: 'III',
     title: 'Ile z nich lecisz na pół mocy?',
@@ -275,6 +281,7 @@ export const QUESTIONS: QuestionDef[] = [
   },
   {
     id: 'veggies_days',
+    condition: () => false, // wyciete z krotszej wersji (2026-07-28)
     section: 'Apetyt',
     sectionNum: 'IV',
     title: 'W ilu z ostatnich 7 dni jadłeś warzywa lub owoce przynajmniej 3 razy?',
@@ -290,6 +297,7 @@ export const QUESTIONS: QuestionDef[] = [
   },
   {
     id: 'protein_days',
+    condition: () => false, // wyciete z krotszej wersji (2026-07-28)
     section: 'Apetyt',
     sectionNum: 'IV',
     title: 'W ilu z ostatnich 7 dni miałeś 3 normalne posiłki z konkretnym białkiem?',
@@ -299,9 +307,9 @@ export const QUESTIONS: QuestionDef[] = [
     upstreamWeight: 0.50,
     crossDomainImpact: 0.45,
     options: [
-      { id: 'pro_0', label: '6-7 dni', value: 0 },
-      { id: 'pro_1', label: '2-5 dni', value: 50 },
-      { id: 'pro_2', label: '0-1 dni', value: 100 },
+      { id: 'pro_0', label: '6-7 dni, prawie zawsze', value: 0 },
+      { id: 'pro_1', label: '2-5 dni, jak wyjdzie', value: 50 },
+      { id: 'pro_2', label: '0-1 dni, głównie na skróty', value: 100 },
     ],
   },
   {
@@ -354,6 +362,7 @@ export const QUESTIONS: QuestionDef[] = [
   },
   {
     id: 'train_years',
+    condition: () => false, // wyciete z krotszej wersji (2026-07-28)
     section: 'Trening',
     sectionNum: 'V',
     title: 'Od ilu lat trenujesz?',
@@ -438,6 +447,7 @@ export const QUESTIONS: QuestionDef[] = [
   },
   {
     id: 'monday_recovery',
+    condition: () => false, // wyciete z krotszej wersji (2026-07-28)
     section: 'Weekend',
     sectionNum: 'VI',
     title: 'Kiedy po weekendzie sen, energia i głowa wracają do normy?',
@@ -460,7 +470,7 @@ export const QUESTIONS: QuestionDef[] = [
     title: 'Co się sypie w weekend najmocniej?',
     type: 'single',
     domain: 'weekend',
-    condition: (a) => a.weekend_pattern === 'wp_shifted' || a.weekend_pattern === 'wp_reset',
+    condition: () => false, // wyciete z krotszej wersji (2026-07-28)
     upstreamWeight: 0.60,
     crossDomainImpact: 0.55,
     options: [
@@ -499,9 +509,10 @@ export const QUESTIONS: QuestionDef[] = [
   },
   {
     id: 'morning_wood',
+    condition: () => false, // wyciete z krotszej wersji (2026-07-28)
     section: 'Głowa',
     sectionNum: 'VII',
-    title: 'Opcjonalnie: jak często w ostatnich 4 tygodniach zdarzał się poranny wzwód?',
+    title: 'Jak często w ostatnich 4 tygodniach zdarzał się poranny wzwód?',
     subtitle: 'Jeden z kilku sygnałów snu i zdrowia seksualnego. Sam nie mówi, jaki masz testosteron. Możesz pominąć.',
     type: 'single',
     domain: 'chaos',
@@ -517,8 +528,8 @@ export const QUESTIONS: QuestionDef[] = [
     id: 'tried_before',
     section: 'Głowa',
     sectionNum: 'VII',
-    title: 'Próby zmiany',
-    subtitle: 'Ile razy w ostatnich 12 miesiącach zaczynałeś plan, który wytrzymał krócej niż 4 tygodnie?',
+    title: 'Ile razy w tym roku odpaliłeś plan, który padł przed miesiącem?',
+    subtitle: 'Liczą się te, co nie dożyły czterech tygodni.',
     type: 'single',
     domain: 'chaos',
     upstreamWeight: 0.65,
@@ -532,6 +543,7 @@ export const QUESTIONS: QuestionDef[] = [
   },
   {
     id: 'defer_count',
+    condition: () => false, // wyciete z krotszej wersji (2026-07-28)
     section: 'Głowa',
     sectionNum: 'VII',
     title: 'W ostatnim tygodniu: ile ważnych rzeczy odłożyłeś, bo nie miałeś głowy, chociaż czas teoretycznie był?',
@@ -548,6 +560,7 @@ export const QUESTIONS: QuestionDef[] = [
   },
   {
     id: 'retreat_when',
+    condition: () => false, // wyciete z krotszej wersji (2026-07-28)
     section: 'Głowa',
     sectionNum: 'VII',
     title: 'Kiedy ostatnio odpuściłeś ważną rozmowę, na której Ci zależało, bo nie miałeś na nią głowy?',
@@ -572,6 +585,41 @@ export const QUESTIONS: QuestionDef[] = [
     domain: 'chaos',
     upstreamWeight: 0.90,
     crossDomainImpact: 0.90,
+  },
+
+  // ── SEKCJA VIII: CO DALEJ (kwalifikacja, niewidoczna, nie wchodzi do score) ──
+  {
+    id: 'intent',
+    section: 'Co dalej',
+    sectionNum: 'VIII',
+    title: 'Gdybyś miał to w końcu ruszyć, jak wolisz?',
+    subtitle: 'Bez zobowiązań. Ciekawi mnie tylko, jak wolisz to ograć.',
+    type: 'single',
+    domain: 'chaos',
+    upstreamWeight: 0,
+    crossDomainImpact: 0,
+    options: [
+      { id: 'in_sam', label: 'Ogarnę sam, daj mi tylko kierunek', value: 0 },
+      { id: 'in_zobacz', label: 'Chcę zobaczyć, jak wygląda robota z kimś', value: 0 },
+      { id: 'in_prowadz', label: 'Wolę, żeby ktoś mnie poprowadził i rozliczył', value: 0 },
+      { id: 'in_niewiem', label: 'Jeszcze nie wiem', value: 0 },
+    ],
+  },
+  {
+    id: 'start_when',
+    section: 'Co dalej',
+    sectionNum: 'VIII',
+    title: 'Kiedy chcesz to ruszyć?',
+    type: 'single',
+    domain: 'chaos',
+    upstreamWeight: 0,
+    crossDomainImpact: 0,
+    options: [
+      { id: 'sw_7dni', label: 'W tym tygodniu, mam dość', value: 0 },
+      { id: 'sw_30dni', label: 'W tym miesiącu', value: 0 },
+      { id: 'sw_kwartal', label: 'Za 2-3 miesiące', value: 0 },
+      { id: 'sw_sprawdzam', label: 'Na razie tylko sprawdzam', value: 0 },
+    ],
   },
 ];
 
@@ -620,7 +668,7 @@ export const PROFILES: Record<string, ProfileDef> = {
     title: 'Twój plan działa tylko w laboratorium',
     tagline: 'Nie masz złego planu. Masz plan, który wymaga życia, którego nie prowadzisz.',
     coreInsight: 'Przeładowany harmonogram bez wersji minimum rozsypuje się przy pierwszym pożarze w pracy lub braku energii.',
-    mirrorText: 'Gdy masz idealny tydzień, trenujesz i jesz świetnie. Gdy pojawia się chaos w pracy, plan odpada w 100%, bo brakuje elastycznej struktury.',
+    mirrorText: 'Gdy masz idealny tydzień, trenujesz i jesz jak trzeba. Gdy w pracy się pali, plan pada w całości, bo nie ma wersji minimum na gorszy dzień.',
     primaryDomain: 'training',
   },
   profile_e: {
