@@ -44,6 +44,23 @@ export async function POST(req: NextRequest) {
       ? 'CIEPŁY. Chce z kimś, ale nie docisnij od razu. Zbuduj 2-3 wymiany, potem miękko rzuć współpracę.'
       : 'ZIMNY albo woli sam. Otwórz wartością, zero pitchu. Daj jeden konkret z jego wyniku, zbuduj zaufanie, wróć później.';
 
+    // ── PELNA ZAGRYWKA DM: pogleb (forma/energia/libido) -> drugie dno + koszt -> most ──
+    const key = s(b.archetypKey, 40);
+    const DEEPEN = [
+      '„Jak z energią i głową po południu, ciągniesz czy siadasz? A rano, budzisz się z gazem czy płasko?"',
+      '„Robisz swoje, a sylwetka stoi w miejscu, czy widać ruch? Powiedz szczerze."',
+      '„Libido, napęd, pewność siebie, tak samo jak rok, dwa temu, czy poszło w dół?"',
+    ];
+    const AWARENESS: Record<string, string> = {
+      weekend_reset: 'To nie silna wola. Jeden rozjechany weekend miesza rytm kortyzolu i podcina testosteron na dwa, trzy dni, więc tracisz nie sobotę, tylko pół tygodnia. Rok po roku to się kumuluje: forma stoi, energia siada. Za rok będziesz w tym samym miejscu, tylko starszy, jak tego nie ruszysz.',
+      wieczorny_odpad: 'Ten wieczorny odpad to nie słaby charakter. Po dniu na napięciu i krótkim śnie rośnie głód, spada sytość, mózg szuka najszybszego zejścia z obrotów. Płacisz za to gorszym jutrem i tak w kółko. Marnujesz formę, którą masz w środku, tylko sam ją sobie co wieczór odcinasz.',
+      glowa_zajezdza: 'To nie brak dyscypliny. Głowa, która po pracy nie schodzi z obrotów, trzyma Cię w trybie alarmu, ciało nie wchodzi w regenerację, sen i testosteron lecą. Rano wstajesz z mniejszym bakiem niż wczoraj. To się nakręca miesiącami, a Ty myślisz, że tak ma być.',
+      wiedza_bez_wdrozenia: 'Wiesz więcej niż połowa trenerów, a ciało tego nie pokazuje, bo mózg nagradza Cię za samą analizę, nie za wykonanie. Kolejny plan pada na pierwszym gorszym dniu. Lata lecą, wiedza rośnie, forma stoi. Brakuje nie wiedzy, tylko kogoś, kto Cię z niej rozliczy.',
+      silnik_bez_paliwa: 'Wyniki w normie to nie to samo co forma. Spłycony sen, nierozładowany stres i nieregularne posiłki robią cichy wyciek, chodzisz zauważalnie poniżej swojego pułapu i myślisz, że tak już wyglądasz. Ten zapas siedzi pod jednym przeciekiem. Im dłużej stoi, tym więcej go tracisz.',
+    };
+    const awareness = AWARENESS[key] || 'To, co czujesz, to nie lenistwo, tylko konkretny wyciek w tygodniu, który sam się nie zatka. Im dłużej stoi, tym więcej formy i energii tracisz.';
+    const BRIDGE = 'Słuchaj, dokładnie w takich przypadkach pracuję z chłopakami: ogarniamy głowę, sen, hormony i formę naraz, bo to jeden mechanizm, nie osobne tematy. Jak czujesz, że to Twoje, pokażę Ci jak wygląda robota ze mną i powiem wprost, czy widzę potencjał, żeby Cię ruszyć. Zobacz najpierw: nabor.talerzihantle.com';
+
     const lines = [
       `${ico} LEAD DIAGNOSTYKA${priority ? ' — PRIORYTET 1:1' : ''}`,
       `Wynik ${score}/100 (${s(b.segment, 20)}) · ${s(b.archetyp, 60)}`,
@@ -57,7 +74,15 @@ export async function POST(req: NextRequest) {
     const res = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ chat_id: chat, text: [...lines, '', '✍️ NAPISZ DO NIEGO:', opener, '', `🎯 JAK GRAĆ: ${closer}`].join('\n'), disable_web_page_preview: true }),
+      body: JSON.stringify({ chat_id: chat, text: [
+        ...lines,
+        '', '━━━ ZAGRYWKA DM ━━━',
+        '', '1) OTWÓRZ:', opener,
+        '', '2) POGŁĘB (o formę i samopoczucie):', ...DEEPEN,
+        '', '3) DRUGIE DNO (uświadom, pokaż koszt):', awareness,
+        '', '4) MOST (gdy odpisze ciepło):', BRIDGE,
+        '', `🎯 JAK GRAĆ: ${closer}`,
+      ].join('\n'), disable_web_page_preview: true }),
     });
     return NextResponse.json({ ok: res.ok });
   } catch {
