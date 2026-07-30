@@ -1,6 +1,7 @@
 import type { WeekPlan, DayState } from '../lib/week-plan';
 import SaveCardButton from './SaveCardButton';
 import { PROOF } from '../lib/proof';
+import { Atmosphere } from '../diagnoza/atmosphere';
 
 // ── KARTA TYGODNIA ──
 // Sygnatura: krzywa napięcia tygodnia (linia jak z odczytu kortyzolu/tętna),
@@ -8,7 +9,7 @@ import { PROOF } from '../lib/proof';
 // liczona ze stanów dni. Reszta strony trzyma się cicho wokół tej jednej rzeczy.
 
 const C = {
-  ink: '#0b0b0c', panel: '#141416', panel2: '#1a1a1d', line: '#26262b', line2: '#33333a',
+  ink: '#08080a', panel: '#141416', panel2: '#1a1a1d', line: '#26262b', line2: '#33333a',
   gold: '#c8a84e', goldBright: '#e8cc80', goldDeep: '#8a7535', goldGlow: 'rgba(200,168,78,0.18)', numGold: '#ab9147',
   amber: '#e0812e', hot: '#e0552e',
   paper: '#ece7db', mute: '#a49e92', faint: '#8f887c',
@@ -70,13 +71,16 @@ function TensionCurve({ week }: { week: WeekPlan['week'] }) {
           <stop offset={`${(peak / (week.length - 1)) * 100}%`} stopColor={C.goldBright} />
           <stop offset="100%" stopColor={C.amber} />
         </linearGradient>
+        <filter id="wpGlow" x="-30%" y="-70%" width="160%" height="240%">
+          <feGaussianBlur stdDeviation="7" result="b" /><feMerge><feMergeNode in="b" /><feMergeNode in="SourceGraphic" /></feMerge>
+        </filter>
       </defs>
       {/* siatka odniesienia */}
       {[0.5].map((f) => (
         <line key={f} x1={padX} x2={W - padX} y1={padTop + innerH * f} y2={padTop + innerH * f} stroke={C.line} strokeWidth="1" strokeDasharray="2 5" />
       ))}
       <path d={area} fill="url(#wpArea)" className="wp-area" />
-      <path d={line} fill="none" stroke="url(#wpStroke)" strokeWidth="2.5" strokeLinecap="round" pathLength={1} className="wp-line" />
+      <path d={line} fill="none" stroke="url(#wpStroke)" strokeWidth="3" strokeLinecap="round" filter="url(#wpGlow)" pathLength={1} className="wp-line" />
       {/* pionowa prowadnica piku (tylko gdy jest realne pęknięcie) */}
       {hasBreak && (
         <line x1={peakPt.x} x2={peakPt.x} y1={peakPt.y} y2={padTop + innerH} stroke={C.hot} strokeWidth="1" strokeDasharray="3 3" opacity="0.5" />
@@ -120,6 +124,7 @@ export default function WeekPage({ plan, imie, naborHref = 'https://nabor.talerz
   return (
     <div className="wp" style={{ background: C.ink, color: C.paper, fontFamily: C.sans, minHeight: '100vh' }}>
       <style>{css}</style>
+      <Atmosphere />
       <div className="wp-gutter wp-gutter-l" aria-hidden />
       <div className="wp-gutter wp-gutter-r" aria-hidden>
         <span className="wp-gutter-tag">HANTLE I TALERZ · KARTA TYGODNIA</span>
@@ -154,7 +159,7 @@ export default function WeekPage({ plan, imie, naborHref = 'https://nabor.talerz
         {/* II. TWOJ TYDZIEN: sygnatura */}
         <section className="wp-rise" style={{ marginBottom: 72 }}>
           <Eyebrow n="II">Twój tydzień</Eyebrow>
-          <div style={{ background: `linear-gradient(180deg, ${C.panel}, ${C.ink})`, border: `1px solid ${C.line}`, borderRadius: 18, padding: '20px 14px 8px' }}>
+          <div className="wp-signal" style={{ background: `linear-gradient(180deg, ${C.panel}, ${C.ink})`, border: `1px solid ${C.goldDeep}`, borderRadius: 24, padding: '20px 14px 8px', boxShadow: `0 0 0 1px rgba(200,168,78,0.22), 0 0 46px rgba(200,168,78,0.18), 0 42px 84px -30px rgba(0,0,0,0.85), inset 0 1px 0 rgba(255,255,255,0.06)` }}>
             <TensionCurve week={plan.week} />
           </div>
           {/* ledger dni */}
@@ -372,4 +377,6 @@ const css = `
 @keyframes wpDraw { to { stroke-dashoffset:0; } }
 @keyframes wpFade { to { opacity:1; } }
 @keyframes wpPulse { 0%,100%{ r:5.5; opacity:1 } 50%{ r:7; opacity:.75 } }
+.wp-signal { transition: box-shadow .35s ease, transform .35s cubic-bezier(.2,.7,.2,1); }
+.wp-signal:hover { transform: translateY(-3px); box-shadow: 0 0 0 1px rgba(200,168,78,0.35), 0 0 64px rgba(200,168,78,0.26), 0 52px 100px -30px rgba(0,0,0,0.9), inset 0 1px 0 rgba(255,255,255,0.09); }
 `;

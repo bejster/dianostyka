@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { QUESTIONS, QuestionDef, QuestionOption } from '../lib/assessment-config';
 import { RawAnswers } from '../lib/scoring-engine';
+import { Atmosphere } from '../diagnoza/atmosphere';
 
 interface Props {
   onComplete: (answers: RawAnswers) => void;
@@ -157,13 +158,16 @@ export default function SingleQuestionFlow({ onComplete, initialAnswers }: Props
   return (
     <div style={{
       minHeight: '100vh',
-      background: '#0e0e0e',
+      background: '#08080a',
       color: '#f0f0f0',
       display: 'flex',
       flexDirection: 'column',
       fontFamily: '"Inter", sans-serif',
       boxSizing: 'border-box',
+      position: 'relative',
+      overflow: 'hidden',
     }}>
+      <Atmosphere />
       {/* ── TOP BAR: PROGRESS BAR + SEKCJA ── */}
       <div style={{
         position: 'sticky', top: 0, zIndex: 50, background: 'rgba(14,14,14,0.95)',
@@ -212,6 +216,7 @@ export default function SingleQuestionFlow({ onComplete, initialAnswers }: Props
       <div style={{
         flex: 1, maxWidth: 520, width: '100%', margin: '0 auto', padding: '24px 20px 100px',
         display: 'flex', flexDirection: 'column', justifyContent: 'center', boxSizing: 'border-box',
+        position: 'relative', zIndex: 1,
         opacity: transitionState === 'out' ? 0 : 1,
         transform: transitionState === 'out' ? 'translateY(-12px)' : transitionState === 'in' ? 'translateY(12px)' : 'none',
         transition: 'opacity 0.2s ease, transform 0.2s ease',

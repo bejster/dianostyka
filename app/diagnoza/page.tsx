@@ -11,9 +11,10 @@ import { calculateScoring, type RawAnswers, type ScoringResult } from '../lib/sc
 import { answersToFD } from '../lib/answers-to-fd';
 import { score, costs, pickArchetype, tagScoreWeighted, hourRange } from '../lib/diagnostic-core';
 import { buildWeekPlan } from '../lib/week-plan';
+import { Atmosphere } from './atmosphere';
 
 const GOLD = '#c8a84e';
-const BG = '#0e0e0e';
+const BG = '#08080a';
 
 type Phase = 'intro' | 'intake' | 'teaser' | 'gate' | 'done';
 
@@ -131,8 +132,9 @@ export default function DiagnozaPage() {
 
   if (phase === 'intro') {
     return (
-      <div style={{ minHeight: '100vh', background: BG, color: '#ece7db', fontFamily: '"Inter", sans-serif', display: 'flex', flexDirection: 'column', justifyContent: 'center', padding: '32px 22px', boxSizing: 'border-box' }}>
-        <div style={{ maxWidth: 480, margin: '0 auto', width: '100%' }}>
+      <div style={{ minHeight: '100vh', background: BG, color: '#ece7db', fontFamily: '"Inter", sans-serif', display: 'flex', flexDirection: 'column', justifyContent: 'center', padding: '32px 22px', boxSizing: 'border-box', position: 'relative', overflow: 'hidden' }}>
+        <Atmosphere />
+        <div style={{ maxWidth: 480, margin: '0 auto', width: '100%', position: 'relative', zIndex: 1 }}>
           <div style={{ fontFamily: "'JetBrains Mono', ui-monospace, monospace", fontSize: 11, letterSpacing: 3, textTransform: 'uppercase', color: GOLD, fontWeight: 700, marginBottom: 22 }}>
             Diagnostyka tygodnia &middot; ~4 min
           </div>
@@ -235,8 +237,9 @@ export default function DiagnozaPage() {
 
   if (phase === 'gate' && result) {
     return (
-      <div style={{ minHeight: '100vh', background: BG, color: '#f0f0f0', fontFamily: '"Inter", sans-serif' }}>
-        <div style={{ maxWidth: 460, margin: '0 auto', padding: '52px 20px 120px', boxSizing: 'border-box' }}>
+      <div style={{ minHeight: '100vh', background: BG, color: '#f0f0f0', fontFamily: '"Inter", sans-serif', position: 'relative', overflow: 'hidden' }}>
+        <Atmosphere />
+        <div style={{ maxWidth: 460, margin: '0 auto', padding: '52px 20px 120px', boxSizing: 'border-box', position: 'relative', zIndex: 1 }}>
           <div style={{ fontFamily: 'monospace', fontSize: 10, letterSpacing: 3, textTransform: 'uppercase', color: GOLD, fontWeight: 700, marginBottom: 16 }}>
             Krok ostatni &middot; Profil {result.profile.code}
           </div>
@@ -281,8 +284,9 @@ export default function DiagnozaPage() {
 
   // done
   return (
-    <div style={{ minHeight: '100vh', background: BG, color: '#f0f0f0', fontFamily: '"Inter", sans-serif', display: 'flex', alignItems: 'center', justifyContent: 'center', textAlign: 'center' }}>
-      <div style={{ maxWidth: 440, padding: '40px 24px' }}>
+    <div style={{ minHeight: '100vh', background: BG, color: '#f0f0f0', fontFamily: '"Inter", sans-serif', display: 'flex', alignItems: 'center', justifyContent: 'center', textAlign: 'center', position: 'relative', overflow: 'hidden' }}>
+      <Atmosphere />
+      <div style={{ maxWidth: 440, padding: '40px 24px', position: 'relative', zIndex: 1 }}>
         <div style={{ fontSize: 40, marginBottom: 16 }}>&#10003;</div>
         <h1 style={{ fontFamily: 'Georgia, serif', fontSize: 28, fontWeight: 400, color: '#fff', marginBottom: 12 }}>
           Mam Twój wynik{name.trim() ? `, ${name.trim()}` : ''}.
