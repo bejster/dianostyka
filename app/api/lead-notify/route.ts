@@ -7,7 +7,8 @@ import { NextRequest, NextResponse } from 'next/server';
 export async function POST(req: NextRequest) {
   try {
     const b = (await req.json().catch(() => ({}))) as Record<string, unknown>;
-    const token = process.env.TELEGRAM_BOT_TOKEN;
+    // Osobny bot dla leadow (Nocna Zmiana, admin w HiT Leady). Fallback na wspolny, gdy nieustawiony.
+    const token = process.env.TELEGRAM_LEADS_BOT_TOKEN || process.env.TELEGRAM_BOT_TOKEN;
     // Domyslnie kanal "HiT Leady" (chat_id z t.me/c/4328603395). Env moze nadpisac.
     const chat = process.env.TELEGRAM_LEADS_CHAT_ID || '-1004328603395';
     if (!token || !chat) {
