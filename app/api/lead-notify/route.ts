@@ -23,6 +23,26 @@ export async function POST(req: NextRequest) {
     const startMap: Record<string, string> = {
       sw_7dni: 'w tym tygodniu', sw_30dni: 'w tym miesiacu', sw_kwartal: 'za 2-3 mies', sw_sprawdzam: 'tylko sprawdza',
     };
+
+    // ── Gotowy opener DM (per archetyp, w glosie Michala) + wskazowka jak grac ──
+    const im = s(b.imie, 40);
+    const greet = im ? `Cześć ${im}` : 'Cześć';
+    const OPENERS: Record<string, string> = {
+      weekend_reset: `${greet}, widziałem Twój wynik. Piątkę dni budujesz, a weekend kasuje Ci to w dwa i w poniedziałek startujesz od minusa. Powiedz mi szczerze: ile z ostatnich czterech poniedziałków ruszyłeś z pełną głową?`,
+      wieczorny_odpad: `${greet}, Twój wynik to klasyk. W dzień ogarniasz, a wieczorem lodówka i telefon do późna przejmują stery. Ciekawi mnie jedno: ten wieczór bardziej ucieka Ci na jedzeniu czy na scrollowaniu do pierwszej?`,
+      glowa_zajezdza: `${greet}, u Ciebie ciało dostaje resztki, bo głowa po robocie nie schodzi z obrotów. Powiedz mi: o której odpuszczasz myślenie o robocie wieczorem?`,
+      wiedza_bez_wdrozenia: `${greet}, Twój wynik mówi wprost: wiedzy masz aż nadto, a tydzień wykłada Ci się na wykonaniu. Ile razy w tym roku odpaliłeś plan, który padł przed miesiącem?`,
+      silnik_bez_paliwa: `${greet}, robisz swoje, a i tak lecisz na pół mocy i coś pod spodem nie gra. Od jak dawna masz tak, że niby wszystko ok, a energii zero?`,
+    };
+    let opener = OPENERS[s(b.archetypKey, 40)] || `${greet}, widziałem Twój wynik z diagnostyki. Powiedz mi, co Cię w tym tygodniu najbardziej wkurza?`;
+    if (b.pain) opener += ` Sam napisałeś, że najbardziej wkurza Cię: „${s(b.pain, 200)}”. Od tego bym zaczął.`;
+    const intent = s(b.intencja, 20);
+    const closer = priority
+      ? 'GORĄCY. Ból wysoki, budżet jest, chce prowadzenia. Otwórz pytaniem, po 1-2 odpowiedziach proponuj rozmowę o prowadzeniu 1:1.'
+      : (intent === 'in_prowadz' || intent === 'in_zobacz')
+      ? 'CIEPŁY. Chce z kimś, ale nie docisnij od razu. Zbuduj 2-3 wymiany, potem miękko rzuć współpracę.'
+      : 'ZIMNY albo woli sam. Otwórz wartością, zero pitchu. Daj jeden konkret z jego wyniku, zbuduj zaufanie, wróć później.';
+
     const lines = [
       `${ico} LEAD DIAGNOSTYKA${priority ? ' — PRIORYTET 1:1' : ''}`,
       `Wynik ${score}/100 (${s(b.segment, 20)}) · ${s(b.archetyp, 60)}`,
@@ -36,7 +56,7 @@ export async function POST(req: NextRequest) {
     const res = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ chat_id: chat, text: lines.join('\n'), disable_web_page_preview: true }),
+      body: JSON.stringify({ chat_id: chat, text: [...lines, '', '✍️ NAPISZ DO NIEGO:', opener, '', `🎯 JAK GRAĆ: ${closer}`].join('\n'), disable_web_page_preview: true }),
     });
     return NextResponse.json({ ok: res.ok });
   } catch {

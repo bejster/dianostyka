@@ -88,6 +88,7 @@ export default function DiagnozaPage() {
         segment: segment.toUpperCase(),
         worstCat,
         archetyp: pickArchetype(D, worstCat).label,
+        archetypKey: pickArchetype(D, worstCat).key,
         godzina: hourRange(D),
         kwota: C.total,
         priority_lead: q.priorityLead,
@@ -136,26 +137,14 @@ export default function DiagnozaPage() {
         <Atmosphere />
         <div style={{ maxWidth: 480, margin: '0 auto', width: '100%', position: 'relative', zIndex: 1 }}>
           <div style={{ fontFamily: "'JetBrains Mono', ui-monospace, monospace", fontSize: 11, letterSpacing: 3, textTransform: 'uppercase', color: GOLD, fontWeight: 700, marginBottom: 22 }}>
-            Diagnostyka tygodnia &middot; 4 min &middot; bez maila
+            Darmowa diagnostyka &middot; 4 minuty &middot; wynik od razu
           </div>
-          <h1 style={{ fontFamily: "'Instrument Serif', Georgia, serif", fontSize: 'clamp(34px, 8.5vw, 54px)', lineHeight: 1.06, fontWeight: 400, color: '#fff', margin: '0 0 20px', letterSpacing: '-0.01em' }}>
-            Trenujesz, ogarniasz robotę,<br />a forma i tak stoi.<br /><span style={{ color: '#e0552e' }}>Twój tydzień pęka w jednym dniu.</span>
+          <h1 style={{ fontFamily: "'Instrument Serif', Georgia, serif", fontSize: 'clamp(38px, 9vw, 58px)', lineHeight: 1.05, fontWeight: 400, color: '#fff', margin: '0 0 20px', letterSpacing: '-0.01em' }}>
+            Nie brakuje Ci dyscypliny.<br /><span style={{ color: GOLD }}>Brakuje Ci diagnozy.</span>
           </h1>
-          <p style={{ fontSize: 16.5, color: '#c4bdb0', lineHeight: 1.65, margin: '0 0 26px' }}>
-            Pewnie nie wiesz w którym. To nie brak dyscypliny. Pięć dni budujesz, jeden gorszy dzień kasuje cały tydzień, i tak w kółko od miesięcy. Za 4 minuty pokażę Ci, gdzie dokładnie pękasz, ile to kosztuje i co zrobić jutro rano.
+          <p style={{ fontSize: 16.5, color: '#c4bdb0', lineHeight: 1.65, margin: '0 0 28px' }}>
+            Trenujesz, ogarniasz robotę, a forma stoi. Tydzień pęka Ci w jednym dniu, zwykle nie w tym, co myślisz. Za 4 minuty pokażę Ci który, ile Cię kosztuje i pierwszy ruch na jutro rano.
           </p>
-          <div style={{ display: 'grid', gap: 12, marginBottom: 30 }}>
-            {[
-              'Dzień, w którym co tydzień się wykrwawiasz, i czemu akurat on',
-              'Rachunek, który płacisz za ten wyciek co roku, w złotówkach',
-              'Jeden ruch na jutro, zanim znowu powiesz sobie „od poniedziałku”',
-            ].map((t, i) => (
-              <div key={i} style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
-                <span style={{ color: GOLD, fontWeight: 800, flexShrink: 0 }}>&rsaquo;</span>
-                <span style={{ fontSize: 15, color: '#d8d2c6', lineHeight: 1.45 }}>{t}</span>
-              </div>
-            ))}
-          </div>
           <button
             onClick={() => { setPhase('intake'); if (typeof window !== 'undefined') window.scrollTo({ top: 0 }); }}
             style={{ width: '100%', padding: '17px', borderRadius: 14, border: 'none', cursor: 'pointer', background: `linear-gradient(135deg, ${GOLD}, #8a7535)`, color: BG, fontWeight: 800, fontSize: 16, letterSpacing: 0.5 }}
