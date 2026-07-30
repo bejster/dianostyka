@@ -8,7 +8,8 @@ export async function POST(req: NextRequest) {
   try {
     const b = (await req.json().catch(() => ({}))) as Record<string, unknown>;
     const token = process.env.TELEGRAM_BOT_TOKEN;
-    const chat = process.env.TELEGRAM_LEADS_CHAT_ID || process.env.TELEGRAM_CHAT_ID;
+    // Domyslnie kanal "HiT Leady" (chat_id z t.me/c/4328603395). Env moze nadpisac.
+    const chat = process.env.TELEGRAM_LEADS_CHAT_ID || '-1004328603395';
     if (!token || !chat) {
       return NextResponse.json({ ok: false, reason: 'no_telegram_config' });
     }
