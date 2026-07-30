@@ -136,19 +136,19 @@ export default function DiagnozaPage() {
         <Atmosphere />
         <div style={{ maxWidth: 480, margin: '0 auto', width: '100%', position: 'relative', zIndex: 1 }}>
           <div style={{ fontFamily: "'JetBrains Mono', ui-monospace, monospace", fontSize: 11, letterSpacing: 3, textTransform: 'uppercase', color: GOLD, fontWeight: 700, marginBottom: 22 }}>
-            Diagnostyka tygodnia &middot; ~4 min
+            Diagnostyka tygodnia &middot; 4 min &middot; bez maila
           </div>
-          <h1 style={{ fontFamily: "'Instrument Serif', Georgia, serif", fontSize: 'clamp(34px, 8vw, 52px)', lineHeight: 1.08, fontWeight: 400, color: '#fff', margin: '0 0 20px', letterSpacing: '-0.01em' }}>
-            Trenujesz, a forma i tak stoi. Zobaczmy, gdzie Twój tydzień pęka.
+          <h1 style={{ fontFamily: "'Instrument Serif', Georgia, serif", fontSize: 'clamp(34px, 8.5vw, 54px)', lineHeight: 1.06, fontWeight: 400, color: '#fff', margin: '0 0 20px', letterSpacing: '-0.01em' }}>
+            Trenujesz, ogarniasz robotę,<br />a forma i tak stoi.<br /><span style={{ color: '#e0552e' }}>Twój tydzień pęka w jednym dniu.</span>
           </h1>
-          <p style={{ fontSize: 16, color: '#a49e92', lineHeight: 1.6, margin: '0 0 26px' }}>
-            Kilkanaście pytań. Na końcu masz Kartę Tygodnia: w którym dniu tydzień się sypie, ile Cię to kosztuje i co zrobić jutro rano. Wynik widzisz od razu, bez podawania maila.
+          <p style={{ fontSize: 16.5, color: '#c4bdb0', lineHeight: 1.65, margin: '0 0 26px' }}>
+            Pewnie nie wiesz w którym. To nie brak dyscypliny. Pięć dni budujesz, jeden gorszy dzień kasuje cały tydzień, i tak w kółko od miesięcy. Za 4 minuty pokażę Ci, gdzie dokładnie pękasz, ile to kosztuje i co zrobić jutro rano.
           </p>
           <div style={{ display: 'grid', gap: 12, marginBottom: 30 }}>
             {[
-              'Gdzie w tygodniu pękasz i dlaczego',
-              'Ile Cię ten jeden wyciek kosztuje rocznie',
-              'Pierwszy ruch, który robisz jutro rano',
+              'Dzień, w którym co tydzień się wykrwawiasz, i czemu akurat on',
+              'Rachunek, który płacisz za ten wyciek co roku, w złotówkach',
+              'Jeden ruch na jutro, zanim znowu powiesz sobie „od poniedziałku”',
             ].map((t, i) => (
               <div key={i} style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
                 <span style={{ color: GOLD, fontWeight: 800, flexShrink: 0 }}>&rsaquo;</span>
@@ -160,7 +160,7 @@ export default function DiagnozaPage() {
             onClick={() => { setPhase('intake'); if (typeof window !== 'undefined') window.scrollTo({ top: 0 }); }}
             style={{ width: '100%', padding: '17px', borderRadius: 14, border: 'none', cursor: 'pointer', background: `linear-gradient(135deg, ${GOLD}, #8a7535)`, color: BG, fontWeight: 800, fontSize: 16, letterSpacing: 0.5 }}
           >
-            Zaczynamy &rarr;
+            Pokaż mi, gdzie pękam &rarr;
           </button>
           <p style={{ fontSize: 12.5, color: '#8f887c', lineHeight: 1.55, margin: '16px 2px 0', textAlign: 'center' }}>
             Od 9 lat, ponad 180 facetów, którzy pracują głową. Piszę ja, nie zespół.
