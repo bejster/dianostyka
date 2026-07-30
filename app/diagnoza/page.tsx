@@ -98,6 +98,9 @@ export default function DiagnozaPage() {
         kiedy_start: q.startWhen,
         pain: painText,
         imie: typeof rawImie === 'string' ? rawImie : '',
+        objawy: Array.isArray(raw.symptoms_chips) ? (raw.symptoms_chips as string[]).join(',') : '',
+        triedBefore: D.triedBefore,
+        drinks: D.drinks,
       }),
     }).catch(() => {});
 

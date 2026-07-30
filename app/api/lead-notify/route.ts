@@ -46,11 +46,31 @@ export async function POST(req: NextRequest) {
 
     // ── PELNA ZAGRYWKA DM: pogleb (forma/energia/libido) -> drugie dno + koszt -> most ──
     const key = s(b.archetypKey, 40);
-    const DEEPEN = [
-      '„Jak z energią i głową po południu, ciągniesz czy siadasz? A rano, budzisz się z gazem czy płasko?"',
-      '„Robisz swoje, a sylwetka stoi w miejscu, czy widać ruch? Powiedz szczerze."',
-      '„Libido, napęd, pewność siebie, tak samo jak rok, dwa temu, czy poszło w dół?"',
+    // Pytania POGŁĘBIAJĄCE dobrane z tego, co lead zaznaczył (efekt „skąd on wie"), jedno na raz.
+    const objawy = s(b.objawy, 200).split(',').map((x) => x.trim()).filter(Boolean);
+    const Q: Record<string, string> = {
+      libido: '„Libido i poranny gaz, tak jak kilka lat temu, czy zauważalnie w dół? Pytam nie bez powodu."',
+      belly: '„Ile lat już trenujesz i co konkretnie próbowałeś, że efektu dalej nie widać? W którym momencie zawsze pada?"',
+      confidence: '„Łapiesz się czasem na tym, że omijasz lustro albo zdjęcia? Szczerze."',
+      fatigue: '„Śpisz swoje godziny, a i tak wstajesz jak po nocnej zmianie? Od jak dawna tak masz?"',
+      focus: '„Po której godzinie głowa Ci siada i lecisz już tylko na kawie?"',
+      cravings: '„Wieczorem masz kontrolę, czy lodówka wygrywa? O której się zaczyna?"',
+      anxiety: '„To napięcie schodzi wieczorem, czy leżysz i dalej mielisz robotę?"',
+      motivation: '„Dowozisz, czy robisz już tylko minimum? I od kiedy odpuściłeś to więcej?"',
+      recovery: '„Po treningu wracasz na drugi dzień, czy ciągnie się to dwa, trzy dni?"',
+      digest: '„Brzuch, wzdęcia, trawienie, dochodzi do tego, czy raczej ok?"',
+    };
+    const picked: string[] = [];
+    for (const o of objawy) { const q = Q[o]; if (q && picked.length < 2 && !picked.includes(q)) picked.push(q); }
+    if ((Number(b.triedBefore) || 0) >= 2 && picked.length < 3) picked.push('„Ile razy w tym roku odpaliłeś plan, który padł, i w którym momencie zawsze pęka? To nie przypadek."');
+    if ((Number(b.drinks) || 0) >= 6 && picked.length < 3) picked.push('„Weekend Ci to rozjeżdża, nie? Ile zajmuje Ci powrót do formy po sobocie?"');
+    const FILL = [
+      '„Jak z energią i głową po południu, ciągniesz czy siadasz?"',
+      '„Robisz swoje, a sylwetka stoi w miejscu, czy widać ruch? Szczerze."',
+      '„Libido i poranny gaz, tak jak rok temu, czy poszło w dół?"',
     ];
+    for (const f of FILL) { if (picked.length < 3 && !picked.includes(f)) picked.push(f); }
+    const DEEPEN = picked.slice(0, 3);
     const AWARENESS: Record<string, string> = {
       weekend_reset: 'To nie silna wola. Jeden rozjechany weekend miesza rytm kortyzolu i podcina testosteron na dwa, trzy dni, więc tracisz nie sobotę, tylko pół tygodnia. Rok po roku to się kumuluje: forma stoi, energia siada. Za rok będziesz w tym samym miejscu, tylko starszy, jak tego nie ruszysz.',
       wieczorny_odpad: 'Ten wieczorny odpad to nie słaby charakter. Po dniu na napięciu i krótkim śnie rośnie głód, spada sytość, mózg szuka najszybszego zejścia z obrotów. Płacisz za to gorszym jutrem i tak w kółko. Marnujesz formę, którą masz w środku, tylko sam ją sobie co wieczór odcinasz.',
@@ -78,7 +98,7 @@ export async function POST(req: NextRequest) {
         ...lines,
         '', '━━━ ZAGRYWKA DM ━━━',
         '', '1) OTWÓRZ:', opener,
-        '', '2) POGŁĘB (o formę i samopoczucie):', ...DEEPEN,
+        '', '2) POGŁĘB (jedno pytanie na raz, z tego co zaznaczył):', ...DEEPEN,
         '', '3) DRUGIE DNO (uświadom, pokaż koszt):', awareness,
         '', '4) MOST (gdy odpisze ciepło):', BRIDGE,
         '', `🎯 JAK GRAĆ: ${closer}`,
