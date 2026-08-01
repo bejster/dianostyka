@@ -81,7 +81,8 @@ export function calculateScoring(answers: RawAnswers): ScoringResult {
     sleepVal = h >= 7.5 ? 0 : h >= 6.5 ? 30 : h >= 5.5 ? 65 : 100;
   }
   const sqVal = answers.sleep_quality === 'sq_great' ? 0 : answers.sleep_quality === 'sq_ok' ? 30 : answers.sleep_quality === 'sq_heavy' ? 70 : 100;
-  const sbVal = answers.screen_bed === 'sb_60min' ? 0 : answers.screen_bed === 'sb_30min' ? 30 : answers.screen_bed === 'sb_bed' ? 75 : 100;
+  // screen_bed jest wyciety z flow; brak odpowiedzi = neutralne 30, a nie 100 (nie zawyzaj dlugu snu)
+  const sbVal = answers.screen_bed === undefined ? 30 : answers.screen_bed === 'sb_60min' ? 0 : answers.screen_bed === 'sb_30min' ? 30 : answers.screen_bed === 'sb_bed' ? 75 : 100;
   const sleepSeverity = Math.round((sleepVal * 0.4) + (sqVal * 0.35) + (sbVal * 0.25));
 
   // Domena: ENERGIA / STRES
@@ -104,9 +105,21 @@ export function calculateScoring(answers: RawAnswers): ScoringResult {
   const alcVal = answers.alcohol_intake === 'alc_zero' ? 0 : answers.alcohol_intake === 'alc_low' ? 35 : answers.alcohol_intake === 'alc_mid' ? 70 : 100;
   const weekendSeverity = Math.round((wpVal * 0.60) + (alcVal * 0.40));
 
-  // Domena: TRENING
-  const gmVal = answers.gym_miss === 'gm_never' ? 0 : answers.gym_miss === 'gm_sometimes' ? 40 : answers.gym_miss === 'gm_frequent' ? 80 : 100;
-  const trainingSeverity = gmVal;
+  // Domena: TRENING (z realnie zbieranych planned/missed; nietrenujacy = plan 0 = to NIE jest jego os awarii)
+  // Wczesniej liczylo sie z gym_miss, ktorego flow nigdy nie zbieral -> severity zawsze 100 -> trening
+  // zawsze wychodzil jako glowne domino (profil D). To bylo zrodlo "za duzo o treningu".
+  let trainingSeverity = 30;
+  if (answers.planned_trainings !== undefined) {
+    const plan = answers.planned_trainings;
+    if (plan === 0) {
+      trainingSeverity = 20; // nie trenuje, nie karzemy, to nie ta os
+    } else {
+      const missRaw = typeof answers.missed_trainings === 'number' ? answers.missed_trainings : 0;
+      const miss = Math.max(0, Math.min(missRaw, plan));
+      const missRate = miss / plan; // 0..1, ile planu realnie wypada
+      trainingSeverity = Math.round(missRate * 90); // max 90, zeby trening nie dominowal dzwigni sam z siebie
+    }
+  }
 
   // Domena: CHAOS / GŁOWA
   const chips = Array.isArray(answers.symptoms_chips) ? answers.symptoms_chips.length : 0;

@@ -1,6 +1,6 @@
 // assessment-config.ts, Wersjonowana konfiguracja pytań, domen i profili Diagnostyki Tygodnia V2
 
-export const ASSESSMENT_VERSION = '2.1.0';
+export const ASSESSMENT_VERSION = '2.2.0';
 
 export type DomainKey = 'sleep' | 'energy' | 'nutrition' | 'training' | 'weekend' | 'chaos';
 
@@ -21,32 +21,32 @@ export const DOMAINS: Record<DomainKey, DomainDef> = {
   energy: {
     key: 'energy',
     label: 'Energia i obciążenie',
-    shortLabel: 'Stres',
-    description: 'Moment pierwszego spadku energii, aktywacja osi HPA i obciążenie pracą.',
+    shortLabel: 'Głowa',
+    description: 'Moment pierwszego spadku energii, aktywacja osi HPA i ile godzin lecisz na pół mocy.',
   },
   nutrition: {
     key: 'nutrition',
     label: 'Apetyt i kontrola jedzenia',
-    shortLabel: 'Żywienie',
-    description: 'Wieczorny napad głodu, chęć na słodkie i stabilność glikemiczna.',
+    shortLabel: 'Żarcie',
+    description: 'Wieczorny napad głodu, kontrola po 18:00 i stabilność glikemiczna.',
   },
   training: {
     key: 'training',
     label: 'Trening i tarcie wykonawcze',
     shortLabel: 'Trening',
-    description: 'Dopasowanie planu do realiów, odpuszczanie i elastyczność struktury.',
+    description: 'Czy w ogóle trenujesz i czy plan przeżywa gorszy tydzień.',
   },
   weekend: {
     key: 'weekend',
     label: 'Weekend i koszt powrotu',
     shortLabel: 'Weekend',
-    description: 'Rozkojarzenie rytmu, rozbity poniedziałek i koszt regeneracji po weekendzie.',
+    description: 'Rozjazd rytmu, używki, rozbity poniedziałek i koszt regeneracji po weekendzie.',
   },
   chaos: {
     key: 'chaos',
-    label: 'Odporność, gdy tydzień się sypie',
-    shortLabel: 'Głowa',
-    description: 'Reakcja na brak idealnych warunków, prokrastynacja i powrót do planu.',
+    label: 'Napęd, głowa i libido',
+    shortLabel: 'Napęd',
+    description: 'Libido, pewność siebie, powrót po odchyleniu i to, co siada najmocniej.',
   },
 };
 
@@ -69,6 +69,7 @@ export interface QuestionDef {
   subtitle?: string;
   type: QuestionType;
   domain: DomainKey;
+  optional?: boolean; // gdy true, mozna pominac (Dalej aktywne bez odpowiedzi)
   min?: number;
   max?: number;
   step?: number;
@@ -79,22 +80,22 @@ export interface QuestionDef {
   crossDomainImpact: number; // ile innych domen pogarsza
 }
 
-// ── ŹRÓDŁO PRAWDY: pełny zestaw pytań przeniesiony 1:1 z żywej strony app/page.tsx (phase === 'form') ──
-// Copy w głosie Michała (werbatim). Każde pytanie karmi konkretne pole FD (patrz answers-to-fd.ts),
-// żeby diagnoza /diagnoza (score, catScores, archetyp, Karta) stała na pełnych danych, nie na INIT.
+// ── ŹRÓDŁO PRAWDY: pytania w głosie Michała. Oś przesunięta ze sylwetki/treningu na
+// energię, głowę, używki i libido. Trening zredukowany do 1 pytania z bramką dla nietrenujących.
 //
-// UWAGA scoring-engine.ts (calculateScoring): czyta RawAnswers po sztywnych id opcji (sq_*, sb_*, st_*,
-// bw_*, ee_*, wp_*, alc_*) oraz bierze upstreamWeight/crossDomainImpact z PIERWSZEGO pytania danej domeny.
-// Dlatego te id i wagi pierwszych pytań per domena są zachowane 1:1 z poprzednią wersją config.
+// TWARDE OGRANICZENIA SILNIKA (scoring-engine.ts + answers-to-fd.ts):
+// - id opcji scoringowych (sleep_quality sq_*, break_window bw_*, stress_level st_*,
+//   evening_eating ee_*, weekend_pattern wp_*, alcohol_intake alc_*) i ich value MUSZA zostac 1:1.
+// - upstreamWeight/crossDomainImpact PIERWSZEGO pytania danej domeny (w kolejnosci tablicy)
+//   definiuja dzwignie tej domeny w calculateScoring. Kotwice per domena zachowane.
 export const QUESTIONS: QuestionDef[] = [
-  // ── SEKCJA I: KONTEKST ──
-  // Pierwsze pytanie domeny 'sleep' -> jego wagi (0.85/0.90) definiują dźwignię snu w calculateScoring.
+  // ── SEKCJA I: KONTEKST (kotwica domeny 'sleep' -> wagi 0.85/0.90) ──
   {
     id: 'age',
     section: 'Kontekst',
     sectionNum: 'I',
     title: 'Ile masz lat?',
-    subtitle: 'Ciało czasem twierdzi, że więcej.',
+    subtitle: 'Pytam nie dla metryczki. Po trzydziestce regeneracja i testosteron nie wybaczają tego, co po dwudziestce schodziło na luzie.',
     type: 'slider',
     domain: 'sleep',
     min: 18,
@@ -108,10 +109,11 @@ export const QUESTIONS: QuestionDef[] = [
   // ── SEKCJA II: SEN ──
   {
     id: 'sleep_hours',
+    condition: () => false, // wyciete (2026-08-01), sleep_quality niesie warstwe snu
     section: 'Sen',
     sectionNum: 'II',
-    title: 'Ile godzin faktycznie śpisz',
-    subtitle: 'Leżysz 8h. Ile z tego naprawdę śpisz, a ile przewijasz telefon?',
+    title: 'Ile realnie śpisz, a nie ile leżysz?',
+    subtitle: 'Odejmij scrollowanie, wybudzenia i zasypianie. Zostaje sama jazda.',
     type: 'slider',
     domain: 'sleep',
     min: 3,
@@ -123,7 +125,7 @@ export const QUESTIONS: QuestionDef[] = [
   },
   {
     id: 'screen_bed',
-    condition: () => false, // wyciete z krotszej wersji (2026-07-28)
+    condition: () => false, // wyciete
     section: 'Sen',
     sectionNum: 'II',
     title: 'W ilu z ostatnich 7 wieczorów telefon był z Tobą do ostatnich 30 minut przed snem?',
@@ -142,61 +144,77 @@ export const QUESTIONS: QuestionDef[] = [
     id: 'sleep_quality',
     section: 'Sen',
     sectionNum: 'II',
-    title: 'Jak często budzisz się z poczuciem, że sen faktycznie Cię odnowił?',
+    title: 'Jak często wstajesz i czujesz, że sen w ogóle zadziałał?',
+    subtitle: 'Chodzi o to, czy rano faktycznie jest z czego brać.',
     type: 'single',
     domain: 'sleep',
     upstreamWeight: 0.80,
     crossDomainImpact: 0.85,
     options: [
-      { id: 'sq_great', label: 'Prawie codziennie', value: 0 },
-      { id: 'sq_ok', label: '3-4 razy w tygodniu', value: 30 },
-      { id: 'sq_heavy', label: '1-2 razy w tygodniu', value: 70 },
-      { id: 'sq_wrecked', label: 'Prawie nigdy', value: 100 },
+      { id: 'sq_great', label: 'Prawie codziennie wstaję z bakiem.', value: 0 },
+      { id: 'sq_ok', label: '3-4 razy w tygodniu.', value: 30 },
+      { id: 'sq_heavy', label: '1-2 razy. Resztę dni wstaję na siłę.', value: 70 },
+      { id: 'sq_wrecked', label: 'Prawie nigdy. Budzik to codzienny cios.', value: 100 },
     ],
   },
   {
     id: 'break_window',
     section: 'Sen',
     sectionNum: 'II',
-    title: 'Kiedy zaczyna się pierwszy moment, po którym dzień się sypie?',
-    subtitle: 'Chodzi o pierwszy ruch, po którym reszta się rozjeżdża, zanim jeszcze widać skutki.',
+    title: 'O której godzinie dzień zaczyna Ci się sypać?',
+    subtitle: 'Nie kiedy to widać. Kiedy to się zaczyna. Ten pierwszy moment, po którym reszta leci z górki.',
     type: 'single',
     domain: 'sleep',
     upstreamWeight: 0.75,
     crossDomainImpact: 0.75,
     options: [
-      { id: 'bw_morning', label: 'Zaraz po przebudzeniu. Budzik, telefon, kawa, start na minusie.', value: 60 },
-      { id: 'bw_midday', label: 'Między 10:00 a 14:00. Odpływam, odkładam pierwsze ważne rzeczy.', value: 50 },
-      { id: 'bw_afternoon', label: 'Między 14:00 a 18:00. Kończy się skupienie, dowożę już tylko minimum.', value: 75 },
-      { id: 'bw_afterwork', label: 'Między 18:00 a 21:00. Odpada trening, normalny posiłek albo plan na wieczór.', value: 80 },
-      { id: 'bw_evening', label: 'Po 21:00. Telefon, lodówka i przesuwanie snu przejmują stery.', value: 90 },
-      { id: 'bw_weekend', label: 'Dopiero weekend. W tygodniu trzymam, piątek albo sobota kasuje rytm.', value: 85 },
-      { id: 'bw_varies', label: 'Nie ma jednego momentu. Rozsypuje się różnie.', value: 70 },
+      { id: 'bw_morning', label: 'Od rana. Budzik, telefon, kawa i już jadę pod kreską.', value: 60 },
+      { id: 'bw_midday', label: 'Przed obiadem. Odpływam, najważniejsze odkładam na potem.', value: 50 },
+      { id: 'bw_afternoon', label: 'Po 14. Skupienie siada, dowożę tylko to, co muszę.', value: 75 },
+      { id: 'bw_afterwork', label: 'Po robocie. Na trening i normalne jedzenie nie zostaje już nic.', value: 80 },
+      { id: 'bw_evening', label: 'Wieczorem. Telefon, lodówka i przesuwanie snu przejmują stery.', value: 90 },
+      { id: 'bw_weekend', label: 'Dopiero weekend. W tygodniu trzymam, piątek albo sobota kasuje wszystko.', value: 85 },
+      { id: 'bw_varies', label: 'Nie ma jednej godziny. Każdego dnia sypie się inaczej.', value: 70 },
     ],
   },
 
-  // ── SEKCJA III: ENERGIA ──
-  // Pierwsze pytanie domeny 'energy' -> wagi 0.70/0.75 (zachowane 1:1 dla dźwigni energii w calculateScoring).
+  // ── SEKCJA III: GŁOWA I ENERGIA (kotwica domeny 'energy' -> wagi 0.70/0.75) ──
   {
     id: 'stress_level',
-    section: 'Energia',
+    section: 'Głowa',
     sectionNum: 'III',
-    title: 'W ilu z ostatnich 7 wieczorów ciało już siedziało, a głowa dalej była w robocie?',
+    title: 'Wieczorem ciało już leży, a głowa dalej miele robotę?',
+    subtitle: 'Ile z ostatnich 7 wieczorów tak wyglądało.',
     type: 'single',
     domain: 'energy',
     upstreamWeight: 0.70,
     crossDomainImpact: 0.75,
     options: [
-      { id: 'st_low', label: '0-1, głowa gaśnie razem ze światłem', value: 0 },
-      { id: 'st_mid', label: '2-3, czasem mielę jeszcze robotę', value: 40 },
-      { id: 'st_high', label: '4-5, leżę i planuję jutro', value: 80 },
-      { id: 'st_max', label: '6-7, zasypiam z listą w głowie', value: 100 },
+      { id: 'st_low', label: 'Prawie nigdy. Gasnę razem ze światłem.', value: 0 },
+      { id: 'st_mid', label: 'Czasem. 2-3 wieczory jeszcze przeżuwam jutro.', value: 40 },
+      { id: 'st_high', label: 'Często. 4-5 wieczorów leżę i planuję.', value: 80 },
+      { id: 'st_max', label: 'Codziennie. Zasypiam z listą w głowie.', value: 100 },
     ],
   },
   {
+    id: 'half_power_hours',
+    section: 'Głowa',
+    sectionNum: 'III',
+    title: 'Ile godzin dziennie lecisz na pół mocy?',
+    subtitle: 'Siedzisz, klikasz, niby robisz. Ale głowy tam nie ma i sam o tym wiesz. Policz te godziny.',
+    type: 'slider',
+    domain: 'energy',
+    min: 0,
+    max: 4,
+    step: 0.5,
+    unit: 'h',
+    upstreamWeight: 0.65,
+    crossDomainImpact: 0.65,
+  },
+  {
     id: 'energy_mornings',
-    condition: () => false, // wyciete z krotszej wersji (2026-07-28)
-    section: 'Energia',
+    condition: () => false, // wyciete
+    section: 'Głowa',
     sectionNum: 'III',
     title: 'Jak często budzisz się z poczuciem, że spałbyś od razu jeszcze dwie godziny?',
     type: 'single',
@@ -210,114 +228,32 @@ export const QUESTIONS: QuestionDef[] = [
       { id: 'en_3', label: '5-7 poranków', value: 100 },
     ],
   },
-  {
-    id: 'dopamine_pull',
-    condition: () => false, // wyciete z krotszej wersji (2026-07-28)
-    section: 'Energia',
-    sectionNum: 'III',
-    title: 'Co się dzieje, gdy trafiasz na nudne albo trudne zadanie?',
-    type: 'single',
-    domain: 'energy',
-    upstreamWeight: 0.65,
-    crossDomainImpact: 0.70,
-    options: [
-      { id: 'dop_0', label: 'Zostaję przy nim bez sięgania po telefon.', value: 0 },
-      { id: 'dop_1', label: 'Po kilku minutach zaczynam szukać przerwy.', value: 33 },
-      { id: 'dop_2', label: 'Łapię telefon przy prawie każdym postoju.', value: 66 },
-      { id: 'dop_3', label: 'Bez dodatkowego bodźca nie wytrzymuję nawet 15-20 minut.', value: 100 },
-    ],
-  },
-  {
-    id: 'work_hours',
-    condition: () => false, // wyciete z krotszej wersji (2026-07-28)
-    section: 'Energia',
-    sectionNum: 'III',
-    title: 'Ile godzin dziennie pracujesz?',
-    subtitle: 'Dwie liczby. Z nich wychodzi, ile ten stan kosztuje Cię w robocie.',
-    type: 'slider',
-    domain: 'energy',
-    min: 4,
-    max: 14,
-    step: 1,
-    unit: 'h',
-    upstreamWeight: 0.70,
-    crossDomainImpact: 0.75,
-  },
-  {
-    id: 'half_power_hours',
-    condition: () => false, // wyciete z krotszej wersji (2026-07-28)
-    section: 'Energia',
-    sectionNum: 'III',
-    title: 'Ile z nich lecisz na pół mocy?',
-    subtitle: 'Siedzisz przy ekranie, klikasz, ale głowy tam nie ma. Policz te godziny.',
-    type: 'slider',
-    domain: 'energy',
-    min: 0,
-    max: 4,
-    step: 0.5,
-    unit: 'h',
-    upstreamWeight: 0.60,
-    crossDomainImpact: 0.65,
-  },
 
-  // ── SEKCJA IV: APETYT ──
-  // Pierwsze pytanie domeny 'nutrition' -> wagi 0.85/0.75 (zachowane 1:1 dla dźwigni żywienia).
+  // ── SEKCJA IV: ŻARCIE (kotwica domeny 'nutrition' -> wagi 0.85/0.75) ──
   {
     id: 'evening_eating',
-    section: 'Apetyt',
+    section: 'Żarcie',
     sectionNum: 'IV',
-    title: 'Co najczęściej dzieje się z jedzeniem między 18:00 a snem?',
+    title: 'Co się dzieje z żarciem między 18:00 a snem?',
+    subtitle: 'Wieczorem hamulce puszczają pierwsze. Powiedz, jak jest u Ciebie.',
     type: 'single',
     domain: 'nutrition',
     upstreamWeight: 0.85,
     crossDomainImpact: 0.75,
     options: [
-      { id: 'ee_clean', label: 'Jem zaplanowany posiłek i temat jest zamknięty.', value: 0 },
+      { id: 'ee_clean', label: 'Jem to, co miałem zjeść, i temat zamknięty.', value: 0 },
       { id: 'ee_snack', label: 'Dochodzi jedna nieplanowana przekąska.', value: 45 },
-      { id: 'ee_binge', label: '1-2 razy w tygodniu jem znacznie więcej, niż planowałem.', value: 70 },
-      { id: 'ee_uncontrolled', label: '3 albo więcej wieczorów kończy się jedzeniem bez kontroli.', value: 90 },
-      { id: 'ee_chaos', label: 'Każdy wieczór wygląda inaczej, nie mam żadnego rytmu.', value: 100 },
-    ],
-  },
-  {
-    id: 'veggies_days',
-    condition: () => false, // wyciete z krotszej wersji (2026-07-28)
-    section: 'Apetyt',
-    sectionNum: 'IV',
-    title: 'W ilu z ostatnich 7 dni jadłeś warzywa lub owoce przynajmniej 3 razy?',
-    type: 'single',
-    domain: 'nutrition',
-    upstreamWeight: 0.45,
-    crossDomainImpact: 0.40,
-    options: [
-      { id: 'veg_0', label: '6-7 dni', value: 0 },
-      { id: 'veg_1', label: '2-5 dni', value: 50 },
-      { id: 'veg_2', label: '0-1 dni', value: 100 },
-    ],
-  },
-  {
-    id: 'protein_days',
-    condition: () => false, // wyciete z krotszej wersji (2026-07-28)
-    section: 'Apetyt',
-    sectionNum: 'IV',
-    title: 'W ilu z ostatnich 7 dni miałeś 3 normalne posiłki z konkretnym białkiem?',
-    subtitle: 'Mięso, ryby, jajka, nabiał. Nie „coś się zjadło".',
-    type: 'single',
-    domain: 'nutrition',
-    upstreamWeight: 0.50,
-    crossDomainImpact: 0.45,
-    options: [
-      { id: 'pro_0', label: '6-7 dni, prawie zawsze', value: 0 },
-      { id: 'pro_1', label: '2-5 dni, jak wyjdzie', value: 50 },
-      { id: 'pro_2', label: '0-1 dni, głównie na skróty', value: 100 },
+      { id: 'ee_binge', label: '1-2 razy w tygodniu leci dużo więcej, niż zakładałem.', value: 70 },
+      { id: 'ee_uncontrolled', label: '3 wieczory albo więcej kończą się żarciem bez hamulca.', value: 90 },
+      { id: 'ee_chaos', label: 'Każdy wieczór inny, żadnego rytmu.', value: 100 },
     ],
   },
   {
     id: 'takeout_cost',
-    section: 'Apetyt',
+    section: 'Żarcie',
     sectionNum: 'IV',
-    title: 'Ile miesięcznie idzie na dowóz i jedzenie na mieście?',
-    subtitle: 'Glovo, kebab pod blokiem, gotowce z Żabki. To liczba, którą sam podajesz i tylko ona wchodzi do rachunku.',
+    title: 'Ile miesięcznie schodzi na dowozy i jedzenie na mieście?',
+    subtitle: 'Glovo, kebab pod blokiem, gotowce z Żabki. Rzuć kwotą z głowy, nikt tego nie sprawdza.',
     type: 'slider',
     domain: 'nutrition',
     min: 0,
@@ -328,14 +264,13 @@ export const QUESTIONS: QuestionDef[] = [
     crossDomainImpact: 0.40,
   },
 
-  // ── SEKCJA V: TRENING ──
-  // Pierwsze pytanie domeny 'training' -> wagi 0.70/0.65 (zachowane 1:1 dla dźwigni treningu).
+  // ── SEKCJA V: TRENING (kotwica domeny 'training' -> wagi 0.70/0.65; nietrenujacy = plan 0) ──
   {
     id: 'planned_trainings',
     section: 'Trening',
     sectionNum: 'V',
-    title: 'Ile treningów w tygodniu sobie zakładasz?',
-    subtitle: 'Dwie liczby, między którymi mieszka cała prawda o Twojej formie. Zero treningów to też odpowiedź.',
+    title: 'Ile razy w tygodniu zakładasz, że trenujesz?',
+    subtitle: 'Zero to też odpowiedź. Nie każdy musi żyć na siłowni i nie o to tu chodzi.',
     type: 'slider',
     domain: 'training',
     min: 0,
@@ -347,10 +282,11 @@ export const QUESTIONS: QuestionDef[] = [
   },
   {
     id: 'missed_trainings',
+    condition: (a) => typeof a.planned_trainings === 'number' && a.planned_trainings >= 1, // bramka: pytaj tylko trenujacych
     section: 'Trening',
     sectionNum: 'V',
-    title: 'Ile z nich zwykle wypada przez zmęczenie, brak czasu, rozsypany tydzień?',
-    subtitle: 'Nie policzy się więcej, niż planujesz.',
+    title: 'Ile z nich zwykle wypada, jak tydzień się rozjedzie?',
+    subtitle: 'Zmęczenie, brak czasu, rozwalony rytm. Więcej, niż w ogóle zaplanowałeś, i tak nie wypadnie.',
     type: 'slider',
     domain: 'training',
     min: 0,
@@ -360,55 +296,23 @@ export const QUESTIONS: QuestionDef[] = [
     upstreamWeight: 0.70,
     crossDomainImpact: 0.65,
   },
-  {
-    id: 'train_years',
-    condition: () => false, // wyciete z krotszej wersji (2026-07-28)
-    section: 'Trening',
-    sectionNum: 'V',
-    title: 'Od ilu lat trenujesz?',
-    type: 'slider',
-    domain: 'training',
-    min: 0,
-    max: 15,
-    step: 1,
-    unit: ' lat',
-    upstreamWeight: 0.40,
-    crossDomainImpact: 0.35,
-  },
-  {
-    id: 'train_happy',
-    section: 'Trening',
-    sectionNum: 'V',
-    title: 'Widać po Tobie te lata treningu?',
-    subtitle: 'Szczerze. Nikt tego nie widzi poza Tobą.',
-    type: 'single',
-    domain: 'training',
-    upstreamWeight: 0.55,
-    crossDomainImpact: 0.50,
-    options: [
-      { id: 'th_0', label: 'Tak, jestem zadowolony', value: 0 },
-      { id: 'th_1', label: 'Częściowo, powinno być lepiej', value: 55 },
-      { id: 'th_2', label: 'Nie, wkładam dużo więcej niż widać', value: 100 },
-      { id: 'th_3', label: 'Dopiero zaczynam, za wcześnie oceniać', value: 20 },
-    ],
-  },
 
-  // ── SEKCJA VI: WEEKEND ──
-  // Pierwsze pytanie domeny 'weekend' -> wagi 0.85/0.85 (zachowane 1:1 dla dźwigni weekendu).
+  // ── SEKCJA VI: WEEKEND (kotwica domeny 'weekend' -> wagi 0.85/0.85) ──
   {
     id: 'weekend_pattern',
     section: 'Weekend',
     sectionNum: 'VI',
-    title: 'Jak często weekend wyraźnie rusza Ci sen, jedzenie albo poziom ruchu?',
+    title: 'Jak często weekend wywala Ci sen, żarcie albo ruch?',
+    subtitle: 'Weekend rozwala rytm, który budujesz przez cały tydzień?',
     type: 'single',
     domain: 'weekend',
     upstreamWeight: 0.85,
     crossDomainImpact: 0.85,
     options: [
-      { id: 'wp_same', label: 'Prawie nigdy', value: 0 },
-      { id: 'wp_slight', label: 'Raz w miesiącu', value: 35 },
-      { id: 'wp_shifted', label: '2-3 weekendy w miesiącu', value: 75 },
-      { id: 'wp_reset', label: 'Prawie każdy weekend', value: 100 },
+      { id: 'wp_same', label: 'Prawie nigdy. Weekend wygląda jak reszta tygodnia.', value: 0 },
+      { id: 'wp_slight', label: 'Raz na miesiąc coś się rozjedzie.', value: 35 },
+      { id: 'wp_shifted', label: '2-3 weekendy w miesiącu.', value: 75 },
+      { id: 'wp_reset', label: 'Prawie każdy weekend kasuje rytm.', value: 100 },
     ],
   },
   {
@@ -422,11 +326,11 @@ export const QUESTIONS: QuestionDef[] = [
     upstreamWeight: 0.80,
     crossDomainImpact: 0.90,
     options: [
-      { id: 'alc_zero', label: 'Czysto, nie ruszam', value: 0 },
-      { id: 'alc_low', label: 'Kilka piw, nic dzikiego', value: 35 },
-      { id: 'alc_mid', label: 'Solidnie, czasem urywa mi się film', value: 70 },
-      { id: 'alc_high', label: 'Alkohol plus coś jeszcze, zioło albo prochy', value: 90 },
-      { id: 'alc_extreme', label: 'Mocno i nie tylko w weekend', value: 100 },
+      { id: 'alc_zero', label: 'Czysto, nie ruszam.', value: 0 },
+      { id: 'alc_low', label: 'Kilka piw, nic dzikiego.', value: 35 },
+      { id: 'alc_mid', label: 'Solidnie, czasem urywa mi się film.', value: 70 },
+      { id: 'alc_high', label: 'Alkohol plus coś jeszcze, zioło albo prochy.', value: 90 },
+      { id: 'alc_extreme', label: 'Mocno i nie tylko w weekend.', value: 100 },
     ],
   },
   {
@@ -434,7 +338,7 @@ export const QUESTIONS: QuestionDef[] = [
     section: 'Weekend',
     sectionNum: 'VI',
     title: 'Ile schodzi, jak już wyjdziesz?',
-    subtitle: 'Alkohol, kluby, taksówki, jedzenie, cokolwiek. Jedno typowe wyjście.',
+    subtitle: 'Alkohol, kluby, taxi, jedzenie, cokolwiek. Jedno typowe wyjście.',
     type: 'slider',
     domain: 'weekend',
     min: 0,
@@ -447,86 +351,66 @@ export const QUESTIONS: QuestionDef[] = [
   },
   {
     id: 'monday_recovery',
-    condition: () => false, // wyciete z krotszej wersji (2026-07-28)
     section: 'Weekend',
     sectionNum: 'VI',
-    title: 'Kiedy po weekendzie sen, energia i głowa wracają do normy?',
-    subtitle: 'Żeby było jak w środku tygodnia.',
+    title: 'Ile dni po weekendzie zdychasz, zanim wrócisz do formy?',
+    subtitle: 'Żeby głowa, energia i sen były znowu takie jak w środku tygodnia.',
     type: 'single',
     domain: 'weekend',
     upstreamWeight: 0.70,
     crossDomainImpact: 0.75,
     options: [
-      { id: 'mon_0', label: 'Od poniedziałkowego rana', value: 0 },
-      { id: 'mon_1', label: 'W poniedziałek po południu', value: 40 },
-      { id: 'mon_2', label: 'Dopiero we wtorek', value: 70 },
-      { id: 'mon_3', label: 'W środę albo później', value: 100 },
-    ],
-  },
-  {
-    id: 'weekend_break',
-    section: 'Weekend',
-    sectionNum: 'VI',
-    title: 'Co się sypie w weekend najmocniej?',
-    type: 'single',
-    domain: 'weekend',
-    condition: () => false, // wyciete z krotszej wersji (2026-07-28)
-    upstreamWeight: 0.60,
-    crossDomainImpact: 0.55,
-    options: [
-      { id: 'ww_0', label: 'Sen i pobudki, wstaję w południe', value: 60 },
-      { id: 'ww_1', label: 'Jedzenie leci luzem', value: 60 },
-      { id: 'ww_2', label: 'Zero ruchu, kanapa i telefon', value: 60 },
-      { id: 'ww_3', label: 'Alkohol i powrót do siebie', value: 60 },
+      { id: 'mon_0', label: 'Zero. W poniedziałek rano jestem gotowy.', value: 0 },
+      { id: 'mon_1', label: 'Poniedziałek po południu odbijam.', value: 40 },
+      { id: 'mon_2', label: 'Dopiero wtorek.', value: 70 },
+      { id: 'mon_3', label: 'Środa albo później. Pół tygodnia zdycham.', value: 100 },
     ],
   },
 
-  // ── SEKCJA VII: GŁOWA ──
-  // Pierwsze pytanie domeny 'chaos' -> wagi 0.60/0.80 (zachowane 1:1 dla dźwigni głowy).
-  // morningWood i objawy karmią hormony/tags; user_pain zostaje na końcu (input do LLM reframe).
+  // ── SEKCJA VII: NAPĘD, GŁOWA I LIBIDO (kotwica domeny 'chaos' -> wagi 0.60/0.80) ──
   {
     id: 'symptoms_chips',
-    section: 'Głowa',
+    section: 'Napęd',
     sectionNum: 'VII',
-    title: 'Które sygnały przeszkadzały Ci najbardziej w ostatnich tygodniach?',
-    subtitle: 'Wybierz maksymalnie 3. Objawy czysto medyczne (bóle głowy, stawy, tętno) omawia się z lekarzem, nie zalicza do wyniku.',
+    title: 'Co ostatnio najbardziej Ci siadało?',
+    subtitle: 'Zaznacz maksymalnie 3, te które czujesz najmocniej. Czysto medyczne rzeczy (bóle, stawy, tętno) zostaw lekarzowi, tu ich nie liczę.',
     type: 'multi',
     domain: 'chaos',
     upstreamWeight: 0.60,
     crossDomainImpact: 0.80,
     options: [
-      { id: 'fatigue', label: 'Zmęczenie mimo wystarczającej liczby godzin snu.', value: 20 },
-      { id: 'focus', label: 'Trudność z utrzymaniem skupienia.', value: 20 },
-      { id: 'cravings', label: 'Wieczorne jedzenie bez kontroli, głód na słodkie.', value: 15 },
-      { id: 'belly', label: 'Brak efektów sylwetkowych mimo regularnych prób.', value: 20 },
-      { id: 'recovery', label: 'Wolniejsza regeneracja po treningu.', value: 15 },
-      { id: 'libido', label: 'Spadek libido albo zainteresowania seksem.', value: 20 },
-      { id: 'anxiety', label: 'Napięcie i rozdrażnienie, które nie schodzą wieczorem.', value: 20 },
-      { id: 'digest', label: 'Problemy z trawieniem albo częste wzdęcia.', value: 15 },
-      { id: 'motivation', label: 'Napęd siada, robisz tylko minimum.', value: 15 },
-      { id: 'confidence', label: 'Mniej pewny siebie niż rok temu, unikasz luster.', value: 15 },
+      { id: 'fatigue', label: 'Zmęczenie, mimo że przesypiam swoje godziny.', value: 20 },
+      { id: 'focus', label: 'Nie utrzymam skupienia dłużej niż chwilę.', value: 20 },
+      { id: 'cravings', label: 'Wieczorne żarcie i głód na słodkie bez hamulca.', value: 15 },
+      { id: 'belly', label: 'Zero efektów na sylwetce, mimo że coś tam próbuję.', value: 20 },
+      { id: 'recovery', label: 'Wolno wracam po treningu albo po cięższym dniu.', value: 15 },
+      { id: 'libido', label: 'Libido i ochota na seks poszły w dół.', value: 20 },
+      { id: 'anxiety', label: 'Napięcie i rozdrażnienie, które wieczorem nie schodzi.', value: 20 },
+      { id: 'digest', label: 'Brzuch, wzdęcia, ciężkość po jedzeniu.', value: 15 },
+      { id: 'motivation', label: 'Napęd siadł, robię już tylko minimum.', value: 15 },
+      { id: 'confidence', label: 'Mniej pewny siebie niż rok temu, omijam lustra.', value: 15 },
     ],
   },
   {
     id: 'morning_wood',
-    condition: () => false, // wyciete z krotszej wersji (2026-07-28)
-    section: 'Głowa',
+    section: 'Napęd',
     sectionNum: 'VII',
-    title: 'Jak często w ostatnich 4 tygodniach zdarzał się poranny wzwód?',
-    subtitle: 'Jeden z kilku sygnałów snu i zdrowia seksualnego. Sam nie mówi, jaki masz testosteron. Możesz pominąć.',
+    title: 'Poranne wzwody, szczerze, jak często?',
+    subtitle: 'Nie żeby oceniać. To jeden z najczystszych sygnałów snu i testosteronu. Chcesz, pomijasz.',
     type: 'single',
     domain: 'chaos',
+    optional: true,
     upstreamWeight: 0.55,
     crossDomainImpact: 0.60,
     options: [
-      { id: 'mw_0', label: '4+ razy w tygodniu', value: 0 },
-      { id: 'mw_1', label: '1-3 razy w tygodniu', value: 50 },
-      { id: 'mw_2', label: 'Rzadziej', value: 100 },
+      { id: 'mw_0', label: 'Większość poranków, standard.', value: 0 },
+      { id: 'mw_1', label: 'Czasem, kilka razy w tygodniu.', value: 50 },
+      { id: 'mw_2', label: 'Rzadko. Zauważam, że to już nie to.', value: 100 },
     ],
   },
   {
     id: 'tried_before',
-    section: 'Głowa',
+    section: 'Napęd',
     sectionNum: 'VII',
     title: 'Ile razy w tym roku odpaliłeś plan, który padł przed miesiącem?',
     subtitle: 'Liczą się te, co nie dożyły czterech tygodni.',
@@ -535,44 +419,10 @@ export const QUESTIONS: QuestionDef[] = [
     upstreamWeight: 0.65,
     crossDomainImpact: 0.60,
     options: [
-      { id: 'tb_0', label: 'Ani razu', value: 0 },
-      { id: 'tb_1', label: '1-2 razy', value: 33 },
-      { id: 'tb_2', label: '3-4 razy', value: 66 },
-      { id: 'tb_3', label: '5+ razy', value: 100 },
-    ],
-  },
-  {
-    id: 'defer_count',
-    condition: () => false, // wyciete z krotszej wersji (2026-07-28)
-    section: 'Głowa',
-    sectionNum: 'VII',
-    title: 'W ostatnim tygodniu: ile ważnych rzeczy odłożyłeś, bo nie miałeś głowy, chociaż czas teoretycznie był?',
-    type: 'single',
-    domain: 'chaos',
-    upstreamWeight: 0.60,
-    crossDomainImpact: 0.70,
-    options: [
-      { id: 'df_0', label: '0', value: 0 },
-      { id: 'df_1', label: '1-2', value: 33 },
-      { id: 'df_2', label: '3-5', value: 66 },
-      { id: 'df_3', label: 'Codziennie coś wisi', value: 100 },
-    ],
-  },
-  {
-    id: 'retreat_when',
-    condition: () => false, // wyciete z krotszej wersji (2026-07-28)
-    section: 'Głowa',
-    sectionNum: 'VII',
-    title: 'Kiedy ostatnio odpuściłeś ważną rozmowę, na której Ci zależało, bo nie miałeś na nią głowy?',
-    type: 'single',
-    domain: 'chaos',
-    upstreamWeight: 0.55,
-    crossDomainImpact: 0.55,
-    options: [
-      { id: 'rt_0', label: 'W tym tygodniu', value: 100 },
-      { id: 'rt_1', label: 'W tym miesiącu', value: 66 },
-      { id: 'rt_2', label: 'Dawno, nie pamiętam', value: 20 },
-      { id: 'rt_3', label: 'Ciągle tak mam', value: 100 },
+      { id: 'tb_0', label: 'Ani razu.', value: 0 },
+      { id: 'tb_1', label: '1-2 razy.', value: 33 },
+      { id: 'tb_2', label: '3-4 razy.', value: 66 },
+      { id: 'tb_3', label: '5 albo więcej. Zaczynam mieć tego dość.', value: 100 },
     ],
   },
   {
@@ -587,7 +437,7 @@ export const QUESTIONS: QuestionDef[] = [
     crossDomainImpact: 0.90,
   },
 
-  // ── SEKCJA VIII: CO DALEJ (kwalifikacja, niewidoczna, nie wchodzi do score) ──
+  // ── SEKCJA VIII: CO DALEJ (kwalifikacja fit, niewidoczna, nie wchodzi do score) ──
   {
     id: 'intent',
     section: 'Co dalej',
@@ -599,10 +449,10 @@ export const QUESTIONS: QuestionDef[] = [
     upstreamWeight: 0,
     crossDomainImpact: 0,
     options: [
-      { id: 'in_sam', label: 'Ogarnę sam, daj mi tylko kierunek', value: 0 },
-      { id: 'in_zobacz', label: 'Chcę zobaczyć, jak wygląda robota z kimś', value: 0 },
-      { id: 'in_prowadz', label: 'Wolę, żeby ktoś mnie poprowadził i rozliczył', value: 0 },
-      { id: 'in_niewiem', label: 'Jeszcze nie wiem', value: 0 },
+      { id: 'in_sam', label: 'Ogarnę sam, daj mi tylko kierunek.', value: 0 },
+      { id: 'in_zobacz', label: 'Chcę zobaczyć, jak wygląda robota z kimś.', value: 0 },
+      { id: 'in_prowadz', label: 'Wolę, żeby ktoś mnie poprowadził i rozliczył.', value: 0 },
+      { id: 'in_niewiem', label: 'Jeszcze nie wiem.', value: 0 },
     ],
   },
   {
@@ -615,10 +465,10 @@ export const QUESTIONS: QuestionDef[] = [
     upstreamWeight: 0,
     crossDomainImpact: 0,
     options: [
-      { id: 'sw_7dni', label: 'W tym tygodniu, mam dość', value: 0 },
-      { id: 'sw_30dni', label: 'W tym miesiącu', value: 0 },
-      { id: 'sw_kwartal', label: 'Za 2-3 miesiące', value: 0 },
-      { id: 'sw_sprawdzam', label: 'Na razie tylko sprawdzam', value: 0 },
+      { id: 'sw_7dni', label: 'W tym tygodniu, mam dość.', value: 0 },
+      { id: 'sw_30dni', label: 'W tym miesiącu.', value: 0 },
+      { id: 'sw_kwartal', label: 'Za 2-3 miesiące.', value: 0 },
+      { id: 'sw_sprawdzam', label: 'Na razie tylko sprawdzam.', value: 0 },
     ],
   },
 ];
@@ -650,7 +500,7 @@ export const PROFILES: Record<string, ProfileDef> = {
     title: 'Wieczór zjada Ci następny dzień',
     tagline: 'Wieczorne odpuszczenie nie kończy dnia. Ustawia gorszy start jutra.',
     coreInsight: 'Utrata kontroli przy lodówce czy ekranie po 21:00 to biologiczny mechanizm szukania dopaminy po całym dniu napięcia psychicznego.',
-    mirrorText: 'Przez cały dzień dowożysz obowiązki na silnej woli. Wieczorem kontrola puści, a późny posiłek i ekrany niszczą sen na kolejną dobę.',
+    mirrorText: 'Przez cały dzień dowozisz obowiązki na silnej woli. Wieczorem kontrola puści, a późny posiłek i ekrany niszczą sen na kolejną dobę.',
     primaryDomain: 'nutrition',
   },
   profile_c: {
@@ -677,7 +527,7 @@ export const PROFILES: Record<string, ProfileDef> = {
     title: 'Cały tydzień jedziesz na napięciu',
     tagline: 'Dowozisz wynik siłą, ale rachunek pojawia się wtedy, gdy puszcza kontrola.',
     coreInsight: 'Stała aktywacja osi HPA utrzymuje wysoki kortyzol, co blokuje regenerację i obniża sprawność organizmu.',
-    mirrorText: 'Pracujesz na wysokich obrotach i dowożysz wszystko. Jednak brak wyłączenia głowy po pracy sprawia, że ciało nie wchodzi w regenerację.',
+    mirrorText: 'Pracujesz na wysokich obrotach i dowozisz wszystko. Jednak brak wyłączenia głowy po pracy sprawia, że ciało nie wchodzi w regenerację.',
     primaryDomain: 'energy',
   },
   profile_f: {

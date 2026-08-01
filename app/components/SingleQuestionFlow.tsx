@@ -283,6 +283,19 @@ export default function SingleQuestionFlow({ onComplete, initialAnswers }: Props
             })}
           </div>
         )}
+        {currentQ.type === 'single' && currentQ.optional && (
+          <button
+            onClick={goToNext}
+            style={{
+              marginTop: 14, width: '100%', padding: '12px', borderRadius: 12,
+              background: 'transparent', color: '#888',
+              fontWeight: 600, fontSize: 13, border: '1px solid rgba(255,255,255,0.08)',
+              cursor: 'pointer', letterSpacing: 0.5,
+            }}
+          >
+            Pomiń to pytanie
+          </button>
+        )}
 
         {/* TYP 2: SLIDER */}
         {currentQ.type === 'slider' && (
