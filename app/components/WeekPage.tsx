@@ -305,7 +305,7 @@ export default function WeekPage({ plan, imie, naborHref = 'https://nabor.talerz
             );
           })()}
           <p className="wp-noprint" style={{ fontSize: 12.5, color: C.faint, textAlign: 'center', margin: '14px 0 0', lineHeight: 1.55 }}>
-            {plan.saveNote} Od 9 lat przeprowadziłem przez to ponad 180 facetów, którzy pracują głową i lubią swoje życie. Piszesz do mnie, odpisuję ja, nie zespół, w 24h.
+            {plan.saveNote} Od 9 lat przeprowadziłem przez to ponad 180 facetów. Napiszesz, odpisuję osobiście w ciągu doby.
           </p>
         </section>
 

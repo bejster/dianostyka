@@ -121,22 +121,22 @@ export default function DiagnozaPage() {
         <Atmosphere />
         <div style={{ maxWidth: 480, margin: '0 auto', width: '100%', position: 'relative', zIndex: 1 }}>
           <div style={{ fontFamily: "'JetBrains Mono', ui-monospace, monospace", fontSize: 11, letterSpacing: 3, textTransform: 'uppercase', color: GOLD, fontWeight: 700, marginBottom: 22 }}>
-            Prywatny odczyt tygodnia &middot; 4 minuty &middot; trafia tylko do mnie
+            Test na 4 minuty &middot; wynik widzę tylko ja
           </div>
           <h1 style={{ fontFamily: "'Instrument Serif', Georgia, serif", fontSize: 'clamp(38px, 9vw, 58px)', lineHeight: 1.05, fontWeight: 400, color: '#fff', margin: '0 0 20px', letterSpacing: '-0.01em' }}>
             Robisz swoje, a i tak lecisz na pół mocy.
           </h1>
           <p style={{ fontSize: 16.5, color: '#c4bdb0', lineHeight: 1.65, margin: '0 0 28px' }}>
-            Twój tydzień ma jeden dzień, w którym wysypuje się energia, głowa i napęd, zwykle nie ten, który obstawiasz. Za 4 minuty pokażę Ci który i co z tym zrobić jutro.
+            W każdym tygodniu jest jeden dzień, który psuje Ci resztę. Zwykle nie ten, o którym myślisz. Odpowiedz na kilka pytań, a pokażę Ci który i co z nim zrobić.
           </p>
           <button
             onClick={() => { setPhase('intake'); if (typeof window !== 'undefined') window.scrollTo({ top: 0 }); }}
             style={{ width: '100%', padding: '17px', borderRadius: 14, border: 'none', cursor: 'pointer', background: `linear-gradient(135deg, ${GOLD}, #8a7535)`, color: BG, fontWeight: 800, fontSize: 16, letterSpacing: 0.5 }}
           >
-            Pokaż mi, gdzie pękam &rarr;
+            Pokaż mi ten dzień &rarr;
           </button>
           <p style={{ fontSize: 12.5, color: '#8f887c', lineHeight: 1.55, margin: '16px 2px 0', textAlign: 'center' }}>
-            Od 9 lat, ponad 180 facetów, którzy pracują głową. Piszę ja, nie zespół.
+            9 lat roboty. Ponad 180 chłopa doprowadzonych do formy.
           </p>
         </div>
       </div>

@@ -79,27 +79,27 @@ const WEEK_FALLBACK: WeekTemplate = WEEK_BY_ARCHETYPE.wieczorny_odpad;
 // Wyjaśniamy mechanizm przyczynowo-skutkowy bez sloganów AI i bez fałszywej psychologii.
 const DEEPER: Record<string, { label: string; body: string; analogy: string }> = {
   weekend_reset: {
-    label: 'Poniedziałkowy dół jest fizjologiczny, nie motywacyjny.',
+    label: 'Poniedziałkowy zjazd robi Ci ciało, które nie zdążyło odpocząć.',
     body: 'Nieregularny sen w weekend i mniej ruchu rozjeżdżają rytm i spłycają głęboki sen. To miesza poranny rytm kortyzolu i przygasza ten szczyt testosteronu, który organizm i tak buduje dopiero w porządnym śnie. Rytm nie wraca w niedzielę w nocy, ciało potrzebuje dwóch, trzech dni, żeby wejść z powrotem w swoje tory. Dlatego poniedziałek i wtorek schodzą Ci na nadrabianiu, nie na braku chęci, tylko na układzie nerwowym, który wciąż wraca do siebie.',
     analogy: 'Jak jazda autem z rozregulowanym zapłonem: silnik zużywa dwukrotnie więcej paliwa, a auto przyspiesza dwa razy wolniej.',
   },
   wieczorny_odpad: {
-    label: 'Wieczorne podjadanie ustawia się w ciągu dnia.',
+    label: 'Wieczorne podjadanie zaczyna się już w ciągu dnia.',
     body: 'Brak kontroli nad jedzeniem po 21:00 to rzadko słaby charakter. Po całym dniu pracy w napięciu i przy niedoborze głębokiego snu poziom greliny (hormonu głodu) rośnie, a leptyna (sygnał sytości) spada. Jednocześnie podwyższony wieczorny kortyzol sprawia, że mózg szuka najszybszego bodźca obniżającego napięcie układu nerwowego. Wieczór w lodówce to czysty biologiczny mechanizm samoregulacji spiętego organizmu.',
     analogy: 'To rachunek za cały dzień pracy na wysokich obrotach. Jeśli nie dasz układowi nerwowemu innego sygnału zejścia z obrotów, sam sięgnie po najszybszy.',
   },
   glowa_zajezdza: {
-    label: 'Kortyzol i testosteron działają na przeciwstawnych biegunach.',
-    body: 'Głowa, która po pracy dalej miele robotę, trzyma układ nerwowy w trybie gotowości. Ciało nie przełącza się wieczorem na tryb przywspółczulny, w którym się regeneruje, więc głęboki sen jest krótszy i płytszy, mimo że leżysz tyle samo godzin. Rano wstajesz z mniejszym bakiem niż wczoraj, bo noc poszła na czuwanie, nie na naprawę.',
+    label: 'Im dłużej głowa pracuje wieczorem, tym gorzej śpisz.',
+    body: 'Głowa, która po pracy dalej myśli o robocie, trzyma układ nerwowy w trybie gotowości. Ciało nie przełącza się wieczorem na tryb przywspółczulny, w którym się regeneruje, więc głęboki sen jest krótszy i płytszy, mimo że leżysz tyle samo godzin. Rano wstajesz z mniejszym bakiem niż wczoraj, bo noc poszła na czuwanie, nie na naprawę.',
     analogy: 'Jak próba zaśnięcia zaraz po ostrej kłótni: leżysz, oczy zamknięte, a w środku wszystko dalej gra na czerwono. Ciało liczy to jako czuwanie, nie sen.',
   },
   wiedza_bez_wdrozenia: {
-    label: 'Mózg nagradza Cię za samą analizę problemu.',
+    label: 'Sama wiedza daje złudzenie postępu, choć nic się nie zmienia.',
     body: 'Samo czytanie o treningu i żywieniu działa jak szybka nagroda. Mózg liczy to jako postęp, chociaż w tygodniu nic się nie ruszyło. Wiesz o tym więcej niż większość ludzi na sali, a i tak tydzień wykłada się na banałach, bo nikt nie pilnuje kolejności i nie rozlicza Cię z wykonania.',
     analogy: 'Wkuwanie mapy bez wyjścia w teren daje poczucie kontroli, a do celu nie zbliża ani o krok.',
   },
   silnik_bez_paliwa: {
-    label: '„Wyniki w normie” to nie to samo co optymalna forma.',
+    label: 'Dobre wyniki krwi nie znaczą, że masz pełną formę.',
     body: 'Zakresy w wynikach krwi wykluczają chorobę, nie mówią nic o formie. Spłycony sen, nierozładowany stres i nieregularne posiłki robią cichy wyciek: nie jesteś chory, ale chodzisz zauważalnie poniżej swojego pułapu, głową i ciałem.',
     analogy: 'Telefon, który cały dzień łapie zasięg w piwnicy: nic się nie zawiesza, a bateria pada koło południa i wszystko chodzi z opóźnieniem.',
   },
