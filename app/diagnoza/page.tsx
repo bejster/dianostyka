@@ -127,7 +127,7 @@ export default function DiagnozaPage() {
             Robisz swoje, a i tak lecisz na pół mocy.
           </h1>
           <p style={{ fontSize: 16.5, color: '#c4bdb0', lineHeight: 1.65, margin: '0 0 28px' }}>
-            W każdym tygodniu jest jeden dzień, który psuje Ci resztę. Zwykle nie ten, o którym myślisz. Odpowiedz na kilka pytań, a pokażę Ci który i co z nim zrobić.
+            W każdym tygodniu masz jeden dzień, który po cichu psuje Ci pozostałe sześć. Prawie nigdy nie jest to ten, który myślisz. Odpowiesz na kilka pytań, a pokażę Ci, który to i co z nim zrobić już jutro.
           </p>
           <button
             onClick={() => { setPhase('intake'); if (typeof window !== 'undefined') window.scrollTo({ top: 0 }); }}
@@ -136,7 +136,7 @@ export default function DiagnozaPage() {
             Pokaż mi ten dzień &rarr;
           </button>
           <p style={{ fontSize: 12.5, color: '#8f887c', lineHeight: 1.55, margin: '16px 2px 0', textAlign: 'center' }}>
-            9 lat roboty. Ponad 180 chłopa doprowadzonych do formy.
+            9 lat roboty. Ponad 180 chłopa, których przeprowadziłem przez dokładnie to.
           </p>
         </div>
       </div>
