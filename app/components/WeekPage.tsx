@@ -181,12 +181,7 @@ export default function WeekPage({ plan, imie, naborHref = 'https://nabor.talerz
             <h2 style={{ fontFamily: C.serif, fontSize: 'clamp(24px, 4.6vw, 34px)', lineHeight: 1.2, color: C.paper, margin: '0 0 18px', fontWeight: 400 }}>
               {plan.deeper.label}
             </h2>
-            <p style={{ fontSize: 16.5, color: C.mute, lineHeight: 1.7, margin: '0 0 20px' }}>{plan.deeper.body}</p>
-            <p style={{ fontSize: 15.5, color: C.gold, fontStyle: 'italic', fontFamily: C.serif, lineHeight: 1.45, margin: 0, paddingLeft: 16, borderLeft: `2px solid ${C.goldDeep}` }}>
-              {plan.deeper.analogy}
-            </p>
           </div>
-          <p style={{ fontSize: 12, color: C.faint, lineHeight: 1.55, margin: '14px 2px 0' }}>{plan.deeperNote}</p>
         </section>
 
         {/* IV. UKRYTY KOSZT */}
@@ -196,7 +191,6 @@ export default function WeekPage({ plan, imie, naborHref = 'https://nabor.talerz
             <p style={{ fontFamily: C.serif, fontSize: 'clamp(26px, 5vw, 38px)', lineHeight: 1.22, color: C.paper, margin: '0 0 22px', fontWeight: 400 }}>
               {plan.hiddenCost.headline}
             </p>
-            <p style={{ fontSize: 16, color: C.mute, lineHeight: 1.65, margin: '0 0 24px', maxWidth: 540 }}>{plan.hiddenCost.math}</p>
             <p style={{ display: 'inline-block', fontFamily: C.mono, fontSize: 13.5, color: C.ink, background: `linear-gradient(135deg, ${C.gold}, ${C.goldBright})`, padding: '10px 16px', borderRadius: 8, letterSpacing: 0.2, fontWeight: 700, margin: 0 }}>
               {plan.hiddenCost.multiplier}
             </p>
@@ -215,13 +209,9 @@ export default function WeekPage({ plan, imie, naborHref = 'https://nabor.talerz
             <div style={{ width: `${plan.potential.usedPct}%`, background: `linear-gradient(90deg, ${C.goldDeep}, ${C.gold})` }} />
             <div style={{ flex: 1, background: `repeating-linear-gradient(45deg, ${C.panel2}, ${C.panel2} 6px, ${C.ink} 6px, ${C.ink} 12px)` }} />
           </div>
-          <h2 style={{ fontFamily: C.serif, fontSize: 'clamp(24px, 4.6vw, 34px)', lineHeight: 1.22, color: C.paper, margin: '0 0 16px', fontWeight: 400 }}>
+          <h2 style={{ fontFamily: C.serif, fontSize: 'clamp(24px, 4.6vw, 34px)', lineHeight: 1.22, color: C.paper, margin: 0, fontWeight: 400, maxWidth: 540 }}>
             {plan.potential.headline}
           </h2>
-          <p style={{ fontSize: 16, color: C.mute, lineHeight: 1.7, margin: '0 0 20px', maxWidth: 540 }}>{plan.potential.body}</p>
-          <p style={{ display: 'inline-block', fontFamily: C.serif, fontSize: 'clamp(19px, 3.6vw, 24px)', fontStyle: 'italic', color: C.paper, lineHeight: 1.4, margin: 0, borderLeft: `2px solid ${C.hot}`, paddingLeft: 18 }}>
-            {plan.potential.punch}
-          </p>
         </section>
 
         {/* VI. PIERWSZE KROKI */}
@@ -231,20 +221,9 @@ export default function WeekPage({ plan, imie, naborHref = 'https://nabor.talerz
             <div style={{ fontFamily: C.mono, fontSize: 10, letterSpacing: 2, textTransform: 'uppercase', color: C.gold, fontWeight: 700, marginBottom: 9 }}>Zacznij tu, jutro rano</div>
             <p style={{ fontFamily: C.serif, fontSize: 20, lineHeight: 1.4, color: C.paper, margin: 0 }}>{plan.firstMove}</p>
           </div>
-          <p style={{ fontSize: 15, color: C.faint, margin: '0 0 26px', lineHeight: 1.55, maxWidth: 500 }}>
-            {hi}to sześć rzeczy, które trzymają tydzień tak, żeby jeden gorszy dzień nie zabrał Ci pięciu następnych.
+          <p style={{ fontSize: 15, color: C.faint, margin: '0 2px', lineHeight: 1.55, maxWidth: 500 }}>
+            {hi}jeden ruch na jutro. Resztę układamy, jak uznasz, że chcesz to zrobić na serio.
           </p>
-          <div style={{ display: 'grid', gap: 1, background: C.line, border: `1px solid ${C.line}`, borderRadius: 14, overflow: 'hidden' }}>
-            {plan.plan.map((a, i) => (
-              <div key={i} style={{ display: 'flex', gap: 18, padding: '20px 18px', background: C.ink, alignItems: 'flex-start' }}>
-                <span style={{ fontFamily: C.mono, fontSize: 13, fontWeight: 700, color: C.numGold, flexShrink: 0, width: 22, paddingTop: 1 }}>{String(i + 1).padStart(2, '0')}</span>
-                <div>
-                  <div style={{ fontFamily: C.mono, fontSize: 10, letterSpacing: 1.5, textTransform: 'uppercase', color: C.gold, marginBottom: 7, fontWeight: 700 }}>{a.kind}</div>
-                  <div style={{ fontSize: 15.5, color: C.paper, lineHeight: 1.55 }}>{a.text}</div>
-                </div>
-              </div>
-            ))}
-          </div>
         </section>
 
         {/* DOWÓD: before/after klientów (renderuje się tylko gdy są realne wpisy w proof.ts) */}
@@ -282,7 +261,7 @@ export default function WeekPage({ plan, imie, naborHref = 'https://nabor.talerz
           </div>
 
           <p style={{ fontSize: 16, color: C.mute, lineHeight: 1.65, margin: '0 0 26px', maxWidth: 540 }}>
-            Ale mapa nie naprawia terenu. Kolejne pół roku na własną rękę to nie jest zero, to ten sam tydzień, tylko starszy. Twoje ciało nie czeka, aż się w końcu zbierzesz. Rachunek, który zobaczyłeś wyżej, płacisz co roku i nic za niego nie masz. Nie obiecam Ci, że Cię wezmę i naprawię to w miesiąc. Nie każdemu jestem w stanie pomóc i nie chcę Ci wciskać czegoś, co u Ciebie może nie usiąść. Ale bardzo bym chciał, żeby usiadło. Zobacz najpierw, jak pracuję z chłopakami, którzy siedzieli dokładnie tu, gdzie Ty teraz. Jak poczujesz, że to Twoje, napisz do mnie z tym wynikiem. Popatrzę na Twój tydzień i powiem Ci wprost, czy widzę tu potencjał, żeby Cię ruszyć i czy mogę Ci pomóc.
+            Pewnie nieraz wywaliłeś kasę na dietę z neta albo plan, który po dwóch tygodniach się rozsypał. Dlatego tu nie dostajesz kolejnego szablonu. Widzę, gdzie dokładnie pęka Twój tydzień, i wiem, co zdjąć najpierw u Ciebie, nie u wszystkich. Nie każdego biorę, a jak nie widzę, że da się ruszyć, powiem wprost. Napisz do mnie z tym wynikiem, odpiszę ja, nie zespół.
           </p>
 
           {/* drabina akcji */}

@@ -121,13 +121,13 @@ export default function DiagnozaPage() {
         <Atmosphere />
         <div style={{ maxWidth: 480, margin: '0 auto', width: '100%', position: 'relative', zIndex: 1 }}>
           <div style={{ fontFamily: "'JetBrains Mono', ui-monospace, monospace", fontSize: 11, letterSpacing: 3, textTransform: 'uppercase', color: GOLD, fontWeight: 700, marginBottom: 22 }}>
-            Darmowa diagnostyka &middot; 4 minuty &middot; wynik od razu
+            Prywatny odczyt tygodnia &middot; 4 minuty &middot; trafia tylko do mnie
           </div>
           <h1 style={{ fontFamily: "'Instrument Serif', Georgia, serif", fontSize: 'clamp(38px, 9vw, 58px)', lineHeight: 1.05, fontWeight: 400, color: '#fff', margin: '0 0 20px', letterSpacing: '-0.01em' }}>
-            Nie brakuje Ci dyscypliny.<br /><span style={{ color: GOLD }}>Brakuje Ci diagnozy.</span>
+            Robisz swoje, a i tak lecisz na pół mocy.
           </h1>
           <p style={{ fontSize: 16.5, color: '#c4bdb0', lineHeight: 1.65, margin: '0 0 28px' }}>
-            Trenujesz, ogarniasz robotę, a forma stoi. Tydzień pęka Ci w jednym dniu, zwykle nie w tym, co myślisz. Za 4 minuty pokażę Ci który, ile Cię kosztuje i pierwszy ruch na jutro rano.
+            Twój tydzień ma jeden dzień, w którym wysypuje się energia, głowa i napęd, zwykle nie ten, który obstawiasz. Za 4 minuty pokażę Ci który i co z tym zrobić jutro.
           </p>
           <button
             onClick={() => { setPhase('intake'); if (typeof window !== 'undefined') window.scrollTo({ top: 0 }); }}

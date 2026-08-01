@@ -35,12 +35,8 @@ export default function SingleQuestionFlow({ onComplete, initialAnswers }: Props
         if (saved) return JSON.parse(saved);
       } catch (_e) {}
     }
-    return {
-      sleep_hours: 7,
-      work_hours: 8,
-      takeout_cost: 300,
-      symptoms_chips: [],
-    };
+    // Zero domyslnych wartosci: slider/number bez ruchu = brak odpowiedzi (nie zapisujemy smieci).
+    return { symptoms_chips: [] };
   });
 
   const [currentIndex, setCurrentIndex] = useState<number>(() => {
@@ -57,6 +53,8 @@ export default function SingleQuestionFlow({ onComplete, initialAnswers }: Props
   });
 
   const [transitionState, setTransitionState] = useState<'idle' | 'out' | 'in'>('idle');
+  // Pytania realnie dotkniete (slider/number musi byc ruszony, inaczej "Zatwierdz" zablokowany).
+  const [touched, setTouched] = useState<Set<string>>(new Set());
 
   // Autosave w localStorage
   useEffect(() => {
@@ -75,6 +73,14 @@ export default function SingleQuestionFlow({ onComplete, initialAnswers }: Props
   const visiblePos = Math.max(1, visibleQuestions.findIndex(q => q.id === currentQ.id) + 1);
   const visibleTotal = visibleQuestions.length;
   const progressPct = Math.round((visiblePos / visibleTotal) * 100);
+
+  // Bramka "Dalej": slider/number musi być ruszony, multi min 1 chip, tekst min 15 znaków.
+  const chipsCount = Array.isArray(answers.symptoms_chips) ? (answers.symptoms_chips as string[]).length : 0;
+  const advanceOk =
+    currentQ.type === 'multi' ? chipsCount >= 1 :
+    currentQ.type === 'text' ? String(answers[currentQ.id] || '').trim().length >= 15 :
+    (currentQ.type === 'slider' || currentQ.type === 'number') ? touched.has(currentQ.id) :
+    true;
 
   // Haptic feedback na mobile
   const vibe = useCallback((pattern: number | number[] = 8) => {
@@ -133,10 +139,12 @@ export default function SingleQuestionFlow({ onComplete, initialAnswers }: Props
   };
 
   const handleSliderChange = (val: number) => {
+    setTouched(t => new Set(t).add(currentQ.id));
     setAnswers(prev => ({ ...prev, [currentQ.id]: val }));
   };
 
   const handleNumberChange = (val: number) => {
+    setTouched(t => new Set(t).add(currentQ.id));
     setAnswers(prev => ({ ...prev, [currentQ.id]: val }));
   };
 
@@ -146,7 +154,7 @@ export default function SingleQuestionFlow({ onComplete, initialAnswers }: Props
       const existing: string[] = Array.isArray(prev.symptoms_chips) ? [...prev.symptoms_chips] : [];
       const idx = existing.indexOf(chipId);
       if (idx >= 0) existing.splice(idx, 1);
-      else existing.push(chipId);
+      else if (existing.length < 3) existing.push(chipId); // TWARDY limit max 3 (label nie kłamie)
       return { ...prev, symptoms_chips: existing };
     });
   };
@@ -306,10 +314,12 @@ export default function SingleQuestionFlow({ onComplete, initialAnswers }: Props
 
             <button
               onClick={goToNext}
+              disabled={!advanceOk}
               style={{
                 marginTop: 36, width: '100%', padding: '16px', borderRadius: 14,
                 background: 'linear-gradient(135deg, #c8a84e, #8a7535)', color: '#0e0e0e',
-                fontWeight: 800, fontSize: 15, border: 'none', cursor: 'pointer',
+                fontWeight: 800, fontSize: 15, border: 'none', cursor: advanceOk ? 'pointer' : 'not-allowed',
+                opacity: advanceOk ? 1 : 0.4,
                 letterSpacing: 1, textTransform: 'uppercase',
               }}
             >
@@ -341,10 +351,12 @@ export default function SingleQuestionFlow({ onComplete, initialAnswers }: Props
 
             <button
               onClick={goToNext}
+              disabled={!advanceOk}
               style={{
                 width: '100%', padding: '16px', borderRadius: 14,
                 background: 'linear-gradient(135deg, #c8a84e, #8a7535)', color: '#0e0e0e',
-                fontWeight: 800, fontSize: 15, border: 'none', cursor: 'pointer',
+                fontWeight: 800, fontSize: 15, border: 'none', cursor: advanceOk ? 'pointer' : 'not-allowed',
+                opacity: advanceOk ? 1 : 0.4,
                 letterSpacing: 1, textTransform: 'uppercase',
               }}
             >
@@ -387,10 +399,12 @@ export default function SingleQuestionFlow({ onComplete, initialAnswers }: Props
 
             <button
               onClick={goToNext}
+              disabled={!advanceOk}
               style={{
                 marginTop: 20, width: '100%', padding: '16px', borderRadius: 14,
                 background: 'linear-gradient(135deg, #c8a84e, #8a7535)', color: '#0e0e0e',
-                fontWeight: 800, fontSize: 15, border: 'none', cursor: 'pointer',
+                fontWeight: 800, fontSize: 15, border: 'none', cursor: advanceOk ? 'pointer' : 'not-allowed',
+                opacity: advanceOk ? 1 : 0.4,
                 letterSpacing: 1, textTransform: 'uppercase',
               }}
             >
@@ -419,10 +433,12 @@ export default function SingleQuestionFlow({ onComplete, initialAnswers }: Props
 
             <button
               onClick={goToNext}
+              disabled={!advanceOk}
               style={{
                 marginTop: 20, width: '100%', padding: '16px', borderRadius: 14,
                 background: 'linear-gradient(135deg, #c8a84e, #8a7535)', color: '#0e0e0e',
-                fontWeight: 800, fontSize: 15, border: 'none', cursor: 'pointer',
+                fontWeight: 800, fontSize: 15, border: 'none', cursor: advanceOk ? 'pointer' : 'not-allowed',
+                opacity: advanceOk ? 1 : 0.4,
                 letterSpacing: 1, textTransform: 'uppercase',
               }}
             >
