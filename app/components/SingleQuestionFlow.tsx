@@ -309,10 +309,11 @@ export default function SingleQuestionFlow({ onComplete, initialAnswers }: Props
 
             <input
               type="range"
-              min={currentQ.min || 4}
-              max={currentQ.max || 12}
-              step={currentQ.step || 0.5}
+              min={currentQ.min ?? 4}
+              max={currentQ.max ?? 12}
+              step={currentQ.step ?? 0.5}
               value={Number(answers[currentQ.id] ?? currentQ.min ?? 7)}
+              onPointerDown={() => { if (answers[currentQ.id] === undefined) handleSliderChange(Number(currentQ.min ?? 7)); }}
               onChange={e => handleSliderChange(parseFloat(e.target.value))}
               style={{
                 width: '100%', height: 10, borderRadius: 5, accentColor: '#c8a84e',
@@ -347,8 +348,8 @@ export default function SingleQuestionFlow({ onComplete, initialAnswers }: Props
             <div style={{ display: 'flex', gap: 10, alignItems: 'center', marginBottom: 28 }}>
               <input
                 type="number"
-                min={currentQ.min || 0}
-                max={currentQ.max || 10000}
+                min={currentQ.min ?? 0}
+                max={currentQ.max ?? 10000}
                 value={Number(answers[currentQ.id] ?? 300)}
                 onChange={e => handleNumberChange(parseInt(e.target.value, 10) || 0)}
                 style={{
