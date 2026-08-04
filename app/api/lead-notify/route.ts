@@ -16,6 +16,8 @@ export async function POST(req: NextRequest) {
     }
 
     const s = (v: unknown, max = 200) => String(v ?? '').replace(/\s+/g, ' ').trim().slice(0, max);
+    // Handle IG = jedyny kontakt do leada. Bez niego nie ma jak sie odezwac.
+    const ig = s(b.instagram, 60).replace(/[@\s]/g, '');
     const score = Number(b.score) || 0;
     const priority = b.priority_lead === true;
     const ico = priority ? '🔥' : score >= 40 ? '🔴' : score >= 20 ? '🟡' : '🟢';
@@ -84,11 +86,11 @@ export async function POST(req: NextRequest) {
 
     const lines = [
       `${ico} LEAD DIAGNOSTYKA${priority ? ' — PRIORYTET 1:1' : ''}`,
+      ig ? `👤 ${s(b.imie, 40) ? s(b.imie, 40) + ' · ' : ''}@${ig} → instagram.com/${ig}` : '⚠️ BRAK IG — lead anonimowy',
       `Wynik ${score}/100 (${s(b.segment, 20)}) · ${s(b.archetyp, 60)}`,
       `Peka: ${s(b.godzina, 40)} · Hamulec: ${s(b.worstCat, 30)} · Koszt: ${s(b.kwota, 20)} zl`,
       `Gotowosc: ${intentMap[s(b.intencja, 20)] || '—'} · Start: ${startMap[s(b.kiedy_start, 20)] || '—'}`,
       `Budzet(proxy) ${Number(b.budget_proxy) || 0}/3 · Zaangazowanie ${Number(b.commitment) || 0}/5`,
-      b.imie ? `Imie: ${s(b.imie, 60)}` : '',
       b.pain ? `Wkurza: „${s(b.pain, 300)}”` : '',
     ].filter(Boolean);
 

@@ -59,7 +59,7 @@ export interface QuestionOption {
   tags?: string[];
 }
 
-export type QuestionType = 'single' | 'slider' | 'number' | 'multi' | 'text';
+export type QuestionType = 'single' | 'slider' | 'number' | 'multi' | 'text' | 'contact';
 
 export interface QuestionDef {
   id: string;
@@ -469,6 +469,20 @@ export const QUESTIONS: QuestionDef[] = [
       { id: 'sw_kwartal', label: 'Za 2-3 miesiące.', value: 0 },
       { id: 'sw_sprawdzam', label: 'Na razie tylko sprawdzam.', value: 0 },
     ],
+  },
+
+  // ── SEKCJA IX: KONTAKT (ostatni ekran, gate przed wynikiem; nie wchodzi do score) ──
+  // Bez tego pola lead jest anonimowy i nie da sie odezwac. IG wymagane, imie opcjonalne.
+  {
+    id: 'instagram',
+    section: 'Kontakt',
+    sectionNum: 'IX',
+    title: 'Podaj swój Instagram, pokażę Ci wynik.',
+    subtitle: 'Wynik widzę tylko ja. Jak coś w nim będzie, odezwę się osobiście.',
+    type: 'contact',
+    domain: 'chaos',
+    upstreamWeight: 0,
+    crossDomainImpact: 0,
   },
 ];
 

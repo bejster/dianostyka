@@ -76,9 +76,12 @@ export default function SingleQuestionFlow({ onComplete, initialAnswers }: Props
 
   // Bramka "Dalej": slider/number musi być ruszony, multi min 1 chip, tekst min 15 znaków.
   const chipsCount = Array.isArray(answers.symptoms_chips) ? (answers.symptoms_chips as string[]).length : 0;
+  // Handle IG bez @ i spacji; gate kontaktu wymaga min. 2 znakow (bez tego lead jest anonimowy).
+  const igClean = String(answers.instagram || '').replace(/[@\s]/g, '');
   const advanceOk =
     currentQ.type === 'multi' ? chipsCount >= 1 :
     currentQ.type === 'text' ? String(answers[currentQ.id] || '').trim().length >= 15 :
+    currentQ.type === 'contact' ? igClean.length >= 2 :
     (currentQ.type === 'slider' || currentQ.type === 'number') ? touched.has(currentQ.id) :
     true;
 
@@ -457,6 +460,61 @@ export default function SingleQuestionFlow({ onComplete, initialAnswers }: Props
               }}
             >
               Dalej &rarr;
+            </button>
+          </div>
+        )}
+
+        {/* TYP 6: KONTAKT (IG wymagane + imie opcjonalne) — ostatni ekran przed wynikiem */}
+        {currentQ.type === 'contact' && (
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 0, marginBottom: 12 }}>
+              <span style={{
+                padding: '16px 10px 16px 16px', borderRadius: '14px 0 0 14px', background: 'rgba(255,255,255,0.04)',
+                borderTop: '1.5px solid rgba(200,168,78,0.4)', borderBottom: '1.5px solid rgba(200,168,78,0.4)',
+                borderLeft: '1.5px solid rgba(200,168,78,0.4)', color: '#c8a84e',
+                fontFamily: 'monospace', fontSize: 20, fontWeight: 800,
+              }}>@</span>
+              <input
+                type="text"
+                inputMode="text"
+                autoCapitalize="none"
+                autoCorrect="off"
+                spellCheck={false}
+                placeholder="twoj_nick"
+                value={String(answers.instagram || '').replace(/^@/, '')}
+                onChange={e => setAnswers(prev => ({ ...prev, instagram: e.target.value.replace(/[@\s]/g, '').slice(0, 40) }))}
+                style={{
+                  flex: 1, padding: '16px', borderRadius: '0 14px 14px 0', background: 'rgba(255,255,255,0.04)',
+                  border: '1.5px solid rgba(200,168,78,0.4)', borderLeft: 'none', color: '#ffffff',
+                  fontSize: 17, fontWeight: 600, outline: 'none', boxSizing: 'border-box',
+                }}
+              />
+            </div>
+
+            <input
+              type="text"
+              placeholder="Imię (opcjonalnie)"
+              value={String(answers.imie || '')}
+              onChange={e => setAnswers(prev => ({ ...prev, imie: e.target.value.slice(0, 40) }))}
+              style={{
+                width: '100%', padding: '14px 16px', borderRadius: 14, background: 'rgba(255,255,255,0.03)',
+                border: '1.5px solid rgba(255,255,255,0.08)', color: '#ffffff',
+                fontSize: 15, outline: 'none', boxSizing: 'border-box', marginBottom: 8,
+              }}
+            />
+
+            <button
+              onClick={goToNext}
+              disabled={!advanceOk}
+              style={{
+                marginTop: 20, width: '100%', padding: '16px', borderRadius: 14,
+                background: 'linear-gradient(135deg, #c8a84e, #8a7535)', color: '#0e0e0e',
+                fontWeight: 800, fontSize: 15, border: 'none', cursor: advanceOk ? 'pointer' : 'not-allowed',
+                opacity: advanceOk ? 1 : 0.4,
+                letterSpacing: 1, textTransform: 'uppercase',
+              }}
+            >
+              Pokaż mój wynik &rarr;
             </button>
           </div>
         )}
