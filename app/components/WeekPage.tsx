@@ -2,6 +2,7 @@ import type { WeekPlan, DayState } from '../lib/week-plan';
 import SaveCardButton from './SaveCardButton';
 import { PROOF } from '../lib/proof';
 import { Atmosphere } from '../diagnoza/atmosphere';
+import { track } from '../lib/analytics';
 
 // ── KARTA TYGODNIA ──
 // Sygnatura: krzywa napięcia tygodnia (linia jak z odczytu kortyzolu/tętna),
@@ -289,12 +290,12 @@ export default function WeekPage({ plan, imie, naborHref = 'https://nabor.talerz
             // Złoty (mocny) przycisk tylko dla skwalifikowanego leada. Zimny widzi same miękkie opcje
             // + swoją Kartę do zapisania: ociepla, nie pcha na najdroższe zanim jest gotów.
             const dm = (
-              <a key="dm" href={dmUrl} target="_blank" rel="noopener noreferrer" className="wp-cta" style={softStyle}>
+              <a key="dm" href={dmUrl} target="_blank" rel="noopener noreferrer" onClick={() => track('diag_dm_click', { qualified })} className="wp-cta" style={softStyle}>
                 Napisz do mnie z tym wynikiem na Instagramie <span aria-hidden>&rarr;</span>
               </a>
             );
             const nabor = (
-              <a key="nabor" href={naborHref} target="_blank" rel="noopener noreferrer" className="wp-cta" style={qualified ? goldStyle : softStyle}>
+              <a key="nabor" href={naborHref} target="_blank" rel="noopener noreferrer" onClick={() => track('diag_nabor_click', { loc: 'result', qualified })} className="wp-cta" style={qualified ? goldStyle : softStyle}>
                 {qualified ? 'Zobacz, jak wygląda współpraca 1:1' : 'Zobacz, jak pracuję z innymi w 1:1'} <span aria-hidden>&rarr;</span>
               </a>
             );

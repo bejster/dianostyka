@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { QUESTIONS, QuestionDef, QuestionOption } from '../lib/assessment-config';
 import { RawAnswers } from '../lib/scoring-engine';
+import { track } from '../lib/analytics';
 import { Atmosphere } from '../diagnoza/atmosphere';
 
 interface Props {
@@ -24,6 +25,34 @@ function fmtVal(val: number, unit?: string): string {
     return `${n} lat`;
   }
   return u ? `${val} ${u}` : `${val}`;
+}
+
+// ── Antybełkot: wykrywa klepanie w klawiaturę ("zzz", "asdfgh", "ee ee ee") w pytaniu otwartym ──
+// Cel: nie przepuścić leada, który nabił byle co. Konserwatywne progi, żeby nie krzyczeć na realne zdania.
+const _CONS = 'bcdfghjklmnpqrstvwxzżźćńłś';
+function isGibberish(raw: string): boolean {
+  const t = (raw || '').trim().toLowerCase();
+  const letters = t.replace(/[^a-ząćęłńóśźż]/g, '');
+  if (letters.length < 5) return false; // za krótko, jeszcze nie oceniamy
+  // 1) ten sam znak 4+ pod rząd: zzzz, aaaaa
+  if (/(.)\1{3,}/.test(t)) return true;
+  // 2) dłuższy tekst, a mało różnych liter: asdasdasd, ee ee ee, aaa bbb ccc
+  if (letters.length >= 10 && new Set(letters).size < 5) return true;
+  // 3) brak samogłosek albo prawie same samogłoski (bdfg / eeee)
+  const vowels = (letters.match(/[aeiouyąęó]/g) || []).length;
+  if (letters.length >= 6 && vowels === 0) return true;
+  if (letters.length >= 6 && vowels / letters.length > 0.85) return true;
+  // 4) token z ciągiem 6+ spółgłosek: asdfghjk (polskie słowa nie mają tak długich zbitek)
+  const consRun = new RegExp('[' + _CONS + ']{6,}');
+  if (t.split(/\s+/).some(w => consRun.test(w))) return true;
+  return false;
+}
+// Minimum treści: 15 znaków i co najmniej 3 słowa (2+ liter). Odsiewa "ok", "nie wiem".
+function enoughContent(raw: string): boolean {
+  const t = (raw || '').trim();
+  if (t.length < 15) return false;
+  const tokens = t.toLowerCase().split(/\s+/).filter(w => w.replace(/[^a-ząćęłńóśźż]/g, '').length >= 2);
+  return tokens.length >= 3;
 }
 
 export default function SingleQuestionFlow({ onComplete, initialAnswers }: Props) {
@@ -74,13 +103,19 @@ export default function SingleQuestionFlow({ onComplete, initialAnswers }: Props
   const visibleTotal = visibleQuestions.length;
   const progressPct = Math.round((visiblePos / visibleTotal) * 100);
 
+  // Lejek: ekspozycja kazdego pytania -> widac dokladnie, na ktorym kroku ludzie odpadaja.
+  useEffect(() => {
+    track('diag_step_viewed', { index: currentIndex, id: currentQ.id, pos: visiblePos, total: visibleTotal });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentIndex]);
+
   // Bramka "Dalej": slider/number musi być ruszony, multi min 1 chip, tekst min 15 znaków.
   const chipsCount = Array.isArray(answers.symptoms_chips) ? (answers.symptoms_chips as string[]).length : 0;
   // Handle IG bez @ i spacji; gate kontaktu wymaga min. 2 znakow (bez tego lead jest anonimowy).
   const igClean = String(answers.instagram || '').replace(/[@\s]/g, '');
   const advanceOk =
     currentQ.type === 'multi' ? chipsCount >= 1 :
-    currentQ.type === 'text' ? String(answers[currentQ.id] || '').trim().length >= 15 :
+    currentQ.type === 'text' ? enoughContent(String(answers[currentQ.id] || '')) && !isGibberish(String(answers[currentQ.id] || '')) :
     currentQ.type === 'contact' ? igClean.length >= 2 :
     (currentQ.type === 'slider' || currentQ.type === 'number') ? touched.has(currentQ.id) :
     true;
@@ -447,6 +482,23 @@ export default function SingleQuestionFlow({ onComplete, initialAnswers }: Props
             <div style={{ textAlign: 'right', fontFamily: 'monospace', fontSize: 11, color: '#666', marginTop: 6 }}>
               {String(answers[currentQ.id] || '').length} / 500 znaków
             </div>
+
+            {/* Antybełkot: ktoś naklepał byle co ("zzz", "asdfgh") -> pociśnij w głosie Michała */}
+            {isGibberish(String(answers[currentQ.id] || '')) && (
+              <div style={{
+                marginTop: 14, padding: '14px 16px', borderRadius: 12,
+                background: 'rgba(220,70,60,0.10)', border: '1.5px solid rgba(220,70,60,0.45)',
+                color: '#ff8f84', fontSize: 14.5, lineHeight: 1.55, fontWeight: 500,
+              }}>
+                Stary, nie wal w chuja. Jak nie chce Ci się tego wypełniać i klepiesz byle co, to wyjdź stąd i nie marnuj mojego czasu. A chcesz, żebym Ci realnie pomógł? Napisz jedno prawdziwe zdanie, co Cię wkurwia.
+              </div>
+            )}
+            {/* Za mało treści (ale nie bełkot): miękka podpowiedź, bez krzyku */}
+            {!isGibberish(String(answers[currentQ.id] || '')) && String(answers[currentQ.id] || '').trim().length > 0 && !enoughContent(String(answers[currentQ.id] || '')) && (
+              <div style={{ marginTop: 12, fontSize: 13.5, color: '#999', lineHeight: 1.5 }}>
+                Napisz jedno pełne zdanie własnymi słowami. Bez tego nie ruszymy dalej.
+              </div>
+            )}
 
             <button
               onClick={goToNext}

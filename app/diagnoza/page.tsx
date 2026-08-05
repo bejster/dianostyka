@@ -4,7 +4,8 @@
 // intro -> intake (1 pytanie/ekran) -> teaser (Karta Tygodnia, koniec). Lead leci na Telegram w handleComplete.
 // Mail wycięty (backend Faza 4 niepodłączony, nie kłamiemy). Stare "/" (v1) nietknięte.
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { track, identify } from '../lib/analytics';
 import SingleQuestionFlow from '../components/SingleQuestionFlow';
 import WeekPage from '../components/WeekPage';
 import { type RawAnswers } from '../lib/scoring-engine';
@@ -49,6 +50,9 @@ export default function DiagnozaPage() {
   // Reframe personalizujacy Karte Tygodnia. Dochodzi w tle po LLM, re-renderuje teaser.
   const [reframe, setReframe] = useState<ReframeData | null>(null);
 
+  // Wejscie na strone diagnostyki (pierwszy ekran). Lejek: intro_view -> started -> step_view... -> completed.
+  useEffect(() => { track('diag_intro_viewed'); }, []);
+
   const handleComplete = (raw: RawAnswers) => {
     setAnswers(raw);
     setPhase('teaser');
@@ -69,6 +73,15 @@ export default function DiagnozaPage() {
     const C = costs(D);
     const q = qualify(raw, D.triedBefore, sc, C.hardTotal);
     const segment = sc >= 40 ? 'goracy' : sc >= 20 ? 'cieply' : 'zimny';
+
+    // Podepnij cala sesje (kroki + nagranie) pod handle IG leada, jesli go zostawil.
+    if (typeof raw.instagram === 'string' && raw.instagram.length > 0) {
+      identify(raw.instagram, { segment, score: sc, priority_lead: q.priorityLead });
+    }
+    // Lejek: quiz dokonczony + wynik pokazany (jeden moment). Bez PII, tylko metryki.
+    track('diag_completed', { score: sc, segment, worstCat, priority_lead: q.priorityLead, has_ig: typeof raw.instagram === 'string' && raw.instagram.length > 0 });
+    track('diag_result_viewed', { score: sc, segment, worstCat });
+
     const painText = typeof raw.user_pain === 'string' ? raw.user_pain.trim() : '';
     const rawImie = raw.imie ?? raw.name;
 
@@ -131,7 +144,7 @@ export default function DiagnozaPage() {
             W każdym tygodniu masz jeden dzień, który po cichu psuje Ci pozostałe sześć. Prawie nigdy nie jest to ten, który myślisz. Odpowiesz na kilka pytań, a pokażę Ci, który to i co z nim zrobić już jutro.
           </p>
           <button
-            onClick={() => { setPhase('intake'); if (typeof window !== 'undefined') window.scrollTo({ top: 0 }); }}
+            onClick={() => { track('diag_started'); setPhase('intake'); if (typeof window !== 'undefined') window.scrollTo({ top: 0 }); }}
             style={{ width: '100%', padding: '17px', borderRadius: 14, border: 'none', cursor: 'pointer', background: `linear-gradient(135deg, ${GOLD}, #8a7535)`, color: BG, fontWeight: 800, fontSize: 16, letterSpacing: 0.5 }}
           >
             Pokaż mi ten dzień &rarr;
@@ -183,7 +196,7 @@ export default function DiagnozaPage() {
         <div style={{ position: 'sticky', top: 0, zIndex: 50, background: 'rgba(11,11,12,0.94)', backdropFilter: 'blur(8px)', borderBottom: '1px solid #26262b', padding: '11px 18px', display: 'flex', alignItems: 'center', gap: 12 }}>
           <span style={{ fontFamily: "'JetBrains Mono', ui-monospace, monospace", fontSize: 10, letterSpacing: 2, textTransform: 'uppercase', color: '#8f887c', fontWeight: 700 }}>Diagnoza gotowa</span>
           <span style={{ flex: 1 }} />
-          <a href={'https://nabor.talerzihantle.com/'} target="_blank" rel="noopener noreferrer" style={{ fontSize: 12.5, color: '#ece7db', textDecoration: 'none', whiteSpace: 'nowrap' }}>
+          <a href={'https://nabor.talerzihantle.com/'} target="_blank" rel="noopener noreferrer" onClick={() => track('diag_nabor_click', { loc: 'header' })} style={{ fontSize: 12.5, color: '#ece7db', textDecoration: 'none', whiteSpace: 'nowrap' }}>
             {qualified ? 'zobacz, jak wygląda współpraca' : 'zobacz, jak pracuję z innymi'} &rarr;
           </a>
         </div>
