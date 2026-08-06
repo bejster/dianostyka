@@ -121,7 +121,11 @@ export default function DiagnozaPage() {
             body: JSON.stringify({ pain: painText, selfDx: '', trigger: '', worstCat, segment, age: D.age }),
           });
           const json = await res.json();
-          if (json?.ok && json.reframe) setReframe(json.reframe as ReframeData);
+          if (json?.ok && json.reframe) {
+            setReframe(json.reframe as ReframeData);
+            // #17: wiemy, czy reframe z wlasnych slow usera realnie sie pokazal (wartosc Karty)
+            track('reframe_shown', { worstCat, segment });
+          }
         } catch {
           // cisza: bez reframe Karta i tak stoi (fallback deterministyczny)
         }
@@ -181,6 +185,12 @@ export default function DiagnozaPage() {
     const imie = typeof rawImie === 'string' ? rawImie : '';
     const q = qualify(answers, D.triedBefore, SC, C.hardTotal);
     const qualified = q.priorityLead || q.wantsHelp;
+    // #1 handoff: niesie kontekst diagnozy do nabora w URL (nabor personalizuje sie po ?from=diagnoza).
+    // Same-tab (#2) + parametry = ciaglosc lejka, zero przepisywania danych przez usera.
+    const igClean = typeof answers.instagram === 'string' ? answers.instagram.replace(/^@?/, '') : '';
+    const naborParams = new URLSearchParams({ from: 'diagnoza', arch: arch.key, score: String(SC), worst: worstW, q: qualified ? '1' : '0', kwota: String(C.total) });
+    if (igClean) naborParams.set('ig', igClean);
+    const naborUrl = `https://nabor.talerzihantle.com/?${naborParams.toString()}`;
     const wkPlan = buildWeekPlan({
       archetypeKey: arch.key, archetypeLabel: arch.label, archetypeTagline: arch.tagline, mirror: arch.mirror,
       qualified,
@@ -196,11 +206,11 @@ export default function DiagnozaPage() {
         <div style={{ position: 'sticky', top: 0, zIndex: 50, background: 'rgba(11,11,12,0.94)', backdropFilter: 'blur(8px)', borderBottom: '1px solid #26262b', padding: '11px 18px', display: 'flex', alignItems: 'center', gap: 12 }}>
           <span style={{ fontFamily: "'JetBrains Mono', ui-monospace, monospace", fontSize: 10, letterSpacing: 2, textTransform: 'uppercase', color: '#8f887c', fontWeight: 700 }}>Diagnoza gotowa</span>
           <span style={{ flex: 1 }} />
-          <a href={'https://nabor.talerzihantle.com/'} target="_blank" rel="noopener noreferrer" onClick={() => track('diag_nabor_click', { loc: 'header' })} style={{ fontSize: 12.5, color: '#ece7db', textDecoration: 'none', whiteSpace: 'nowrap' }}>
+          <a href={naborUrl} onClick={() => track('diag_nabor_click', { loc: 'header', qualified })} style={{ fontSize: 12.5, color: '#ece7db', textDecoration: 'none', whiteSpace: 'nowrap' }}>
             {qualified ? 'zobacz, jak wygląda współpraca' : 'zobacz, jak pracuję z innymi'} &rarr;
           </a>
         </div>
-        <WeekPage plan={wkPlan} imie={imie} qualified={qualified} naborHref={'https://nabor.talerzihantle.com/'} />
+        <WeekPage plan={wkPlan} imie={imie} qualified={qualified} instagram={igClean} naborHref={naborUrl} />
       </>
     );
   }

@@ -120,7 +120,7 @@ function Eyebrow({ n, children }: { n: string; children: React.ReactNode }) {
   );
 }
 
-export default function WeekPage({ plan, imie, naborHref = 'https://nabor.talerzihantle.com/', qualified = false }: { plan: WeekPlan; imie?: string; naborHref?: string; qualified?: boolean }) {
+export default function WeekPage({ plan, imie, instagram, naborHref = 'https://nabor.talerzihantle.com/', qualified = false }: { plan: WeekPlan; imie?: string; instagram?: string; naborHref?: string; qualified?: boolean }) {
   const hi = imie?.trim() ? `${imie.trim()}, ` : '';
   return (
     <div className="wp" style={{ background: C.ink, color: C.paper, fontFamily: C.sans, minHeight: '100vh' }}>
@@ -137,6 +137,17 @@ export default function WeekPage({ plan, imie, naborHref = 'https://nabor.talerz
           <span style={{ fontFamily: C.mono, fontSize: 11, letterSpacing: 5, color: C.gold, fontWeight: 700 }}>HANTLE I TALERZ</span>
           <span style={{ fontFamily: C.mono, fontSize: 10, letterSpacing: 3, color: C.faint, textTransform: 'uppercase' }}>Karta tygodnia · wydanie prywatne</span>
         </header>
+
+        {/* #3: potwierdzenie zapisu + oczekiwanie kontaktu. Telegram-notify z @IG poszedl juz do Michala,
+            wiec „odezwe sie" jest prawdziwe; „napisz pierwszy" zostaje pewna sciezka dla niecierpliwych. */}
+        {instagram && (
+          <div className="wp-noprint" style={{ display: 'flex', alignItems: 'flex-start', gap: 12, background: C.panel2, border: `1px solid ${C.line2}`, borderRadius: 12, padding: '13px 16px', marginBottom: 44 }}>
+            <span aria-hidden style={{ color: C.gold, fontSize: 17, lineHeight: 1.3, flexShrink: 0 }}>✓</span>
+            <p style={{ margin: 0, fontSize: 13.5, color: C.mute, lineHeight: 1.55 }}>
+              Zapisałem Twój wynik. Piszę do chłopaków z tym osobiście, zwykle w ciągu doby na <b style={{ color: C.paper }}>@{instagram}</b>. Chcesz szybciej? Napisz pierwszy niżej.
+            </p>
+          </div>
+        )}
 
         {/* I. ROZPOZNANIE */}
         <section className="wp-rise" style={{ marginBottom: 72 }}>
@@ -295,7 +306,7 @@ export default function WeekPage({ plan, imie, naborHref = 'https://nabor.talerz
               </a>
             );
             const nabor = (
-              <a key="nabor" href={naborHref} target="_blank" rel="noopener noreferrer" onClick={() => track('diag_nabor_click', { loc: 'result', qualified })} className="wp-cta" style={qualified ? goldStyle : softStyle}>
+              <a key="nabor" href={naborHref} onClick={() => track('diag_nabor_click', { loc: 'result', qualified })} className="wp-cta" style={qualified ? goldStyle : softStyle}>
                 {qualified ? 'Zobacz, jak wygląda współpraca 1:1' : 'Zobacz, jak pracuję z innymi w 1:1'} <span aria-hidden>&rarr;</span>
               </a>
             );
