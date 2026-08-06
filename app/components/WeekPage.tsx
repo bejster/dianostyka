@@ -186,14 +186,29 @@ export default function WeekPage({ plan, imie, instagram, naborHref = 'https://n
           </div>
         </section>
 
-        {/* III. DRUGIE DNO */}
+        {/* III. DRUGIE DNO — mechanizm: najostrzejsza, spersonalizowana warstwa (z wlasnych slow usera przez reframe LLM albo deterministyczna). Wczesniej renderowal sie sam naglowek; body+analogy+note byly liczone i niewidoczne. */}
         <section className="wp-rise" style={{ marginBottom: 72 }}>
           <Eyebrow n="III">Drugie dno</Eyebrow>
           <div style={{ background: `linear-gradient(180deg, ${C.panel2}, ${C.ink})`, border: `1px solid ${C.line2}`, borderRadius: 18, padding: 'clamp(22px, 5vw, 34px)' }}>
-            <h2 style={{ fontFamily: C.serif, fontSize: 'clamp(24px, 4.6vw, 34px)', lineHeight: 1.2, color: C.paper, margin: '0 0 18px', fontWeight: 400 }}>
+            <h2 style={{ fontFamily: C.serif, fontSize: 'clamp(24px, 4.6vw, 34px)', lineHeight: 1.2, color: C.paper, margin: `0 0 ${plan.deeper.body ? 20 : 0}px`, fontWeight: 400 }}>
               {plan.deeper.label}
             </h2>
+            {plan.deeper.body && (
+              <p style={{ fontSize: 16.5, color: C.mute, lineHeight: 1.75, margin: 0 }}>
+                {plan.deeper.body}
+              </p>
+            )}
+            {plan.deeper.analogy && (
+              <p style={{ fontFamily: C.serif, fontSize: 'clamp(18px, 3.6vw, 22px)', fontStyle: 'italic', color: C.gold, lineHeight: 1.42, margin: '20px 0 0', paddingLeft: 18, borderLeft: `2px solid ${C.goldDeep}` }}>
+                {plan.deeper.analogy}
+              </p>
+            )}
           </div>
+          {plan.deeperNote && (
+            <p style={{ fontSize: 12.5, color: C.faint, lineHeight: 1.55, margin: '14px 2px 0', maxWidth: 540 }}>
+              {plan.deeperNote}
+            </p>
+          )}
         </section>
 
         {/* IV. UKRYTY KOSZT */}

@@ -182,12 +182,24 @@ function buildPlan(i: WeekPlanInput): { plan: PlanAnchor[]; metric: string } {
   return { plan, metric };
 }
 
+// Slaby punkt w jezyku usera, do wplecenia w zaproszenie (personalizacja punktu wyciekowego).
+const WEAK_SPOT: Record<string, string> = {
+  'Sen': 'sen, który nie regeneruje',
+  'Stres': 'głowa, która wieczorem nie schodzi z obrotów',
+  'Żywienie': 'wieczór, w którym cały dzień się na Tobie mści',
+  'Weekend': 'weekend, który kasuje pięć dni roboty',
+  'Trening': 'wykonanie, nie wiedza',
+  'Głowa': 'głowa, która zajeżdża ciało',
+};
+function weakSpot(worst: string): string { return WEAK_SPOT[worst] || WEAK_SPOT['Żywienie']; }
+
 // ── ZAPROSZENIE ──
 function invitationLine(input: WeekPlanInput): string {
   const hot = input.qualified || (input.potentialPct ?? (100 - input.score)) <= 45;
   const mies = input.costMonths && input.costMonths >= 2 ? `${input.costMonths} miesięcy już zeszło, a sylwetka stoi w tym samym miejscu. ` : '';
-  if (hot) return `Wiedzę masz, plan trzymasz teraz w tej Karcie. ${mies}Więc czemu za rok będziesz dokładnie tu, gdzie jesteś dziś? Bo sam, po trzecim gorszym dniu, wracasz do starego tygodnia i mówisz sobie: od poniedziałku. Ten poniedziałek nie przyszedł ani razu. Parę lat temu czułeś się w swoim ciele lżej. Tamten stan wciąż siedzi pod tym jednym wyciekiem, wystarczy go odetkać.`;
-  return `Bazę masz dobrą, teoria siedzi. ${mies}A i tak co tydzień pękasz w tym samym punkcie. Sam tego nie domkniesz, bo osobno każdy z tych błędów wygląda na drobiazg. Pierwszy gorszy dzień kasuje Ci cały tydzień i wracasz na start w poniedziałek. Z kimś, kto to widzi i rozlicza, domykasz to w dwa tygodnie.`;
+  const spot = weakSpot(input.worstCat);
+  if (hot) return `Wiedzę masz, plan trzymasz teraz w tej Karcie. ${mies}Więc czemu za rok będziesz dokładnie tu, gdzie jesteś dziś? Bo sam, po trzecim gorszym dniu, wracasz do starego tygodnia i mówisz sobie: od poniedziałku. Ten poniedziałek nie przyszedł ani razu. Parę lat temu czułeś się w swoim ciele lżej. Tamten stan wciąż siedzi pod jednym wyciekiem. U Ciebie to ${spot}. Wystarczy go odetkać.`;
+  return `Bazę masz dobrą, teoria siedzi. ${mies}A i tak co tydzień pękasz w tym samym punkcie. U Ciebie to ${spot}. Sam tego nie domkniesz, bo osobno każdy z tych błędów wygląda na drobiazg. Pierwszy gorszy dzień kasuje Ci cały tydzień i wracasz na start w poniedziałek. Z kimś, kto to widzi i rozlicza, domykasz to w dwa tygodnie.`;
 }
 
 // ── MOST DO KOLEJNEGO KROKU ──
