@@ -40,6 +40,13 @@ export async function POST(req: NextRequest) {
     };
     let opener = OPENERS[s(b.archetypKey, 40)] || `${greet}, widziałem Twój wynik z diagnostyki. Powiedz mi, co Cię w tym tygodniu najbardziej wkurza?`;
     if (b.pain) opener += ` Sam napisałeś, że najbardziej wkurza Cię: „${s(b.pain, 200)}”. Od tego bym zaczął.`;
+
+    // ── 1 TAP OUTBOUND: deep link z Telegrama prosto do DM leada z gotowym openerem ──
+    // Skraca first-touch do sekund (bez szukania profilu i przepisywania). Ten sam mechanizm
+    // ig.me/m/<handle>?text=, ktorego uzywa Karta (lead -> Michal). Fallback: przycisk Profil.
+    const openerForLink = opener.slice(0, 900); // bezpieczny limit dlugosci URL w przycisku Telegrama
+    const dmLink = ig ? `https://ig.me/m/${ig}?text=${encodeURIComponent(openerForLink)}` : '';
+    const profileLink = ig ? `https://instagram.com/${ig}` : '';
     const intent = s(b.intencja, 20);
     const closer = priority
       ? 'GORĄCY. Ból wysoki, budżet jest, chce prowadzenia. Otwórz pytaniem, po 1-2 odpowiedziach proponuj rozmowę o prowadzeniu 1:1.'
@@ -97,15 +104,28 @@ export async function POST(req: NextRequest) {
     const res = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ chat_id: chat, text: [
-        ...lines,
-        '', '━━━ ZAGRYWKA DM ━━━',
-        '', '1) OTWÓRZ:', opener,
-        '', '2) POGŁĘB (jedno pytanie na raz, z tego co zaznaczył):', ...DEEPEN,
-        '', '3) DRUGIE DNO (uświadom, pokaż koszt):', awareness,
-        '', '4) MOST (gdy odpisze ciepło):', BRIDGE,
-        '', `🎯 JAK GRAĆ: ${closer}`,
-      ].join('\n'), disable_web_page_preview: true }),
+      body: JSON.stringify({
+        chat_id: chat,
+        text: [
+          ...lines,
+          '', '━━━ ZAGRYWKA DM ━━━',
+          '', '1) OTWÓRZ:', opener,
+          '', '2) POGŁĘB (jedno pytanie na raz, z tego co zaznaczył):', ...DEEPEN,
+          '', '3) DRUGIE DNO (uświadom, pokaż koszt):', awareness,
+          '', '4) MOST (gdy odpisze ciepło):', BRIDGE,
+          '', `🎯 JAK GRAĆ: ${closer}`,
+        ].join('\n'),
+        disable_web_page_preview: true,
+        // Inline button: 1 tap -> DM leada z gotowym openerem. Tylko gdy jest handle IG.
+        ...(dmLink ? {
+          reply_markup: {
+            inline_keyboard: [[
+              { text: '💬 Odpisz na DM (opener gotowy)', url: dmLink },
+              { text: '👤 Profil', url: profileLink },
+            ]],
+          },
+        } : {}),
+      }),
     });
     return NextResponse.json({ ok: res.ok });
   } catch {
