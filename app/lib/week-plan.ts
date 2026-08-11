@@ -137,7 +137,7 @@ function potentialBlock(input: WeekPlanInput): WeekPlan['potential'] {
     usedPct: used,
     headline: 'Formę masz w środku. Co tydzień sam sobie ją odcinasz.',
     body: `Z tego, co zaznaczyłeś, tydzień przepuszcza Ci dziś jakieś ${100 - used}% tego, na co Cię stać. Ta liczba idzie z Twoich własnych odpowiedzi, nie z żadnego badania. Reszta nigdzie nie poszła, trzyma ją jedno miejsce: ${spot}.`,
-    punch: 'Odetkaj ten jeden punkt, a reszta rusza sama. Bez wywracania całego życia do góry nogami.',
+    punch: 'Zamknij ten jeden wyciek, a reszta rusza sama. Bez wywracania całego życia do góry nogami.',
   };
 }
 
@@ -205,7 +205,7 @@ function invitationLine(input: WeekPlanInput): string {
   const hot = input.qualified || (input.potentialPct ?? (100 - input.score)) <= 45;
   const mies = input.costMonths && input.costMonths >= 2 ? `${input.costMonths} miesięcy już zeszło, a sylwetka stoi w tym samym miejscu. ` : '';
   const spot = input.reframe?.slaby_punkt?.trim() || weakSpot(input.worstCat);
-  if (hot) return `Wiedzę masz, plan trzymasz teraz w tej Karcie. ${mies}Więc czemu za rok będziesz dokładnie tu, gdzie jesteś dziś? Bo sam, po trzecim gorszym dniu, wracasz do starego tygodnia i mówisz sobie: od poniedziałku. Ten poniedziałek nie przyszedł ani razu. Parę lat temu czułeś się w swoim ciele lżej. Ten stan trzyma dziś jedno zatkane miejsce. U Ciebie to ${spot}. Odetkać je i wraca.`;
+  if (hot) return `Wiedzę masz, plan trzymasz teraz w tej Karcie. ${mies}Więc czemu za rok będziesz dokładnie tu, gdzie jesteś dziś? Bo sam, po trzecim gorszym dniu, wracasz do starego tygodnia i mówisz sobie: od poniedziałku. Ten poniedziałek nie przyszedł ani razu. Parę lat temu czułeś się w swoim ciele lżej. Dziś trzyma go jeden wyciek. U Ciebie to ${spot}. Zamknij go, a wraca.`;
   return `Bazę masz dobrą, teoria siedzi. ${mies}A i tak co tydzień pękasz w tym samym punkcie. U Ciebie to ${spot}. Sam tego nie domkniesz, bo osobno każdy z tych błędów wygląda na drobiazg. Pierwszy gorszy dzień kasuje Ci cały tydzień i wracasz na start w poniedziałek. Z kimś, kto to widzi i rozlicza, domykasz to w dwa tygodnie.`;
 }
 
