@@ -151,6 +151,19 @@ export async function POST(req: NextRequest) {
         lastReason = 'binary_slop'; continue;
       }
 
+      // Guard OGONKOW: pola pisane przez model (bez cytatu, ktory oddaje slowa leada) prawie zawsze
+      // maja polskie znaki. Jesli jest ich znikomo = model zjechal na ASCII (skopiowal input bez ogonkow).
+      // Retry; drugi raz -> czysty fallback deterministyczny (ma pelne ogonki). Prog bezpieczny:
+      // realna polszczyzna ma ~1 diakrytyk na 8-12 znakow, tu lapiemy dopiero ponizej 1 na 50.
+      const authored = (['falszywe_zalozenie', 'mechanizm', 'pulapka', 'slaby_punkt', 'zaproszenie', 'most_intro']
+        .map(k => (typeof parsed[k] === 'string' ? (parsed[k] as string) : ''))
+        .concat(Array.isArray(parsed.kolejnosc) ? (parsed.kolejnosc as unknown[]).filter(x => typeof x === 'string') as string[] : []))
+        .join(' ');
+      const diac = (authored.match(/[ąćęłńóśźż]/gi) || []).length;
+      if (authored.length > 120 && diac < authored.length / 50) {
+        lastReason = 'ascii_slip'; continue;
+      }
+
       reframe = parsed;
     }
 
