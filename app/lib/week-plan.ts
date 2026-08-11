@@ -20,6 +20,7 @@ export interface WeekPlanInput {
   costTotal: number;             // costs().total, zł / 6 mies (faktyczny wydatek)
   wknd: number;                  // 0-4 jak mocno weekend rusza rytm
   imie?: string;
+  trigger?: string;              // czemu ruszyl to dzis (wlasne slowa, do domkniecia mostu), opcjonalne
   potentialPct?: number;         // ile % potencjału user dziś wykorzystuje (100 - score), opcjonalne
   costMonths?: number;           // stagnationMonths z costs(), opcjonalne
   // dodatkowe sygnały do doboru kotwic (opcjonalne, mają sensowne defaulty):
@@ -47,6 +48,7 @@ export interface WeekPlan {
   metric: string;
   invitation: string;           // osobista linia "widzę tu potencjał" (sekcja VII, wielki serif)
   bridgeIntro: string;          // akapit pod zaproszeniem (spersonalizowany most albo fallback)
+  weakSpot: string;             // slaby punkt leada (rozwiazany: reframe albo deterministyczny) do CTA
   bridge: { tier: string; line: string; kind: 'save' | 'start' | 'ladder' | 'coop' }[];
   saveNote: string;             // pod przyciskiem zapisu
   firstMove: string;            // jeden konkretny ruch na jutro (darmowy win od razu, reciprocity)
@@ -203,7 +205,7 @@ function invitationLine(input: WeekPlanInput): string {
   const hot = input.qualified || (input.potentialPct ?? (100 - input.score)) <= 45;
   const mies = input.costMonths && input.costMonths >= 2 ? `${input.costMonths} miesięcy już zeszło, a sylwetka stoi w tym samym miejscu. ` : '';
   const spot = input.reframe?.slaby_punkt?.trim() || weakSpot(input.worstCat);
-  if (hot) return `Wiedzę masz, plan trzymasz teraz w tej Karcie. ${mies}Więc czemu za rok będziesz dokładnie tu, gdzie jesteś dziś? Bo sam, po trzecim gorszym dniu, wracasz do starego tygodnia i mówisz sobie: od poniedziałku. Ten poniedziałek nie przyszedł ani razu. Parę lat temu czułeś się w swoim ciele lżej. Tamten stan wciąż siedzi pod jednym wyciekiem. U Ciebie to ${spot}. Wystarczy go odetkać.`;
+  if (hot) return `Wiedzę masz, plan trzymasz teraz w tej Karcie. ${mies}Więc czemu za rok będziesz dokładnie tu, gdzie jesteś dziś? Bo sam, po trzecim gorszym dniu, wracasz do starego tygodnia i mówisz sobie: od poniedziałku. Ten poniedziałek nie przyszedł ani razu. Parę lat temu czułeś się w swoim ciele lżej. Ten stan trzyma dziś jedno zatkane miejsce. U Ciebie to ${spot}. Odetkać je i wraca.`;
   return `Bazę masz dobrą, teoria siedzi. ${mies}A i tak co tydzień pękasz w tym samym punkcie. U Ciebie to ${spot}. Sam tego nie domkniesz, bo osobno każdy z tych błędów wygląda na drobiazg. Pierwszy gorszy dzień kasuje Ci cały tydzień i wracasz na start w poniedziałek. Z kimś, kto to widzi i rozlicza, domykasz to w dwa tygodnie.`;
 }
 
@@ -215,14 +217,14 @@ function bridgeIntroLine(input: WeekPlanInput): string {
 }
 
 // ── MOST DO KOLEJNEGO KROKU ──
+// Dwa stopnie, nie menu. Bez "Robisz to sam" (off-ramp nad CTA) i bez Save (ten zszedl do stopki).
+// Prosty jezyk, zero korpo/coacha. Primary akcja (DM) jest niżej, w przyciskach.
 function buildBridge(input: WeekPlanInput): WeekPlan['bridge'] {
   const hot = input.qualified || (input.potentialPct ?? (100 - input.score)) <= 45;
-  const save = { tier: 'Zapisz Kartę Tygodnia (PDF)', line: 'Pobierz ten wynik jako punkt odniesienia na najbliższe 7 dni.', kind: 'save' as const };
-  const start = { tier: 'Robisz to sam', line: 'Bierzesz te 6 kotwic i pilnujesz dnia, w którym tydzień Ci pęka.', kind: 'start' as const };
-  const ladder = { tier: 'Siadamy nad tym raz', line: 'Przechodzimy ten wynik razem, pod Twój grafik i to, co chcesz ruszyć.', kind: 'ladder' as const };
-  const coopHot = { tier: 'Prowadzę Cię 1:1', line: 'Jeśli po Twoim wyniku uznam, że mogę Cię ruszyć, biorę Cię na pokład: układam tydzień pod Twój grafik i prowadzę co tydzień.', kind: 'coop' as const };
-  const coopCold = { tier: 'Prowadzę Cię 1:1', line: 'Gdy zobaczysz, jak pracuję z innymi i uznasz, że to Twoja droga, odezwij się do mnie z tym wynikiem.', kind: 'coop' as const };
-  return hot ? [save, coopHot, start, ladder] : [save, start, ladder, coopCold];
+  const ladder = { tier: 'Siadamy nad tym raz', line: 'Przechodzimy Twój wynik na spokojnie i wychodzisz z jednym planem na najbliższy miesiąc.', kind: 'ladder' as const };
+  const coopHot = { tier: 'Prowadzę Cię 1:1', line: 'Układam Ci tydzień pod grafik i co tydzień rozliczam z wykonania, aż to zacznie siedzieć samo.', kind: 'coop' as const };
+  const coopCold = { tier: 'Prowadzę Cię 1:1', line: 'Jak zobaczysz, jak pracuję z innymi, i uznasz, że chcesz to robić ze mną, a nie sam, odezwij się.', kind: 'coop' as const };
+  return hot ? [ladder, coopHot] : [ladder, coopCold];
 }
 
 // ── JEDEN RUCH NA JUTRO: darmowy win od razu, zanim user wejdzie w 6 kotwic ──
@@ -271,6 +273,7 @@ export function buildWeekPlan(input: WeekPlanInput): WeekPlan {
     metric,
     invitation: invitationLine(input),
     bridgeIntro: bridgeIntroLine(input),
+    weakSpot: input.reframe?.slaby_punkt?.trim() || weakSpot(input.worstCat),
     bridge: buildBridge(input),
     saveNote: 'To trafia tylko do mnie. Bez automatów i bez list mailingowych.',
     firstMove: firstMoveFor(input.worstCat),

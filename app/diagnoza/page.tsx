@@ -209,6 +209,7 @@ export default function DiagnozaPage() {
       qualified,
       worstCat: worstW, breakWindow: D.breakWindow, score: SC, costTotal: C.total, wknd: D.wknd,
       imie, potentialPct: 100 - SC, costMonths: C.stagnationMonths,
+      trigger: typeof answers.user_trigger === 'string' ? answers.user_trigger : undefined,
       drinks: D.drinks, screenBed: D.screenBed, junk: D.junk, protein: D.protein,
       sleep: D.sleep, miss: D.miss, binge: D.binge, gym: D.gym,
       reframe: reframe || undefined,

@@ -144,7 +144,7 @@ export default function WeekPage({ plan, imie, instagram, naborHref = 'https://n
           <div className="wp-noprint" style={{ display: 'flex', alignItems: 'flex-start', gap: 12, background: C.panel2, border: `1px solid ${C.line2}`, borderRadius: 12, padding: '13px 16px', marginBottom: 44 }}>
             <span aria-hidden style={{ color: C.gold, fontSize: 17, lineHeight: 1.3, flexShrink: 0 }}>✓</span>
             <p style={{ margin: 0, fontSize: 13.5, color: C.mute, lineHeight: 1.55 }}>
-              Zapisałem Twój wynik. Piszę do chłopaków z tym osobiście, zwykle w ciągu doby na <b style={{ color: C.paper }}>@{instagram}</b>. Chcesz szybciej? Napisz pierwszy niżej.
+              Twój wynik jest już u mnie, pod <b style={{ color: C.paper }}>@{instagram}</b>. Najszybciej ruszymy, jak sam napiszesz do mnie pierwszy, tam na dole. Odpisuję Ci osobiście, nie automat.
             </p>
           </div>
         )}
@@ -298,41 +298,36 @@ export default function WeekPage({ plan, imie, instagram, naborHref = 'https://n
                 <span style={{ fontFamily: C.mono, fontSize: 12, fontWeight: 700, color: C.numGold, flexShrink: 0, marginTop: 2, width: 20 }}>{String(i + 1).padStart(2, '0')}</span>
                 <div style={{ flex: 1 }}>
                   <div style={{ fontSize: 15, fontWeight: 700, color: C.paper, marginBottom: 5 }}>{b.tier}</div>
-                  <div style={{ fontSize: 14.5, color: C.mute, lineHeight: 1.55, marginBottom: b.kind === 'save' ? 12 : 0 }}>{b.line}</div>
-                  {b.kind === 'save' && <SaveCardButton label="Zapisz Kartę tygodnia (PDF)" />}
+                  <div style={{ fontSize: 14.5, color: C.mute, lineHeight: 1.55 }}>{b.line}</div>
                 </div>
               </div>
             ))}
           </div>
 
-          {/* Przycisk bezpośredniego kontaktu w DM i Prowadzenia */}
+          {/* Jeden oczywisty ruch = DM. Slaby punkt tuz nad przyciskiem, DM zawsze primary
+              (sprzedaz wylacznie IG DM), nabor jako drugorzedny link, Save cicho obok. */}
           {(() => {
-            const dmMsg = imie?.trim()
-              ? `Cześć Michał, jestem ${imie.trim()}. Zrobiłem diagnostykę na stronie (${plan.problem.name}). Chcę omówić z Tobą mój wynik.`
-              : `Cześć Michał, zrobiłem diagnostykę na stronie (${plan.problem.name}). Chcę omówić z Tobą mój wynik.`;
+            const dmMsg = `Cześć Michał${imie?.trim() ? `, jestem ${imie.trim()}` : ''}. Zrobiłem diagnostykę (${plan.problem.name}). Najbardziej siedzi mi ${plan.weakSpot}. Chcę to z Tobą przegadać.`;
             const dmUrl = `https://ig.me/m/hantleitalerz?text=${encodeURIComponent(dmMsg)}`;
-            const goldStyle = { background: `linear-gradient(135deg, ${C.gold}, ${C.goldBright})`, color: C.ink, fontWeight: 800 };
-            const softStyle = { background: C.panel2, color: C.paper, border: `1px solid ${C.line2}` };
-            // Złoty (mocny) przycisk tylko dla skwalifikowanego leada. Zimny widzi same miękkie opcje
-            // + swoją Kartę do zapisania: ociepla, nie pcha na najdroższe zanim jest gotów.
-            const dm = (
-              <a key="dm" href={dmUrl} target="_blank" rel="noopener noreferrer" onClick={() => track('diag_dm_click', { qualified })} className="wp-cta" style={softStyle}>
-                Napisz do mnie z tym wynikiem na Instagramie <span aria-hidden>&rarr;</span>
-              </a>
-            );
-            const nabor = (
-              <a key="nabor" href={naborHref} onClick={() => track('diag_nabor_click', { loc: 'result', qualified })} className="wp-cta" style={qualified ? goldStyle : softStyle}>
-                {qualified ? 'Zobacz, jak wygląda współpraca 1:1' : 'Zobacz, jak pracuję z innymi w 1:1'} <span aria-hidden>&rarr;</span>
-              </a>
-            );
             return (
-              <div className="wp-noprint" style={{ display: 'grid', gap: 12 }}>
-                {qualified ? [nabor, dm] : [dm, nabor]}
+              <div className="wp-noprint">
+                <p style={{ fontSize: 15.5, color: C.paper, lineHeight: 1.6, margin: '0 0 16px', maxWidth: 540 }}>
+                  U Ciebie pęka to jedno: <b style={{ color: C.gold }}>{plan.weakSpot}</b>. Z tym do mnie napisz, resztę ułożymy.
+                </p>
+                <a href={dmUrl} target="_blank" rel="noopener noreferrer" onClick={() => track('diag_dm_click', { qualified })} className="wp-cta" style={{ background: `linear-gradient(135deg, ${C.gold}, ${C.goldBright})`, color: C.ink, fontWeight: 800 }}>
+                  Napisz do mnie na Instagramie <span aria-hidden>&rarr;</span>
+                </a>
+                <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', alignItems: 'center', gap: 18, margin: '18px 0 0' }}>
+                  <a href={naborHref} onClick={() => track('diag_nabor_click', { loc: 'result', qualified })} style={{ fontSize: 13.5, color: C.mute, textDecoration: 'underline', textUnderlineOffset: 3 }}>
+                    {qualified ? 'albo zobacz, jak wygląda współpraca 1:1' : 'albo zobacz, jak pracuję z innymi'}
+                  </a>
+                  <SaveCardButton label="Zapisz Kartę (PDF)" />
+                </div>
               </div>
             );
           })()}
-          <p className="wp-noprint" style={{ fontSize: 12.5, color: C.faint, textAlign: 'center', margin: '14px 0 0', lineHeight: 1.55 }}>
-            {plan.saveNote} Od 9 lat przeprowadziłem przez to ponad 180 facetów. Napiszesz, odpisuję osobiście w ciągu doby.
+          <p className="wp-noprint" style={{ fontSize: 12.5, color: C.faint, textAlign: 'center', margin: '18px 0 0', lineHeight: 1.55 }}>
+            {plan.saveNote} Od 9 lat przeprowadziłem przez to ponad 180 facetów.
           </p>
         </section>
 

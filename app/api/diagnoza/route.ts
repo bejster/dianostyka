@@ -15,8 +15,8 @@ Twoje zadanie: uzyj KONKRETOW z jego testu (cytuj jego realne wybory i slowa, ni
 4. KOLEJNOSC: 3 precyzyjne kroki rozbrajajace JEGO problem w kolejnosci fizjologicznej. Tablica 3 stringow, kazdy max 8 slow.
 5. PULAPKA: czemu kolejna dieta/plan z neta go z tego nie wyciagnie. Odwolaj sie do jego historii (ile planow mu padlo, jak sam sie tlumaczy). 1 zdanie, max 25 slow.
 6. SLABY_PUNKT: jedno miejsce, w ktorym co tydzien peka, jego jezykiem, jako krotka frazy (np. "wieczor, w ktorym caly dzien sie na Tobie msci"). Max 12 slow, bez kropki na koncu.
-7. ZAPROSZENIE: osobista linia na sam koniec Karty (sekcja "Ode mnie, na koniec"). Nazwij jego slaby punkt, powiedz wprost gdzie sam sie zatrzyma i czemu, i uczciwie zapros do rozmowy. Bez wciskania, bez "kup teraz". Ma brzmiec jak prawda powiedziana w twarz, nie jak sprzedaz. 3-4 zdania, max 60 slow.
-8. MOST_INTRO: akapit tuz pod zaproszeniem. Odwolaj sie do tego, ze pewnie juz probowal sam (uzyj ile planow mu padlo), powiedz czemu tym razem dostaje cos innego niz szablon (widzisz gdzie U NIEGO peka tydzien), i ze nie kazdego bierzesz. 2-3 zdania, max 60 slow.
+7. ZAPROSZENIE: osobista linia na sam koniec Karty (sekcja "Ode mnie, na koniec"). OTWORZ ja jego momentem TRIGGER, czemu ruszyl to akurat dzis, jego wlasnymi slowami (nie parafrazuj na gladko, oddaj tamten moment). Potem nazwij slaby punkt, powiedz wprost gdzie sam sie zatrzyma i czemu, i zapros do rozmowy. Bez wciskania, bez "kup teraz". Prawda w twarz, nie sprzedaz. 3-4 zdania, max 65 slow.
+8. MOST_INTRO: akapit tuz pod zaproszeniem. Odwolaj sie do tego, ze pewnie juz probowal sam (uzyj ile planow mu padlo), powiedz czemu tym razem dostaje cos innego niz szablon (widzisz gdzie u niego peka tydzien), i ze nie kazdego bierzesz. 2-3 zdania, max 60 slow.
 
 ZASADY TONU (TWARDE):
 - WYLACZNIE polski alfabet lacinski. ZERO cyrylicy, zero obcych alfabetow.
@@ -30,6 +30,9 @@ ZASADY TONU (TWARDE):
 - DOWOD, NIE SCIEMA: zero zmyslonych procentow i godzin podanych jako pewnik. Nie tward, ze jeden weekend albo jedna noc zmienia hormony. Mow o wzorcu, nie o epizodzie. Przyczyny stawiaj miekko (podcina, przygasza, rozjezdza), nie kategorycznie.
 - ZAKAZ moralizowania o jedzeniu, ciele, uzywkach, nawykach.
 - ZAKAZ pochwal i zmyslonego podziwu ("widac, ze zalezy Ci", "robisz kawal roboty"). Konkret, mechanizm, wniosek.
+- ZAKAZ jezyka coacha i korpo: "na pokład", "Twoja droga", "przejdziemy przez to razem", "omowic wynik", "tryb X w tryb Y". Mow prosto: "pokaze Ci", "przegadamy", "poukladamy".
+- Pisz "Jak chcesz", nie "Jesli chcesz". Do JEDNEGO faceta, nie do grupy. Nigdy nie pisz slowem w wersalikach w srodku zdania.
+- NIE KOPIUJ slow z ponizszego przykladu. Przyklad pokazuje TYLKO rytm, dlugosc zdan i sposob otwarcia triggerem. Tresc bierz wylacznie z realnych odpowiedzi tego leada. Nie powielaj fraz typu "placisz rachunek za caly dzien" ani "przejde z Toba ten punkt".
 
 KONTEKST TESTU:
 - Najslabsza kategoria: {worstCat}
@@ -37,8 +40,8 @@ KONTEKST TESTU:
 - Wiek: {age}
 - Planow, ktore mu padly w tym roku: {triedBefore}
 
-PRZYKLAD RYTMU I GLOSU (nasladuj ton i dlugosc zdan, NIE tresc, dopasuj do realnej sytuacji leada):
-{"cytat":"ogarniam 12 osob w firmie, a nad wlasnym jedzeniem po 21 nie panuje","falszywe_zalozenie":"Myslisz, ze to brak silnej woli, skoro w robocie jej nie brakuje.","mechanizm":"Do wieczora trzymasz wszystko na napieciu i kawie. Uklad nerwowy nie dostaje sygnalu zejscia z obrotow, wiec bierze najszybszy: jedzenie. Krotki, plytki sen podbija grelinę rano, a wieczorny kortyzol domyka petle. To rachunek za dzien, nie slaby charakter.","kolejnosc":["Bialko w pierwszym posilku","Rytual zejscia z obrotow przed 22","Telefon poza sypialnia"],"pulapka":"Trzy plany padly Ci w tym roku, bo kazdy celowal w talerz, a Twoj wieczor rozkreca napiecie z calego dnia.","slaby_punkt":"wieczor, w ktorym caly dzien sie na Tobie msci","zaproszenie":"Wieczorem placisz rachunek za caly dzien na napieciu, bo nikt nie nauczyl Twojego ukladu nerwowego schodzic z obrotow. Sam dojdziesz do tego miejsca i tam utkniesz, bo kazda proba celuje w jedzenie, a nie w to, co je nakreca. Jak chcesz, przejde z Toba dokladnie ten punkt.","most_intro":"Trzy razy w tym roku zaczales i po dwoch tygodniach odpuszczales. Dlatego nie dostajesz tu czwartego szablonu. Widze, gdzie U CIEBIE peka tydzien, i wiem, co zdjac najpierw. Nie kazdego biore, a jak nie widze, ze da sie ruszyc, powiem wprost."}
+PRZYKLAD RYTMU I OTWARCIA (to INNA sytuacja niz Twoj lead: sen i weekend. Nasladuj TYLKO rytm, dlugosc zdan i to, ze zaproszenie otwiera sie triggerem. Tresc bierz w calosci z realnych odpowiedzi swojego leada, nie stad):
+{"cytat":"budze sie o trzeciej i juz nie zasypiam, potem caly dzien jestem na pol gwizdka","falszywe_zalozenie":"Myslisz, ze masz lekki sen, a to rozjechany rytm po weekendach.","mechanizm":"Wybudzenia o trzeciej ida czesto za wieczornym kortyzolem, ktory nie zdazyl opasc. Weekend z krotszym snem i alkoholem rozjezdza zegar, wiec w tygodniu budzik lapie Cie w zlej fazie. Rano wstajesz z mniejszym bakiem, nie z lenistwa.","kolejnosc":["Stala pobudka nawet w weekend","Alkohol do jednego dnia","Swiatlo w oczy zaraz po wstaniu"],"pulapka":"Kolejny suplement na sen tego nie ruszy, bo celuje w objaw, a Twoj rytm rozwala weekend.","slaby_punkt":"weekend, ktory kasuje Ci caly nastepny tydzien","zaproszenie":"Ruszyles to dzis, bo zdjecia z wakacji Cie zmrozily. Sam dojdziesz do tego weekendu i tam Ci sie sypie, bo poniedzialek zawsze zaczynasz od nadrabiania. Jak chcesz, poukladamy Twoj tydzien tak, zeby weekend go nie kasowal.","most_intro":"Zaczynales juz kilka razy i za kazdym razem cos wybilo Cie z rytmu. Dlatego nie dostajesz kolejnej rozpiski. Widze, gdzie u ciebie peka tydzien, i wiem, co zdjac najpierw. Nie kazdego biore, a jak nie widze szansy, powiem wprost."}
 
 ZWROC TYLKO CZYSTY JSON, bez markdown, bez backtickow, dokladnie tymi kluczami:
 {"cytat":"...","falszywe_zalozenie":"...","mechanizm":"...","kolejnosc":["krok1","krok2","krok3"],"pulapka":"...","slaby_punkt":"...","zaproszenie":"...","most_intro":"..."}`;
@@ -151,6 +154,14 @@ export async function POST(req: NextRequest) {
     if (!reframe) {
       return NextResponse.json({ ok: false, reason: lastReason });
     }
+
+    // De-shout: model czasem kopiuje wersaliki z instrukcji ("U CIEBIE"). Sprowadz slowa-krzyki
+    // (2+ wielkich liter pod rzad) do normalnej formy, to czytelny AI-tell u leada.
+    const deShout = (s: unknown): unknown =>
+      typeof s === 'string'
+        ? s.replace(/\p{Lu}[\p{Lu}]+/gu, w => w.charAt(0) + w.slice(1).toLowerCase())
+        : Array.isArray(s) ? s.map(deShout) : s;
+    for (const k of Object.keys(reframe)) reframe[k] = deShout(reframe[k]);
 
     return NextResponse.json({ ok: true, reframe });
   } catch (e) {
