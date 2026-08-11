@@ -12,6 +12,7 @@ import { type RawAnswers } from '../lib/scoring-engine';
 import { answersToFD } from '../lib/answers-to-fd';
 import { score, costs, pickArchetype, tagScoreWeighted, hourRange } from '../lib/diagnostic-core';
 import { buildWeekPlan } from '../lib/week-plan';
+import { buildLeadBrief } from '../lib/lead-brief';
 import { Atmosphere } from './atmosphere';
 
 const GOLD = '#c8a84e';
@@ -27,6 +28,10 @@ interface ReframeData {
   mechanizm?: string;
   kolejnosc?: string[];
   pulapka?: string;
+  // ── warstwa mostu (sekcja VII), pisana z realnych odpowiedzi leada ──
+  slaby_punkt?: string;   // slaby punkt jego jezykiem (frazy)
+  zaproszenie?: string;   // osobista linia "Ode mnie, na koniec"
+  most_intro?: string;    // akapit pod zaproszeniem (zastepuje generyk)
 }
 
 // ── Kwalifikacja leada na prowadzenie 1:1 (niewidoczna dla usera) ──
@@ -83,6 +88,7 @@ export default function DiagnozaPage() {
     track('diag_result_viewed', { score: sc, segment, worstCat });
 
     const painText = typeof raw.user_pain === 'string' ? raw.user_pain.trim() : '';
+    const leadBrief = buildLeadBrief(raw); // pelny brief + 3 pola wolnego tekstu do personalizacji
     const rawImie = raw.imie ?? raw.name;
 
     // ── Powiadomienie leada na Telegram: ZAWSZE, gdy ktoś skończył quiz (Michał chce wiedzieć od razu) ──
@@ -111,14 +117,21 @@ export default function DiagnozaPage() {
       }),
     }).catch(() => {});
 
-    // ── Reframe z wlasnych slow usera (LLM), tylko gdy coś napisał. Fire-and-forget, Karta stoi bez niego. ──
-    if (painText) {
+    // ── Reframe z wlasnych slow usera (LLM), gdy cokolwiek napisal. Karmimy CALY brief (wszystkie
+    //    odpowiedzi), nie jedno zdanie. Fire-and-forget, Karta stoi bez niego (fallback deterministyczny). ──
+    if (leadBrief.hasFreeText) {
       void (async () => {
         try {
           const res = await fetch('/api/diagnoza', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ pain: painText, selfDx: '', trigger: '', worstCat, segment, age: D.age }),
+            body: JSON.stringify({
+              brief: leadBrief.brief,
+              pain: leadBrief.pain,
+              trigger: leadBrief.trigger,
+              selfDx: leadBrief.selfDx,
+              worstCat, segment, age: D.age, triedBefore: D.triedBefore,
+            }),
           });
           const json = await res.json();
           if (json?.ok && json.reframe) {

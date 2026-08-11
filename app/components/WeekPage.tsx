@@ -288,7 +288,7 @@ export default function WeekPage({ plan, imie, instagram, naborHref = 'https://n
           </div>
 
           <p style={{ fontSize: 16, color: C.mute, lineHeight: 1.65, margin: '0 0 26px', maxWidth: 540 }}>
-            Pewnie nieraz wywaliłeś kasę na dietę z neta albo plan, który po dwóch tygodniach się rozsypał. Dlatego tu nie dostajesz kolejnego szablonu. Widzę, gdzie dokładnie pęka Twój tydzień, i wiem, co zdjąć najpierw u Ciebie, nie u wszystkich. Nie każdego biorę, a jak nie widzę, że da się ruszyć, powiem wprost. Napisz do mnie z tym wynikiem, odpiszę ja, nie zespół.
+            {plan.bridgeIntro}
           </p>
 
           {/* drabina akcji */}

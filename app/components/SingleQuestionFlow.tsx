@@ -470,7 +470,7 @@ export default function SingleQuestionFlow({ onComplete, initialAnswers }: Props
           <div>
             <textarea
               rows={4}
-              placeholder="np. Trenuję regularnie, trzymam miskę w dzień, ale po 21:00 zjadam pół lodówki i w poniedziałki w ogóle nie mam siły..."
+              placeholder={currentQ.placeholder || 'np. Trenuję regularnie, trzymam miskę w dzień, ale po 21:00 zjadam pół lodówki i w poniedziałki w ogóle nie mam siły...'}
               value={String(answers[currentQ.id] || '')}
               onChange={e => handleTextChange(e.target.value)}
               style={{

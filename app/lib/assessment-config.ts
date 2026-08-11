@@ -74,6 +74,7 @@ export interface QuestionDef {
   max?: number;
   step?: number;
   unit?: string;
+  placeholder?: string; // podpowiedź w polu tekstowym (per pytanie, nie jeden generyk)
   options?: QuestionOption[];
   condition?: (answers: Record<string, unknown>) => boolean;
   upstreamWeight: number; // jak bardzo ten problem jest przyrodzoną przyczyną
@@ -395,10 +396,9 @@ export const QUESTIONS: QuestionDef[] = [
     section: 'Napęd',
     sectionNum: 'VII',
     title: 'Poranne wzwody, szczerze, jak często?',
-    subtitle: 'Bez oceniania. To dobry sygnał snu i testosteronu. Możesz pominąć.',
+    subtitle: 'Bez oceniania. To jeden z najlepszych domowych sygnałów snu i testosteronu, dlatego pytam wprost.',
     type: 'single',
     domain: 'chaos',
-    optional: true,
     upstreamWeight: 0.55,
     crossDomainImpact: 0.60,
     options: [
@@ -429,11 +429,36 @@ export const QUESTIONS: QuestionDef[] = [
     section: 'Główna przeszkoda',
     sectionNum: 'VII',
     title: 'Co Cię w tym wszystkim najbardziej wkurwia?',
-    subtitle: 'Jedno zdanie, własnymi słowami. Bez ładnego pisania.',
+    subtitle: 'Jedno, dwa zdania, własnymi słowami. Bez ładnego pisania, tak jak myślisz.',
     type: 'text',
     domain: 'chaos',
+    placeholder: 'np. Że ogarniam firmę, ludzi, wszystko, a nad własnym ciałem od dwóch lat nie umiem zapanować i sam siebie za to nie szanuję...',
     upstreamWeight: 0.90,
     crossDomainImpact: 0.90,
+  },
+  {
+    id: 'user_trigger',
+    section: 'Główna przeszkoda',
+    sectionNum: 'VII',
+    title: 'Czemu akurat teraz to sprawdzasz?',
+    subtitle: 'Coś Cię dziś tu przygnało. Nie miesiąc temu, nie za rok. Napisz co.',
+    type: 'text',
+    domain: 'chaos',
+    placeholder: 'np. Zobaczyłem się na zdjęciach z wesela i mnie zmroziło. Albo: syn poprosił, żebym z nim pobiegał, i po dwóch minutach musiałem stanąć...',
+    upstreamWeight: 0.85,
+    crossDomainImpact: 0.80,
+  },
+  {
+    id: 'user_selfdx',
+    section: 'Główna przeszkoda',
+    sectionNum: 'VII',
+    title: 'Co Twoim zdaniem trzyma Cię w miejscu?',
+    subtitle: 'Nie musisz mieć racji. Chcę usłyszeć, jak Ty to sobie tłumaczysz.',
+    type: 'text',
+    domain: 'chaos',
+    placeholder: 'np. Myślę, że to brak czasu i silnej woli. Zaczynam mocno, po dwóch tygodniach coś wybija mnie z rytmu i odpuszczam całość...',
+    upstreamWeight: 0.85,
+    crossDomainImpact: 0.80,
   },
 
   // ── SEKCJA VIII: CO DALEJ (kwalifikacja fit, niewidoczna, nie wchodzi do score) ──

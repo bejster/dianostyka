@@ -26,7 +26,10 @@ export interface WeekPlanInput {
   drinks?: number; screenBed?: number; junk?: number; protein?: number;
   sleep?: number; miss?: number; binge?: number; gym?: number;
   // reframe z /api/diagnoza (opcjonalny):
-  reframe?: { cytat?: string; falszywe_zalozenie?: string; mechanizm?: string; pulapka?: string; kolejnosc?: string[] };
+  reframe?: {
+    cytat?: string; falszywe_zalozenie?: string; mechanizm?: string; pulapka?: string; kolejnosc?: string[];
+    slaby_punkt?: string; zaproszenie?: string; most_intro?: string;
+  };
 }
 
 export type DayState = 'good' | 'ok' | 'risk' | 'break';
@@ -42,7 +45,8 @@ export interface WeekPlan {
   potential: { usedPct: number; headline: string; body: string; punch: string };
   plan: PlanAnchor[];            // pierwsze kroki: 6 kotwic
   metric: string;
-  invitation: string;           // osobista linia "widzę tu potencjał"
+  invitation: string;           // osobista linia "widzę tu potencjał" (sekcja VII, wielki serif)
+  bridgeIntro: string;          // akapit pod zaproszeniem (spersonalizowany most albo fallback)
   bridge: { tier: string; line: string; kind: 'save' | 'start' | 'ladder' | 'coop' }[];
   saveNote: string;             // pod przyciskiem zapisu
   firstMove: string;            // jeden konkretny ruch na jutro (darmowy win od razu, reciprocity)
@@ -126,11 +130,11 @@ function hiddenCost(input: WeekPlanInput): WeekPlan['hiddenCost'] {
 // ── POTENCJAŁ NA STOLE ──
 function potentialBlock(input: WeekPlanInput): WeekPlan['potential'] {
   const used = Math.max(20, Math.min(input.potentialPct ?? (100 - input.score), 85));
-  const worst = input.worstCat.toLowerCase();
+  const spot = input.reframe?.slaby_punkt?.trim() || input.worstCat.toLowerCase();
   return {
     usedPct: used,
     headline: 'Formę masz w środku. Co tydzień sam sobie ją odcinasz.',
-    body: `Z tego, co zaznaczyłeś, tydzień przepuszcza Ci dziś jakieś ${100 - used}% tego, na co Cię stać. Ta liczba idzie z Twoich własnych odpowiedzi, nie z żadnego badania. Reszta nigdzie nie poszła, trzyma ją jedno miejsce: ${worst}.`,
+    body: `Z tego, co zaznaczyłeś, tydzień przepuszcza Ci dziś jakieś ${100 - used}% tego, na co Cię stać. Ta liczba idzie z Twoich własnych odpowiedzi, nie z żadnego badania. Reszta nigdzie nie poszła, trzyma ją jedno miejsce: ${spot}.`,
     punch: 'Odetkaj ten jeden punkt, a reszta rusza sama. Bez wywracania całego życia do góry nogami.',
   };
 }
@@ -193,13 +197,21 @@ const WEAK_SPOT: Record<string, string> = {
 };
 function weakSpot(worst: string): string { return WEAK_SPOT[worst] || WEAK_SPOT['Żywienie']; }
 
-// ── ZAPROSZENIE ──
+// ── ZAPROSZENIE ── (LLM-owe z realnych slow leada, gdy jest; inaczej deterministyczne z jego slabym punktem)
 function invitationLine(input: WeekPlanInput): string {
+  if (input.reframe?.zaproszenie?.trim()) return input.reframe.zaproszenie.trim();
   const hot = input.qualified || (input.potentialPct ?? (100 - input.score)) <= 45;
   const mies = input.costMonths && input.costMonths >= 2 ? `${input.costMonths} miesięcy już zeszło, a sylwetka stoi w tym samym miejscu. ` : '';
-  const spot = weakSpot(input.worstCat);
+  const spot = input.reframe?.slaby_punkt?.trim() || weakSpot(input.worstCat);
   if (hot) return `Wiedzę masz, plan trzymasz teraz w tej Karcie. ${mies}Więc czemu za rok będziesz dokładnie tu, gdzie jesteś dziś? Bo sam, po trzecim gorszym dniu, wracasz do starego tygodnia i mówisz sobie: od poniedziałku. Ten poniedziałek nie przyszedł ani razu. Parę lat temu czułeś się w swoim ciele lżej. Tamten stan wciąż siedzi pod jednym wyciekiem. U Ciebie to ${spot}. Wystarczy go odetkać.`;
   return `Bazę masz dobrą, teoria siedzi. ${mies}A i tak co tydzień pękasz w tym samym punkcie. U Ciebie to ${spot}. Sam tego nie domkniesz, bo osobno każdy z tych błędów wygląda na drobiazg. Pierwszy gorszy dzień kasuje Ci cały tydzień i wracasz na start w poniedziałek. Z kimś, kto to widzi i rozlicza, domykasz to w dwa tygodnie.`;
+}
+
+// ── MOST_INTRO ── akapit pod zaproszeniem. LLM-owy z jego historii, inaczej deterministyczny fallback.
+function bridgeIntroLine(input: WeekPlanInput): string {
+  if (input.reframe?.most_intro?.trim()) return input.reframe.most_intro.trim();
+  const spot = input.reframe?.slaby_punkt?.trim() || weakSpot(input.worstCat);
+  return `Pewnie nieraz wywaliłeś kasę na dietę z neta albo plan, który po dwóch tygodniach się rozsypał. Dlatego tu nie dostajesz kolejnego szablonu. Widzę, gdzie dokładnie pęka Twój tydzień, u Ciebie to ${spot}, i wiem, co zdjąć najpierw. Nie każdego biorę, a jak nie widzę, że da się ruszyć, powiem wprost. Napisz do mnie z tym wynikiem, odpiszę ja, nie zespół.`;
 }
 
 // ── MOST DO KOLEJNEGO KROKU ──
@@ -258,6 +270,7 @@ export function buildWeekPlan(input: WeekPlanInput): WeekPlan {
     plan,
     metric,
     invitation: invitationLine(input),
+    bridgeIntro: bridgeIntroLine(input),
     bridge: buildBridge(input),
     saveNote: 'To trafia tylko do mnie. Bez automatów i bez list mailingowych.',
     firstMove: firstMoveFor(input.worstCat),
