@@ -95,7 +95,7 @@ export async function POST(req: NextRequest) {
     let reframe: Record<string, unknown> | null = null;
     let lastReason = 'unknown_error';
 
-    for (let attempt = 0; attempt < 2 && !reframe; attempt++) {
+    for (let attempt = 0; attempt < 3 && !reframe; attempt++) {
       const r = await fetch('https://openrouter.ai/api/v1/chat/completions', {
         method: 'POST',
         headers: {
@@ -151,18 +151,16 @@ export async function POST(req: NextRequest) {
         lastReason = 'binary_slop'; continue;
       }
 
-      // Guard OGONKOW: pola pisane przez model (bez cytatu, ktory oddaje slowa leada) prawie zawsze
-      // maja polskie znaki. Jesli jest ich znikomo = model zjechal na ASCII (skopiowal input bez ogonkow).
-      // Retry; drugi raz -> czysty fallback deterministyczny (ma pelne ogonki). Prog bezpieczny:
-      // realna polszczyzna ma ~1 diakrytyk na 8-12 znakow, tu lapiemy dopiero ponizej 1 na 50.
-      const authored = (['falszywe_zalozenie', 'mechanizm', 'pulapka', 'slaby_punkt', 'zaproszenie', 'most_intro']
-        .map(k => (typeof parsed[k] === 'string' ? (parsed[k] as string) : ''))
-        .concat(Array.isArray(parsed.kolejnosc) ? (parsed.kolejnosc as unknown[]).filter(x => typeof x === 'string') as string[] : []))
-        .join(' ');
-      const diac = (authored.match(/[ąćęłńóśźż]/gi) || []).length;
-      if (authored.length > 120 && diac < authored.length / 50) {
-        lastReason = 'ascii_slip'; continue;
-      }
+      // Guard OGONKOW (PER POLE): kazde dluzsze pole pisane przez model prawie zawsze ma polskie
+      // znaki. Sprawdzamy osobno kluczowe pola (nie razem, bo jedno moglo zjechac na ASCII, gdy inne
+      // nadrabiaja). Znikomo diakrytykow = model skopiowal ASCII z inputu -> retry; po wyczerpaniu prob
+      // czysty fallback deterministyczny (ma pelne ogonki). Prog bezpieczny: realny PL ma ~1/10, lapiemy <1/40.
+      const asciiSlip = ['zaproszenie', 'most_intro', 'mechanizm', 'falszywe_zalozenie'].some(k => {
+        const s = typeof parsed[k] === 'string' ? (parsed[k] as string) : '';
+        const d = (s.match(/[ąćęłńóśźż]/gi) || []).length;
+        return s.length > 60 && d < s.length / 40;
+      });
+      if (asciiSlip) { lastReason = 'ascii_slip'; continue; }
 
       reframe = parsed;
     }
