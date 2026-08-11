@@ -307,7 +307,10 @@ export default function WeekPage({ plan, imie, instagram, naborHref = 'https://n
           {/* Jeden oczywisty ruch = DM. Slaby punkt tuz nad przyciskiem, DM zawsze primary
               (sprzedaz wylacznie IG DM), nabor jako drugorzedny link, Save cicho obok. */}
           {(() => {
-            const dmMsg = `Cześć Michał${imie?.trim() ? `, jestem ${imie.trim()}` : ''}. Zrobiłem diagnostykę (${plan.problem.name}). Najbardziej siedzi mi ${plan.weakSpot}. Chcę to z Tobą przegadać.`;
+            // weakSpot w wiadomosci idzie w 1. osobie (od leada do Michala). Jesli LLM wrzuci 2. osobe
+            // ("na Tobie", "Ci"), fraza celowalaby w Michala, wiec ja wtedy pomijamy (deterministyczny neutralny).
+            const wsSafe = /\b(ci|tobie|twój|twoje|twoim|twoją|cię|ciebie)\b/i.test(plan.weakSpot) ? '' : plan.weakSpot;
+            const dmMsg = `Cześć Michał${imie?.trim() ? `, jestem ${imie.trim()}` : ''}. Zrobiłem diagnostykę (${plan.problem.name}).${wsSafe ? ` Najbardziej siedzi mi ${wsSafe}.` : ''} Chcę to z Tobą przegadać.`;
             const dmUrl = `https://ig.me/m/hantleitalerz?text=${encodeURIComponent(dmMsg)}`;
             return (
               <div className="wp-noprint">

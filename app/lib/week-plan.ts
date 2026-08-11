@@ -192,7 +192,7 @@ function buildPlan(i: WeekPlanInput): { plan: PlanAnchor[]; metric: string } {
 const WEAK_SPOT: Record<string, string> = {
   'Sen': 'sen, który nie regeneruje',
   'Stres': 'głowa, która wieczorem nie schodzi z obrotów',
-  'Żywienie': 'wieczór, w którym cały dzień się na Tobie mści',
+  'Żywienie': 'wieczór, który zjada cały następny dzień',
   'Weekend': 'weekend, który kasuje pięć dni roboty',
   'Trening': 'wykonanie, nie wiedza',
   'Głowa': 'głowa, która zajeżdża ciało',
