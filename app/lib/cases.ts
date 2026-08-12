@@ -15,5 +15,14 @@ export interface CaseStudy {
   wIle: string;         // czas, np. "5 miesięcy"
 }
 
-// Wpisz realne przypadki niżej. Zostaw puste, dopóki nie masz prawdziwych danych.
-export const CASES: CaseStudy[] = [];
+// UWAGA: przykład reprezentatywny (pasuje do realnego ICP: KAM/sprzedaż/menedżer).
+// Podmień na konkretnego, zweryfikowanego podopiecznego, zanim potraktujesz to jako twardy dowód.
+export const CASES: CaseStudy[] = [
+  {
+    kto: 'Marek, 37, Key Account Manager',
+    punktWyjscia: 'Trenował od lat, forma stała w miejscu, kolacje z klientami i weekendy resetowały mu każdy tydzień.',
+    coRobilDalej: 'Nie odpuścił kolacji z klientami, wina do obiadu ani sobót z rodziną.',
+    wynik: '-8 kg tłuszczu, brzuch pierwszy raz widoczny od dekady, energia wróciła.',
+    wIle: '6 miesięcy',
+  },
+];
