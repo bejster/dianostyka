@@ -1,6 +1,7 @@
 import type { WeekPlan, DayState } from '../lib/week-plan';
 import SaveCardButton from './SaveCardButton';
 import { PROOF } from '../lib/proof';
+import { CASES } from '../lib/cases';
 import { Atmosphere } from '../diagnoza/atmosphere';
 import { track } from '../lib/analytics';
 
@@ -275,6 +276,26 @@ export default function WeekPage({ plan, imie, instagram, naborHref = 'https://n
           </section>
         )}
 
+        {/* DOWÓD TEKSTOWY: przypadki, które zrobiły formę BEZ rzucania życia (nisza) */}
+        {CASES.length > 0 && (
+          <section className="wp-rise" style={{ marginBottom: 72 }}>
+            <Eyebrow n="★">Zrobili to bez rzucania życia</Eyebrow>
+            <div style={{ display: 'grid', gap: 16 }}>
+              {CASES.map((c, i) => (
+                <div key={i} style={{ background: `linear-gradient(180deg, ${C.panel2}, ${C.ink})`, border: `1px solid ${C.line2}`, borderRadius: 16, padding: 'clamp(20px, 5vw, 28px)' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 12, marginBottom: 14, flexWrap: 'wrap' }}>
+                    <span style={{ fontFamily: C.mono, fontSize: 11, letterSpacing: 1.5, textTransform: 'uppercase', color: C.gold, fontWeight: 700 }}>{c.kto}</span>
+                    <span style={{ fontFamily: C.mono, fontSize: 10.5, letterSpacing: 1, color: C.faint }}>{c.wIle}</span>
+                  </div>
+                  <p style={{ fontSize: 15, color: C.mute, lineHeight: 1.6, margin: '0 0 12px' }}>{c.punktWyjscia}</p>
+                  <p style={{ fontFamily: C.serif, fontSize: 'clamp(18px, 3.4vw, 21px)', fontStyle: 'italic', color: C.gold, lineHeight: 1.4, margin: '0 0 14px', paddingLeft: 16, borderLeft: `2px solid ${C.goldDeep}` }}>{c.coRobilDalej}</p>
+                  <p style={{ fontFamily: C.serif, fontSize: 'clamp(22px, 4.4vw, 28px)', color: C.paper, lineHeight: 1.25, margin: 0 }}>{c.wynik}</p>
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
+
         {/* VII. MOST */}
         <section className="wp-rise" style={{ marginBottom: 20 }}>
           <Eyebrow n="VII">Krok dalej</Eyebrow>
@@ -304,6 +325,13 @@ export default function WeekPage({ plan, imie, instagram, naborHref = 'https://n
             ))}
           </div>
 
+          {/* NISZA: rekompozycja bez rzucania zycia. Oś przekazu, zawsze widoczna (nie zalezy od LLM). */}
+          <div style={{ background: C.panel2, border: `1px solid ${C.line2}`, borderLeft: `3px solid ${C.gold}`, borderRadius: 12, padding: '16px 18px', marginBottom: 30 }}>
+            <p style={{ fontSize: 15, color: C.paper, lineHeight: 1.65, margin: 0, maxWidth: 560 }}>
+              Żebyś wiedział, w co wchodzisz: chłopaki, których prowadzę, dalej wychodzą w weekend, piją wino do kolacji i jadą na wypady z ekipą. Forma rośnie <b style={{ color: C.gold }}>obok tego życia, nie zamiast niego</b>. Wolniej niż obiecują cudotwórcy z reklam, ale w tempie, które utrzymasz przez lata. Ponad 180 chłopa zrobiło rekompozycję właśnie tak, nie żyjąc jak mnich.
+            </p>
+          </div>
+
           {/* Jeden oczywisty ruch = DM. Slaby punkt tuz nad przyciskiem, DM zawsze primary
               (sprzedaz wylacznie IG DM), nabor jako drugorzedny link, Save cicho obok. */}
           {(() => {
@@ -330,7 +358,7 @@ export default function WeekPage({ plan, imie, instagram, naborHref = 'https://n
             );
           })()}
           <p className="wp-noprint" style={{ fontSize: 12.5, color: C.faint, textAlign: 'center', margin: '18px 0 0', lineHeight: 1.55 }}>
-            {plan.saveNote} Od 9 lat przeprowadziłem przez to ponad 180 facetów.
+            {plan.saveNote}
           </p>
         </section>
 

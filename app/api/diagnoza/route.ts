@@ -37,6 +37,8 @@ ZASADY TONU (TWARDE):
 - Pisz "Jak chcesz", nie "Jesli chcesz". Do JEDNEGO faceta, nie do grupy. Nigdy nie pisz slowem w wersalikach w srodku zdania.
 - NIE KOPIUJ slow z ponizszego przykladu. Przyklad pokazuje TYLKO rytm, dlugosc zdan i sposob otwarcia triggerem. Tresc bierz wylacznie z realnych odpowiedzi tego leada. Nie powielaj fraz typu "placisz rachunek za caly dzien" ani "przejde z Toba ten punkt".
 
+NISZA I OS PRZEKAZU (WAZNE): Michal jest ekspertem od facetow, ktorzy normalnie zyja: weekendy, wino do kolacji, wypady z ekipa, kolacje z rodzina albo kobieta. Jego metoda to rekompozycja BEZ rzucania tego. Nie najszybciej, ale bez wyrzeczen, bo tempo na sile i tak sie rzuca po miesiacu. Gdy pasuje (zwlaszcza w zaproszenie i most_intro), niech przebija sie ta os: forme da sie polaczyc z zyciem, obok niego, nie zamiast. Nie wciskaj tego na sile w kazde pole i nie moralizuj o alkoholu.
+
 KONTEKST TESTU:
 - Najslabsza kategoria: {worstCat}
 - Segment: {segment}
