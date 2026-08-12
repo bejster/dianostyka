@@ -195,21 +195,27 @@ export default function DiagnozaPage() {
     const worstW = [...catScores].sort((a, b) => a.pct - b.pct)[0]?.label || 'Sen';
     const arch = pickArchetype(D, worstW);
 
-    // ── MAPA STATUSU: per-obszar 0-100 (forma, sen, hormony...). Reuzywa catScores + dokłada
-    //    „Hormony i napęd" (morning wood + libido/napęd/pewnosc/regeneracja). Higher = lepiej. ──
-    const catPct = (l: string) => catScores.find((c) => c.label === l)?.pct ?? 50;
-    const mwSev = answers.morning_wood === 'mw_2' ? 100 : answers.morning_wood === 'mw_1' ? 50 : 0;
-    const hormoneChips = Array.isArray(answers.symptoms_chips)
-      ? (answers.symptoms_chips as string[]).filter((t) => ['libido', 'motivation', 'confidence', 'recovery'].includes(t)).length
-      : 0;
-    const hormonyPct = Math.max(100 - Math.round(mwSev * 0.45 + hormoneChips * 18), 5);
+    // ── MAPA STATUSU: 5 osi, KAZDA liczona TYLKO z realnie zbieranych odpowiedzi (zero domyslnych
+    //    stalych ze starego quizu). Severity 0-100 -> indeks w uczciwym pasmie 24-90 (bez 0/100,
+    //    ktore wygladaja na scieme). Wyzszy = lepiej. Labele nie obiecuja pomiaru, ktorego nie robimy. ──
+    const T = new Set<string>(Array.from(D.tags));
+    const cnt = (cs: string[]) => cs.filter((c) => T.has(c)).length;
+    const clamp01 = (x: number) => Math.max(0, Math.min(1, x));
+    const idx = (sev: number) => Math.round(24 + (1 - clamp01(sev / 100)) * 66); // sev0->90, sev100->24
+    // istotnosc godziny pekniecia dnia dla snu: rano/wieczor najmocniej, indeks = D.breakWindow (0-6)
+    const bwSleep = [1, 0.2, 0.3, 0.4, 0.8, 0.3, 0.5][D.breakWindow] ?? 0.5;
+    const senSev = (0.40 * (D.sleepQ / 3) + 0.20 * bwSleep + 0.20 * (D.lost / 4) + 0.20 * (D.mondayFeel / 3)) * 100;
+    const napedSev = (0.42 * (D.morningWood / 2) + 0.40 * (cnt(['libido', 'motivation', 'confidence', 'recovery']) / 3) + 0.18 * (D.lost / 4)) * 100;
+    const trainSev = D.plan >= 1 ? D.miss / D.plan : 0.85; // nie trenuje wcale = wysoki deficyt
+    const formaSev = (0.40 * trainSev + 0.30 * (D.binge / 4) + 0.15 * clamp01(D.junk / 700) + 0.15 * (T.has('belly') ? 1 : 0)) * 100;
+    const wkndSev = (0.35 * clamp01(D.drinks / 10) + 0.35 * (D.wknd / 4) + 0.30 * (D.mondayFeel / 3)) * 100;
+    const glowaSev = (0.40 * (D.stress / 3) + 0.25 * (D.lost / 4) + 0.20 * (cnt(['focus', 'anxiety', 'fatigue']) / 3) + 0.15 * (D.triedBefore / 3)) * 100;
     const statuses = [
-      { label: 'Sen i regeneracja', score: catPct('Sen') },
-      { label: 'Hormony i napęd', score: hormonyPct },
-      { label: 'Forma i trening', score: catPct('Trening') },
-      { label: 'Głowa i energia', score: catPct('Głowa') },
-      { label: 'Jedzenie', score: catPct('Żywienie') },
-      { label: 'Weekend', score: catPct('Weekend') },
+      { label: 'Forma', score: idx(formaSev) },
+      { label: 'Sen i regeneracja', score: idx(senSev) },
+      { label: 'Napęd i libido', score: idx(napedSev) },
+      { label: 'Głowa i stres', score: idx(glowaSev) },
+      { label: 'Weekend i rytm', score: idx(wkndSev) },
     ];
     const rawImie = answers.imie ?? answers.name;
     const imie = typeof rawImie === 'string' ? rawImie : '';
