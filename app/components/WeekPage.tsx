@@ -122,7 +122,6 @@ function Eyebrow({ n, children }: { n: string; children: React.ReactNode }) {
 }
 
 export default function WeekPage({ plan, imie, instagram, naborHref = 'https://nabor.talerzihantle.com/', qualified = false, statuses = [] }: { plan: WeekPlan; imie?: string; instagram?: string; naborHref?: string; qualified?: boolean; statuses?: { label: string; score: number }[] }) {
-  const hi = imie?.trim() ? `${imie.trim()}, ` : '';
   return (
     <div className="wp" style={{ background: C.ink, color: C.paper, fontFamily: C.sans, minHeight: '100vh' }}>
       <style>{css}</style>
@@ -290,7 +289,7 @@ export default function WeekPage({ plan, imie, instagram, naborHref = 'https://n
             <p style={{ fontFamily: C.serif, fontSize: 'clamp(18px, 3.6vw, 21px)', color: C.paper, lineHeight: 1.5, margin: 0 }}>{plan.firstMove.ruch}</p>
           </div>
           <p style={{ fontSize: 15, color: C.faint, margin: '0 2px', lineHeight: 1.6, maxWidth: 520 }}>
-            {hi}{plan.firstMove.efekt}
+            {plan.firstMove.efekt}
           </p>
         </section>
 
