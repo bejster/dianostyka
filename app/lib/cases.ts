@@ -15,14 +15,15 @@ export interface CaseStudy {
   wIle: string;         // czas, np. "5 miesięcy"
 }
 
-// UWAGA: przykład reprezentatywny (pasuje do realnego ICP: KAM/sprzedaż/menedżer).
-// Podmień na konkretnego, zweryfikowanego podopiecznego, zanim potraktujesz to jako twardy dowód.
+// UCZCIWIE: to typowy przebieg (złożenie), NIE jeden zweryfikowany klient — dlatego bez imienia
+// i bez twardej precyzji (żeby nie czytało się jak fikcyjny testimonial = ryzyko UOKiK + spalone zaufanie).
+// Gdy masz realnego podopiecznego + zgodę: wstaw imię/inicjał, twarde liczby, najlepiej ze zdjęciem z PROOF.
 export const CASES: CaseStudy[] = [
   {
-    kto: 'Marek, 37, Key Account Manager',
-    punktWyjscia: 'Trenował od lat, forma stała w miejscu, kolacje z klientami i weekendy resetowały mu każdy tydzień.',
-    coRobilDalej: 'Nie odpuścił kolacji z klientami, wina do obiadu ani sobót z rodziną.',
-    wynik: '-8 kg tłuszczu, brzuch pierwszy raz widoczny od dekady, energia wróciła.',
-    wIle: '6 miesięcy',
+    kto: 'Typowy przebieg u moich podopiecznych (KAM, sprzedaż, menedżerowie)',
+    punktWyjscia: 'Trenują od lat, forma stoi, a kolacje z klientami i weekendy resetują im każdy tydzień.',
+    coRobilDalej: 'Bez rzucania kolacji z klientami, wina do obiadu i sobót z rodziną.',
+    wynik: 'Kilka kilogramów tłuszczu w dół, brzuch wraca, energia w ciągu dnia przestaje siadać.',
+    wIle: 'kilka miesięcy',
   },
 ];

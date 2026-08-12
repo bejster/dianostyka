@@ -139,13 +139,12 @@ export default function WeekPage({ plan, imie, instagram, naborHref = 'https://n
           <span style={{ fontFamily: C.mono, fontSize: 10, letterSpacing: 3, color: C.faint, textTransform: 'uppercase' }}>Karta tygodnia · wydanie prywatne</span>
         </header>
 
-        {/* #3: potwierdzenie zapisu + oczekiwanie kontaktu. Telegram-notify z @IG poszedl juz do Michala,
-            wiec „odezwe sie" jest prawdziwe; „napisz pierwszy" zostaje pewna sciezka dla niecierpliwych. */}
+        {/* Ball-in-court: zero „mam Cię / odezwę się" (pasywna furtka gasi CTA). Prywatnosc + kontrola u leada. */}
         {instagram && (
           <div className="wp-noprint" style={{ display: 'flex', alignItems: 'flex-start', gap: 12, background: C.panel2, border: `1px solid ${C.line2}`, borderRadius: 12, padding: '13px 16px', marginBottom: 44 }}>
             <span aria-hidden style={{ color: C.gold, fontSize: 17, lineHeight: 1.3, flexShrink: 0 }}>✓</span>
             <p style={{ margin: 0, fontSize: 13.5, color: C.mute, lineHeight: 1.55 }}>
-              Twój wynik jest już u mnie, pod <b style={{ color: C.paper }}>@{instagram}</b>. Najszybciej ruszymy, jak sam napiszesz do mnie pierwszy, tam na dole. Odpisuję Ci osobiście, nie automat.
+              Ta Karta jest tylko Twoja, pod <b style={{ color: C.paper }}>@{instagram}</b>. Nie wrzucam Cię na żadną listę i nie zaczepiam w DM. Jak zechcesz to ze mną przegadać, jestem na dole. Odpisuję ja, nie automat.
             </p>
           </div>
         )}
@@ -191,12 +190,17 @@ export default function WeekPage({ plan, imie, instagram, naborHref = 'https://n
             Dostarcza obietnice Story „wysylam mape: forma, sen, hormony". Najnizszy slupek = przeciek. */}
         {statuses.length > 0 && (() => {
           const lo = Math.min(...statuses.map((s) => s.score));
+          const avg = Math.round(statuses.reduce((s, x) => s + x.score, 0) / statuses.length); // agregat = srednia osi (scala dawny „Zapas")
           const tier = (n: number) => (n < 40 ? C.hot : n < 65 ? C.amber : C.gold);
           return (
             <section className="wp-rise" style={{ marginBottom: 72 }}>
               <Eyebrow n="◆">Mapa statusu</Eyebrow>
+              <div style={{ display: 'flex', alignItems: 'baseline', gap: 14, marginBottom: 16, flexWrap: 'wrap' }}>
+                <span style={{ fontFamily: C.serif, fontSize: 'clamp(56px, 14vw, 96px)', lineHeight: 0.9, color: C.gold, fontWeight: 400 }}>{avg}<span style={{ fontSize: '0.35em', color: C.faint }}>/100</span></span>
+                <span style={{ fontFamily: C.mono, fontSize: 12, letterSpacing: 1.5, textTransform: 'uppercase', color: C.faint, maxWidth: 200, lineHeight: 1.5 }}>tyle z siebie dziś średnio wyciągasz</span>
+              </div>
               <p style={{ fontSize: 15.5, color: C.mute, lineHeight: 1.65, margin: '0 0 24px', maxWidth: 540 }}>
-                Ile z siebie dziś wyciągasz w każdym z tych obszarów, w skali od 0 do 100. To odczyt z Twoich odpowiedzi, nie z badania krwi. Reszta do setki to zapas, który trzyma styl tygodnia. Najniższy słupek to Twój przeciek.
+                Rozbicie na obszary niżej. To odczyt z Twoich odpowiedzi, nie z badania krwi. Najniższy słupek to Twój przeciek, reszta to zapas, który dziś blokuje styl tygodnia.
               </p>
               <div style={{ display: 'grid', gap: 16 }}>
                 {statuses.map((s, i) => {
@@ -222,7 +226,7 @@ export default function WeekPage({ plan, imie, instagram, naborHref = 'https://n
                 })}
               </div>
               <p style={{ fontSize: 13.5, color: C.faint, margin: '18px 2px 0', lineHeight: 1.55, maxWidth: 520 }}>
-                Każdy z tych słupków rusza w górę w kilka tygodni, gdy zdejmiesz właściwy hamulec. Nie po kolei, tylko od tego jednego, który ciągnie resztę za sobą.
+                U większości te słupki ruszają z miejsca w parę tygodni, gdy zdejmiesz właściwy hamulec. Nie po kolei, od tego jednego, który ciągnie resztę za sobą.
               </p>
             </section>
           );
@@ -257,41 +261,36 @@ export default function WeekPage({ plan, imie, instagram, naborHref = 'https://n
         <section className="wp-rise" style={{ marginBottom: 72 }}>
           <Eyebrow n="IV">Jeden ukryty koszt</Eyebrow>
           <blockquote style={{ margin: 0 }}>
-            <p style={{ fontFamily: C.serif, fontSize: 'clamp(26px, 5vw, 38px)', lineHeight: 1.22, color: C.paper, margin: '0 0 22px', fontWeight: 400 }}>
+            <p style={{ fontFamily: C.serif, fontSize: 'clamp(26px, 5vw, 38px)', lineHeight: 1.22, color: C.paper, margin: '0 0 18px', fontWeight: 400 }}>
               {plan.hiddenCost.headline}
             </p>
+            {plan.hiddenCost.math && (
+              <p style={{ fontSize: 16, color: C.mute, lineHeight: 1.65, margin: '0 0 20px', maxWidth: 540 }}>
+                {plan.hiddenCost.math}
+              </p>
+            )}
             <p style={{ display: 'inline-block', fontFamily: C.mono, fontSize: 13.5, color: C.ink, background: `linear-gradient(135deg, ${C.gold}, ${C.goldBright})`, padding: '10px 16px', borderRadius: 8, letterSpacing: 0.2, fontWeight: 700, margin: 0 }}>
               {plan.hiddenCost.multiplier}
             </p>
           </blockquote>
         </section>
 
-        {/* V. POTENCJAŁ NA STOLE */}
+        {/* V. WARTOŚĆ: zaawansowany mechanizm (co widzę, czego inni nie) + ruch na 7 dni + efekt/most.
+            To „elite" beat: buduje zaufanie kompetencją i daje realną wartość do wdrożenia. */}
         <section className="wp-rise" style={{ marginBottom: 72 }}>
-          <Eyebrow n="V">Zapas na stole</Eyebrow>
-          <div style={{ display: 'flex', alignItems: 'baseline', gap: 14, marginBottom: 18, flexWrap: 'wrap' }}>
-            <span style={{ fontFamily: C.serif, fontSize: 'clamp(64px, 16vw, 108px)', lineHeight: 0.9, color: C.gold, fontWeight: 400 }}>{plan.potential.usedPct}%</span>
-            <span style={{ fontFamily: C.mono, fontSize: 12, letterSpacing: 1.5, textTransform: 'uppercase', color: C.faint, maxWidth: 190, lineHeight: 1.5 }}>tyle z siebie dziś wyciągasz</span>
+          <Eyebrow n="V">Zacznij tu</Eyebrow>
+          {/* co widzę, czego inni nie — insight budujący zaufanie */}
+          <div style={{ background: `linear-gradient(180deg, ${C.panel2}, ${C.ink})`, border: `1px solid ${C.line2}`, borderRadius: 16, padding: 'clamp(20px, 5vw, 28px)', marginBottom: 16 }}>
+            <div style={{ fontFamily: C.mono, fontSize: 10, letterSpacing: 2, textTransform: 'uppercase', color: C.gold, fontWeight: 700, marginBottom: 12 }}>Co widzę, czego inni nie</div>
+            <p style={{ fontSize: 16.5, color: C.paper, lineHeight: 1.7, margin: 0 }}>{plan.firstMove.widze}</p>
           </div>
-          {/* pasek: wykorzystane vs zablokowane */}
-          <div style={{ height: 10, borderRadius: 6, background: C.panel, overflow: 'hidden', display: 'flex', marginBottom: 22, border: `1px solid ${C.line}` }}>
-            <div style={{ width: `${plan.potential.usedPct}%`, background: `linear-gradient(90deg, ${C.goldDeep}, ${C.gold})` }} />
-            <div style={{ flex: 1, background: `repeating-linear-gradient(45deg, ${C.panel2}, ${C.panel2} 6px, ${C.ink} 6px, ${C.ink} 12px)` }} />
+          {/* ruch na 7 dni — realna wartość do wdrożenia */}
+          <div style={{ background: `linear-gradient(180deg, ${C.goldGlow}, transparent)`, border: `1px solid ${C.line2}`, borderRadius: 16, padding: 'clamp(20px, 5vw, 28px)', marginBottom: 18 }}>
+            <div style={{ fontFamily: C.mono, fontSize: 10, letterSpacing: 2, textTransform: 'uppercase', color: C.gold, fontWeight: 700, marginBottom: 12 }}>Zrób to przez 7 dni</div>
+            <p style={{ fontFamily: C.serif, fontSize: 'clamp(18px, 3.6vw, 21px)', color: C.paper, lineHeight: 1.5, margin: 0 }}>{plan.firstMove.ruch}</p>
           </div>
-          <h2 style={{ fontFamily: C.serif, fontSize: 'clamp(24px, 4.6vw, 34px)', lineHeight: 1.22, color: C.paper, margin: 0, fontWeight: 400, maxWidth: 540 }}>
-            {plan.potential.headline}
-          </h2>
-        </section>
-
-        {/* VI. PIERWSZE KROKI */}
-        <section className="wp-rise" style={{ marginBottom: 72 }}>
-          <Eyebrow n="VI">Pierwsze kroki</Eyebrow>
-          <div style={{ background: `linear-gradient(180deg, ${C.goldGlow}, transparent)`, border: `1px solid ${C.line2}`, borderRadius: 14, padding: '20px 22px', marginBottom: 24 }}>
-            <div style={{ fontFamily: C.mono, fontSize: 10, letterSpacing: 2, textTransform: 'uppercase', color: C.gold, fontWeight: 700, marginBottom: 9 }}>Zacznij tu, jutro rano</div>
-            <p style={{ fontFamily: C.serif, fontSize: 20, lineHeight: 1.4, color: C.paper, margin: 0 }}>{plan.firstMove}</p>
-          </div>
-          <p style={{ fontSize: 15, color: C.faint, margin: '0 2px', lineHeight: 1.55, maxWidth: 500 }}>
-            {hi}jeden ruch na jutro. Resztę układamy, jak uznasz, że chcesz to zrobić na serio.
+          <p style={{ fontSize: 15, color: C.faint, margin: '0 2px', lineHeight: 1.6, maxWidth: 520 }}>
+            {hi}{plan.firstMove.efekt}
           </p>
         </section>
 
@@ -320,7 +319,7 @@ export default function WeekPage({ plan, imie, instagram, naborHref = 'https://n
         {/* DOWÓD TEKSTOWY: przypadki, które zrobiły formę BEZ rzucania życia (nisza) */}
         {CASES.length > 0 && (
           <section className="wp-rise" style={{ marginBottom: 72 }}>
-            <Eyebrow n="★">Zrobili to bez rzucania życia</Eyebrow>
+            <Eyebrow n="★">Jak to idzie, bez rzucania życia</Eyebrow>
             <div style={{ display: 'grid', gap: 16 }}>
               {CASES.map((c, i) => (
                 <div key={i} style={{ background: `linear-gradient(180deg, ${C.panel2}, ${C.ink})`, border: `1px solid ${C.line2}`, borderRadius: 16, padding: 'clamp(20px, 5vw, 28px)' }}>
@@ -337,9 +336,9 @@ export default function WeekPage({ plan, imie, instagram, naborHref = 'https://n
           </section>
         )}
 
-        {/* VII. MOST */}
+        {/* VI. MOST */}
         <section className="wp-rise" style={{ marginBottom: 20 }}>
-          <Eyebrow n="VII">Krok dalej</Eyebrow>
+          <Eyebrow n="VI">Krok dalej</Eyebrow>
 
           {/* zaproszenie osobiste */}
           <div className="wp-noprint" style={{ background: `linear-gradient(180deg, ${C.goldGlow}, transparent)`, border: `1px solid ${C.line2}`, borderRadius: 18, padding: 'clamp(22px, 5vw, 32px)', marginBottom: 34 }}>
