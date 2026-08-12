@@ -121,7 +121,7 @@ function Eyebrow({ n, children }: { n: string; children: React.ReactNode }) {
   );
 }
 
-export default function WeekPage({ plan, imie, instagram, naborHref = 'https://nabor.talerzihantle.com/', qualified = false }: { plan: WeekPlan; imie?: string; instagram?: string; naborHref?: string; qualified?: boolean }) {
+export default function WeekPage({ plan, imie, instagram, naborHref = 'https://nabor.talerzihantle.com/', qualified = false, statuses = [] }: { plan: WeekPlan; imie?: string; instagram?: string; naborHref?: string; qualified?: boolean; statuses?: { label: string; score: number }[] }) {
   const hi = imie?.trim() ? `${imie.trim()}, ` : '';
   return (
     <div className="wp" style={{ background: C.ink, color: C.paper, fontFamily: C.sans, minHeight: '100vh' }}>
@@ -186,6 +186,47 @@ export default function WeekPage({ plan, imie, instagram, naborHref = 'https://n
             ))}
           </div>
         </section>
+
+        {/* MAPA STATUSU: per-obszar 0-100 (forma, sen, hormony...). Odczyt z odpowiedzi, nie badanie.
+            Dostarcza obietnice Story „wysylam mape: forma, sen, hormony". Najnizszy slupek = przeciek. */}
+        {statuses.length > 0 && (() => {
+          const lo = Math.min(...statuses.map((s) => s.score));
+          const tier = (n: number) => (n < 40 ? C.hot : n < 65 ? C.amber : C.gold);
+          return (
+            <section className="wp-rise" style={{ marginBottom: 72 }}>
+              <Eyebrow n="◆">Mapa statusu</Eyebrow>
+              <p style={{ fontSize: 15.5, color: C.mute, lineHeight: 1.65, margin: '0 0 24px', maxWidth: 540 }}>
+                Ile z siebie dziś wyciągasz w każdym z tych obszarów, w skali od 0 do 100. To odczyt z Twoich odpowiedzi, nie z badania krwi. Reszta do setki to zapas, który trzyma styl tygodnia. Najniższy słupek to Twój przeciek.
+              </p>
+              <div style={{ display: 'grid', gap: 16 }}>
+                {statuses.map((s, i) => {
+                  const col = tier(s.score);
+                  const low = s.score === lo;
+                  return (
+                    <div key={i}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 7, gap: 10 }}>
+                        <span style={{ fontSize: 14.5, color: low ? C.paper : C.mute, fontWeight: low ? 700 : 500 }}>
+                          {s.label}
+                          {low && <span style={{ fontFamily: C.mono, fontSize: 9.5, letterSpacing: 1.5, color: C.hot, marginLeft: 9, fontWeight: 700 }}>← TU PRZECIEK</span>}
+                        </span>
+                        <span style={{ fontFamily: C.mono, fontSize: 15, fontWeight: 700, color: col, fontVariantNumeric: 'tabular-nums', flexShrink: 0 }}>
+                          {s.score}<span style={{ color: C.faint, fontSize: 11 }}>/100</span>
+                        </span>
+                      </div>
+                      <div style={{ height: 8, borderRadius: 5, background: C.panel, overflow: 'hidden', display: 'flex', border: `1px solid ${C.line}` }}>
+                        <div style={{ width: `${s.score}%`, background: `linear-gradient(90deg, ${col}88, ${col})` }} />
+                        <div style={{ flex: 1, background: `repeating-linear-gradient(45deg, ${C.panel2}, ${C.panel2} 5px, ${C.ink} 5px, ${C.ink} 10px)` }} />
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+              <p style={{ fontSize: 13.5, color: C.faint, margin: '18px 2px 0', lineHeight: 1.55, maxWidth: 520 }}>
+                Każdy z tych słupków rusza w górę w kilka tygodni, gdy zdejmiesz właściwy hamulec. Nie po kolei, tylko od tego jednego, który ciągnie resztę za sobą.
+              </p>
+            </section>
+          );
+        })()}
 
         {/* III. DRUGIE DNO — mechanizm: najostrzejsza, spersonalizowana warstwa (z wlasnych slow usera przez reframe LLM albo deterministyczna). Wczesniej renderowal sie sam naglowek; body+analogy+note byly liczone i niewidoczne. */}
         <section className="wp-rise" style={{ marginBottom: 72 }}>

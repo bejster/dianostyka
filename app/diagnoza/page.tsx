@@ -194,6 +194,23 @@ export default function DiagnozaPage() {
     ];
     const worstW = [...catScores].sort((a, b) => a.pct - b.pct)[0]?.label || 'Sen';
     const arch = pickArchetype(D, worstW);
+
+    // ── MAPA STATUSU: per-obszar 0-100 (forma, sen, hormony...). Reuzywa catScores + dokłada
+    //    „Hormony i napęd" (morning wood + libido/napęd/pewnosc/regeneracja). Higher = lepiej. ──
+    const catPct = (l: string) => catScores.find((c) => c.label === l)?.pct ?? 50;
+    const mwSev = answers.morning_wood === 'mw_2' ? 100 : answers.morning_wood === 'mw_1' ? 50 : 0;
+    const hormoneChips = Array.isArray(answers.symptoms_chips)
+      ? (answers.symptoms_chips as string[]).filter((t) => ['libido', 'motivation', 'confidence', 'recovery'].includes(t)).length
+      : 0;
+    const hormonyPct = Math.max(100 - Math.round(mwSev * 0.45 + hormoneChips * 18), 5);
+    const statuses = [
+      { label: 'Sen i regeneracja', score: catPct('Sen') },
+      { label: 'Hormony i napęd', score: hormonyPct },
+      { label: 'Forma i trening', score: catPct('Trening') },
+      { label: 'Głowa i energia', score: catPct('Głowa') },
+      { label: 'Jedzenie', score: catPct('Żywienie') },
+      { label: 'Weekend', score: catPct('Weekend') },
+    ];
     const rawImie = answers.imie ?? answers.name;
     const imie = typeof rawImie === 'string' ? rawImie : '';
     const q = qualify(answers, D.triedBefore, SC, C.hardTotal);
@@ -224,7 +241,7 @@ export default function DiagnozaPage() {
             {qualified ? 'zobacz, jak wygląda współpraca' : 'zobacz, jak pracuję z innymi'} &rarr;
           </a>
         </div>
-        <WeekPage plan={wkPlan} imie={imie} qualified={qualified} instagram={igClean} naborHref={naborUrl} />
+        <WeekPage plan={wkPlan} imie={imie} qualified={qualified} instagram={igClean} naborHref={naborUrl} statuses={statuses} />
       </>
     );
   }
