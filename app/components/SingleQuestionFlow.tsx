@@ -1,9 +1,9 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { QUESTIONS, QuestionDef, QuestionOption } from '../lib/assessment-config';
 import { RawAnswers } from '../lib/scoring-engine';
-import { track } from '../lib/analytics';
+import { track, trackDiag } from '../lib/analytics';
 import { Atmosphere } from '../diagnoza/atmosphere';
 
 interface Props {
@@ -81,9 +81,26 @@ export default function SingleQuestionFlow({ onComplete, initialAnswers }: Props
     return 0;
   });
 
+  // znacznik ekspozycji biezacego pytania -> elapsed_ms w question_answer (bez PII)
+  const shownAt = useRef<number>(0);
+
   const [transitionState, setTransitionState] = useState<'idle' | 'out' | 'in'>('idle');
   // Pytania realnie dotkniete (slider/number musi byc ruszony, inaczej "Zatwierdz" zablokowany).
   const [touched, setTouched] = useState<Set<string>>(new Set());
+
+  // Stabilny submission_id per sesja (przetrwa reload) — klucz upsertu wiersza w Notion.
+  const [submissionId] = useState<string>(() => {
+    if (typeof window === 'undefined') return '';
+    try {
+      const K = 'diagnostyka_v2_submission_id';
+      let id = localStorage.getItem(K);
+      if (!id) {
+        id = (typeof crypto !== 'undefined' && crypto.randomUUID) ? crypto.randomUUID() : `s_${Date.now()}_${Math.random().toString(36).slice(2)}`;
+        localStorage.setItem(K, id);
+      }
+      return id;
+    } catch { return `s_${Date.now()}`; }
+  });
 
   // Autosave w localStorage
   useEffect(() => {
@@ -103,11 +120,44 @@ export default function SingleQuestionFlow({ onComplete, initialAnswers }: Props
   const visibleTotal = visibleQuestions.length;
   const progressPct = Math.round((visiblePos / visibleTotal) * 100);
 
+  // Progresywny zapis: kazda odpowiedz leci osobno (event-per-row) -> /api/diag-event -> n8n -> Notion.
+  // keepalive: przetrwa nawigacje/zamkniecie karty, wiec lapiemy tez ostatnia odpowiedz przed porzuceniem.
+  const postEvent = useCallback((qId: string, value: unknown) => {
+    if (!submissionId || typeof fetch === 'undefined') return;
+    try {
+      fetch('/api/diag-event', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        keepalive: true,
+        body: JSON.stringify({ submission_id: submissionId, q_id: qId, value, pos: visiblePos, total: visibleTotal, ts: Date.now() }),
+      }).catch(() => {});
+    } catch (_e) {}
+  }, [submissionId, visiblePos, visibleTotal]);
+
   // Lejek: ekspozycja kazdego pytania -> widac dokladnie, na ktorym kroku ludzie odpadaja.
+  // question_view: DEDUP od re-renderow — dep = [currentIndex], wiec odpala tylko przy realnym wejsciu
+  // na ekran pytania (mount + zmiana pytania + revisit po back). Typowanie/ruch slidera nie zmienia
+  // currentIndex -> zaden dodatkowy view.
   useEffect(() => {
-    track('diag_step_viewed', { index: currentIndex, id: currentQ.id, pos: visiblePos, total: visibleTotal });
+    shownAt.current = Date.now();
+    const base = { question_id: currentQ.id, index: currentIndex, pos: visiblePos, total: visibleTotal };
+    trackDiag('question_view', base);
+    track('diag_step_viewed', { index: currentIndex, id: currentQ.id, pos: visiblePos, total: visibleTotal }); // legacy alias
+    if (currentQ.type === 'contact') trackDiag('contact_view', base);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentIndex]);
+
+  // elapsed_ms: pauzuj timer gdy karta ukryta (nie licz „11 minut", gdy user przelaczyl karte)
+  useEffect(() => {
+    const hiddenAt = { t: 0 };
+    const onVis = () => {
+      if (typeof document === 'undefined') return;
+      if (document.visibilityState === 'hidden') hiddenAt.t = Date.now();
+      else if (hiddenAt.t) { shownAt.current += Date.now() - hiddenAt.t; hiddenAt.t = 0; }
+    };
+    if (typeof document !== 'undefined') document.addEventListener('visibilitychange', onVis);
+    return () => { if (typeof document !== 'undefined') document.removeEventListener('visibilitychange', onVis); };
+  }, []);
 
   // Bramka "Dalej": slider/number musi być ruszony, multi min 1 chip, tekst min 15 znaków.
   const chipsCount = Array.isArray(answers.symptoms_chips) ? (answers.symptoms_chips as string[]).length : 0;
@@ -116,7 +166,7 @@ export default function SingleQuestionFlow({ onComplete, initialAnswers }: Props
   const advanceOk =
     currentQ.type === 'multi' ? chipsCount >= 1 :
     currentQ.type === 'text' ? enoughContent(String(answers[currentQ.id] || '')) && !isGibberish(String(answers[currentQ.id] || '')) :
-    currentQ.type === 'contact' ? igClean.length >= 2 :
+    currentQ.type === 'contact' ? true : // P0-1: kontakt opcjonalny, wynik NIE wymaga IG (setter diagnostic mode)
     (currentQ.type === 'slider' || currentQ.type === 'number') ? touched.has(currentQ.id) :
     true;
 
@@ -129,7 +179,23 @@ export default function SingleQuestionFlow({ onComplete, initialAnswers }: Props
     } catch (_e) {}
   }, []);
 
-  const goToNext = useCallback(() => {
+  const goToNext = useCallback((opts?: { skipped?: boolean }) => {
+    // Zapis odpowiedzi biezacego pytania (single leci osobno w handleSingleSelect, tu reszta typow).
+    const cq = QUESTIONS[currentIndex] || QUESTIONS[0];
+    // ── Analytics per-pytanie (PostHog): BEZ PII, BEZ tresci odpowiedzi. Surowe wartosci ida tylko do Notion (postEvent). ──
+    const vq = QUESTIONS.filter(q => !q.condition || q.condition(answers as Record<string, unknown>));
+    const pos = Math.max(1, vq.findIndex(q => q.id === cq.id) + 1);
+    // question_answer = COMMIT (przejscie dalej), NIE kazdy input/ruch slidera. Jeden commit = jeden event. ZERO wartosci odpowiedzi.
+    const ev = { question_id: cq.id, index: currentIndex, pos, total: vq.length, elapsed_ms: Math.max(0, Date.now() - shownAt.current) };
+    if (cq.type === 'contact') trackDiag('contact_submit', { index: currentIndex, total: vq.length });
+    else if (opts?.skipped === true) trackDiag('question_skip', ev);
+    else trackDiag('question_answer', ev);
+    if (cq.type !== 'single') {
+      const v = cq.type === 'contact' ? { instagram: answers.instagram, imie: answers.imie }
+        : cq.type === 'multi' ? answers.symptoms_chips
+        : answers[cq.id];
+      postEvent(cq.id, v);
+    }
     let next = currentIndex + 1;
     while (next < QUESTIONS.length) {
       const c = QUESTIONS[next].condition;
@@ -146,11 +212,13 @@ export default function SingleQuestionFlow({ onComplete, initialAnswers }: Props
       }, 200);
     } else {
       vibe([20, 50, 20]);
+      // diag_complete NIE tutaj — odpala page.tsx po realnym commit wyniku (setPhase 'teaser'), nie przed
       onComplete(answers);
     }
-  }, [currentIndex, answers, onComplete, vibe]);
+  }, [currentIndex, answers, onComplete, vibe, postEvent]);
 
   const goToPrev = useCallback(() => {
+    trackDiag('question_back', { question_id: (QUESTIONS[currentIndex] || QUESTIONS[0]).id, index: currentIndex });
     let prev = currentIndex - 1;
     while (prev >= 0) {
       const c = QUESTIONS[prev].condition;
@@ -171,6 +239,7 @@ export default function SingleQuestionFlow({ onComplete, initialAnswers }: Props
   const handleSingleSelect = (opt: QuestionOption) => {
     vibe(10);
     setAnswers(prev => ({ ...prev, [currentQ.id]: opt.id }));
+    postEvent(currentQ.id, opt.id);
     setTimeout(() => {
       goToNext();
     }, 280);
@@ -321,19 +390,6 @@ export default function SingleQuestionFlow({ onComplete, initialAnswers }: Props
             })}
           </div>
         )}
-        {currentQ.type === 'single' && currentQ.optional && (
-          <button
-            onClick={goToNext}
-            style={{
-              marginTop: 14, width: '100%', padding: '12px', borderRadius: 12,
-              background: 'transparent', color: '#888',
-              fontWeight: 600, fontSize: 13, border: '1px solid rgba(255,255,255,0.08)',
-              cursor: 'pointer', letterSpacing: 0.5,
-            }}
-          >
-            Pomiń to pytanie
-          </button>
-        )}
 
         {/* TYP 2: SLIDER */}
         {currentQ.type === 'slider' && (
@@ -365,7 +421,7 @@ export default function SingleQuestionFlow({ onComplete, initialAnswers }: Props
             </div>
 
             <button
-              onClick={goToNext}
+              onClick={() => goToNext()}
               disabled={!advanceOk}
               style={{
                 marginTop: 36, width: '100%', padding: '16px', borderRadius: 14,
@@ -402,7 +458,7 @@ export default function SingleQuestionFlow({ onComplete, initialAnswers }: Props
             </div>
 
             <button
-              onClick={goToNext}
+              onClick={() => goToNext()}
               disabled={!advanceOk}
               style={{
                 width: '100%', padding: '16px', borderRadius: 14,
@@ -450,7 +506,7 @@ export default function SingleQuestionFlow({ onComplete, initialAnswers }: Props
             })}
 
             <button
-              onClick={goToNext}
+              onClick={() => goToNext()}
               disabled={!advanceOk}
               style={{
                 marginTop: 20, width: '100%', padding: '16px', borderRadius: 14,
@@ -483,14 +539,14 @@ export default function SingleQuestionFlow({ onComplete, initialAnswers }: Props
               {String(answers[currentQ.id] || '').length} / 500 znaków
             </div>
 
-            {/* Antybełkot: ktoś naklepał byle co ("zzz", "asdfgh") -> pociśnij w głosie Michała */}
+            {/* Antybełkot: ktoś naklepał byle co -> neutralny recovery (P1-4: bez shamingu cold leada) */}
             {isGibberish(String(answers[currentQ.id] || '')) && (
               <div style={{
                 marginTop: 14, padding: '14px 16px', borderRadius: 12,
-                background: 'rgba(220,70,60,0.10)', border: '1.5px solid rgba(220,70,60,0.45)',
-                color: '#ff8f84', fontSize: 14.5, lineHeight: 1.55, fontWeight: 500,
+                background: 'rgba(200,168,78,0.08)', border: '1.5px solid rgba(200,168,78,0.35)',
+                color: '#c9c1af', fontSize: 14.5, lineHeight: 1.55, fontWeight: 500,
               }}>
-                Stary, nie wal w chuja. Jak nie chce Ci się tego wypełniać i klepiesz byle co, to wyjdź stąd i nie marnuj mojego czasu. A chcesz, żebym Ci realnie pomógł? Napisz jedno prawdziwe zdanie, co Cię wkurwia.
+                Wygląda, jakby to było wklepane na szybko. Jak nie masz teraz odpowiedzi, spokojnie pomiń. A jak chcesz, żebym to wykorzystał, napisz jedno prawdziwe zdanie własnymi słowami.
               </div>
             )}
             {/* Za mało treści (ale nie bełkot): miękka podpowiedź, bez krzyku */}
@@ -501,7 +557,7 @@ export default function SingleQuestionFlow({ onComplete, initialAnswers }: Props
             )}
 
             <button
-              onClick={goToNext}
+              onClick={() => goToNext()}
               disabled={!advanceOk}
               style={{
                 marginTop: 20, width: '100%', padding: '16px', borderRadius: 14,
@@ -513,6 +569,15 @@ export default function SingleQuestionFlow({ onComplete, initialAnswers }: Props
             >
               Dalej &rarr;
             </button>
+            {/* Skip POD polem (secondary/muted) — tylko dla realnie opcjonalnych pytan (np. user_trigger VOC) */}
+            {currentQ.optional && (
+              <button
+                onClick={() => goToNext({ skipped: true })}
+                style={{ marginTop: 12, width: '100%', padding: '10px', background: 'transparent', color: '#6a6a6a', fontSize: 13, border: 'none', cursor: 'pointer', textDecoration: 'underline', letterSpacing: 0.3 }}
+              >
+                Nie masz teraz odpowiedzi? Pomiń to pytanie
+              </button>
+            )}
           </div>
         )}
 
@@ -556,7 +621,7 @@ export default function SingleQuestionFlow({ onComplete, initialAnswers }: Props
             />
 
             <button
-              onClick={goToNext}
+              onClick={() => goToNext()}
               disabled={!advanceOk}
               style={{
                 marginTop: 20, width: '100%', padding: '16px', borderRadius: 14,
@@ -568,6 +633,9 @@ export default function SingleQuestionFlow({ onComplete, initialAnswers }: Props
             >
               Pokaż mój wynik &rarr;
             </button>
+            <p style={{ marginTop: 12, fontSize: 12.5, color: '#6a6a6a', lineHeight: 1.5, textAlign: 'center' }}>
+              @Instagram jest opcjonalny. Wynik zobaczysz tak czy inaczej. Zostaw go tylko, jeśli chcesz, żebym rzucił na niego okiem.
+            </p>
           </div>
         )}
       </div>

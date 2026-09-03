@@ -5,18 +5,77 @@
 // Mail wycięty (backend Faza 4 niepodłączony, nie kłamiemy). Stare "/" (v1) nietknięte.
 
 import { useState, useEffect } from 'react';
-import { track, identify } from '../lib/analytics';
+import { track, trackDiag } from '../lib/analytics';
 import SingleQuestionFlow from '../components/SingleQuestionFlow';
 import WeekPage from '../components/WeekPage';
 import { type RawAnswers } from '../lib/scoring-engine';
 import { answersToFD } from '../lib/answers-to-fd';
-import { score, costs, pickArchetype, tagScoreWeighted, hourRange } from '../lib/diagnostic-core';
+import { score, costs, pickArchetype, tagScoreWeighted, hourRange, patternStrength } from '../lib/diagnostic-core';
 import { buildWeekPlan } from '../lib/week-plan';
+import ResultExperience from '../components/ResultExperience';
+import { packFor, silnikExperiment, silnikBeat4, silnikEndLine } from '../lib/result-content';
+import { ASSESSMENT_VERSION } from '../lib/assessment-config';
 import { buildLeadBrief } from '../lib/lead-brief';
 import { Atmosphere } from './atmosphere';
 
 const GOLD = '#c8a84e';
 const BG = '#08080a';
+
+// ── ŻYWY INSTRUMENT (intro): rytm 7 dni, jeden dzień świeci na czerwono z pytajnikiem.
+// Ten sam sygnał, który user dostaje w wyniku (krzywa TU PĘKA). Deterministyczny, zero danych.
+function WeekPulse() {
+  const ys = [62, 68, 58, 66, 60, 67, 61]; // neutralny puls — zaden dzien nie wyrozniony (nie sugeruj dnia przed odpowiedzia usera)
+  const xAt = (i: number) => 26 + (408 * i) / 6;
+  const pts = ys.map((y, i) => ({ x: xAt(i), y }));
+  let d = `M ${pts[0].x} ${pts[0].y}`;
+  for (let i = 0; i < pts.length - 1; i++) {
+    const p0 = pts[i - 1] || pts[i], p1 = pts[i], p2 = pts[i + 1], p3 = pts[i + 2] || p2;
+    const c1x = p1.x + (p2.x - p0.x) / 6, c1y = p1.y + (p2.y - p0.y) / 6;
+    const c2x = p2.x - (p3.x - p1.x) / 6, c2y = p2.y - (p3.y - p1.y) / 6;
+    d += ` C ${c1x.toFixed(1)} ${c1y.toFixed(1)}, ${c2x.toFixed(1)} ${c2y.toFixed(1)}, ${p2.x} ${p2.y}`;
+  }
+  const days = ['PON', 'WT', 'ŚR', 'CZW', 'PT', 'SOB', 'NDZ'];
+  return (
+    <div className="wpulse" style={{ maxWidth: 440, margin: '0 auto 30px' }}>
+      <style>{`
+        .wpu-line { stroke-dasharray: 1; stroke-dashoffset: 1; }
+        @keyframes wpuDraw { to { stroke-dashoffset: 0; } }
+        @keyframes wpuHot { 0%,100% { r: 5.5; opacity: 1; } 50% { r: 7; opacity: .72; } }
+        @keyframes wpuRing { 0% { r: 6; opacity: .55; } 70% { r: 18; opacity: 0; } 100% { opacity: 0; } }
+        @keyframes wpuQ { 0%,100% { opacity: .5; } 50% { opacity: 1; } }
+        @media (prefers-reduced-motion: no-preference) {
+          .wpu-line { animation: wpuDraw 1.8s .3s cubic-bezier(.4,0,.2,1) forwards; }
+          .wpu-hot { animation: wpuHot 2.2s 1.4s ease-in-out infinite; }
+          .wpu-ring { animation: wpuRing 2.2s 1.4s ease-out infinite; }
+          .wpu-q { animation: wpuQ 2.2s 1.4s ease-in-out infinite; }
+        }
+      `}</style>
+      <svg viewBox="0 0 460 120" width="100%" role="img" aria-label="rytm tygodnia" style={{ display: 'block' }}>
+        <defs>
+          <linearGradient id="wpuGrad" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0%" stopColor="#8a7535" />
+            <stop offset="50%" stopColor="#e8cc80" />
+            <stop offset="100%" stopColor="#8a7535" />
+          </linearGradient>
+          <filter id="wpuGlow" x="-40%" y="-80%" width="180%" height="260%">
+            <feGaussianBlur stdDeviation="4" result="b" /><feMerge><feMergeNode in="b" /><feMergeNode in="SourceGraphic" /></feMerge>
+          </filter>
+        </defs>
+        <line x1="26" x2="434" y1="98" y2="98" stroke="#26262b" strokeWidth="1" strokeDasharray="2 6" />
+        <path d={d} fill="none" stroke="url(#wpuGrad)" strokeWidth="2.5" strokeLinecap="round" filter="url(#wpuGlow)" pathLength={1} className="wpu-line" />
+        {pts.map((p, i) => (
+          <g key={i}>
+            <circle cx={p.x} cy={p.y} r={3} fill="#08080a" stroke="#8f887c" strokeWidth={1.5} />
+            <text x={p.x} y={116} textAnchor="middle" fontFamily="'JetBrains Mono', monospace" fontSize="10" fill="#5a5a60" fontWeight={500}>{days[i]}</text>
+          </g>
+        ))}
+      </svg>
+      <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 10, letterSpacing: 2.5, textTransform: 'uppercase', color: '#8f887c', textAlign: 'center', marginTop: 8 }}>
+        twój tydzień gdzieś tu pęka
+      </div>
+    </div>
+  );
+}
 
 type Phase = 'intro' | 'intake' | 'teaser';
 
@@ -34,19 +93,21 @@ interface ReframeData {
   most_intro?: string;    // akapit pod zaproszeniem (zastepuje generyk)
 }
 
-// ── Kwalifikacja leada na prowadzenie 1:1 (niewidoczna dla usera) ──
-// budżet z realnego wydatku (hardTotal, bez pytania o zarobki), gotowość z intencji + kiedy chce ruszyć + ile razy próbował.
-// priorityLead = mocny ból + budżet + gotowość. wantsHelp = miękki sygnał (chce z kimś, nie sam) -> routing na współpracę.
-function qualify(raw: RawAnswers, triedBefore: number, sc: number, hardTotal: number) {
+// ── Sygnały leada dla operatora (niewidoczne dla usera) — WYŁĄCZNIE z jawnych odpowiedzi ──
+// diag-setter-rc-002 / P0-2: severity NIE wchodzi do sales/qualification. Diagnoza (tier/archetyp) liczona osobno.
+// Zero budgetProxy: szacowany koszt problemu != zdolność zakupowa. Realny budżet ustala DM/sales, nie ta diagnostyka.
+// followup_priority = operacyjny sygnał do kolejki kontaktu, liczony TYLKO z jawnej intencji + terminu (nie severity, nie budżet).
+function qualify(raw: RawAnswers, triedBefore: number) {
   const intent = typeof raw.intent === 'string' ? raw.intent : '';
   const startWhen = typeof raw.start_when === 'string' ? raw.start_when : '';
-  const budgetProxy = hardTotal >= 3000 ? 3 : hardTotal >= 1500 ? 2 : 1;
   const intentPts = intent === 'in_prowadz' ? 2 : intent === 'in_zobacz' ? 1 : 0;
   const startPts = (startWhen === 'sw_7dni' || startWhen === 'sw_30dni') ? 1 : 0;
-  const commitment = Math.min((triedBefore >= 2 ? 2 : triedBefore) + intentPts + startPts, 5);
-  const priorityLead = sc >= 40 && commitment >= 3 && budgetProxy >= 2;
+  // readiness = operacyjna gotowość z jawnych sygnałów (intencja + termin + ile razy próbował). NIE severity.
+  const readiness = Math.min((triedBefore >= 2 ? 2 : triedBefore) + intentPts + startPts, 5);
   const wantsHelp = intent === 'in_prowadz' || intent === 'in_zobacz';
-  return { intent, startWhen, budgetProxy, commitment, priorityLead, wantsHelp };
+  // followup_priority: jawna chęć prowadzenia + konkretny termin startu. Bez severity, bez budżetu.
+  const followupPriority = intent === 'in_prowadz' && (startWhen === 'sw_7dni' || startWhen === 'sw_30dni');
+  return { intent, startWhen, readiness, wantsHelp, followupPriority };
 }
 
 export default function DiagnozaPage() {
@@ -54,9 +115,23 @@ export default function DiagnozaPage() {
   const [answers, setAnswers] = useState<RawAnswers | null>(null);
   // Reframe personalizujacy Karte Tygodnia. Dochodzi w tle po LLM, re-renderuje teaser.
   const [reframe, setReframe] = useState<ReframeData | null>(null);
+  // Async reveal: status personalizacji dolu Karty (VI). 'off' brak wolnego tekstu, 'pending' LLM leci
+  // (shimmer „dopisuje pod Twoje slowa"), 'ready' wszedl, 'failed' timeout/blad (blok odczytu sie chowa,
+  // reszta dolu stoi deterministycznie). Gora (I, III) jest zawsze deterministyczna, nie zalezy od tego.
+  const [reframeStatus, setReframeStatus] = useState<'off' | 'pending' | 'ready' | 'failed'>('off');
+  // P1-1: tryb wejscia. 'diagnostic' = domyslny (cold/warm, pelny flow). 'fast_fit' = tylko dla jawnego
+  // ready-to-buy z ?mode=fast_fit (setter/DM), zeby NIE wpychac gotowego leada w 19 ekranow diagnozy.
+  const [mode, setMode] = useState<'diagnostic' | 'fast_fit'>('diagnostic');
 
   // Wejscie na strone diagnostyki (pierwszy ekran). Lejek: intro_view -> started -> step_view... -> completed.
-  useEffect(() => { track('diag_intro_viewed'); }, []);
+  // Tryb czytany z URL (?mode=fast_fit); cold/direct traffic bez parametru zostaje w diagnostic. Zero PII.
+  useEffect(() => {
+    trackDiag('diag_intro_viewed');
+    try {
+      const m = new URLSearchParams(window.location.search).get('mode');
+      if (m === 'fast_fit') { setMode('fast_fit'); trackDiag('fast_fit_intro_viewed'); }
+    } catch { /* brak URL API = zostajemy w diagnostic */ }
+  }, []);
 
   const handleComplete = (raw: RawAnswers) => {
     setAnswers(raw);
@@ -76,20 +151,25 @@ export default function DiagnozaPage() {
     const worstCat = [...catScores].sort((a, b) => a.pct - b.pct)[0]?.label || 'Sen';
     const sc = score(D);
     const C = costs(D);
-    const q = qualify(raw, D.triedBefore, sc, C.hardTotal);
-    const segment = sc >= 40 ? 'goracy' : sc >= 20 ? 'cieply' : 'zimny';
+    const q = qualify(raw, D.triedBefore);
+    // severity_band = WYŁĄCZNIE diagnostyka (nie sales temperature). Neutralne nazwy, oddzielone od intencji.
+    const severityBand = sc >= 40 ? 'high' : sc >= 20 ? 'moderate' : 'low';
 
-    // Podepnij cala sesje (kroki + nagranie) pod handle IG leada, jesli go zostawil.
-    if (typeof raw.instagram === 'string' && raw.instagram.length > 0) {
-      identify(raw.instagram, { segment, score: sc, priority_lead: q.priorityLead });
-    }
-    // Lejek: quiz dokonczony + wynik pokazany (jeden moment). Bez PII, tylko metryki.
-    track('diag_completed', { score: sc, segment, worstCat, priority_lead: q.priorityLead, has_ig: typeof raw.instagram === 'string' && raw.instagram.length > 0 });
-    track('diag_result_viewed', { score: sc, segment, worstCat });
+    // diag-setter-rc-001 / scope #8 (privacy): NIE identyfikujemy sesji po handlu IG w product analytics (PostHog).
+    // IG to PII — trafia wyłącznie do Michała przez /api/lead-notify (Telegram/CRM), nie do analityki produktu.
+    // Funnel zostaje anonimowy (device-level); score/priority_lead nie są wiązane z realnym @handle w PostHog.
+    // diag_complete = FLOW REALNIE SKONCZONY: po setPhase('teaser') (commit do renderu wyniku) i udanym
+    // policzeniu wyniku. NIE przed. Gdyby computacja rzucila, ten event by nie poszedl. Bez PII, tylko metryki.
+    // P0-3: product analytics dostaje TYLKO neutralne, nie-PII pola. Zero sales temperature, zero priority_lead, zero raw answers.
+    trackDiag('diag_complete', { score: sc, severity_band: severityBand, worstCat, has_ig: typeof raw.instagram === 'string' && raw.instagram.length > 0 });
+    trackDiag('diag_result_viewed', { score: sc, severity_band: severityBand, worstCat });
 
     const painText = typeof raw.user_pain === 'string' ? raw.user_pain.trim() : '';
     const leadBrief = buildLeadBrief(raw); // pelny brief + 3 pola wolnego tekstu do personalizacji
     const rawImie = raw.imie ?? raw.name;
+    // Werdykt 3-tier do Telegrama = TYLKO ciezkosc/potrzeba z domen (P0-2: intencja zakupu NIE podnosi diagnozy).
+    const tgRedCount = catScores.filter((c) => c.pct < 45).length;
+    const tgTier: 'A' | 'B' | 'C' = tgRedCount >= 3 ? 'C' : tgRedCount <= 1 ? 'A' : 'B';
 
     // ── Powiadomienie leada na Telegram: ZAWSZE, gdy ktoś skończył quiz (Michał chce wiedzieć od razu) ──
     void fetch('/api/lead-notify', {
@@ -97,15 +177,14 @@ export default function DiagnozaPage() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         score: sc,
-        segment: segment.toUpperCase(),
+        severity_band: severityBand.toUpperCase(),
         worstCat,
         archetyp: pickArchetype(D, worstCat).label,
         archetypKey: pickArchetype(D, worstCat).key,
         godzina: hourRange(D),
         kwota: C.total,
-        priority_lead: q.priorityLead,
-        budget_proxy: q.budgetProxy,
-        commitment: q.commitment,
+        followup_priority: q.followupPriority,
+        readiness: q.readiness,
         intencja: q.intent,
         kiedy_start: q.startWhen,
         pain: painText,
@@ -114,12 +193,20 @@ export default function DiagnozaPage() {
         objawy: Array.isArray(raw.symptoms_chips) ? (raw.symptoms_chips as string[]).join(',') : '',
         triedBefore: D.triedBefore,
         drinks: D.drinks,
+        primary_goal: typeof raw.primary_goal === 'string' ? raw.primary_goal : '',
+        give_up_point: typeof raw.give_up_point === 'string' ? raw.give_up_point : '',
+        tier: tgTier,
       }),
     }).catch(() => {});
 
     // ── Reframe z wlasnych slow usera (LLM), gdy cokolwiek napisal. Karmimy CALY brief (wszystkie
     //    odpowiedzi), nie jedno zdanie. Fire-and-forget, Karta stoi bez niego (fallback deterministyczny). ──
     if (leadBrief.hasFreeText) {
+      setReframeStatus('pending');
+      // Timeout async reveal: shimmer nie wisi w nieskonczonosc. Po 10s odslon deterministyczny dol
+      // (blok odczytu sie chowa). Jak LLM dojdzie pozniej, i tak podmieni (setReframe leci niezaleznie).
+      // 10s = gorna granica z handoffa; latwe do strojenia, jak zmierzysz realny czas odpowiedzi.
+      window.setTimeout(() => setReframeStatus((s) => (s === 'ready' ? s : 'failed')), 10000);
       void (async () => {
         try {
           const res = await fetch('/api/diagnoza', {
@@ -130,44 +217,89 @@ export default function DiagnozaPage() {
               pain: leadBrief.pain,
               trigger: leadBrief.trigger,
               selfDx: leadBrief.selfDx,
-              worstCat, segment, age: D.age, triedBefore: D.triedBefore,
+              worstCat, severity_band: severityBand, age: D.age, triedBefore: D.triedBefore,
             }),
           });
           const json = await res.json();
           if (json?.ok && json.reframe) {
             setReframe(json.reframe as ReframeData);
+            setReframeStatus('ready');
             // #17: wiemy, czy reframe z wlasnych slow usera realnie sie pokazal (wartosc Karty)
-            track('reframe_shown', { worstCat, segment });
+            trackDiag('reframe_shown', { worstCat, severity_band: severityBand });
+          } else {
+            setReframeStatus((s) => (s === 'ready' ? s : 'failed'));
           }
         } catch {
-          // cisza: bez reframe Karta i tak stoi (fallback deterministyczny)
+          // bez reframe dol Karty stoi deterministycznie, blok odczytu sie chowa
+          setReframeStatus((s) => (s === 'ready' ? s : 'failed'));
         }
       })();
     }
   };
+
+  // ── P1-1 FAST FIT: tylko dla jawnego ready-to-buy (?mode=fast_fit). Zero forsowania 19 ekranow. ──
+  // Ready-to-buy dostaje jasna sciezke do prowadzenia; kto woli, przechodzi do pelnej diagnostyki (never downgrade intent).
+  if (phase === 'intro' && mode === 'fast_fit') {
+    const fastFitNabor = `https://nabor.talerzihantle.com/?${new URLSearchParams({ from: 'diag', mode: 'fast_fit', v: ASSESSMENT_VERSION }).toString()}#prowadzenie`;
+    return (
+      <div style={{ minHeight: '100vh', background: BG, color: '#ece7db', fontFamily: '"Inter", sans-serif', display: 'flex', flexDirection: 'column', justifyContent: 'center', padding: '32px 22px', boxSizing: 'border-box', position: 'relative', overflow: 'hidden' }}>
+        <Atmosphere />
+        <div style={{ maxWidth: 480, margin: '0 auto', width: '100%', position: 'relative', zIndex: 1 }}>
+          <div style={{ fontFamily: "'JetBrains Mono', ui-monospace, monospace", fontSize: 11, letterSpacing: 3, textTransform: 'uppercase', color: GOLD, fontWeight: 700, marginBottom: 22 }}>
+            Diagnostyka 168 · szybka ścieżka
+          </div>
+          <h1 style={{ fontFamily: "'Instrument Serif', Georgia, serif", fontSize: 'clamp(30px, 7.5vw, 48px)', lineHeight: 1.08, fontWeight: 400, color: '#fff', margin: '0 0 20px', letterSpacing: '-0.01em' }}>
+            Wiesz, że chcesz ruszyć. Nie musisz przechodzić całej diagnostyki.
+          </h1>
+          <p style={{ fontSize: 16.5, color: '#c4bdb0', lineHeight: 1.65, margin: '0 0 26px' }}>
+            Jeśli już wiesz, że chcesz to ograć z kimś, pokażę Ci od razu, jak wygląda prowadzenie: cały proces, zakres i wejście. Bez 19 pytań.
+          </p>
+          <a
+            href={fastFitNabor}
+            onClick={() => trackDiag('fast_fit_to_nabor')}
+            style={{ display: 'block', textAlign: 'center', textDecoration: 'none', width: '100%', padding: '17px', borderRadius: 14, border: 'none', cursor: 'pointer', background: `linear-gradient(135deg, ${GOLD}, #8a7535)`, color: BG, fontWeight: 800, fontSize: 16, letterSpacing: 0.5, boxSizing: 'border-box' }}
+          >
+            Zobacz prowadzenie 1:1 &rarr;
+          </a>
+          <button
+            onClick={() => { trackDiag('fast_fit_to_diagnostic'); setMode('diagnostic'); if (typeof window !== 'undefined') window.scrollTo({ top: 0 }); }}
+            style={{ marginTop: 14, width: '100%', padding: '13px', background: 'transparent', color: '#8f887c', fontSize: 14, border: '1px solid #26262b', borderRadius: 12, cursor: 'pointer', letterSpacing: 0.3 }}
+          >
+            Wolę najpierw przejść pełną diagnostykę
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   if (phase === 'intro') {
     return (
       <div style={{ minHeight: '100vh', background: BG, color: '#ece7db', fontFamily: '"Inter", sans-serif', display: 'flex', flexDirection: 'column', justifyContent: 'center', padding: '32px 22px', boxSizing: 'border-box', position: 'relative', overflow: 'hidden' }}>
         <Atmosphere />
         <div style={{ maxWidth: 480, margin: '0 auto', width: '100%', position: 'relative', zIndex: 1 }}>
+          <WeekPulse />
           <div style={{ fontFamily: "'JetBrains Mono', ui-monospace, monospace", fontSize: 11, letterSpacing: 3, textTransform: 'uppercase', color: GOLD, fontWeight: 700, marginBottom: 22 }}>
-            Test na 4 minuty &middot; wynik widzę tylko ja
+            Diagnostyka 168 · 5-7 min · prywatnie
           </div>
-          <h1 style={{ fontFamily: "'Instrument Serif', Georgia, serif", fontSize: 'clamp(38px, 9vw, 58px)', lineHeight: 1.05, fontWeight: 400, color: '#fff', margin: '0 0 20px', letterSpacing: '-0.01em' }}>
-            Robisz swoje, a i tak lecisz na pół mocy.
+          <h1 style={{ fontFamily: "'Instrument Serif', Georgia, serif", fontSize: 'clamp(34px, 8vw, 54px)', lineHeight: 1.06, fontWeight: 400, color: '#fff', margin: '0 0 20px', letterSpacing: '-0.01em' }}>
+            Znajdź moment, od którego reszta tygodnia zaczyna lecieć w dół.
           </h1>
-          <p style={{ fontSize: 16.5, color: '#c4bdb0', lineHeight: 1.65, margin: '0 0 28px' }}>
-            W każdym tygodniu masz jeden dzień, który po cichu psuje Ci pozostałe sześć. Prawie nigdy nie jest to ten, który myślisz. Odpowiesz na kilka pytań, a pokażę Ci, który to i co z nim zrobić już jutro.
+          <p style={{ fontSize: 16.5, color: '#c4bdb0', lineHeight: 1.65, margin: '0 0 22px' }}>
+            Odpowiesz na kilka pytań o swój realny tydzień. Na końcu pokażę Ci, gdzie najwcześniej pojawia się wzorzec, który później kosztuje Cię najwięcej, albo że w Twoim tygodniu nie ma jednego takiego punktu. I jeden test do sprawdzenia u siebie.
           </p>
+          {/* P1-3: usunięty niezweryfikowany pasek liczb (9 lat / 1200+ / 200+). Kotwica = człowiek + epistemiczna uczciwość. */}
+          <div style={{ margin: '0 0 22px', padding: '14px 16px', border: '1px solid #26262b', borderRadius: 12, background: '#141416' }}>
+            <div style={{ fontFamily: "'JetBrains Mono', ui-monospace, monospace", fontSize: 11, letterSpacing: 1, textTransform: 'uppercase', color: GOLD, fontWeight: 700, marginBottom: 6 }}>Michał &middot; Human Performance Coach</div>
+            <div style={{ fontSize: 13.5, color: '#8f887c', lineHeight: 1.55 }}>Każdy wynik składa się z Twoich odpowiedzi. Gdy danych jest za mało, zobaczysz to wprost zamiast wymyślonej pewności.</div>
+          </div>
           <button
-            onClick={() => { track('diag_started'); setPhase('intake'); if (typeof window !== 'undefined') window.scrollTo({ top: 0 }); }}
+            onClick={() => { trackDiag('diag_start'); setPhase('intake'); if (typeof window !== 'undefined') window.scrollTo({ top: 0 }); }}
             style={{ width: '100%', padding: '17px', borderRadius: 14, border: 'none', cursor: 'pointer', background: `linear-gradient(135deg, ${GOLD}, #8a7535)`, color: BG, fontWeight: 800, fontSize: 16, letterSpacing: 0.5 }}
           >
-            Pokaż mi ten dzień &rarr;
+            Znajdź mój Punkt Pęknięcia &rarr;
           </button>
           <p style={{ fontSize: 12.5, color: '#8f887c', lineHeight: 1.55, margin: '16px 2px 0', textAlign: 'center' }}>
-            9 lat roboty. Ponad 180 chłopa, których przeprowadziłem przez dokładnie to.
+            Wynik zobaczysz od razu. @Instagram zostawisz tylko jeśli chcesz, żebym rzucił na niego okiem. Bez telefonu, bez calla.
           </p>
         </div>
       </div>
@@ -192,7 +324,13 @@ export default function DiagnozaPage() {
       { label: 'Trening', pct: Math.max(100 - Math.round(((D.miss * 1.5 + (D.trainHappy >= 1 && D.trainHappy <= 2 ? 1 : 0)) / 4) * 100), 5) },
       { label: 'Głowa', pct: Math.max(100 - Math.round((tagScoreWeighted(D.tags) / 10) * 60 + D.defer * 8 + D.dopamine * 6 + (D.triedBefore >= 2 ? 10 : 0)), 5) },
     ];
-    const worstW = [...catScores].sort((a, b) => a.pct - b.pct)[0]?.label || 'Sen';
+    // deterministic tie-break przy remisie pct: stala kolejnosc domen (zero losowosci, zero undefined/NaN)
+    const DOMAIN_TIE = ['Sen', 'Stres', 'Żywienie', 'Weekend', 'Trening', 'Głowa'];
+    const sortedDom = [...catScores].sort((a, b) => (a.pct - b.pct) || (DOMAIN_TIE.indexOf(a.label) - DOMAIN_TIE.indexOf(b.label)));
+    const worstW = sortedDom[0]?.label || 'Sen';
+    // truth gate stanu: gap>=6 = jedna domena realnie wybija sie; inaczej remis (tied) / wszystko zdrowe (neutral)
+    const worstGap = (sortedDom[1]?.pct ?? 100) - (sortedDom[0]?.pct ?? 0);
+    const worstState: 'clear' | 'tied' | 'neutral' = worstGap >= 6 ? 'clear' : ((sortedDom[0]?.pct ?? 0) >= 62 ? 'neutral' : 'tied');
     const arch = pickArchetype(D, worstW);
 
     // ── MAPA STATUSU: 5 osi, KAZDA liczona TYLKO z realnie zbieranych odpowiedzi (zero domyslnych
@@ -219,14 +357,14 @@ export default function DiagnozaPage() {
     ];
     const rawImie = answers.imie ?? answers.name;
     const imie = typeof rawImie === 'string' ? rawImie : '';
-    const q = qualify(answers, D.triedBefore, SC, C.hardTotal);
-    const qualified = q.priorityLead || q.wantsHelp;
+    const q = qualify(answers, D.triedBefore);
+    // qualified = TYLKO jawna intencja (bridge/CTA Beat 8). NIE podnosi tieru diagnozy (P0-2 separation).
+    const qualified = q.wantsHelp;
     // #1 handoff: niesie kontekst diagnozy do nabora w URL (nabor personalizuje sie po ?from=diagnoza).
     // Same-tab (#2) + parametry = ciaglosc lejka, zero przepisywania danych przez usera.
     const igClean = typeof answers.instagram === 'string' ? answers.instagram.replace(/^@?/, '') : '';
-    const naborParams = new URLSearchParams({ from: 'diagnoza', arch: arch.key, score: String(SC), worst: worstW, q: qualified ? '1' : '0', kwota: String(C.total) });
-    if (igClean) naborParams.set('ig', igClean);
-    const naborUrl = `https://nabor.talerzihantle.com/?${naborParams.toString()}`;
+    // URL naboru (Beat 8 End Experience): ZERO PII — tylko routing/analytics. IG/score/kwota NIE lecą.
+    const naborUrl = `https://nabor.talerzihantle.com/?${new URLSearchParams({ from: 'diag', arch: arch.key, intent: typeof answers.intent === 'string' ? answers.intent : '', v: ASSESSMENT_VERSION }).toString()}#prowadzenie`;
     const wkPlan = buildWeekPlan({
       archetypeKey: arch.key, archetypeLabel: arch.label, archetypeTagline: arch.tagline, mirror: arch.mirror,
       qualified,
@@ -237,18 +375,42 @@ export default function DiagnozaPage() {
       sleep: D.sleep, miss: D.miss, binge: D.binge, gym: D.gym,
       reframe: reframe || undefined,
     });
+    const pct = Math.max(35, Math.min(Math.round(SC), 78));
+    // Werdykt 3-tier: WYŁĄCZNIE ciezkosc/potrzeba z liczby domen "na czerwono". Intencja zakupu NIE podnosi diagnozy (P0-2).
+    const redCount = catScores.filter((c) => c.pct < 45).length;
+    const tier: 'A' | 'B' | 'C' = redCount >= 3 ? 'C' : redCount <= 1 ? 'A' : 'B';
+    const LEAK_LABEL: Record<string, string> = { Sen: 'sen', Stres: 'głowa wieczorem', 'Żywienie': 'wieczory', Weekend: 'weekend', Trening: 'wykonanie', 'Głowa': 'głowa wieczorem' };
+    const leakLabel = LEAK_LABEL[worstW] || 'jeden dzień';
+    // Beat 3 evidence lines — WYLACZNIE z realnych odpowiedzi (truth gate: bez wsparcia nie renderuj)
+    const evidence: string[] = [];
+    if (answers.stress_level === 'st_high' || answers.stress_level === 'st_max') evidence.push('Jednym z sygnałów jest napięcie, które zostaje z Tobą po całym dniu.');
+    if (typeof answers.half_power_hours === 'number' && answers.half_power_hours >= 2.5) evidence.push('Do tego kilka godzin dziennie na pół mocy pokazuje, że energia zaczyna siadać wcześniej.');
+    if (answers.evening_eating === 'ee_binge' || answers.evening_eating === 'ee_uncontrolled' || answers.evening_eating === 'ee_chaos') evidence.push('Wieczorem częściej puszcza też jedzenie.');
+    // Beat 5 test: silnik_bez_paliwa izoluje TYLKO najmocniejszy sygnal (worstW); reszta bierze pack.experiment
+    const experiment = arch.key === 'silnik_bez_paliwa' ? silnikExperiment(worstW, worstState) : packFor(arch.key).experiment;
+    const beat4Teaser = arch.key === 'silnik_bez_paliwa' ? silnikBeat4(worstW, worstState) : undefined;
+    const endLineDyn = arch.key === 'silnik_bez_paliwa' ? silnikEndLine(worstW) : undefined;
     return (
-      <>
-        {/* prowadzenie 1:1 na gorze: WeekPage ma most na dole (VII), to dodatkowy cue u szczytu */}
-        <div style={{ position: 'sticky', top: 0, zIndex: 50, background: 'rgba(11,11,12,0.94)', backdropFilter: 'blur(8px)', borderBottom: '1px solid #26262b', padding: '11px 18px', display: 'flex', alignItems: 'center', gap: 12 }}>
-          <span style={{ fontFamily: "'JetBrains Mono', ui-monospace, monospace", fontSize: 10, letterSpacing: 2, textTransform: 'uppercase', color: '#8f887c', fontWeight: 700 }}>Diagnoza gotowa</span>
-          <span style={{ flex: 1 }} />
-          <a href={naborUrl} onClick={() => track('diag_nabor_click', { loc: 'header', qualified })} style={{ fontSize: 12.5, color: '#ece7db', textDecoration: 'none', whiteSpace: 'nowrap' }}>
-            {qualified ? 'zobacz, jak wygląda współpraca' : 'zobacz, jak pracuję z innymi'} &rarr;
-          </a>
-        </div>
-        <WeekPage plan={wkPlan} imie={imie} qualified={qualified} instagram={igClean} naborHref={naborUrl} statuses={statuses} />
-      </>
+      <ResultExperience
+        pack={packFor(arch.key)}
+        tier={tier}
+        archLabel={arch.label}
+        archKey={arch.key}
+        strength={patternStrength(SC)}
+        redCount={redCount}
+        breakId={typeof answers.break_window === 'string' ? answers.break_window : ''}
+        mondayId={typeof answers.monday_recovery === 'string' ? answers.monday_recovery : ''}
+        evidence={evidence}
+        experiment={experiment}
+        firstMove={beat4Teaser}
+        endLine={endLineDyn}
+        cytat={reframe?.cytat}
+        imie={imie}
+        instagram={igClean}
+        ctaHref={naborUrl}
+        qualified={qualified}
+        intent={typeof answers.intent === 'string' ? answers.intent : ''}
+      />
     );
   }
 

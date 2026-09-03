@@ -4,6 +4,7 @@ import { PROOF } from '../lib/proof';
 import { CASES } from '../lib/cases';
 import { Atmosphere } from '../diagnoza/atmosphere';
 import { track } from '../lib/analytics';
+import { GOOGLE_AGG, GOOGLE_CARDS, GOOGLE_SHOTS } from '../lib/google-reviews';
 
 // ── KARTA TYGODNIA ──
 // Sygnatura: krzywa napięcia tygodnia (linia jak z odczytu kortyzolu/tętna),
@@ -121,7 +122,7 @@ function Eyebrow({ n, children }: { n: string; children: React.ReactNode }) {
   );
 }
 
-export default function WeekPage({ plan, imie, instagram, naborHref = 'https://nabor.talerzihantle.com/', qualified = false, statuses = [] }: { plan: WeekPlan; imie?: string; instagram?: string; naborHref?: string; qualified?: boolean; statuses?: { label: string; score: number }[] }) {
+export default function WeekPage({ plan, imie, instagram, naborHref = 'https://nabor.talerzihantle.com/', qualified = false, statuses = [], reframeStatus = 'off' }: { plan: WeekPlan; imie?: string; instagram?: string; naborHref?: string; qualified?: boolean; statuses?: { label: string; score: number }[]; reframeStatus?: 'off' | 'pending' | 'ready' | 'failed' }) {
   return (
     <div className="wp" style={{ background: C.ink, color: C.paper, fontFamily: C.sans, minHeight: '100vh' }}>
       <style>{css}</style>
@@ -143,7 +144,7 @@ export default function WeekPage({ plan, imie, instagram, naborHref = 'https://n
           <div className="wp-noprint" style={{ display: 'flex', alignItems: 'flex-start', gap: 12, background: C.panel2, border: `1px solid ${C.line2}`, borderRadius: 12, padding: '13px 16px', marginBottom: 44 }}>
             <span aria-hidden style={{ color: C.gold, fontSize: 17, lineHeight: 1.3, flexShrink: 0 }}>✓</span>
             <p style={{ margin: 0, fontSize: 13.5, color: C.mute, lineHeight: 1.55 }}>
-              Ta Karta jest tylko Twoja, pod <b style={{ color: C.paper }}>@{instagram}</b>. Nie wrzucam Cię na żadną listę i nie zaczepiam w DM. Jak zechcesz to ze mną przegadać, jestem na dole. Odpisuję ja, nie automat.
+              Ta Karta jest tylko Twoja, pod <b style={{ color: C.paper }}>@{instagram}</b>. Nie wrzucam Cię na żadną listę i nie zaczepiam w DM. Jak zechcesz to ze mną przegadać, jestem na dole.
             </p>
           </div>
         )}
@@ -199,7 +200,7 @@ export default function WeekPage({ plan, imie, instagram, naborHref = 'https://n
                 <span style={{ fontFamily: C.mono, fontSize: 12, letterSpacing: 1.5, textTransform: 'uppercase', color: C.faint, maxWidth: 200, lineHeight: 1.5 }}>tyle z siebie dziś średnio wyciągasz</span>
               </div>
               <p style={{ fontSize: 15.5, color: C.mute, lineHeight: 1.65, margin: '0 0 24px', maxWidth: 540 }}>
-                Rozbicie na obszary niżej. To odczyt z Twoich odpowiedzi, nie z badania krwi. Najniższy słupek to Twój przeciek, reszta to zapas, który dziś blokuje styl tygodnia.
+                Rozbicie na obszary niżej, policzone z tego, co pozaznaczałeś. Najniższy słupek to miejsce, gdzie ucieka Ci najwięcej. Reszta to zapas, który trzyma Twój tydzień w miejscu.
               </p>
               <div style={{ display: 'grid', gap: 16 }}>
                 {statuses.map((s, i) => {
@@ -339,6 +340,41 @@ export default function WeekPage({ plan, imie, instagram, naborHref = 'https://n
         <section className="wp-rise" style={{ marginBottom: 20 }}>
           <Eyebrow n="VI">Krok dalej</Eyebrow>
 
+          {/* PERSONALIZOWANY ODCZYT (async reveal): jego slowa + mechanizm z LLM. Cala personalizacja
+              zjechala tu, na dol, gdzie model zdazy dojsc. 'pending' -> shimmer „dopisuje pod Twoje slowa",
+              'ready' -> realny odczyt, 'failed'/'off' -> blok znika (gora i tak jest deterministyczna). */}
+          {reframeStatus === 'pending' && (
+            <div className="wp-noprint" style={{ background: `linear-gradient(180deg, ${C.panel2}, ${C.ink})`, border: `1px solid ${C.line2}`, borderRadius: 18, padding: 'clamp(22px, 5vw, 32px)', marginBottom: 34 }}>
+              <div style={{ fontFamily: C.mono, fontSize: 10, letterSpacing: 2.5, textTransform: 'uppercase', color: C.gold, marginBottom: 18, display: 'flex', alignItems: 'center', gap: 10 }}>
+                <span className="wp-dotpulse" style={{ width: 7, height: 7, borderRadius: '50%', background: C.gold, display: 'inline-block' }} aria-hidden />
+                Dopisuję to pod Twoje słowa
+              </div>
+              <div className="wp-shimmer" style={{ height: 15, width: '92%', marginBottom: 12 }} aria-hidden />
+              <div className="wp-shimmer" style={{ height: 15, width: '100%', marginBottom: 12 }} aria-hidden />
+              <div className="wp-shimmer" style={{ height: 15, width: '74%' }} aria-hidden />
+            </div>
+          )}
+          {reframeStatus === 'ready' && plan.reading && (plan.reading.cytat || plan.reading.mechanizm) && (
+            <div style={{ background: `linear-gradient(180deg, ${C.panel2}, ${C.ink})`, border: `1px solid ${C.line2}`, borderRadius: 18, padding: 'clamp(22px, 5vw, 32px)', marginBottom: 34 }}>
+              <div style={{ fontFamily: C.mono, fontSize: 10, letterSpacing: 2.5, textTransform: 'uppercase', color: C.gold, marginBottom: 16 }}>Twój tydzień, Twoimi słowami</div>
+              {plan.reading.cytat && (
+                <p style={{ fontFamily: C.serif, fontSize: 'clamp(20px, 4vw, 26px)', fontStyle: 'italic', color: C.paper, lineHeight: 1.32, margin: '0 0 18px' }}>
+                  „{plan.reading.cytat}”
+                </p>
+              )}
+              {plan.reading.mechanizm && (
+                <p style={{ fontSize: 16.5, color: C.mute, lineHeight: 1.75, margin: 0 }}>
+                  {plan.reading.mechanizm}
+                </p>
+              )}
+              {plan.reading.pulapka && (
+                <p style={{ fontFamily: C.serif, fontSize: 'clamp(18px, 3.6vw, 22px)', fontStyle: 'italic', color: C.gold, lineHeight: 1.42, margin: '18px 0 0', paddingLeft: 18, borderLeft: `2px solid ${C.goldDeep}` }}>
+                  {plan.reading.pulapka}
+                </p>
+              )}
+            </div>
+          )}
+
           {/* zaproszenie osobiste */}
           <div className="wp-noprint" style={{ background: `linear-gradient(180deg, ${C.goldGlow}, transparent)`, border: `1px solid ${C.line2}`, borderRadius: 18, padding: 'clamp(22px, 5vw, 32px)', marginBottom: 34 }}>
             <div style={{ fontFamily: C.mono, fontSize: 10, letterSpacing: 2.5, textTransform: 'uppercase', color: C.gold, marginBottom: 14 }}>Ode mnie, na koniec</div>
@@ -367,7 +403,59 @@ export default function WeekPage({ plan, imie, instagram, naborHref = 'https://n
           {/* NISZA: rekompozycja bez rzucania zycia. Oś przekazu, zawsze widoczna (nie zalezy od LLM). */}
           <div style={{ background: C.panel2, border: `1px solid ${C.line2}`, borderLeft: `3px solid ${C.gold}`, borderRadius: 12, padding: '16px 18px', marginBottom: 30 }}>
             <p style={{ fontSize: 15, color: C.paper, lineHeight: 1.65, margin: 0, maxWidth: 560 }}>
-              Żebyś wiedział, w co wchodzisz: chłopaki, których prowadzę, dalej wychodzą w weekend, piją wino do kolacji i jadą na wypady z ekipą. Forma rośnie <b style={{ color: C.gold }}>obok tego życia, nie zamiast niego</b>. Wolniej niż obiecują cudotwórcy z reklam, ale w tempie, które utrzymasz przez lata. Ponad 180 chłopa zrobiło rekompozycję właśnie tak, nie żyjąc jak mnich.
+              Żebyś wiedział, w co wchodzisz: chłopaki, których prowadzę, dalej wychodzą w weekend, piją wino do kolacji i jadą na wypady z ekipą. Forma rośnie <b style={{ color: C.gold }}>obok tego życia, nie zamiast niego</b>. Wolniej niż obiecują cudotwórcy z reklam, ale w tempie, które utrzymasz przez lata. Ponad 200 facetów zrobiło rekompozycję właśnie tak, nie żyjąc jak mnich.
+            </p>
+          </div>
+
+          {/* OPINIE GOOGLE: trzeci typ proofu tuz nad blokiem "zanim napiszesz". Mix: badge (agregat + link
+              do profilu = weryfikowalne) + ciemne karty (czytelne, spojne z premium) + 2 realne zrzuty
+              (dowod, ze prawdziwe). Autentycznosc badge'a i zrzutow splywa na przepisane karty. */}
+          <div style={{ marginBottom: 30 }}>
+            <a href={GOOGLE_AGG.url} target="_blank" rel="noopener noreferrer" onClick={() => track('diag_google_click', { qualified })}
+              style={{ display: 'flex', alignItems: 'center', gap: 12, textDecoration: 'none', background: C.panel2, border: `1px solid ${C.line2}`, borderRadius: 12, padding: '13px 16px', marginBottom: 16 }}>
+              <span aria-hidden style={{ fontFamily: C.sans, fontWeight: 800, fontSize: 19, color: '#4285F4', flexShrink: 0, lineHeight: 1 }}>G</span>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: 14.5, color: C.paper, fontWeight: 700 }}>
+                  {GOOGLE_AGG.rating} <span style={{ color: C.gold, letterSpacing: 1 }}>★★★★★</span>
+                  <span style={{ color: C.mute, fontWeight: 400 }}> · {GOOGLE_AGG.count} opinii w Google</span>
+                </div>
+                <div style={{ fontSize: 12.5, color: C.faint, marginTop: 2 }}>Zobacz wszystkie na profilu &rarr;</div>
+              </div>
+            </a>
+            <div style={{ display: 'grid', gap: 12 }}>
+              {GOOGLE_CARDS.map((r, i) => (
+                <div key={i} style={{ background: `linear-gradient(180deg, ${C.panel2}, ${C.ink})`, border: `1px solid ${C.line2}`, borderRadius: 14, padding: '16px 18px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 10, marginBottom: 8 }}>
+                    <span style={{ color: C.gold, fontSize: 13, letterSpacing: 1 }}>★★★★★</span>
+                    <span style={{ fontFamily: C.mono, fontSize: 10.5, color: C.faint }}>Google · {r.when}</span>
+                  </div>
+                  <p style={{ fontFamily: C.serif, fontSize: 'clamp(16px, 3.4vw, 19px)', fontStyle: 'italic', color: C.paper, lineHeight: 1.46, margin: '0 0 10px' }}>„{r.text}”</p>
+                  <div style={{ fontSize: 13, color: C.mute, fontWeight: 700 }}>{r.name}</div>
+                </div>
+              ))}
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginTop: 12 }}>
+              {GOOGLE_SHOTS.map((s, i) => (
+                <img key={i} src={s.src} alt={s.alt} loading="lazy" style={{ width: '100%', display: 'block', borderRadius: 10, border: `1px solid ${C.line2}` }} />
+              ))}
+            </div>
+            <div style={{ fontFamily: C.mono, fontSize: 10, letterSpacing: 2, textTransform: 'uppercase', color: C.faint, textAlign: 'center', marginTop: 10 }}>
+              prosto z Google, bez retuszu
+            </div>
+          </div>
+
+          {/* ZANIM NAPISZESZ: co dalej + ze glebsza robota jest platna + ze nie scigam. Cynik nie klika
+              w niezdefiniowane. Deterministyczne, zawsze widoczne, tuz nad przyciskiem DM. */}
+          <div className="wp-noprint" style={{ background: C.panel2, border: `1px solid ${C.line2}`, borderRadius: 12, padding: 'clamp(16px, 4vw, 20px) clamp(16px, 4vw, 22px)', marginBottom: 26 }}>
+            <div style={{ fontFamily: C.mono, fontSize: 10, letterSpacing: 2.5, textTransform: 'uppercase', color: C.faint, fontWeight: 700, marginBottom: 12 }}>Zanim napiszesz</div>
+            <p style={{ fontSize: 15, color: C.mute, lineHeight: 1.65, margin: '0 0 10px', maxWidth: 560 }}>
+              Jak klikniesz, piszesz do mnie na Instagramie. Czyta to ja, nie automat. Zadam dwa, trzy pytania o Twój tydzień i powiem wprost, od czego zacząć.
+            </p>
+            <p style={{ fontSize: 15, color: C.mute, lineHeight: 1.65, margin: '0 0 10px', maxWidth: 560 }}>
+              Jak z tego wyjdzie, że chcesz, żebym Cię przez to przeprowadził, to już płatne prowadzenie. Mówię od razu, żebyś wiedział, w co wchodzisz.
+            </p>
+            <p style={{ fontSize: 15, color: C.mute, lineHeight: 1.65, margin: 0, maxWidth: 560 }}>
+              Nie ścigam i nie zasypuję Cię wiadomościami. Piszesz, kiedy chcesz, albo wcale.
             </p>
           </div>
 
@@ -450,4 +538,11 @@ const css = `
 @keyframes wpPulse { 0%,100%{ r:5.5; opacity:1 } 50%{ r:7; opacity:.75 } }
 .wp-signal { transition: box-shadow .35s ease, transform .35s cubic-bezier(.2,.7,.2,1); }
 .wp-signal:hover { transform: translateY(-3px); box-shadow: 0 0 0 1px rgba(200,168,78,0.35), 0 0 64px rgba(200,168,78,0.26), 0 52px 100px -30px rgba(0,0,0,0.9), inset 0 1px 0 rgba(255,255,255,0.09); }
+.wp-shimmer { background: linear-gradient(90deg, ${C.panel2} 0%, ${C.line2} 50%, ${C.panel2} 100%); background-size: 200% 100%; border-radius: 6px; }
+@keyframes wpShine { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+@keyframes wpDot { 0%,100% { opacity: 1; transform: scale(1); } 50% { opacity: .35; transform: scale(.6); } }
+@media (prefers-reduced-motion: no-preference) {
+  .wp-shimmer { animation: wpShine 1.5s ease-in-out infinite; }
+  .wp-dotpulse { animation: wpDot 1.2s ease-in-out infinite; }
+}
 `;

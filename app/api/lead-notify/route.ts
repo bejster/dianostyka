@@ -19,7 +19,7 @@ export async function POST(req: NextRequest) {
     // Handle IG = jedyny kontakt do leada. Bez niego nie ma jak sie odezwac.
     const ig = s(b.instagram, 60).replace(/[@\s]/g, '');
     const score = Number(b.score) || 0;
-    const priority = b.priority_lead === true;
+    const priority = b.followup_priority === true; // P0-2: priorytet kontaktu = jawna intencja + termin (NIE severity, NIE budżet)
     const ico = priority ? '🔥' : score >= 40 ? '🔴' : score >= 20 ? '🟡' : '🟢';
     const intentMap: Record<string, string> = {
       in_prowadz: 'chce prowadzenia', in_zobacz: 'chce zobaczyc pomoc', in_sam: 'woli sam', in_niewiem: 'nie wie',
@@ -27,6 +27,13 @@ export async function POST(req: NextRequest) {
     const startMap: Record<string, string> = {
       sw_7dni: 'w tym tygodniu', sw_30dni: 'w tym miesiacu', sw_kwartal: 'za 2-3 mies', sw_sprawdzam: 'tylko sprawdza',
     };
+    const goalMap: Record<string, string> = {
+      goal_forma: 'forma/wyglad', goal_energia: 'energia/moc', goal_sen: 'sen/regeneracja', goal_glowa: 'spokoj w glowie', goal_naped: 'naped/libido', goal_inne: 'cos innego',
+    };
+    const giveupMap: Record<string, string> = {
+      gup_weekend: 'weekend', gup_wieczor: 'wieczor', gup_stres: 'stres/robota', gup_efekt: 'brak efektu', gup_czas: 'brak czasu',
+    };
+    const tierMap: Record<string, string> = { A: 'TRZYMA SAM (git)', B: 'JEDEN WYCIEK', C: 'ZAJEZDZA CALY TYDZIEN' };
 
     // ── Gotowy opener DM (per archetyp, w glosie Michala) + wskazowka jak grac ──
     const im = s(b.imie, 40);
@@ -49,7 +56,7 @@ export async function POST(req: NextRequest) {
     const profileLink = ig ? `https://instagram.com/${ig}` : '';
     const intent = s(b.intencja, 20);
     const closer = priority
-      ? 'GORĄCY. Ból wysoki, budżet jest, chce prowadzenia. Otwórz pytaniem, po 1-2 odpowiedziach proponuj rozmowę o prowadzeniu 1:1.'
+      ? 'GORĄCY. Chce prowadzenia i deklaruje szybki start. Otwórz pytaniem, po 1-2 odpowiedziach proponuj rozmowę o prowadzeniu 1:1.'
       : (intent === 'in_prowadz' || intent === 'in_zobacz')
       ? 'CIEPŁY. Chce z kimś, ale nie docisnij od razu. Zbuduj 2-3 wymiany, potem miękko rzuć współpracę.'
       : 'ZIMNY albo woli sam. Otwórz wartością, zero pitchu. Daj jeden konkret z jego wyniku, zbuduj zaufanie, wróć później.';
@@ -94,12 +101,24 @@ export async function POST(req: NextRequest) {
     const lines = [
       `${ico} LEAD DIAGNOSTYKA${priority ? ' — PRIORYTET 1:1' : ''}`,
       ig ? `👤 ${s(b.imie, 40) ? s(b.imie, 40) + ' · ' : ''}@${ig} → instagram.com/${ig}` : '⚠️ BRAK IG — lead anonimowy',
-      `Wynik ${score}/100 (${s(b.segment, 20)}) · ${s(b.archetyp, 60)}`,
+      `Wynik ${score}/100 (${s(b.severity_band, 20)}) · ${s(b.archetyp, 60)}`,
       `Peka: ${s(b.godzina, 40)} · Hamulec: ${s(b.worstCat, 30)} · Koszt: ${s(b.kwota, 20)} zl`,
+      (b.primary_goal || b.tier) ? `Cel: ${goalMap[s(b.primary_goal, 30)] || '—'} · Odpuszcza: ${giveupMap[s(b.give_up_point, 30)] || '—'} · Werdykt: ${tierMap[s(b.tier, 2)] || '—'}` : '',
       `Gotowosc: ${intentMap[s(b.intencja, 20)] || '—'} · Start: ${startMap[s(b.kiedy_start, 20)] || '—'}`,
-      `Budzet(proxy) ${Number(b.budget_proxy) || 0}/3 · Zaangazowanie ${Number(b.commitment) || 0}/5`,
+      `Gotowosc operacyjna ${Number(b.readiness) || 0}/5 · Priorytet kontaktu: ${priority ? 'TAK (intencja+termin)' : 'nie'}`,
       b.pain ? `Wkurza: „${s(b.pain, 300)}”` : '',
     ].filter(Boolean);
+
+    // ── Pelny lead -> n8n (diagnostyka-hit) -> Notion. Kazde ukonczone wypelnienie ląduje jako wiersz.
+    //    Nie blokuje ani nie wywala Telegrama; .trim() broni przed zablakanym \n w wartosci env. ──
+    const n8nUrl = (process.env.N8N_DIAGNOSTYKA_WEBHOOK || '').trim();
+    if (n8nUrl) {
+      await fetch(n8nUrl, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ event: 'diagnostyka_complete', ...b, received_at: new Date().toISOString() }),
+      }).catch(() => {});
+    }
 
     const res = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
       method: 'POST',

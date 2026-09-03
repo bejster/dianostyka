@@ -2,6 +2,8 @@
 // Bez klucza NEXT_PUBLIC_POSTHOG_KEY window.posthog nie istnieje i track() jest no-opem,
 // wiec instrumentacja moze byc w kodzie na produkcji, zanim Michal wklei klucz.
 
+import { ASSESSMENT_VERSION } from './assessment-config';
+
 type Props = Record<string, unknown>;
 
 interface PosthogLike {
@@ -20,6 +22,12 @@ export function track(event: string, props?: Props): void {
   } catch {
     // cisza: analityka nigdy nie moze wywrocic flow
   }
+}
+
+// Event diagnostyki: wstrzykuje `version` z JEDNEGO centralnego zrodla (ASSESSMENT_VERSION),
+// zeby moc porownac 2.5.0 vs 2.5.1 bez mieszania danych. Uzywaj do wszystkich eventow diagnostyki.
+export function trackDiag(event: string, props?: Props): void {
+  track(event, { version: ASSESSMENT_VERSION, ...props });
 }
 
 // Podpina sesje (wszystkie kroki + nagranie) pod handle IG -> w PostHog widzisz lejek konkretnego leada.

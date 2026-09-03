@@ -53,6 +53,9 @@ export interface WeekPlan {
   saveNote: string;             // pod przyciskiem zapisu
   // BLOK WARTOSCI (VI): zaawansowany mechanizm (co widze, czego inni nie) + ruch na 7 dni + efekt/most.
   firstMove: { widze: string; ruch: string; efekt: string };
+  // PERSONALIZOWANY ODCZYT (VI, async reveal): jego slowa + mechanizm z LLM (reframe). Undefined = brak
+  // reframe -> blok sie nie pokazuje (dol stoi deterministycznie). Patrz reframeStatus w WeekPage.
+  reading?: { cytat?: string; mechanizm?: string; pulapka?: string };
 }
 
 const DAYS = ['Pon', 'Wt', 'Śr', 'Czw', 'Pt', 'Sob', 'Ndz'] as const;
@@ -64,8 +67,8 @@ const WEEK_BY_ARCHETYPE: Record<string, WeekTemplate> = {
     states: ['risk', 'ok', 'good', 'ok', 'risk', 'break', 'break'],
   },
   wieczorny_odpad: {
-    labels: ['Rano ogar, wieczór spłaca dług', 'To samo, tylko bardziej zmęczony', 'Wieczór wygrywa trzeci raz', 'Kredyt się kumuluje', 'Wieczór plus alkohol', 'Dzień bez ramy', 'Reset na jutro'],
-    states: ['risk', 'risk', 'break', 'risk', 'break', 'risk', 'ok'],
+    labels: ['Rano ogar, wieczór spłaca dług', 'To samo, tylko bardziej zmęczony', 'Wieczór wygrywa trzeci raz', 'Kredyt się kumuluje', 'Piątek: najmniej ramy, najwięcej okazji', 'Dzień bez ramy', 'Reset na jutro'],
+    states: ['risk', 'risk', 'risk', 'risk', 'break', 'risk', 'ok'],
   },
   glowa_zajezdza: {
     labels: ['Głowa jeszcze ciągnie', 'Napięcie się kumuluje', 'Po 14:00 spadek mocy', 'Głowa na rezerwie', 'Wieczorem zero paliwa', 'Niby wolne, głowa pracuje', 'Napięcie przed poniedziałkiem'],
@@ -87,13 +90,13 @@ const WEEK_FALLBACK: WeekTemplate = WEEK_BY_ARCHETYPE.wieczorny_odpad;
 const DEEPER: Record<string, { label: string; body: string; analogy: string }> = {
   weekend_reset: {
     label: 'Poniedziałkowy zjazd robi Ci ciało, które nie zdążyło odpocząć.',
-    body: 'Nieregularny sen w weekend i mniej ruchu rozjeżdżają rytm i spłycają głęboki sen. To miesza poranny rytm kortyzolu i przygasza szczyt testosteronu, który organizm i tak buduje dopiero w porządnym śnie. Rytm rzadko wraca już w niedzielę w nocy, u wielu ciało potrzebuje jeszcze paru dni, żeby wejść z powrotem w swoje tory. Dlatego poniedziałek i wtorek schodzą na nadrabianiu, nie na braku chęci, tylko na układzie nerwowym, który wciąż wraca do siebie.',
+    body: 'Nieregularny sen i mniej ruchu w weekend rozjeżdżają rytm i spłycają głęboki sen. To miesza poranny kortyzol i przygasza testosteron, który ciało i tak budujesz dopiero w mocnym śnie. Zegar nie wskakuje na swoje w niedzielę w nocy. Ciału trzeba jeszcze paru dni, żeby wrócić na tory. Dlatego poniedziałek i wtorek schodzą Ci na nadrabianiu, choć chęci masz tyle samo co zawsze.',
     analogy: 'Jak jazda autem z rozregulowanym zapłonem: silnik zużywa dwukrotnie więcej paliwa, a auto przyspiesza dwa razy wolniej.',
   },
   wieczorny_odpad: {
-    label: 'Wieczorne podjadanie zaczyna się już w ciągu dnia.',
-    body: 'Brak kontroli nad jedzeniem po 21:00 to rzadko słaby charakter. Po całym dniu w napięciu i przy krótkim śnie grelina (hormon głodu) zwykle rośnie, a leptyna (sygnał sytości) spada. Do tego wieczorny kortyzol, który u wielu nie schodzi po napiętym dniu, popycha mózg do najszybszego bodźca na rozładowanie. Wieczór w lodówce to nie słaby charakter, tylko spięte ciało, które szuka najkrótszej drogi w dół.',
-    analogy: 'To rachunek za cały dzień pracy na wysokich obrotach. Jeśli nie dasz układowi nerwowemu innego sygnału zejścia z obrotów, sam sięgnie po najszybszy.',
+    label: 'Wieczorem tylko płacisz rachunek. Robisz go przez cały dzień.',
+    body: 'Po całym dniu na kawie, w napięciu i po krótkim śnie ciało podkręca wieczorem hormon głodu, a przycisza ten, który mówi „najadłeś się”. Kortyzol, który po napiętym dniu nie zszedł, dokłada swoje: głowa szuka najszybszego zejścia z obrotów i o 22:00 znajduje je w cukrze. Spięte ciało bierze najkrótszą drogę w dół, bo przez cały dzień nie dostało innej.',
+    analogy: 'To jak sprężyna nakręcana przez cały dzień. Wieczorem musi gdzieś strzelić i wybiera najbliższe: lodówkę.',
   },
   glowa_zajezdza: {
     label: 'Im dłużej głowa pracuje wieczorem, tym gorzej śpisz.',
@@ -120,7 +123,7 @@ function hiddenCost(input: WeekPlanInput): WeekPlan['hiddenCost'] {
     case 'weekend_reset':
       return { headline: 'Jeden rozbity weekend zabiera wysokie obroty przez 3 kolejne dni.', math: `W skali miesiąca to nie 4 luźne dni, ale 8-10 dni roboczych spędzonych na ponownym wchodzeniu w rytm.${kasa}${mies}`, multiplier: 'Rozkojarzony poniedziałek i wtorek to ukryty koszt niespójnego weekendu.' };
     case 'wieczorny_odpad':
-      return { headline: 'Wieczorny wyciek energii obniża jakość decyzji następnego dnia.', math: `Niedospana noc i ciężki żołądek rano obniżają koncentrację w kluczowych godzinach pracy.${kasa}${mies}`, multiplier: 'Brak struktury wieczorem spłaca się gorszym skupieniem do południa.' };
+      return { headline: 'Rozwalony wieczór zabiera Ci następny dzień, zanim się zacznie.', math: `Wstajesz niedospany, z ciężką głową, i pierwsze godziny w pracy nadrabiasz kawą, zamiast robić robotę.${kasa}${mies}`, multiplier: 'Jeden zjedzony wieczór, jeden dzień na pół gwizdka.' };
     case 'glowa_zajezdza':
       return { headline: 'Brak wyłączenia głowy po pracy zjada regenerację i sen.', math: `Dni w ciągłym napięciu kumulują zmęczenie, przez co wolny czas idzie na zbieranie sił, a nie na odpoczynek.${kasa}${mies}`, multiplier: 'Głowa, która po pracy nie schodzi z obrotów, okrada Cię z jutra, zanim jeszcze wstaniesz.' };
     case 'wiedza_bez_wdrozenia':
@@ -213,8 +216,7 @@ function invitationLine(input: WeekPlanInput): string {
 // ── MOST_INTRO ── akapit pod zaproszeniem. LLM-owy z jego historii, inaczej deterministyczny fallback.
 function bridgeIntroLine(input: WeekPlanInput): string {
   if (input.reframe?.most_intro?.trim()) return input.reframe.most_intro.trim();
-  const spot = input.reframe?.slaby_punkt?.trim() || weakSpot(input.worstCat);
-  return `Pewnie nieraz wywaliłeś kasę na dietę z neta albo plan, który po dwóch tygodniach się rozsypał. Dlatego tu nie dostajesz kolejnego szablonu. Widzę, gdzie dokładnie pęka Twój tydzień, u Ciebie to ${spot}, i wiem, co zdjąć najpierw. Nie każdego biorę, a jak nie widzę, że da się ruszyć, powiem wprost. Napisz do mnie z tym wynikiem, odpiszę ja, nie zespół.`;
+  return `Pewnie nieraz wywaliłeś kasę na dietę z neta albo plan, który po dwóch tygodniach się rozsypał. Ze mną nie dostajesz gotowca do wydrukowania. Patrzę, gdzie konkretnie pęka Twój tydzień, i wiem, co zdjąć najpierw. Nie każdego biorę. Jak nie widzę, że da się ruszyć, powiem wprost. Napisz z tym wynikiem, odpisuję sam, nie żaden zespół.`;
 }
 
 // ── MOST DO KOLEJNEGO KROKU ──
@@ -236,14 +238,14 @@ function buildBridge(input: WeekPlanInput): WeekPlan['bridge'] {
 type ValueBlock = { widze: string; ruch: string; efekt: string };
 const VALUE_BY_ARCHETYPE: Record<string, ValueBlock> = {
   weekend_reset: {
-    widze: 'Twój problem to nie sobota, tylko rozjazd zegara. Gdy w weekend wstajesz 2-3 godziny później, robisz sobie „social jetlag", jakbyś przeleciał dwie strefy czasowe. Dlatego poniedziałek i wtorek zdychasz, choć w sobotę „tylko trochę odpuściłeś".',
+    widze: 'Sama sobota Cię nie rozwala. Rozwala Cię to, że przez weekend rozjeżdżasz sobie wewnętrzny zegar. Wstajesz 2-3 godziny później i robisz sobie „social jetlag”, jakbyś przeleciał dwie strefy czasowe. Dlatego w poniedziałek i wtorek zdychasz, choć w sobotę „tylko trochę odpuściłeś”.',
     ruch: 'Przez 7 dni pilnuj jednej rzeczy: pobudka o stałej porze, plus minus godzina, też w sobotę i niedzielę. Położysz się późno, wstań o swojej i dobij 20 minut drzemki po południu. Rytm ratuje to mocniej niż samo odstawienie alkoholu.',
     efekt: 'Po tygodniu poniedziałek wstaje inny. Jak poczujesz różnicę, odezwij się, bo to pierwszy z kilku wycieków, które u Ciebie widzę.',
   },
   wieczorny_odpad: {
-    widze: 'Wieczorny głód nie zaczyna się wieczorem, tylko rano. Kawa na czczo i pierwszy posiłek na samych węglach robią huśtawkę glukozy na cały dzień. Wieczorem dokłada się zmęczenie i niższa serotonina, więc mózg woła o najszybsze paliwo: cukier.',
-    ruch: 'Przez 7 dni: pierwszy posiłek to 30-40 g białka plus tłuszcz (jajka, nie płatki). A 2 godziny przed snem porcja wolnego białka, twaróg albo kazeina, zamiast słodkiego, z odrobiną węgli złożonych (ryż, ziemniak). Tryptofan z białka i te węgle sprzyjają serotoninie i melatoninie, więc łatwiej odpuścić lodówkę i głębiej zasnąć.',
-    efekt: 'Po kilku dniach wieczorny głód siada sam, bez walki z sobą. Jak Cię to zaskoczy, napisz.',
+    widze: 'Ten wieczorny cukier montuje się już przy śniadaniu. Kawa na czczo i pierwszy posiłek na samych węglach rozbujają Ci poziom cukru na cały dzień. Każdy zjazd to dla głowy sygnał „dobierz szybkiej energii”. Wieczorem, już zmęczony, po prostu przestajesz z tym sygnałem walczyć.',
+    ruch: 'Przez 7 dni dwie rzeczy. Śniadanie z 30-40 g białka i tłuszczem (jajka, nie płatki), żeby ściąć huśtawkę cukru od rana. I 2 godziny przed snem porcja wolnego białka, twaróg albo kazeina, z odrobiną węgli (ryż, ziemniak) zamiast słodkiego. To daje ciału budulec pod serotoninę i sen, więc łatwiej odpuścić lodówkę i głębiej zejść w noc.',
+    efekt: 'Po kilku dniach wieczorny głód siada sam, bez szarpania się z sobą. Jak Cię to zaskoczy, napisz.',
   },
   glowa_zajezdza: {
     widze: 'Głowa nie chce się wieczorem wyłączyć, bo Twój kortyzol się rozjechał: zamiast być wysoko rano i nisko wieczorem, ciągnie w drugą stronę. Ciało zostaje w trybie gotowości, więc sen jest płytki, mimo że leżysz swoje 7 godzin.',
@@ -251,12 +253,12 @@ const VALUE_BY_ARCHETYPE: Record<string, ValueBlock> = {
     efekt: 'Rano zaczynasz wstawać z pełniejszym bakiem. Jak głowa zacznie schodzić wieczorem, daj znać.',
   },
   wiedza_bez_wdrozenia: {
-    widze: 'U Ciebie nie brakuje wiedzy, brakuje architektury wykonania. Mózg dostaje zastrzyk dopaminy za samo czytanie i planowanie, czuje postęp, choć w tygodniu nic się nie ruszyło. Dlatego kolejny „lepszy plan" nic nie zmieni.',
+    widze: 'Wiedzy masz aż za dużo. Brakuje Ci architektury wykonania. Głowa dostaje zastrzyk dopaminy za samo czytanie i planowanie, czuje postęp, choć w tygodniu nic się nie ruszyło. Dlatego kolejny „lepszy plan” nic nie zmieni.',
     ruch: 'Przez 7 dni odwróć to: zero nowej teorii. Tylko wersja minimum, 20 minut treningu wpisane na sztywno jak spotkanie, i jedna liczba na koniec dnia: zrobione czy nie. Rozliczasz wykonanie, nie wiedzę.',
     efekt: 'Zobaczysz na własne oczy, że problem nigdy nie siedział w wiedzy. Jak to klapnie, odezwij się, bo dalej najszybciej idzie z kimś, kto Cię z tego rozlicza.',
   },
   silnik_bez_paliwa: {
-    widze: 'Wyniki krwi masz w normie, a czujesz się na pół gwizdka, bo „w normie" znaczy „nie chory", nie „w formie". Cichy wyciek robią trzy rzeczy naraz: płytki sen, nierozładowany stres i nieregularne posiłki. Osobno każda wygląda na drobiazg.',
+    widze: 'Wyniki krwi masz w normie, a i tak chodzisz na pół gwizdka. „W normie” znaczy tylko tyle, że nie jesteś chory. Do formy stąd jeszcze kawał drogi. Cichy wyciek robią trzy rzeczy naraz: płytki sen, nierozładowany stres i nieregularne posiłki. Osobno każda wygląda na drobiazg.',
     ruch: 'Przez 7 dni jeden fundament: stała pora pobudki i pierwszego posiłku (30-40 g białka), plus 10 minut ruchu na świeżym powietrzu rano. To trzy dźwignie na tym samym zegarze biologicznym, ruszasz je razem, nie po kolei.',
     efekt: 'Po tygodniu energia przestaje siadać o 14:00. Jak to poczujesz, napisz.',
   },
@@ -266,10 +268,13 @@ function valueFor(archetypeKey: string): ValueBlock { return VALUE_BY_ARCHETYPE[
 export function buildWeekPlan(input: WeekPlanInput): WeekPlan {
   const tpl = WEEK_BY_ARCHETYPE[input.archetypeKey] || WEEK_FALLBACK;
   const week: WeekDay[] = DAYS.map((day, idx) => ({ day, label: tpl.labels[idx], state: tpl.states[idx] }));
+  // I (Rozpoznanie) i III (Drugie dno) SA ZAWSZE DETERMINISTYCZNE: to gorne sekcje, ktore cynik czyta
+  // najszybciej. Personalizacja z LLM (jego slowa, mechanizm) zjezdza na dol (VI -> reading), gdzie model
+  // zdazy dojsc i gdzie nie skacze pod czytajacym (async reveal). Reframe zasila juz tylko VI.
   const problem = {
     name: input.archetypeLabel,
-    oneLiner: input.reframe?.cytat?.trim() ? `„${input.reframe.cytat.trim()}”` : input.archetypeTagline,
-    falseAssumption: input.reframe?.falszywe_zalozenie?.trim() || defaultFalseAssumption(input.archetypeKey),
+    oneLiner: input.archetypeTagline,
+    falseAssumption: defaultFalseAssumption(input.archetypeKey),
     mirror: input.mirror,
   };
   const { plan: basePlanArr, metric } = buildPlan(input);
@@ -280,18 +285,14 @@ export function buildWeekPlan(input: WeekPlanInput): WeekPlan {
     plan[2] = { icon: '📈', kind: 'Krok 3 (Twój priorytet)', text: input.reframe.kolejnosc[2] };
   }
 
-  const baseDeeper = DEEPER[input.archetypeKey] || DEEPER.wieczorny_odpad;
-  const deeper = {
-    label: input.reframe?.mechanizm ? 'Co najpewniej dzieje się w Twoim tygodniu' : baseDeeper.label,
-    body: input.reframe?.mechanizm?.trim() || baseDeeper.body,
-    analogy: input.reframe?.pulapka?.trim() || baseDeeper.analogy,
-  };
+  // III zawsze deterministyczne (mechanizm/pulapka z LLM zjechaly do VI -> reading).
+  const deeper = { ...(DEEPER[input.archetypeKey] || DEEPER.wieczorny_odpad) };
 
   return {
     problem,
     week,
     deeper,
-    deeperNote: 'To opis mechanizmu, nie diagnoza. Ten wzór widzę u większości facetów z tym samym rozjazdem tygodnia. Objawy czysto medyczne (bóle, tętno, stawy) omawiaj z lekarzem.',
+    deeperNote: 'Tak to wygląda u większości chłopa z podobnie rozjechanym tygodniem. Jak dochodzą twarde objawy, bóle, kołatanie, stawy, to już rozmowa z lekarzem, nie ze mną.',
     hiddenCost: hiddenCost(input),
     potential: potentialBlock(input),
     plan,
@@ -302,15 +303,22 @@ export function buildWeekPlan(input: WeekPlanInput): WeekPlan {
     bridge: buildBridge(input),
     saveNote: 'To trafia tylko do mnie. Bez automatów i bez list mailingowych.',
     firstMove: valueFor(input.archetypeKey),
+    reading: input.reframe
+      ? {
+          cytat: input.reframe.cytat?.trim() || undefined,
+          mechanizm: input.reframe.mechanizm?.trim() || undefined,
+          pulapka: input.reframe.pulapka?.trim() || undefined,
+        }
+      : undefined,
   };
 }
 
 function defaultFalseAssumption(key: string): string {
   switch (key) {
     case 'weekend_reset': return 'Myślisz, że weekend kasuje się sam w niedzielę w nocy. Nie kasuje. Ciało spłaca go jeszcze przez dwa, trzy dni.';
-    case 'wieczorny_odpad': return 'Zrzucasz to na słabą wolę wieczorem. A wieczorny apetyt idzie za całodniowym napięciem i krótkim snem, nie za charakterem.';
+    case 'wieczorny_odpad': return 'Myślisz, że problem odpala się wieczorem, przy otwartej lodówce. Odpala się dużo wcześniej: w tym, jak przez cały dzień jadłeś, spałeś i ile miałeś na głowie. Wieczór tylko wystawia rachunek.';
     case 'glowa_zajezdza': return 'Szukasz winy w diecie. Główny hamulec to nierozładowany stres, który trzyma ciało w gotowości i nie daje mu zejść wieczorem.';
     case 'wiedza_bez_wdrozenia': return 'Wierzysz, że kolejna przeczytana teoria to ruszy. Wiedzę już masz. Brakuje kogoś, kto dopilnuje wykonania i Cię z niego rozliczy.';
-    default: return 'Bierzesz spadek energii za normę wieku. To nie wiek, to jeden konkretny wyciek w Twoim tygodniu, który da się zatkać.';
+    default: return 'Wygodnie zrzucić spadek energii na wiek. Tylko że pod spodem prawie zawsze siedzi jeden konkretny wyciek w tygodniu. A taki da się zatkać.';
   }
 }
