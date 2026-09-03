@@ -31,10 +31,10 @@ const BREAK_PHRASE: Record<string, string> = {
 };
 
 export default function ResultExperience({
-  pack, tier = 'C', cytat, imie, instagram, ctaHref = 'https://nabor.talerzihantle.com/', qualified = false, heroVideo, intent = '',
+  pack, tier = 'C', cytat, imie, instagram, ctaHref = 'https://nabor.talerzihantle.com/', wantsHelp = false, heroVideo, intent = '',
   archLabel = '', archKey = '', strength = 'clear', redCount = 0, breakId = '', mondayId = '', evidence = [], experiment, firstMove, endLine,
 }: {
-  pack: ResultPack; tier?: 'A' | 'B' | 'C'; cytat?: string; imie?: string; instagram?: string; ctaHref?: string; qualified?: boolean; heroVideo?: HeroVideoConfig; intent?: string;
+  pack: ResultPack; tier?: 'A' | 'B' | 'C'; cytat?: string; imie?: string; instagram?: string; ctaHref?: string; wantsHelp?: boolean; heroVideo?: HeroVideoConfig; intent?: string;
   archLabel?: string; archKey?: string; strength?: PatternStrength; redCount?: number; breakId?: string; mondayId?: string; evidence?: string[]; experiment?: Experiment; firstMove?: string; endLine?: string;
 }) {
   const progRef = useRef<HTMLDivElement>(null);
@@ -173,13 +173,13 @@ export default function ResultExperience({
             <p className="rx-raise-q">Chcesz, żebym spojrzał na cały wynik i powiedział Ci, co sprawdziłbym u Ciebie jako pierwsze?</p>
           </div>
 
-          <a className="rx-cta" href={dmHref} target="_blank" rel="noopener noreferrer" onClick={() => trackDiag('handraiser_click', { tier, qualified, arch: archLabel })}>
+          <a className="rx-cta" href={dmHref} target="_blank" rel="noopener noreferrer" onClick={() => trackDiag('handraiser_click', { tier, wants_help: wantsHelp, arch: archLabel })}>
             Tak, rzuć okiem na mój wynik →
           </a>
           <p className="rx-fine" style={{ margin: '0 0 6px' }}>Piszesz do mnie na Instagramie, wiadomość jest już gotowa, wystarczy ją wysłać.</p>
           <p className="rx-selfserve">Wolisz najpierw ogarnąć to sam? Niżej masz cały test na {durLabel}.</p>
 
-          <a className="rx-badge" style={{ marginTop: 18 }} href={GOOGLE_AGG.url} target="_blank" rel="noopener noreferrer" onClick={() => trackDiag('diag_google_click', { qualified })}>
+          <a className="rx-badge" style={{ marginTop: 18 }} href={GOOGLE_AGG.url} target="_blank" rel="noopener noreferrer" onClick={() => trackDiag('diag_google_click', { wants_help: wantsHelp })}>
             <span className="rx-g">G</span>
             <span className="rx-r">{GOOGLE_AGG.rating} <span style={{ color: C.gold }}>★★★★★</span><span style={{ color: C.mute, fontWeight: 400 }}> · {GOOGLE_AGG.count} opinii w Google</span></span>
           </a>

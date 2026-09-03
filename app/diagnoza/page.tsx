@@ -4,8 +4,8 @@
 // intro -> intake (1 pytanie/ekran) -> teaser (Karta Tygodnia, koniec). Lead leci na Telegram w handleComplete.
 // Mail wycięty (backend Faza 4 niepodłączony, nie kłamiemy). Stare "/" (v1) nietknięte.
 
-import { useState, useEffect } from 'react';
-import { track, trackDiag } from '../lib/analytics';
+import { useState, useEffect, useRef } from 'react';
+import { track, trackDiag, registerContext } from '../lib/analytics';
 import SingleQuestionFlow from '../components/SingleQuestionFlow';
 import WeekPage from '../components/WeekPage';
 import { type RawAnswers } from '../lib/scoring-engine';
@@ -93,21 +93,17 @@ interface ReframeData {
   most_intro?: string;    // akapit pod zaproszeniem (zastepuje generyk)
 }
 
-// ── Sygnały leada dla operatora (niewidoczne dla usera) — WYŁĄCZNIE z jawnych odpowiedzi ──
-// diag-setter-rc-002 / P0-2: severity NIE wchodzi do sales/qualification. Diagnoza (tier/archetyp) liczona osobno.
-// Zero budgetProxy: szacowany koszt problemu != zdolność zakupowa. Realny budżet ustala DM/sales, nie ta diagnostyka.
-// followup_priority = operacyjny sygnał do kolejki kontaktu, liczony TYLKO z jawnej intencji + terminu (nie severity, nie budżet).
-function qualify(raw: RawAnswers, triedBefore: number) {
+// ── Sygnały leada dla operatora (niewidoczne dla usera) — WYŁĄCZNIE z jawnych sygnałów kupna/startu ──
+// diag-setter-rc-003 / P0-1: brak composite "readiness". triedBefore (chronologia porażek), severity, symptomy,
+// score, koszt i archetyp NIE wchodzą do żadnego sygnału sprzedażowego. Payload niesie tylko jawne fakty osobno.
+// diag-setter-rc-002 / P0-2: severity liczona osobno (severity_band, diagnoza). Zero budgetProxy.
+function qualify(raw: RawAnswers) {
   const intent = typeof raw.intent === 'string' ? raw.intent : '';
   const startWhen = typeof raw.start_when === 'string' ? raw.start_when : '';
-  const intentPts = intent === 'in_prowadz' ? 2 : intent === 'in_zobacz' ? 1 : 0;
-  const startPts = (startWhen === 'sw_7dni' || startWhen === 'sw_30dni') ? 1 : 0;
-  // readiness = operacyjna gotowość z jawnych sygnałów (intencja + termin + ile razy próbował). NIE severity.
-  const readiness = Math.min((triedBefore >= 2 ? 2 : triedBefore) + intentPts + startPts, 5);
   const wantsHelp = intent === 'in_prowadz' || intent === 'in_zobacz';
-  // followup_priority: jawna chęć prowadzenia + konkretny termin startu. Bez severity, bez budżetu.
+  // followup_priority: WYŁĄCZNIE jawna chęć prowadzenia + konkretny termin startu. Bez severity, bez triedBefore, bez budżetu.
   const followupPriority = intent === 'in_prowadz' && (startWhen === 'sw_7dni' || startWhen === 'sw_30dni');
-  return { intent, startWhen, readiness, wantsHelp, followupPriority };
+  return { intent, startWhen, wantsHelp, followupPriority };
 }
 
 export default function DiagnozaPage() {
@@ -122,15 +118,35 @@ export default function DiagnozaPage() {
   // P1-1: tryb wejscia. 'diagnostic' = domyslny (cold/warm, pelny flow). 'fast_fit' = tylko dla jawnego
   // ready-to-buy z ?mode=fast_fit (setter/DM), zeby NIE wpychac gotowego leada w 19 ekranow diagnozy.
   const [mode, setMode] = useState<'diagnostic' | 'fast_fit'>('diagnostic');
+  // P1-3: opaque lead_ref/rid od settera. TYLKO do prywatnego payloadu leada (Telegram/CRM). NIGDY do PostHog ani do copy wyniku.
+  const leadRef = useRef<string>('');
 
   // Wejscie na strone diagnostyki (pierwszy ekran). Lejek: intro_view -> started -> step_view... -> completed.
-  // Tryb czytany z URL (?mode=fast_fit); cold/direct traffic bez parametru zostaje w diagnostic. Zero PII.
+  // Tryb + atrybucja settera czytane z URL. Cold/direct traffic bez parametrow zostaje w diagnostic. Zero PII.
   useEffect(() => {
     trackDiag('diag_intro_viewed');
     try {
-      const m = new URLSearchParams(window.location.search).get('mode');
+      const sp = new URLSearchParams(window.location.search);
+      const m = sp.get('mode');
       if (m === 'fast_fit') { setMode('fast_fit'); trackDiag('fast_fit_intro_viewed'); }
-    } catch { /* brak URL API = zostajemy w diagnostic */ }
+      // P1-1: atrybucja settera — whitelist + walidacja, WYŁĄCZNIE do analytics (nigdy do scoringu/wyniku/fast-fit).
+      const pick = (k: string, allow: string[]): string | undefined => {
+        const v = (sp.get(k) || '').toLowerCase();
+        return allow.includes(v) ? v : undefined;
+      };
+      const ctx: Record<string, string> = { mode: m === 'fast_fit' ? 'fast_fit' : 'diagnostic' };
+      const src = pick('src', ['setter', 'organic', 'story', 'dm', 'other']);
+      const lane = pick('lane', ['cold', 'warm', 'hot']); // ATRYBUCJA ONLY — nie miesza sie z diagnostycznym severity
+      const campaignRaw = (sp.get('campaign') || '').toLowerCase().slice(0, 40);
+      const campaign = /^[a-z0-9_-]+$/.test(campaignRaw) ? campaignRaw : undefined;
+      if (src) ctx.src = src;
+      if (lane) ctx.lane = lane;
+      if (campaign) ctx.campaign = campaign;
+      registerContext(ctx);
+      // P1-3: opaque lead_ref/rid — strict token, bez @/kropek/spacji (nie moze byc handlem/mailem). Zero PII.
+      const rid = (sp.get('rid') || sp.get('lead_ref') || '').trim();
+      if (/^[A-Za-z0-9_-]{6,64}$/.test(rid)) leadRef.current = rid;
+    } catch { /* brak URL API = zostajemy w diagnostic bez atrybucji */ }
   }, []);
 
   const handleComplete = (raw: RawAnswers) => {
@@ -151,7 +167,7 @@ export default function DiagnozaPage() {
     const worstCat = [...catScores].sort((a, b) => a.pct - b.pct)[0]?.label || 'Sen';
     const sc = score(D);
     const C = costs(D);
-    const q = qualify(raw, D.triedBefore);
+    const q = qualify(raw);
     // severity_band = WYŁĄCZNIE diagnostyka (nie sales temperature). Neutralne nazwy, oddzielone od intencji.
     const severityBand = sc >= 40 ? 'high' : sc >= 20 ? 'moderate' : 'low';
 
@@ -184,7 +200,8 @@ export default function DiagnozaPage() {
         godzina: hourRange(D),
         kwota: C.total,
         followup_priority: q.followupPriority,
-        readiness: q.readiness,
+        wants_help: q.wantsHelp,
+        lead_ref: leadRef.current || undefined, // P1-3: tylko prywatny kanał (Telegram/n8n->Notion). NIGDY do PostHog.
         intencja: q.intent,
         kiedy_start: q.startWhen,
         pain: painText,
@@ -240,7 +257,9 @@ export default function DiagnozaPage() {
   // ── P1-1 FAST FIT: tylko dla jawnego ready-to-buy (?mode=fast_fit). Zero forsowania 19 ekranow. ──
   // Ready-to-buy dostaje jasna sciezke do prowadzenia; kto woli, przechodzi do pelnej diagnostyki (never downgrade intent).
   if (phase === 'intro' && mode === 'fast_fit') {
-    const fastFitNabor = `https://nabor.talerzihantle.com/?${new URLSearchParams({ from: 'diag', mode: 'fast_fit', v: ASSESSMENT_VERSION }).toString()}#prowadzenie`;
+    // P0-2: ready-to-buy NIE wraca na stronę sprzedażową (nabor). Fast lane = bezpośredni DM do Michała z prefillem.
+    // Zero PII (handle Michała + generyczny prefill). Brak zweryfikowanego checkout/transaction route -> DM jest bezpiecznym fast lane.
+    const fastLaneDm = `https://ig.me/m/hantleitalerz?text=${encodeURIComponent('Jestem zdecydowany, chcę sprawdzić fit/zakres i ruszyć.')}`;
     return (
       <div style={{ minHeight: '100vh', background: BG, color: '#ece7db', fontFamily: '"Inter", sans-serif', display: 'flex', flexDirection: 'column', justifyContent: 'center', padding: '32px 22px', boxSizing: 'border-box', position: 'relative', overflow: 'hidden' }}>
         <Atmosphere />
@@ -252,14 +271,16 @@ export default function DiagnozaPage() {
             Wiesz, że chcesz ruszyć. Nie musisz przechodzić całej diagnostyki.
           </h1>
           <p style={{ fontSize: 16.5, color: '#c4bdb0', lineHeight: 1.65, margin: '0 0 26px' }}>
-            Jeśli już wiesz, że chcesz to ograć z kimś, pokażę Ci od razu, jak wygląda prowadzenie: cały proces, zakres i wejście. Bez 19 pytań.
+            To napisz do mnie na priv. Sprawdzimy fit i zakres, i jak pasuje, ruszamy. Bez przechodzenia całej diagnostyki.
           </p>
           <a
-            href={fastFitNabor}
-            onClick={() => trackDiag('fast_fit_to_nabor')}
+            href={fastLaneDm}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={() => trackDiag('fast_fit_to_dm')}
             style={{ display: 'block', textAlign: 'center', textDecoration: 'none', width: '100%', padding: '17px', borderRadius: 14, border: 'none', cursor: 'pointer', background: `linear-gradient(135deg, ${GOLD}, #8a7535)`, color: BG, fontWeight: 800, fontSize: 16, letterSpacing: 0.5, boxSizing: 'border-box' }}
           >
-            Zobacz prowadzenie 1:1 &rarr;
+            Napisz do mnie i ruszamy &rarr;
           </a>
           <button
             onClick={() => { trackDiag('fast_fit_to_diagnostic'); setMode('diagnostic'); if (typeof window !== 'undefined') window.scrollTo({ top: 0 }); }}
@@ -357,9 +378,9 @@ export default function DiagnozaPage() {
     ];
     const rawImie = answers.imie ?? answers.name;
     const imie = typeof rawImie === 'string' ? rawImie : '';
-    const q = qualify(answers, D.triedBefore);
-    // qualified = TYLKO jawna intencja (bridge/CTA Beat 8). NIE podnosi tieru diagnozy (P0-2 separation).
-    const qualified = q.wantsHelp;
+    const q = qualify(answers);
+    // wantsHelp = TYLKO jawna intencja (bridge/CTA Beat 8). NIE podnosi tieru diagnozy ani żadnego elementu Beat 1-5 (P1-4 rename).
+    const wantsHelp = q.wantsHelp;
     // #1 handoff: niesie kontekst diagnozy do nabora w URL (nabor personalizuje sie po ?from=diagnoza).
     // Same-tab (#2) + parametry = ciaglosc lejka, zero przepisywania danych przez usera.
     const igClean = typeof answers.instagram === 'string' ? answers.instagram.replace(/^@?/, '') : '';
@@ -367,7 +388,7 @@ export default function DiagnozaPage() {
     const naborUrl = `https://nabor.talerzihantle.com/?${new URLSearchParams({ from: 'diag', arch: arch.key, intent: typeof answers.intent === 'string' ? answers.intent : '', v: ASSESSMENT_VERSION }).toString()}#prowadzenie`;
     const wkPlan = buildWeekPlan({
       archetypeKey: arch.key, archetypeLabel: arch.label, archetypeTagline: arch.tagline, mirror: arch.mirror,
-      qualified,
+      qualified: wantsHelp, // buildWeekPlan input key (bridge-only); wartość = jawna intencja
       worstCat: worstW, breakWindow: D.breakWindow, score: SC, costTotal: C.total, wknd: D.wknd,
       imie, potentialPct: 100 - SC, costMonths: C.stagnationMonths,
       trigger: typeof answers.user_trigger === 'string' ? answers.user_trigger : undefined,
@@ -408,7 +429,7 @@ export default function DiagnozaPage() {
         imie={imie}
         instagram={igClean}
         ctaHref={naborUrl}
-        qualified={qualified}
+        wantsHelp={wantsHelp}
         intent={typeof answers.intent === 'string' ? answers.intent : ''}
       />
     );

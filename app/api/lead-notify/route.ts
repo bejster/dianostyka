@@ -105,7 +105,7 @@ export async function POST(req: NextRequest) {
       `Peka: ${s(b.godzina, 40)} · Hamulec: ${s(b.worstCat, 30)} · Koszt: ${s(b.kwota, 20)} zl`,
       (b.primary_goal || b.tier) ? `Cel: ${goalMap[s(b.primary_goal, 30)] || '—'} · Odpuszcza: ${giveupMap[s(b.give_up_point, 30)] || '—'} · Werdykt: ${tierMap[s(b.tier, 2)] || '—'}` : '',
       `Gotowosc: ${intentMap[s(b.intencja, 20)] || '—'} · Start: ${startMap[s(b.kiedy_start, 20)] || '—'}`,
-      `Gotowosc operacyjna ${Number(b.readiness) || 0}/5 · Priorytet kontaktu: ${priority ? 'TAK (intencja+termin)' : 'nie'}`,
+      `Priorytet kontaktu: ${priority ? 'TAK (chce prowadzenia + termin startu)' : 'nie'}${b.wants_help === true ? ' · chce pomocy' : ''}`,
       b.pain ? `Wkurza: „${s(b.pain, 300)}”` : '',
     ].filter(Boolean);
 

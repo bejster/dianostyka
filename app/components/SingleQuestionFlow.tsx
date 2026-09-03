@@ -187,7 +187,12 @@ export default function SingleQuestionFlow({ onComplete, initialAnswers }: Props
     const pos = Math.max(1, vq.findIndex(q => q.id === cq.id) + 1);
     // question_answer = COMMIT (przejscie dalej), NIE kazdy input/ruch slidera. Jeden commit = jeden event. ZERO wartosci odpowiedzi.
     const ev = { question_id: cq.id, index: currentIndex, pos, total: vq.length, elapsed_ms: Math.max(0, Date.now() - shownAt.current) };
-    if (cq.type === 'contact') trackDiag('contact_submit', { index: currentIndex, total: vq.length });
+    if (cq.type === 'contact') {
+      // P1-2: kontakt opcjonalny -> continue mierzymy ZAWSZE (has_contact bool), a realny opt-in IG osobnym eventem.
+      const provided = String(answers.instagram || '').replace(/[@\s]/g, '').length >= 2;
+      trackDiag('contact_continue', { index: currentIndex, total: vq.length, has_contact: provided });
+      if (provided) trackDiag('contact_provided', { index: currentIndex, total: vq.length }); // zero raw handle w PostHog
+    }
     else if (opts?.skipped === true) trackDiag('question_skip', ev);
     else trackDiag('question_answer', ev);
     if (cq.type !== 'single') {
