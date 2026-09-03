@@ -71,7 +71,7 @@ function WeekPulse() {
         ))}
       </svg>
       <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 10, letterSpacing: 2.5, textTransform: 'uppercase', color: '#8f887c', textAlign: 'center', marginTop: 8 }}>
-        twój tydzień gdzieś tu pęka
+        tu szukamy pierwszego sygnału
       </div>
     </div>
   );
@@ -118,17 +118,17 @@ export default function DiagnozaPage() {
   // P1-1: tryb wejscia. 'diagnostic' = domyslny (cold/warm, pelny flow). 'fast_fit' = tylko dla jawnego
   // ready-to-buy z ?mode=fast_fit (setter/DM), zeby NIE wpychac gotowego leada w 19 ekranow diagnozy.
   const [mode, setMode] = useState<'diagnostic' | 'fast_fit'>('diagnostic');
-  // P1-3: opaque lead_ref/rid od settera. TYLKO do prywatnego payloadu leada (Telegram/CRM). NIGDY do PostHog ani do copy wyniku.
+  // P1-2: dopoki nie rozstrzygniemy trybu, renderujemy neutralny shell (zero flash diagnostyki dla fast_fit).
+  const [modeResolved, setModeResolved] = useState(false);
+  // P0-1/P1-3: opaque lead_ref settera. TYLKO do prywatnego payloadu leada (Telegram/CRM). NIGDY do PostHog ani copy wyniku.
   const leadRef = useRef<string>('');
 
-  // Wejscie na strone diagnostyki (pierwszy ekran). Lejek: intro_view -> started -> step_view... -> completed.
-  // Tryb + atrybucja settera czytane z URL. Cold/direct traffic bez parametrow zostaje w diagnostic. Zero PII.
+  // Wejscie na strone diagnostyki. Kolejnosc (P1-1): parsuj+zarejestruj atrybucje -> DOPIERO potem pierwsze eventy lejka.
   useEffect(() => {
-    trackDiag('diag_intro_viewed');
+    let m: string | null = null;
     try {
       const sp = new URLSearchParams(window.location.search);
-      const m = sp.get('mode');
-      if (m === 'fast_fit') { setMode('fast_fit'); trackDiag('fast_fit_intro_viewed'); }
+      m = sp.get('mode');
       // P1-1: atrybucja settera — whitelist + walidacja, WYŁĄCZNIE do analytics (nigdy do scoringu/wyniku/fast-fit).
       const pick = (k: string, allow: string[]): string | undefined => {
         const v = (sp.get(k) || '').toLowerCase();
@@ -142,11 +142,16 @@ export default function DiagnozaPage() {
       if (src) ctx.src = src;
       if (lane) ctx.lane = lane;
       if (campaign) ctx.campaign = campaign;
-      registerContext(ctx);
-      // P1-3: opaque lead_ref/rid — strict token, bez @/kropek/spacji (nie moze byc handlem/mailem). Zero PII.
-      const rid = (sp.get('rid') || sp.get('lead_ref') || '').trim();
+      registerContext(ctx); // PRZED pierwszymi eventami lejka
+      // P0-1: lead_ref czytany z sessionStorage (bootstrap w layout.tsx zdjal go z #fragmentu PRZED trackerami). Zero query-string.
+      const rid = (typeof sessionStorage !== 'undefined' ? sessionStorage.getItem('diag_lead_ref') : '') || '';
       if (/^[A-Za-z0-9_-]{6,64}$/.test(rid)) leadRef.current = rid;
-    } catch { /* brak URL API = zostajemy w diagnostic bez atrybucji */ }
+    } catch { /* brak URL/storage API = zostajemy w diagnostic bez atrybucji */ }
+    // Tryb rozstrzygniety -> render wlasciwego ekranu; pierwsze eventy lejka PO registerContext (P1-1).
+    if (m === 'fast_fit') setMode('fast_fit');
+    setModeResolved(true);
+    trackDiag('diag_intro_viewed');
+    if (m === 'fast_fit') trackDiag('fast_fit_intro_viewed');
   }, []);
 
   const handleComplete = (raw: RawAnswers) => {
@@ -254,6 +259,18 @@ export default function DiagnozaPage() {
     }
   };
 
+  // ── P1-2: dopoki tryb nie rozstrzygniety, neutralny shell (zero flash diagnostyki na ?mode=fast_fit) ──
+  // Renderowany na 1. paint (SSR + hydration) az useEffect ustali mode. Zero diagnostycznego H1/CTA.
+  if (phase === 'intro' && !modeResolved) {
+    return (
+      <div style={{ minHeight: '100vh', background: BG, display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', overflow: 'hidden' }} aria-hidden="true">
+        <Atmosphere />
+        <div style={{ width: 34, height: 34, borderRadius: '50%', border: `2px solid ${GOLD}`, borderTopColor: 'transparent', animation: 'dxspin 0.7s linear infinite', position: 'relative', zIndex: 1 }} />
+        <style>{`@keyframes dxspin{to{transform:rotate(360deg)}}@media(prefers-reduced-motion:reduce){[aria-hidden] div{animation:none!important}}`}</style>
+      </div>
+    );
+  }
+
   // ── P1-1 FAST FIT: tylko dla jawnego ready-to-buy (?mode=fast_fit). Zero forsowania 19 ekranow. ──
   // Ready-to-buy dostaje jasna sciezke do prowadzenia; kto woli, przechodzi do pelnej diagnostyki (never downgrade intent).
   if (phase === 'intro' && mode === 'fast_fit') {
@@ -280,7 +297,7 @@ export default function DiagnozaPage() {
             onClick={() => trackDiag('fast_fit_to_dm')}
             style={{ display: 'block', textAlign: 'center', textDecoration: 'none', width: '100%', padding: '17px', borderRadius: 14, border: 'none', cursor: 'pointer', background: `linear-gradient(135deg, ${GOLD}, #8a7535)`, color: BG, fontWeight: 800, fontSize: 16, letterSpacing: 0.5, boxSizing: 'border-box' }}
           >
-            Napisz do mnie i ruszamy &rarr;
+            Sprawdźmy fit i zakres &rarr;
           </a>
           <button
             onClick={() => { trackDiag('fast_fit_to_diagnostic'); setMode('diagnostic'); if (typeof window !== 'undefined') window.scrollTo({ top: 0 }); }}

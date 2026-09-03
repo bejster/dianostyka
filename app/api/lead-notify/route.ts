@@ -113,10 +113,21 @@ export async function POST(req: NextRequest) {
     //    Nie blokuje ani nie wywala Telegrama; .trim() broni przed zablakanym \n w wartosci env. ──
     const n8nUrl = (process.env.N8N_DIAGNOSTYKA_WEBHOOK || '').trim();
     if (n8nUrl) {
+      // P0-3 (rc-004): private-boundary compat. Realny mapping n8n->Notion zyje w chmurze (nie w repo), wiec defensywnie
+      // dokladamy LEGACY NAZWY pol niosace NOWE, poprawne wartosci — zeby stary mapping po renamingu nie zgubil danych.
+      // To wylacznie alias NAZW, NIE przywrocenie zlej semantyki: zero budgetProxy, zero readiness, segment = neutralny
+      // severity_band (nie sales temperature). TODO(verify): potwierdzic realny mapping i po 1 release usunac aliasy.
+      const n8nBody = {
+        event: 'diagnostyka_complete',
+        ...b,
+        priority_lead: b.followup_priority, // legacy nazwa -> wartosc = nowy followup_priority (waska flaga kolejki kontaktu)
+        segment: b.severity_band,           // legacy nazwa -> wartosc = neutralny severity_band (NIE temperatura sprzedazowa)
+        received_at: new Date().toISOString(),
+      };
       await fetch(n8nUrl, {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ event: 'diagnostyka_complete', ...b, received_at: new Date().toISOString() }),
+        body: JSON.stringify(n8nBody),
       }).catch(() => {});
     }
 
