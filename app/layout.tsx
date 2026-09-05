@@ -4,6 +4,7 @@ import './globals.css';
 export const metadata: Metadata = {
   title: 'Diagnostyka 168: gdzie zaczyna się rozjeżdżać Twój tydzień | Hantle i Talerz',
   description: 'Kilka minut pytań o sen, energię, jedzenie, ruch i weekend. Na końcu dostajesz wzorzec z własnych odpowiedzi i jeden test do sprawdzenia.',
+  alternates: { canonical: 'https://diagnostyka.talerzihantle.com/' },
   openGraph: {
     title: 'Diagnostyka 168: gdzie zaczyna się rozjeżdżać Twój tydzień | Hantle i Talerz',
     description: 'Kilka minut pytań o sen, energię, jedzenie, ruch i weekend. Na końcu dostajesz wzorzec z własnych odpowiedzi i jeden test do sprawdzenia.',

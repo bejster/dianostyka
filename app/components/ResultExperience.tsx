@@ -139,7 +139,10 @@ export default function ResultExperience({
           <h1 className="rx-arch">{archLabel || 'Twój tydzień'}</h1>
           {redLine && <div className="rx-redline">{redLine}</div>}
           <p className="rx-sub rx-hero-sub">{pack.beat1Line}</p>
-          <div className="rx-cue">↓ scrolluj</div>
+          <div className="rx-cue" aria-hidden="true">
+            <span className="rx-cue-arrow">↓</span>
+            <span>SCROLLUJ</span>
+          </div>
         </section>
 
         {/* BEAT 2 — PUNKT PĘKNIĘCIA (uczciwa rozdzielczość czasu) */}
@@ -286,13 +289,14 @@ const css = `
 .rx-h2{font-family:${C.serif};font-weight:400;line-height:1.08;letter-spacing:-.01em;color:${C.paper};margin:0 0 22px;font-size:clamp(28px,5.2vw,44px)}
 .rx-sub{color:${C.mute};line-height:1.62;font-size:clamp(15px,2.1vw,17px)}
 .rx-pull{font-family:${C.serif};font-style:italic;color:${C.gold};border-left:2px solid ${C.goldD};padding-left:18px;line-height:1.4;font-size:clamp(19px,4vw,24px);margin:0}
-.rx-hero{min-height:92vh;display:flex;flex-direction:column;justify-content:center;text-align:center;align-items:center;padding:40px 0 60px}
+.rx-hero{position:relative;min-height:100svh;display:flex;flex-direction:column;justify-content:center;text-align:center;align-items:center;padding:40px 0 max(112px,calc(env(safe-area-inset-bottom) + 92px))}
 .rx-arch{font-family:${C.serif};font-weight:400;line-height:1.02;font-size:clamp(34px,8.4vw,64px);color:${C.gold};margin:0 0 16px;letter-spacing:-.01em;text-shadow:0 0 44px ${C.glow};max-width:15ch}
 .rx-redline{font-family:${C.mono};font-size:12px;letter-spacing:1px;color:${C.mute};margin-bottom:22px;max-width:32ch}
 .rx-evidence{color:${C.paper};line-height:1.55;font-size:14.5px;margin:0 0 8px;padding-left:14px;border-left:2px solid ${C.goldD}}
 .rx-hero-sub{max-width:34ch;margin:0 auto}
-.rx-cue{margin-top:44px;font-family:${C.mono};font-size:10px;letter-spacing:2px;color:${C.faint};text-transform:uppercase;animation:rxbob 1.8s ease-in-out infinite}
-@keyframes rxbob{0%,100%{transform:translateY(0);opacity:.55}50%{transform:translateY(6px);opacity:1}}
+.rx-cue{position:absolute;left:50%;bottom:max(34px,calc(env(safe-area-inset-bottom) + 22px));transform:translateX(-50%);display:inline-flex;align-items:center;justify-content:center;gap:12px;font-family:${C.mono};font-size:clamp(18px,4.6vw,22px);font-weight:700;line-height:1;letter-spacing:.28em;color:${C.goldB};text-transform:uppercase;white-space:nowrap;text-shadow:0 0 18px rgba(200,168,78,.18);opacity:.96}
+.rx-cue-arrow{display:inline-block;font-size:1.4em;line-height:.7;letter-spacing:0;color:${C.gold};animation:rxbob 1.6s ease-in-out infinite}
+@keyframes rxbob{0%,100%{transform:translateY(0);opacity:.72}50%{transform:translateY(7px);opacity:1}}
 .rx-quote{font-family:${C.serif};font-style:italic;font-size:clamp(19px,4vw,24px);color:${C.paper};line-height:1.34;border-left:2px solid ${C.goldD};padding-left:18px;margin:0 0 26px}
 .rx-raise-teaser{font-size:14.5px;color:${C.mute};line-height:1.55;margin:0 0 12px}
 .rx-firstmove{background:${C.pan2};border:1px solid ${C.line2};border-left:3px solid ${C.gold};border-radius:12px;padding:14px 16px;margin:0 0 18px}
@@ -364,5 +368,5 @@ const css = `
 .rx-next-medium:hover{background:rgba(200,168,78,.08);border-color:${C.gold};color:${C.paper}}
 .rx-next-soft{color:${C.mute};background:transparent;border:1px solid ${C.line2};font-weight:600;font-size:14px}
 .rx-next-soft:hover{color:${C.gold};border-color:${C.goldD}}
-@media(prefers-reduced-motion:reduce){.rx-beat{opacity:1;transform:none}.rx-cue{animation:none}}
+@media(prefers-reduced-motion:reduce){.rx-beat{opacity:1;transform:none}.rx-cue-arrow{animation:none}}
 `;

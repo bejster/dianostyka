@@ -1,6 +1,6 @@
 // assessment-config.ts, Wersjonowana konfiguracja pytań, domen i profili Diagnostyki Tygodnia V2
 
-export const ASSESSMENT_VERSION = '2.6.2';
+export const ASSESSMENT_VERSION = '2.6.3';
 
 export type DomainKey = 'sleep' | 'energy' | 'nutrition' | 'training' | 'weekend' | 'chaos';
 

@@ -300,7 +300,7 @@ export default function DiagnozaPage() {
             Sprawdźmy fit i zakres &rarr;
           </a>
           <button
-            onClick={() => { trackDiag('fast_fit_to_diagnostic'); setMode('diagnostic'); if (typeof window !== 'undefined') window.scrollTo({ top: 0 }); }}
+            onClick={() => { registerContext({ mode: 'diagnostic' }); trackDiag('fast_fit_to_diagnostic'); setMode('diagnostic'); if (typeof window !== 'undefined') window.scrollTo({ top: 0 }); }}
             style={{ marginTop: 14, width: '100%', padding: '13px', background: 'transparent', color: '#8f887c', fontSize: 14, border: '1px solid #26262b', borderRadius: 12, cursor: 'pointer', letterSpacing: 0.3 }}
           >
             Wolę najpierw przejść pełną diagnostykę
@@ -331,11 +331,38 @@ export default function DiagnozaPage() {
             <div style={{ fontSize: 13.5, color: '#8f887c', lineHeight: 1.55 }}>Każdy wynik składa się z Twoich odpowiedzi. Gdy danych jest za mało, zobaczysz to wprost zamiast wymyślonej pewności.</div>
           </div>
           <button
-            onClick={() => { trackDiag('diag_start'); setPhase('intake'); if (typeof window !== 'undefined') window.scrollTo({ top: 0 }); }}
+            onClick={() => {
+              registerContext({ mode: 'diagnostic' });
+              trackDiag('entry_route_selected', { route: 'diagnostic' });
+              trackDiag('diag_start');
+              setPhase('intake');
+              if (typeof window !== 'undefined') window.scrollTo({ top: 0 });
+            }}
             style={{ width: '100%', padding: '17px', borderRadius: 14, border: 'none', cursor: 'pointer', background: `linear-gradient(135deg, ${GOLD}, #8a7535)`, color: BG, fontWeight: 800, fontSize: 16, letterSpacing: 0.5 }}
           >
             Znajdź mój Punkt Pęknięcia &rarr;
           </button>
+          {/* diag_one_link_router_v1: jeden publiczny link, routing wewnątrz */}
+          <div style={{ display:'flex',alignItems:'center',gap:12,margin:'16px 0 12px' }} aria-hidden="true">
+            <span style={{ height:1,background:'#26262b',flex:1 }} />
+            <span style={{ fontFamily:"'JetBrains Mono',ui-monospace,monospace",fontSize:10,letterSpacing:2,textTransform:'uppercase',color:'#6f6a61' }}>albo</span>
+            <span style={{ height:1,background:'#26262b',flex:1 }} />
+          </div>
+          <button
+            onClick={() => {
+              registerContext({ mode: 'fast_fit' });
+              trackDiag('entry_route_selected', { route: 'fast_fit' });
+              trackDiag('fast_fit_intro_viewed');
+              setMode('fast_fit');
+              if (typeof window !== 'undefined') window.scrollTo({ top: 0 });
+            }}
+            style={{ width:'100%',padding:'15px 16px',borderRadius:14,border:'1px solid #4a4438',cursor:'pointer',background:'rgba(200,168,78,0.035)',color:'#e8cc80',fontWeight:700,fontSize:15,lineHeight:1.35 }}
+          >
+            Wiem, że chcę działać. Sprawdźmy fit i zakres &rarr;
+          </button>
+          <p style={{ fontSize:12,color:'#777168',lineHeight:1.5,margin:'9px 2px 0',textAlign:'center' }}>
+            Jeśli jesteś już zdecydowany, nie musisz przechodzić całej diagnostyki.
+          </p>
           <p style={{ fontSize: 12.5, color: '#8f887c', lineHeight: 1.55, margin: '16px 2px 0', textAlign: 'center' }}>
             Wynik zobaczysz od razu. @Instagram zostawisz tylko jeśli chcesz, żebym rzucił na niego okiem. Bez telefonu, bez calla.
           </p>
