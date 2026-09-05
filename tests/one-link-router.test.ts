@@ -6,10 +6,12 @@ const page = fs.readFileSync(new URL('../app/diagnoza/page.tsx', import.meta.url
 const home = fs.readFileSync(new URL('../app/page.tsx', import.meta.url), 'utf8');
 const cfg = fs.readFileSync(new URL('../app/lib/assessment-config.ts', import.meta.url), 'utf8');
 const layout = fs.readFileSync(new URL('../app/layout.tsx', import.meta.url), 'utf8');
+const nextConfig = fs.readFileSync(new URL('../next.config.ts', import.meta.url), 'utf8');
 
 test('root is the one canonical public entry and renders Diagnostyka', () => {
   assert.match(home, /export \{ default \} from '.\/diagnoza\/page'/);
   assert.match(layout, /alternates:\s*\{ canonical: 'https:\/\/diagnostyka\.talerzihantle\.com\/' \}/);
+  assert.doesNotMatch(nextConfig, /source:\s*['"]\/['"].*destination:\s*['"]\/diagnoza['"]/s);
 });
 
 test('entry offers diagnostic and fast-fit routes inside one product', () => {
