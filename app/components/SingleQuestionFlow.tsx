@@ -69,15 +69,28 @@ export default function SingleQuestionFlow({ onComplete, initialAnswers }: Props
   });
 
   const [currentIndex, setCurrentIndex] = useState<number>(() => {
+    // Start/resume zawsze na pytaniu, które jest faktycznie widoczne.
+    // Wcześniej QUESTIONS[0] mogło mieć condition:false, więc ukryte `age` flashowało jako 1/18.
+    let seed: RawAnswers = initialAnswers && Object.keys(initialAnswers).length > 0 ? initialAnswers : { symptoms_chips: [] };
+    let candidate = 0;
     if (typeof window !== 'undefined') {
       try {
+        const savedAnswers = localStorage.getItem(STORAGE_KEY);
+        if ((!initialAnswers || Object.keys(initialAnswers).length === 0) && savedAnswers) seed = JSON.parse(savedAnswers);
         const savedStep = localStorage.getItem(STEP_KEY);
         if (savedStep) {
           const parsed = parseInt(savedStep, 10);
-          if (!isNaN(parsed) && parsed >= 0 && parsed < QUESTIONS.length) return parsed;
+          if (!isNaN(parsed) && parsed >= 0 && parsed < QUESTIONS.length) candidate = parsed;
         }
       } catch (_e) {}
     }
+    const visible = (idx: number) => {
+      const q = QUESTIONS[idx];
+      return Boolean(q && (!q.condition || q.condition(seed as Record<string, unknown>)));
+    };
+    if (visible(candidate)) return candidate;
+    for (let idx = candidate + 1; idx < QUESTIONS.length; idx++) if (visible(idx)) return idx;
+    for (let idx = 0; idx < candidate; idx++) if (visible(idx)) return idx;
     return 0;
   });
 
@@ -436,7 +449,7 @@ export default function SingleQuestionFlow({ onComplete, initialAnswers }: Props
                 letterSpacing: 1, textTransform: 'uppercase',
               }}
             >
-              Zatwierdź &rarr;
+              Dalej &rarr;
             </button>
           </div>
         )}
@@ -473,7 +486,7 @@ export default function SingleQuestionFlow({ onComplete, initialAnswers }: Props
                 letterSpacing: 1, textTransform: 'uppercase',
               }}
             >
-              Zatwierdź &rarr;
+              Dalej &rarr;
             </button>
           </div>
         )}
@@ -551,13 +564,13 @@ export default function SingleQuestionFlow({ onComplete, initialAnswers }: Props
                 background: 'rgba(200,168,78,0.08)', border: '1.5px solid rgba(200,168,78,0.35)',
                 color: '#c9c1af', fontSize: 14.5, lineHeight: 1.55, fontWeight: 500,
               }}>
-                Wygląda, jakby to było wklepane na szybko. Jak nie masz teraz odpowiedzi, spokojnie pomiń. A jak chcesz, żebym to wykorzystał, napisz jedno prawdziwe zdanie własnymi słowami.
+                Wygląda, jakby to było wpisane na szybko. Możesz pominąć to pytanie. Jeśli chcesz, żebym wykorzystał odpowiedź w wyniku, napisz jedno prawdziwe zdanie własnymi słowami.
               </div>
             )}
             {/* Za mało treści (ale nie bełkot): miękka podpowiedź, bez krzyku */}
             {!isGibberish(String(answers[currentQ.id] || '')) && String(answers[currentQ.id] || '').trim().length > 0 && !enoughContent(String(answers[currentQ.id] || '')) && (
               <div style={{ marginTop: 12, fontSize: 13.5, color: '#999', lineHeight: 1.5 }}>
-                Napisz jedno pełne zdanie własnymi słowami. Bez tego nie ruszymy dalej.
+                Napisz jedno pełne zdanie własnymi słowami.
               </div>
             )}
 
@@ -580,7 +593,7 @@ export default function SingleQuestionFlow({ onComplete, initialAnswers }: Props
                 onClick={() => goToNext({ skipped: true })}
                 style={{ marginTop: 12, width: '100%', padding: '10px', background: 'transparent', color: '#6a6a6a', fontSize: 13, border: 'none', cursor: 'pointer', textDecoration: 'underline', letterSpacing: 0.3 }}
               >
-                Nie masz teraz odpowiedzi? Pomiń to pytanie
+                Pomiń to pytanie
               </button>
             )}
           </div>
@@ -639,7 +652,7 @@ export default function SingleQuestionFlow({ onComplete, initialAnswers }: Props
               Pokaż mój wynik &rarr;
             </button>
             <p style={{ marginTop: 12, fontSize: 12.5, color: '#6a6a6a', lineHeight: 1.5, textAlign: 'center' }}>
-              @Instagram jest opcjonalny. Wynik zobaczysz tak czy inaczej. Zostaw go tylko, jeśli chcesz, żebym rzucił na niego okiem.
+              @Instagram jest opcjonalny. Zostaw go, jeśli chcesz, żebym połączył wynik z Twoją późniejszą wiadomością.
             </p>
           </div>
         )}

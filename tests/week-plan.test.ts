@@ -30,7 +30,7 @@ test('każdy archetyp daje kompletną, poprawną stronę tygodnia', () => {
     const plan = buildWeekPlan(baseInput({ archetypeKey: a.key, archetypeLabel: a.label, archetypeTagline: a.tagline, worstCat: a.worstCat }));
     assert.equal(plan.week.length, 7, `${a.key}: 7 dni`);
     assert.equal(plan.plan.length, 6, `${a.key}: 6 kotwic`);
-    assert.equal(plan.bridge.length, 4, `${a.key}: 4 ścieżki mostu`);
+    assert.equal(plan.bridge.length, 2, `${a.key}: 2 ścieżki mostu`);
     assert.ok(plan.problem.name.length > 0, `${a.key}: nazwa problemu`);
     assert.ok(plan.problem.falseAssumption.length > 0, `${a.key}: fałszywe założenie`);
     assert.ok(plan.deeper.label.length > 0 && plan.deeper.body.length > 0 && plan.deeper.analogy.length > 0, `${a.key}: drugie dno kompletne`);
@@ -39,33 +39,30 @@ test('każdy archetyp daje kompletną, poprawną stronę tygodnia', () => {
     assert.ok(plan.potential.punch.length > 0, `${a.key}: pointa potencjału`);
     assert.ok(plan.invitation.length > 0, `${a.key}: zaproszenie`);
     assert.ok(plan.metric.length > 0, `${a.key}: wskaźnik`);
-    // most zawsze ma zapis i współpracę = zawsze jest akcja
+    // obecny kontrakt mostu: ladder -> coop. Save został przeniesiony do stopki.
     const kinds = plan.bridge.map(b => b.kind);
-    assert.ok(kinds.includes('save') && kinds.includes('coop'), `${a.key}: most ma zapis i współpracę`);
+    assert.deepEqual(kinds, ['ladder', 'coop'], `${a.key}: most ma ladder -> coop`);
     for (const d of plan.week) {
       assert.ok(['good', 'ok', 'risk', 'break'].includes(d.state), `${a.key}: stan dnia ${d.state}`);
     }
   }
 });
 
-test('reframe nadpisuje fałszywe założenie, ale strona stoi bez niego', () => {
-  const withReframe = buildWeekPlan(baseInput({ reframe: { falszywe_zalozenie: 'Twoje własne słowa tutaj.' } }));
-  assert.equal(withReframe.problem.falseAssumption, 'Twoje własne słowa tutaj.');
+test('reframe nie rusza górnego werdyktu i trafia tylko do dolnego odczytu', () => {
+  const withReframe = buildWeekPlan(baseInput({ reframe: { falszywe_zalozenie: 'Twoje własne słowa tutaj.', mechanizm: 'Mój mechanizm.' } }));
+  assert.notEqual(withReframe.problem.falseAssumption, 'Twoje własne słowa tutaj.');
+  assert.equal(withReframe.reading?.mechanizm, 'Mój mechanizm.');
   const without = buildWeekPlan(baseInput());
   assert.ok(without.problem.falseAssumption.length > 0);
+  assert.equal(without.reading, undefined);
 });
 
-test('most zawsze zaczyna od zapisu, nigdy nie wpycha współpracy na wejściu', () => {
+test('most ma jeden prosty ladder, a ton prowadzenia adaptuje się bez zmiany kolejności', () => {
   const hot = buildWeekPlan(baseInput({ potentialPct: 30 }));
   const cold = buildWeekPlan(baseInput({ potentialPct: 70 }));
-  assert.equal(hot.bridge[0].kind, 'save', 'najpierw zapis karty');
-  assert.equal(cold.bridge[0].kind, 'save');
-  // realny routing: gorący widzi prowadzenie wcześniej, zimny ma je na końcu i miękko
-  const hotCoop = hot.bridge.findIndex(b => b.kind === 'coop');
-  const coldCoop = cold.bridge.findIndex(b => b.kind === 'coop');
-  assert.ok(hotCoop < coldCoop, 'gorący widzi prowadzenie wcześniej niż zimny');
-  assert.ok(hot.bridge.some(b => b.kind === 'coop') && cold.bridge.some(b => b.kind === 'coop'), 'obaj mają ścieżkę współpracy');
-  // ton zaproszenia adaptuje się do wielkości zablokowanego potencjału
+  assert.deepEqual(hot.bridge.map(b => b.kind), ['ladder', 'coop']);
+  assert.deepEqual(cold.bridge.map(b => b.kind), ['ladder', 'coop']);
+  assert.notEqual(hot.bridge[1].line, cold.bridge[1].line, 'ciepło CTA różni się dla hot vs cold');
   assert.notEqual(hot.invitation, cold.invitation, 'zaproszenie różne dla różnego upside');
 });
 

@@ -285,10 +285,10 @@ export default function DiagnozaPage() {
             Diagnostyka 168 · szybka ścieżka
           </div>
           <h1 style={{ fontFamily: "'Instrument Serif', Georgia, serif", fontSize: 'clamp(30px, 7.5vw, 48px)', lineHeight: 1.08, fontWeight: 400, color: '#fff', margin: '0 0 20px', letterSpacing: '-0.01em' }}>
-            Wiesz, że chcesz ruszyć. Nie musisz przechodzić całej diagnostyki.
+            Wiesz już, że chcesz działać. Sprawdźmy tylko, czy zakres pasuje.
           </h1>
           <p style={{ fontSize: 16.5, color: '#c4bdb0', lineHeight: 1.65, margin: '0 0 26px' }}>
-            To napisz do mnie na priv. Sprawdzimy fit i zakres, i jak pasuje, ruszamy. Bez przechodzenia całej diagnostyki.
+            Napisz do mnie na Instagramie. Zobaczę, z czym wchodzisz. Ustalimy zakres. Od razu będziesz wiedział, czy to ma sens.
           </p>
           <a
             href={fastLaneDm}
@@ -303,7 +303,7 @@ export default function DiagnozaPage() {
             onClick={() => { registerContext({ mode: 'diagnostic' }); trackDiag('fast_fit_to_diagnostic'); setMode('diagnostic'); if (typeof window !== 'undefined') window.scrollTo({ top: 0 }); }}
             style={{ marginTop: 14, width: '100%', padding: '13px', background: 'transparent', color: '#8f887c', fontSize: 14, border: '1px solid #26262b', borderRadius: 12, cursor: 'pointer', letterSpacing: 0.3 }}
           >
-            Wolę najpierw przejść pełną diagnostykę
+            Chcę najpierw przejść pełną diagnostykę
           </button>
         </div>
       </div>
@@ -323,12 +323,16 @@ export default function DiagnozaPage() {
             Znajdź moment, od którego reszta tygodnia zaczyna lecieć w dół.
           </h1>
           <p style={{ fontSize: 16.5, color: '#c4bdb0', lineHeight: 1.65, margin: '0 0 22px' }}>
-            Odpowiesz na kilka pytań o swój realny tydzień. Na końcu pokażę Ci, gdzie najwcześniej pojawia się wzorzec, który później kosztuje Cię najwięcej, albo że w Twoim tygodniu nie ma jednego takiego punktu. I jeden test do sprawdzenia u siebie.
+            Przejdziemy po Twoim tygodniu od rana do weekendu. Szukam pierwszego sygnału, po którym forma, energia albo wykonanie zaczynają lecieć gorzej. Na końcu zobaczysz, gdzie pojawia się u Ciebie ten wzorzec oraz jaki jeden test warto zrobić jako pierwszy.
           </p>
           {/* P1-3: usunięty niezweryfikowany pasek liczb (9 lat / 1200+ / 200+). Kotwica = człowiek + epistemiczna uczciwość. */}
-          <div style={{ margin: '0 0 22px', padding: '14px 16px', border: '1px solid #26262b', borderRadius: 12, background: '#141416' }}>
-            <div style={{ fontFamily: "'JetBrains Mono', ui-monospace, monospace", fontSize: 11, letterSpacing: 1, textTransform: 'uppercase', color: GOLD, fontWeight: 700, marginBottom: 6 }}>Michał &middot; Human Performance Coach</div>
-            <div style={{ fontSize: 13.5, color: '#8f887c', lineHeight: 1.55 }}>Każdy wynik składa się z Twoich odpowiedzi. Gdy danych jest za mało, zobaczysz to wprost zamiast wymyślonej pewności.</div>
+          <div style={{ margin: '0 0 22px', padding: '14px 16px', border: '1px solid #3b352a', borderRadius: 14, background: 'linear-gradient(145deg, rgba(200,168,78,.06), #141416 44%)', display: 'grid', gridTemplateColumns: '58px 1fr', gap: 13, alignItems: 'center' }}>
+            <img src="/michal-portrait.jpg" alt="Michał" width={58} height={58} style={{ width: 58, height: 58, borderRadius: '50%', objectFit: 'cover', objectPosition: 'center', border: '1px solid #8a7535', boxShadow: '0 0 0 4px rgba(200,168,78,.06)' }} />
+            <div>
+              <div style={{ fontFamily: "'JetBrains Mono', ui-monospace, monospace", fontSize: 10.5, letterSpacing: 1.8, textTransform: 'uppercase', color: GOLD, fontWeight: 800, marginBottom: 5 }}>Michał · Metoda 168</div>
+              <div style={{ fontSize: 14.5, color: '#ece7db', lineHeight: 1.42, fontWeight: 650 }}>Naprawiam facetom tydzień, który regularnie wykłada im formę i napęd.</div>
+            </div>
+            <div style={{ gridColumn: '1 / -1', fontSize: 13.5, color: '#8f887c', lineHeight: 1.55, paddingTop: 2 }}>Każdy wynik powstaje z tego, co zaznaczasz po drodze. Gdy wzorzec jest słaby, zobaczysz to wprost.</div>
           </div>
           <button
             onClick={() => {
@@ -361,10 +365,10 @@ export default function DiagnozaPage() {
             Wiem, że chcę działać. Sprawdźmy fit i zakres &rarr;
           </button>
           <p style={{ fontSize:12,color:'#777168',lineHeight:1.5,margin:'9px 2px 0',textAlign:'center' }}>
-            Jeśli jesteś już zdecydowany, nie musisz przechodzić całej diagnostyki.
+            Ta ścieżka jest dla osób, które już podjęły decyzję i chcą sprawdzić fit oraz zakres.
           </p>
           <p style={{ fontSize: 12.5, color: '#8f887c', lineHeight: 1.55, margin: '16px 2px 0', textAlign: 'center' }}>
-            Wynik zobaczysz od razu. @Instagram zostawisz tylko jeśli chcesz, żebym rzucił na niego okiem. Bez telefonu, bez calla.
+            Wynik zobaczysz od razu. @Instagram zostawiasz wtedy, gdy chcesz, żebym później połączył wynik z Twoją wiadomością.
           </p>
         </div>
       </div>
@@ -475,6 +479,7 @@ export default function DiagnozaPage() {
         ctaHref={naborUrl}
         wantsHelp={wantsHelp}
         intent={typeof answers.intent === 'string' ? answers.intent : ''}
+        startWhen={typeof answers.start_when === 'string' ? answers.start_when : ''}
       />
     );
   }

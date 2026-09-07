@@ -23,5 +23,5 @@ test('entry offers diagnostic and fast-fit routes inside one product', () => {
 });
 
 test('release telemetry is versioned separately', () => {
-  assert.match(cfg, /ASSESSMENT_VERSION = '2\.6\.3'/);
+  assert.match(cfg, /ASSESSMENT_VERSION = '2\.6\.4'/);
 });
