@@ -89,9 +89,9 @@ export async function POST(req: NextRequest) {
     for (const f of FILL) { if (picked.length < 3 && !picked.includes(f)) picked.push(f); }
     const DEEPEN = picked.slice(0, 3);
     const AWARENESS: Record<string, string> = {
-      weekend_reset: 'To nie silna wola. Jeden rozjechany weekend miesza rytm kortyzolu i podcina testosteron na dwa, trzy dni, więc tracisz nie sobotę, tylko pół tygodnia. Rok po roku to się kumuluje: forma stoi, energia siada. Za rok będziesz w tym samym miejscu, tylko starszy, jak tego nie ruszysz.',
+      weekend_reset: 'To nie silna wola. Jeden rozjechany weekend rozwala Ci rytm snu i jedzenia na dwa, trzy dni, więc realnie tracisz nie sobotę, tylko pół tygodnia rozjazdu. Rok po roku to się kumuluje: forma stoi, energia siada. Za rok będziesz w tym samym miejscu, tylko starszy, jak tego nie ruszysz.',
       wieczorny_odpad: 'Ten wieczorny odpad to nie słaby charakter. Po dniu na napięciu i krótkim śnie rośnie głód, spada sytość, mózg szuka najszybszego zejścia z obrotów. Płacisz za to gorszym jutrem i tak w kółko. Marnujesz formę, którą masz w środku, tylko sam ją sobie co wieczór odcinasz.',
-      glowa_zajezdza: 'To nie brak dyscypliny. Głowa, która po pracy nie schodzi z obrotów, trzyma Cię w trybie alarmu, ciało nie wchodzi w regenerację, sen i testosteron lecą. Rano wstajesz z mniejszym bakiem niż wczoraj. To się nakręca miesiącami, a Ty myślisz, że tak ma być.',
+      glowa_zajezdza: 'To nie brak dyscypliny. Głowa, która po pracy nie schodzi z obrotów, trzyma Cię w trybie alarmu, ciało nie wchodzi w regenerację, sen robi się płytszy i budzisz się, jakbyś w ogóle nie spał. Rano wstajesz z mniejszym bakiem niż wczoraj. To się nakręca miesiącami, a Ty myślisz, że tak ma być.',
       wiedza_bez_wdrozenia: 'Wiesz więcej niż połowa trenerów, a ciało tego nie pokazuje, bo mózg nagradza Cię za samą analizę, nie za wykonanie. Kolejny plan pada na pierwszym gorszym dniu. Lata lecą, wiedza rośnie, forma stoi. Brakuje nie wiedzy, tylko kogoś, kto Cię z niej rozliczy.',
       silnik_bez_paliwa: 'Wyniki w normie to nie to samo co forma. Spłycony sen, nierozładowany stres i nieregularne posiłki robią cichy wyciek, chodzisz zauważalnie poniżej swojego pułapu i myślisz, że tak już wyglądasz. Ten zapas siedzi pod jednym przeciekiem. Im dłużej stoi, tym więcej go tracisz.',
     };

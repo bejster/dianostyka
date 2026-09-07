@@ -276,7 +276,7 @@ export default function DiagnozaPage() {
   if (phase === 'intro' && mode === 'fast_fit') {
     // P0-2: ready-to-buy NIE wraca na stronę sprzedażową (nabor). Fast lane = bezpośredni DM do Michała z prefillem.
     // Zero PII (handle Michała + generyczny prefill). Brak zweryfikowanego checkout/transaction route -> DM jest bezpiecznym fast lane.
-    const fastLaneDm = `https://ig.me/m/hantleitalerz?text=${encodeURIComponent('Jestem zdecydowany, chcę sprawdzić fit/zakres i ruszyć.')}`;
+    const fastLaneDm = `https://ig.me/m/hantleitalerz?text=${encodeURIComponent('Jestem zdecydowany, chcę sprawdzić zakres i ruszyć.')}`;
     return (
       <div style={{ minHeight: '100vh', background: BG, color: '#ece7db', fontFamily: '"Inter", sans-serif', display: 'flex', flexDirection: 'column', justifyContent: 'center', padding: '32px 22px', boxSizing: 'border-box', position: 'relative', overflow: 'hidden' }}>
         <Atmosphere />
@@ -297,7 +297,7 @@ export default function DiagnozaPage() {
             onClick={() => trackDiag('fast_fit_to_dm')}
             style={{ display: 'block', textAlign: 'center', textDecoration: 'none', width: '100%', padding: '17px', borderRadius: 14, border: 'none', cursor: 'pointer', background: `linear-gradient(135deg, ${GOLD}, #8a7535)`, color: BG, fontWeight: 800, fontSize: 16, letterSpacing: 0.5, boxSizing: 'border-box' }}
           >
-            Sprawdźmy fit i zakres &rarr;
+            Sprawdźmy, czy zakres pasuje &rarr;
           </a>
           <button
             onClick={() => { registerContext({ mode: 'diagnostic' }); trackDiag('fast_fit_to_diagnostic'); setMode('diagnostic'); if (typeof window !== 'undefined') window.scrollTo({ top: 0 }); }}
@@ -362,10 +362,10 @@ export default function DiagnozaPage() {
             }}
             style={{ width:'100%',padding:'15px 16px',borderRadius:14,border:'1px solid #4a4438',cursor:'pointer',background:'rgba(200,168,78,0.035)',color:'#e8cc80',fontWeight:700,fontSize:15,lineHeight:1.35 }}
           >
-            Wiem, że chcę działać. Sprawdźmy fit i zakres &rarr;
+            Wiem, że chcę działać. Sprawdźmy, czy zakres pasuje &rarr;
           </button>
           <p style={{ fontSize:12,color:'#777168',lineHeight:1.5,margin:'9px 2px 0',textAlign:'center' }}>
-            Ta ścieżka jest dla osób, które już podjęły decyzję i chcą sprawdzić fit oraz zakres.
+            Ta ścieżka jest dla osób, które już podjęły decyzję i chcą sprawdzić zakres.
           </p>
           <p style={{ fontSize: 12.5, color: '#8f887c', lineHeight: 1.55, margin: '16px 2px 0', textAlign: 'center' }}>
             Wynik zobaczysz od razu. @Instagram zostawiasz wtedy, gdy chcesz, żebym później połączył wynik z Twoją wiadomością.

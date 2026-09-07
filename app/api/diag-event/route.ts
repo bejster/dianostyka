@@ -12,12 +12,25 @@ export async function POST(req: NextRequest) {
     // .trim() broni przed zablakanym \n w wartosci env.
     const url = (process.env.DIAG_EVENT_WEBHOOK || 'https://n8n.srv1313512.hstgr.cloud/webhook/diagnostyka-events').trim();
     if (!url) return NextResponse.json({ ok: true, forwarded: false });
-    await fetch(url, {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ event: 'diagnostyka_answer', ...body, received_at: new Date().toISOString() }),
-    }).catch(() => {});
-    return NextResponse.json({ ok: true });
+    let forwarded = false;
+    try {
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ event: 'diagnostyka_answer', ...body, received_at: new Date().toISOString() }),
+      });
+      forwarded = res.ok;
+      if (!res.ok) {
+        // Nie wybuchamy quizu, ale zostawiamy slad w runtime logach (Vercel), zeby dalo sie
+        // wylapac ciche gubienie progresywnych eventow zamiast dowiadywac sie o tym po fakcie.
+        console.error(`[diag-event] downstream ${res.status} from ${url}`);
+      }
+    } catch (e) {
+      console.error(`[diag-event] downstream fetch failed for ${url}:`, e instanceof Error ? e.message : e);
+    }
+    // ok:true zawsze — quiz nie moze sie wywalic przez padniety sink. forwarded mowi prawde
+    // o tym, czy dane faktycznie dotarly dalej, zeby cichy data loss byl widoczny w logach/monitoringu.
+    return NextResponse.json({ ok: true, forwarded });
   } catch {
     return NextResponse.json({ ok: false }, { status: 200 });
   }

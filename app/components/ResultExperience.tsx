@@ -76,8 +76,10 @@ export default function ResultExperience({
   }, [tier, strength, archLabel, archKey, intent]);
 
   // hand-raiser -> DM z gotowym prefillem (brzmi jak wiadomość człowieka, nie formularz)
+  // Celowo NIE obiecuje darmowej osobistej analizy wyniku (to jest dla każdego, nie tylko dla realnych
+  // kandydatów do współpracy) — otwiera rozmowę o ruszeniu tematu, filtruje po intencji, nie po ciekawości.
   const DM_HANDLE = 'hantleitalerz';
-  const dmMsg = `hej, zrobiłem Diagnostykę 168. wyszedł mi ${pack.ppTag}. możesz zerknąć na mój wynik i powiedzieć, od czego ty byś zaczął?`;
+  const dmMsg = `hej, zrobiłem Diagnostykę 168. wyszedł mi ${pack.ppTag}. chcę to ruszyć.`;
   const dmHref = `https://ig.me/m/${DM_HANDLE}?text=${encodeURIComponent(dmMsg)}`;
 
   // BEAT 1: kierunek z redCount (NIE severity/patternStrength — to globalny wynik, nie confidence archetypu)
@@ -102,9 +104,9 @@ export default function ResultExperience({
   const fastLane = intent === 'in_prowadz' && (startWhen === 'sw_7dni' || startWhen === 'sw_30dni');
   const nextStep: NextStep = fastLane ? {
     kicker: 'Napisałeś, że wolisz prowadzenie',
-    h2: 'Masz już wynik. Teraz sprawdzamy fit i zakres.',
+    h2: 'Masz już wynik. Teraz sprawdzamy, czy zakres pasuje.',
     body: 'Wiadomość jest gotowa. Po niej sprawdzę ten wynik i powiem Ci, jaki zakres widzę u Ciebie oraz od czego warto ruszyć.',
-    cta: 'Wyślij wynik i sprawdź fit →', variant: 'strong', route: 'dm',
+    cta: 'Wyślij wynik i sprawdź zakres →', variant: 'strong', route: 'dm',
   } : intent === 'in_prowadz' ? {
     kicker: 'Napisałeś, że wolisz prowadzenie',
     h2: 'Zobacz, jak wygląda praca po takim wyniku.',
@@ -152,9 +154,10 @@ export default function ResultExperience({
           </div>
         </section>
 
-        {/* BEAT 2 — PUNKT PĘKNIĘCIA (uczciwa rozdzielczość czasu) */}
+        {/* BEAT 2 — MIRROR (jak dotąd to łapałeś, zawsze za późno) -> REFRAME (realny punkt pęknięcia z odpowiedzi) */}
         <section className="rx-beat" data-beat="2">
           <div className="rx-kick">Punkt pęknięcia</div>
+          <p className="rx-pull" style={{ marginBottom: 20 }}>{pack.ppHeadline}</p>
           <h2 className="rx-h2">{breakPhrase}</h2>
           <p className="rx-sub">{breakFollowup}</p>
         </section>
@@ -172,7 +175,7 @@ export default function ResultExperience({
         <section className="rx-beat" data-beat="4">
           <div className="rx-kick">Co ja z tego czytam</div>
           {cytat && <p className="rx-quote">„{cytat}”</p>}
-          <h2 className="rx-h2" style={{ fontSize: 'clamp(24px,5vw,38px)', marginBottom: 18 }}>{pack.ppHeadline}</h2>
+          <h2 className="rx-h2" style={{ fontSize: 'clamp(24px,5vw,38px)', marginBottom: 18 }}>Sprawdziłbym najpierw: {pack.ppHook}.</h2>
           <p className="rx-sub" style={{ marginBottom: 22 }}>{pack.ppReveal}</p>
 
           <p className="rx-b4teaser">{fm}</p>
@@ -180,11 +183,11 @@ export default function ResultExperience({
           {heroVideo && <HeroVideo {...heroVideo} />}
 
           <div className="rx-raise">
-            <p className="rx-raise-q">Chcesz, żebym spojrzał na cały wynik i powiedział Ci, co sprawdziłbym u Ciebie jako pierwsze?</p>
+            <p className="rx-raise-q">Widzisz w tym siebie i chcesz to ruszyć?</p>
           </div>
 
           <a className="rx-cta" href={dmHref} target="_blank" rel="noopener noreferrer" onClick={() => trackDiag('handraiser_click', { tier, wants_help: wantsHelp, arch: archLabel })}>
-            Tak, rzuć okiem na mój wynik →
+            Napisz, pogadamy →
           </a>
           <p className="rx-fine" style={{ margin: '0 0 6px' }}>Piszesz do mnie na Instagramie, wiadomość jest już gotowa, wystarczy ją wysłać.</p>
           <p className="rx-selfserve">Wolisz najpierw ogarnąć to sam? Niżej masz cały test na {durLabel}.</p>

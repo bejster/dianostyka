@@ -19,7 +19,7 @@ test('entry offers diagnostic and fast-fit routes inside one product', () => {
   assert.match(page, /entry_route_selected/);
   assert.match(page, /route: 'diagnostic'/);
   assert.match(page, /route: 'fast_fit'/);
-  assert.match(page, /Wiem, że chcę działać\. Sprawdźmy fit i zakres/);
+  assert.match(page, /Wiem, że chcę działać\. Sprawdźmy, czy zakres pasuje/);
 });
 
 test('release telemetry is versioned separately', () => {
