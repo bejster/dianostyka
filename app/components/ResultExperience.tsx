@@ -25,7 +25,7 @@ export default function ResultExperience({
   archLabel, archKey, redCount, breakId, domainLabel, statuses,
   evidenceReceipts, loop, whyRepeats, costFacts, userPain,
   experiment, experimentConfidence, route,
-  imie, instagram, naborHref, submissionId,
+  imie, instagram, naborHref, submissionId, contentSignals,
 }: {
   archLabel: string; archKey: string; redCount?: number; breakId: string; domainLabel: string;
   statuses: { label: string; score: number }[];
@@ -33,6 +33,7 @@ export default function ResultExperience({
   costFacts: string[]; userPain?: string;
   experiment: ExperimentDef; experimentConfidence: Confidence; route: RouteDecision;
   imie?: string; instagram?: string; naborHref: string; submissionId?: string;
+  contentSignals?: Record<string, string | boolean>;
 }) {
   const progRef = useRef<HTMLDivElement>(null);
   const [calib, setCalib] = useState<string>('');
@@ -52,6 +53,8 @@ export default function ResultExperience({
 
   useEffect(() => {
     trackDiag('result_viewed', { arch: archKey });
+    // Jedna anonimowa paczka content intelligence. Wyłącznie bezpieczne kategorie, zero PII/free text/health data.
+    if (contentSignals) trackDiag('content_signal', contentSignals);
     const io = new IntersectionObserver((es) => es.forEach((e) => {
       if (e.isIntersecting) {
         (e.target as HTMLElement).classList.add('in');

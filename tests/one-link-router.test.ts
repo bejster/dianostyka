@@ -14,12 +14,13 @@ test('root is the one canonical public entry and renders Diagnostyka', () => {
   assert.doesNotMatch(nextConfig, /source:\s*['"]\/['"].*destination:\s*['"]\/diagnoza['"]/s);
 });
 
-test('entry offers diagnostic and fast-fit routes inside one product', () => {
-  assert.match(page, /diag_one_link_router_v1/);
-  assert.match(page, /entry_route_selected/);
+test('public entry stays diagnostic while hot lane remains available by explicit query mode', () => {
+  assert.match(page, /m === 'fast_fit'/);
+  assert.match(page, /mode === 'fast_fit'/);
+  assert.match(page, /fast_fit_to_nabor/);
   assert.match(page, /route: 'diagnostic'/);
-  assert.match(page, /route: 'fast_fit'/);
-  assert.match(page, /Wiem, że chcę działać\. Sprawdźmy, czy zakres pasuje/);
+  assert.doesNotMatch(page, /Wiem, że chcę działać\. Sprawdźmy, czy zakres pasuje/);
+  assert.match(page, /Publiczny cold\/warm entry pokazuje tylko diagnostykę/);
 });
 
 test('release telemetry is versioned separately', () => {

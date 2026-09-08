@@ -74,7 +74,7 @@ function WeekPulse() {
         ))}
       </svg>
       <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 10, letterSpacing: 2.5, textTransform: 'uppercase', color: '#8f887c', textAlign: 'center', marginTop: 8 }}>
-        tu szukamy pierwszego sygnału
+        PUNKT PĘKNIĘCIA: ?
       </div>
     </div>
   );
@@ -148,8 +148,15 @@ export default function DiagnozaPage() {
       if (campaign) ctx.campaign = campaign;
       registerContext(ctx); // PRZED pierwszymi eventami lejka
       // P0-1: lead_ref czytany z sessionStorage (bootstrap w layout.tsx zdjal go z #fragmentu PRZED trackerami). Zero query-string.
-      const rid = (typeof sessionStorage !== 'undefined' ? sessionStorage.getItem('diag_lead_ref') : '') || '';
-      if (/^[A-Za-z0-9_-]{6,64}$/.test(rid)) leadRef.current = rid;
+      let rid = (typeof sessionStorage !== 'undefined' ? sessionStorage.getItem('diag_lead_ref') : '') || '';
+      if (!/^[A-Za-z0-9_-]{6,64}$/.test(rid)) {
+        const rand = typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
+          ? crypto.randomUUID().replace(/-/g, '')
+          : `${Date.now()}${Math.random().toString(36).slice(2)}`;
+        rid = `lr_web_${rand}`.slice(0, 64);
+        try { sessionStorage.setItem('diag_lead_ref', rid); } catch {}
+      }
+      leadRef.current = rid;
     } catch { /* brak URL/storage API = zostajemy w diagnostic bez atrybucji */ }
     // Tryb rozstrzygniety -> render wlasciwego ekranu; pierwsze eventy lejka PO registerContext (P1-1).
     if (m === 'fast_fit') setMode('fast_fit');
@@ -224,6 +231,22 @@ export default function DiagnozaPage() {
         primary_goal: typeof raw.primary_goal === 'string' ? raw.primary_goal : '',
         give_up_point: typeof raw.give_up_point === 'string' ? raw.give_up_point : '',
         tier: tgTier,
+        raw_answers: raw,
+        diagnostyka_brief: leadBrief.brief,
+        derived_signals: {
+          score: sc,
+          severity_band: severityBand,
+          worstCat,
+          archetyp: pickArchetype(D, worstCat).label,
+          archetypKey: pickArchetype(D, worstCat).key,
+          followup_priority: q.followupPriority,
+          wants_help: q.wantsHelp,
+          intencja: q.intent,
+          kiedy_start: q.startWhen,
+          primary_goal: typeof raw.primary_goal === 'string' ? raw.primary_goal : '',
+          give_up_point: typeof raw.give_up_point === 'string' ? raw.give_up_point : '',
+          tier: tgTier,
+        },
       }),
     }).catch(() => {});
 
@@ -328,7 +351,7 @@ export default function DiagnozaPage() {
             Znajdź moment, od którego reszta tygodnia zaczyna lecieć w dół.
           </h1>
           <p style={{ fontSize: 16.5, color: '#c4bdb0', lineHeight: 1.65, margin: '0 0 22px' }}>
-            Przejdziemy po Twoim tygodniu od rana do weekendu. Szukam pierwszego sygnału, po którym forma, energia albo wykonanie zaczynają lecieć gorzej. Na końcu zobaczysz, gdzie pojawia się u Ciebie ten wzorzec oraz jaki jeden test warto zrobić jako pierwszy.
+            Przejdziemy przez Twój normalny tydzień od rana do weekendu. Na końcu zobaczysz swój Punkt Pęknięcia, odpowiedzi, które najmocniej go zdradziły, oraz jeden test na 72 godziny. Jeśli sygnały będą się gryźć, wynik powie to wprost.
           </p>
           {/* P1-3: usunięty niezweryfikowany pasek liczb (9 lat / 1200+ / 200+). Kotwica = człowiek + epistemiczna uczciwość. */}
           <div style={{ margin: '0 0 22px', padding: '14px 16px', border: '1px solid #3b352a', borderRadius: 14, background: 'linear-gradient(145deg, rgba(200,168,78,.06), #141416 44%)', display: 'grid', gridTemplateColumns: '58px 1fr', gap: 13, alignItems: 'center' }}>
@@ -351,29 +374,9 @@ export default function DiagnozaPage() {
           >
             Znajdź mój Punkt Pęknięcia &rarr;
           </button>
-          {/* diag_one_link_router_v1: jeden publiczny link, routing wewnątrz */}
-          <div style={{ display:'flex',alignItems:'center',gap:12,margin:'16px 0 12px' }} aria-hidden="true">
-            <span style={{ height:1,background:'#26262b',flex:1 }} />
-            <span style={{ fontFamily:"'JetBrains Mono',ui-monospace,monospace",fontSize:10,letterSpacing:2,textTransform:'uppercase',color:'#6f6a61' }}>albo</span>
-            <span style={{ height:1,background:'#26262b',flex:1 }} />
-          </div>
-          <button
-            onClick={() => {
-              registerContext({ mode: 'fast_fit' });
-              trackDiag('entry_route_selected', { route: 'fast_fit' });
-              trackDiag('fast_fit_intro_viewed');
-              setMode('fast_fit');
-              if (typeof window !== 'undefined') window.scrollTo({ top: 0 });
-            }}
-            style={{ width:'100%',padding:'15px 16px',borderRadius:14,border:'1px solid #4a4438',cursor:'pointer',background:'rgba(200,168,78,0.035)',color:'#e8cc80',fontWeight:700,fontSize:15,lineHeight:1.35 }}
-          >
-            Wiem, że chcę działać. Sprawdźmy, czy zakres pasuje &rarr;
-          </button>
-          <p style={{ fontSize:12,color:'#777168',lineHeight:1.5,margin:'9px 2px 0',textAlign:'center' }}>
-            Ta ścieżka jest dla osób, które już podjęły decyzję i chcą sprawdzić zakres.
-          </p>
+          {/* Publiczny cold/warm entry pokazuje tylko diagnostykę. Hot lane działa wyłącznie przez ?mode=fast_fit z DM/settera. */}
           <p style={{ fontSize: 12.5, color: '#8f887c', lineHeight: 1.55, margin: '16px 2px 0', textAlign: 'center' }}>
-            Wynik zobaczysz od razu. @Instagram zostawiasz wtedy, gdy chcesz, żebym później połączył wynik z Twoją wiadomością.
+            Wynik zobaczysz od razu. Kontakt podajesz tylko wtedy, gdy chcesz zobaczyć pomoc albo prowadzenie.
           </p>
         </div>
       </div>
@@ -479,6 +482,21 @@ export default function DiagnozaPage() {
     const whyRepeats = computeWhyRepeats(pack, answers);
     const costFacts = computeCostFacts(answers);
     const route = routeDecision(intentStr, startWhenStr);
+    // CONTENT SIGNALS: anonimowe kategorie do uczenia contentu. Bez PII, treści otwartych, symptomów, używek, libido.
+    const contentSignals: Record<string, string | boolean> = {
+      break_window: breakIdStr || 'unknown',
+      give_up_point: typeof answers.give_up_point === 'string' ? answers.give_up_point : 'unknown',
+      weekend_pattern: typeof answers.weekend_pattern === 'string' ? answers.weekend_pattern : 'unknown',
+      tried_before: typeof answers.tried_before === 'string' ? answers.tried_before : 'unknown',
+      intent: intentStr || 'unknown',
+      start_when: startWhenStr || 'unknown',
+      archetype: arch.key,
+      experiment_id: pickedExperiment.id,
+      experiment_confidence: confidence,
+      route_primary: route.primary,
+      has_pain_text: typeof answers.user_pain === 'string' && answers.user_pain.trim().length > 0,
+      has_trigger_text: typeof answers.user_trigger === 'string' && answers.user_trigger.trim().length > 0,
+    };
     const submissionIdStr = typeof window !== 'undefined' ? (localStorage.getItem('diagnostyka_v2_submission_id') || '') : '';
     const userPainSafe = typeof answers.user_pain === 'string' && answers.user_pain.trim() ? answers.user_pain.trim() : undefined;
     return (
@@ -501,6 +519,7 @@ export default function DiagnozaPage() {
         instagram={igClean}
         naborHref={naborUrl}
         submissionId={submissionIdStr}
+        contentSignals={contentSignals}
       />
     );
   }

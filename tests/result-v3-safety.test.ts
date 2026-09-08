@@ -28,7 +28,7 @@ test('required expectation-reset copy is present verbatim in Beat 6', () => {
 test('analytics events use only the safe frozen event names', () => {
   const allowed = new Set([
     'result_viewed', 'fracture_viewed', 'loop_viewed', 'experiment_viewed', 'experiment_committed',
-    'method_demo_viewed', 'result_saved', 'cta_nabor_clicked', 'calibration_answer',
+    'method_demo_viewed', 'result_saved', 'cta_nabor_clicked', 'calibration_answer', 'content_signal',
   ]);
   // literal trackDiag('x', ...) calls + the beat->event lookup map (dynamic trackDiag(EVT[b], ...))
   const direct = [...result.matchAll(/trackDiag\('([a-z_]+)'/g)].map((m) => m[1]);

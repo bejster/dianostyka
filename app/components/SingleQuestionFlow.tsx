@@ -178,12 +178,14 @@ export default function SingleQuestionFlow({ onComplete, initialAnswers }: Props
 
   // Bramka "Dalej": slider/number musi być ruszony, multi min 1 chip, tekst min 15 znaków.
   const chipsCount = Array.isArray(answers.symptoms_chips) ? (answers.symptoms_chips as string[]).length : 0;
-  // Handle IG bez @ i spacji; gate kontaktu wymaga min. 2 znakow (bez tego lead jest anonimowy).
+  // Kontakt jest warunkowy: jawna chęć pomocy/prowadzenia wymaga IG, self-serve zostaje bez tarcia.
   const igClean = String(answers.instagram || '').replace(/[@\s]/g, '');
+  const intentId = String(answers.intent || '');
+  const contactRequired = currentQ.type === 'contact' && (intentId === 'in_prowadz' || intentId === 'in_zobacz');
   const advanceOk =
     currentQ.type === 'multi' ? chipsCount >= 1 :
     currentQ.type === 'text' ? enoughContent(String(answers[currentQ.id] || '')) && !isGibberish(String(answers[currentQ.id] || '')) :
-    currentQ.type === 'contact' ? true : // P0-1: kontakt opcjonalny, wynik NIE wymaga IG (setter diagnostic mode)
+    currentQ.type === 'contact' ? (!contactRequired || igClean.length >= 2) :
     (currentQ.type === 'slider' || currentQ.type === 'number') ? touched.has(currentQ.id) :
     true;
 
@@ -207,7 +209,7 @@ export default function SingleQuestionFlow({ onComplete, initialAnswers }: Props
     if (cq.type === 'contact') {
       // P1-2: kontakt opcjonalny -> continue mierzymy ZAWSZE (has_contact bool), a realny opt-in IG osobnym eventem.
       const provided = String(answers.instagram || '').replace(/[@\s]/g, '').length >= 2;
-      trackDiag('contact_continue', { index: currentIndex, total: vq.length, has_contact: provided });
+      trackDiag('contact_continue', { index: currentIndex, total: vq.length, has_contact: provided, contact_required: contactRequired });
       if (provided) trackDiag('contact_provided', { index: currentIndex, total: vq.length }); // zero raw handle w PostHog
     }
     else if (opts?.skipped === true) trackDiag('question_skip', ev);
@@ -240,7 +242,7 @@ export default function SingleQuestionFlow({ onComplete, initialAnswers }: Props
       // diag_complete NIE tutaj — odpala page.tsx po realnym commit wyniku (setPhase 'teaser'), nie przed
       onComplete(answers);
     }
-  }, [currentIndex, answers, onComplete, vibe, postEvent]);
+  }, [currentIndex, answers, onComplete, vibe, postEvent, contactRequired]);
 
   const goToPrev = useCallback(() => {
     trackDiag('question_back', { question_id: (QUESTIONS[currentIndex] || QUESTIONS[0]).id, index: currentIndex });
@@ -417,23 +419,30 @@ export default function SingleQuestionFlow({ onComplete, initialAnswers }: Props
         transform: transitionState === 'out' ? 'translateY(-12px)' : transitionState === 'in' ? 'translateY(12px)' : 'none',
         transition: 'opacity 0.2s ease, transform 0.2s ease',
       }}>
-        {/* Tytuł pytania */}
+        {/* Tytuł pytania. Kontakt zmienia copy po jawnej intencji, bez ukrytej kwalifikacji. */}
         <h2 style={{
           fontFamily: 'Georgia, serif',
           fontSize: 'clamp(24px, 5.8vw, 32px)',
           fontWeight: 400,
           lineHeight: 1.25,
           color: '#ffffff',
+
           marginBottom: currentQ.subtitle ? 10 : 24,
           letterSpacing: '-0.01em',
         }}>
-          {currentQ.title}
+          {currentQ.type === 'contact' && contactRequired
+            ? 'Zostaw @ z Instagrama, żebym mógł połączyć ten wynik z Tobą.'
+            : currentQ.title}
         </h2>
 
         {/* Podtytuł */}
-        {currentQ.subtitle && (
+        {(currentQ.subtitle || (currentQ.type === 'contact' && contactRequired)) && (
           <p style={{ fontSize: 14.5, color: '#999999', lineHeight: 1.55, marginBottom: 28 }}>
-            {currentQ.subtitle}
+            {currentQ.type === 'contact' && contactRequired
+              ? (intentId === 'in_prowadz'
+                ? 'Wybrałeś prowadzenie. Wynik dostajesz od razu. @ pozwala mi przypisać tę diagnostykę do właściwej rozmowy.'
+                : 'Chcesz zobaczyć, jak wygląda praca ze mną. Wynik dostajesz od razu. @ pozwala mi przypisać tę diagnostykę do właściwej rozmowy.')
+              : currentQ.subtitle}
           </p>
         )}
 
@@ -668,7 +677,7 @@ export default function SingleQuestionFlow({ onComplete, initialAnswers }: Props
           </div>
         )}
 
-        {/* TYP 6: KONTAKT (IG wymagane + imie opcjonalne) — ostatni ekran przed wynikiem */}
+        {/* TYP 6: KONTAKT — wymagany tylko po jawnej intencji pomocy/prowadzenia. */}
         {currentQ.type === 'contact' && (
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 0, marginBottom: 12 }}>
@@ -721,7 +730,9 @@ export default function SingleQuestionFlow({ onComplete, initialAnswers }: Props
               {isCompleting ? 'Ładuję wynik…' : <>Pokaż mój wynik &rarr;</>}
             </button>
             <p style={{ marginTop: 12, fontSize: 12.5, color: '#6a6a6a', lineHeight: 1.5, textAlign: 'center' }}>
-              @Instagram jest opcjonalny. Zostaw go, jeśli chcesz, żebym połączył wynik z Twoją późniejszą wiadomością.
+              {contactRequired
+                ? '@ użyję tylko po to, żeby połączyć wynik z właściwą rozmową.'
+                : '@Instagram jest opcjonalny. Zostaw go, jeśli chcesz, żebym połączył wynik z Twoją późniejszą wiadomością.'}
             </p>
           </div>
         )}
