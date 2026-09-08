@@ -22,16 +22,17 @@ const C = {
 };
 
 export default function ResultExperience({
-  archLabel, archKey, redCount, breakId, domainLabel,
+  archLabel, archKey, redCount, breakId, domainLabel, statuses,
   evidenceReceipts, loop, whyRepeats, costFacts, userPain,
   experiment, experimentConfidence, route,
-  imie, instagram, naborHref, dmHref, submissionId,
+  imie, instagram, naborHref, submissionId,
 }: {
   archLabel: string; archKey: string; redCount?: number; breakId: string; domainLabel: string;
+  statuses: { label: string; score: number }[];
   evidenceReceipts: string[]; loop: { nodes: LoopNode[]; uncertain: boolean }; whyRepeats: string;
   costFacts: string[]; userPain?: string;
   experiment: ExperimentDef; experimentConfidence: Confidence; route: RouteDecision;
-  imie?: string; instagram?: string; naborHref: string; dmHref: string; submissionId?: string;
+  imie?: string; instagram?: string; naborHref: string; submissionId?: string;
 }) {
   const progRef = useRef<HTMLDivElement>(null);
   const [calib, setCalib] = useState<string>('');
@@ -70,6 +71,14 @@ export default function ResultExperience({
   }, [archKey]);
 
   const breakPhrase = BREAK_PHRASE[breakId] || 'Twój tydzień nie ma jednego wyraźnego momentu, w którym pęka.';
+  const orderedStatuses = [...statuses].sort((a,b) => a.score - b.score);
+  const weakestStatus = orderedStatuses[0];
+  const strongestStatus = orderedStatuses[orderedStatuses.length - 1];
+  const breakTrack: Record<string,{pct:number;label:string}> = { bw_morning:{pct:5,label:'rano'}, bw_midday:{pct:24,label:'przed obiadem'}, bw_afternoon:{pct:43,label:'po 14'}, bw_afterwork:{pct:62,label:'po pracy'}, bw_evening:{pct:81,label:'wieczorem'}, bw_weekend:{pct:96,label:'weekend'}, bw_varies:{pct:50,label:'zmiennie'} };
+  const breakPos = breakTrack[breakId] || breakTrack.bw_varies;
+  const radarPoints = statuses.map((st, i) => { const a = -Math.PI / 2 + i * (Math.PI * 2 / statuses.length); const r = Math.max(24, Math.min(st.score, 90)) * 0.82; return `${110 + Math.cos(a) * r},${110 + Math.sin(a) * r}`; }).join(' ');
+  const radarGrid = [30, 55, 80].map((r) => statuses.map((_, i) => { const a = -Math.PI / 2 + i * (Math.PI * 2 / statuses.length); return `${110 + Math.cos(a) * r},${110 + Math.sin(a) * r}`; }).join(' '));
+
   const redLine = (redCount ?? 0) >= 2
     ? `${redCount} ${(redCount ?? 0) <= 4 ? 'obszary' : 'obszarów'} w Twoich odpowiedziach ${(redCount ?? 0) <= 4 ? 'wskazują' : 'wskazuje'} ten sam kierunek.`
     : (redCount ?? 0) === 1 ? 'Najmocniejszy sygnał pojawia się w jednym obszarze.' : '';
@@ -95,7 +104,6 @@ export default function ResultExperience({
   };
 
   const onNaborClick = () => trackDiag('cta_nabor_clicked', { arch: archKey, route: route.primary });
-  const onDmClick = () => trackDiag('cta_dm_clicked', { arch: archKey, route: route.primary });
 
   return (
     <div className="rx" style={{ background: C.ink, color: C.paper, fontFamily: C.sans, minHeight: '100vh', overflowX: 'hidden', position: 'relative' }}>
@@ -103,13 +111,7 @@ export default function ResultExperience({
       <div className="rx-atmo" aria-hidden />
       <div className="rx-prog" ref={progRef} aria-hidden />
 
-      {route.hotEarlyCta && (
-        <a className="rx-hotcta" href={dmHref} target="_blank" rel="noopener noreferrer" onClick={onDmClick}>
-          {route.primaryLabel} →
-        </a>
-      )}
-
-      <div className="rx-wrap" style={route.hotEarlyCta ? { paddingBottom: 'max(96px, calc(env(safe-area-inset-bottom) + 86px))' } : undefined}>
+      <div className="rx-wrap">
 
         {/* BEAT 1 — PUNKT PĘKNIĘCIA jako primary payoff. Score/pct wtorny (brak w V3). Max 2 receipts. */}
         <section className="rx-beat rx-hero" data-beat="1">
@@ -119,6 +121,11 @@ export default function ResultExperience({
             <h1 className="rx-arch">{breakPhrase}</h1>
             {redLine && <div className="rx-redline">{redLine}</div>}
             <p className="rx-sub rx-hero-sub">Z Twoich odpowiedzi najmocniej składa się właśnie ten moment. Dalej pokazuję, co po nim wraca.</p>
+            <div className="rx-breakviz">
+              <div className="rx-breakviz-now">Najwcześniejszy sygnał: <strong>{breakPos.label}</strong></div>
+              <div className="rx-breakviz-line"><span style={{ left: `${breakPos.pct}%` }} /></div>
+              <div className="rx-breakviz-scale"><span>rano</span><span>po pracy</span><span>weekend</span></div>
+            </div>
             {evidenceReceipts.length > 0 && (
               <div className="rx-receipts">
                 {evidenceReceipts.map((r, i) => (<p key={i} className="rx-receipt">{r}</p>))}
@@ -129,6 +136,38 @@ export default function ResultExperience({
             <span className="rx-cue-arrow">↓</span>
             <span>SCROLLUJ</span>
           </div>
+        </section>
+
+        {/* MAPA 168 — wizualny payoff z pięciu osi już liczonych z odpowiedzi. */}
+        <section className="rx-beat rx-map-section" data-beat="map">
+          <div className="rx-kick">Mapa 168</div>
+          <div className="rx-map-head">
+            <h2 className="rx-h2">Twój tydzień na pięciu osiach.</h2>
+            <span>wyżej = stabilniej</span>
+          </div>
+          <div className="rx-map-visual">
+            <div className="rx-radar-wrap" aria-hidden="true">
+              <svg className="rx-radar" viewBox="0 0 220 220" role="img">
+                {radarGrid.map((pts, i) => <polygon key={i} points={pts} className="rx-radar-grid" />)}
+                {statuses.map((_, i) => { const a = -Math.PI / 2 + i * (Math.PI * 2 / statuses.length); return <line key={i} x1="110" y1="110" x2={110 + Math.cos(a) * 80} y2={110 + Math.sin(a) * 80} className="rx-radar-axis" />; })}
+                <polygon points={radarPoints} className="rx-radar-data" />
+              </svg>
+              <div className="rx-radar-core"><span>MAPA</span><strong>168</strong></div>
+            </div>
+            <div className="rx-map">
+              {statuses.map((st) => (
+                <div className="rx-axis" key={st.label}>
+                  <div className="rx-axis-head"><span>{st.label}</span><strong>{st.score}</strong></div>
+                  <div className="rx-axis-track" aria-label={`${st.label}: ${st.score} na 100`}><div className="rx-axis-fill" style={{ width: `${st.score}%` }} /><span className="rx-axis-mid" aria-hidden="true" /></div>
+                </div>
+              ))}
+            </div>
+          </div>
+          <div className="rx-map-readout">
+            <div><span>Najmniej stabilna oś</span><strong>{weakestStatus?.label}</strong></div>
+            <div><span>Najbardziej stabilna oś</span><strong>{strongestStatus?.label}</strong></div>
+          </div>
+          <p className="rx-map-note">Indeks powstaje wyłącznie z Twoich odpowiedzi. Pokazuje proporcje: gdzie tydzień trzyma się najlepiej, a gdzie najłatwiej traci sterowność.</p>
         </section>
 
         {/* BEAT 2 — PĘTLA 168: deterministyczny łańcuch z realnych odpowiedzi + istniejącej, zatwierdzonej treści archetypu */}
@@ -169,6 +208,7 @@ export default function ResultExperience({
         <section className="rx-beat" data-beat="5">
           <div className="rx-kick">Test na 72 godziny</div>
           <h2 className="rx-h2" style={{ fontSize: 'clamp(24px,5vw,38px)' }}>Przez następne 72 godziny sprawdź jedną rzecz.</h2>
+          <div className="rx-72line" aria-hidden="true"><span>0 h</span><i/><span>24 h</span><i/><span>48 h</span><i/><span>72 h</span></div>
           <div className="rx-exp">
             <div className="rx-exp-row"><span className="rx-exp-k">{experiment.name}</span><p>{experiment.action}</p></div>
             <div className="rx-exp-row"><span className="rx-exp-k">Kiedy</span><p>{experiment.moment}</p></div>
@@ -203,25 +243,9 @@ export default function ResultExperience({
             <li><span className="rx-demo-n">3</span>Dopiero później ruszałbym {domainLabel.toLowerCase()} dalej.</li>
           </ol>
           <div className="rx-expectation">
-            <p>Jeśli chcesz tylko zrozumieć swój wynik, masz go tutaj. Nie musisz pisać do mnie po dodatkowe darmowe omówienie.</p>
-            <p>Zrób test 72h. Sprawdź, czy Punkt Pęknięcia faktycznie pojawia się tam, gdzie wyszedł. DM służy osobom, które realnie rozważają prowadzenie.</p>
+            <p>Jeśli chcesz tylko zrozumieć swój wynik, masz go tutaj.</p>
+            <p>Na końcu wybierzesz jeden następny ruch. Ja mam już zapis Twojej diagnostyki, więc nie musisz pisać pierwszej wiadomości.</p>
           </div>
-
-          <div className="rx-kick" style={{ marginTop: 28 }}>{route.primaryKicker}</div>
-          {route.primary === 'dm' && (
-            <a className="rx-next rx-next-strong" href={dmHref} target="_blank" rel="noopener noreferrer" onClick={onDmClick}>{route.primaryLabel} →</a>
-          )}
-          {route.primary === 'nabor' && (
-            <a className="rx-next rx-next-strong" href={naborHref} target="_blank" rel="noopener noreferrer" onClick={onNaborClick}>{route.primaryLabel} →</a>
-          )}
-          {route.primary === 'experiment' && (
-            <a className="rx-next rx-next-medium" href="#beat-5-anchor" onClick={() => { const el = document.querySelector('[data-beat="5"]'); el?.scrollIntoView({ behavior: 'smooth' }); }}>{route.primaryLabel} ↑</a>
-          )}
-          {route.secondaryNabor && (
-            <a className={route.secondaryNabor.prominence === 'prominent' ? 'rx-next rx-next-medium' : 'rx-next rx-next-soft'} href={naborHref} target="_blank" rel="noopener noreferrer" onClick={onNaborClick}>
-              {route.secondaryNabor.label} →
-            </a>
-          )}
 
           <a className="rx-badge" style={{ marginTop: 16 }} href={GOOGLE_AGG.url} target="_blank" rel="noopener noreferrer">
             <span className="rx-g">G</span>
@@ -250,6 +274,24 @@ export default function ResultExperience({
           </div>
           {calib && <p className="rx-fine" style={{ textAlign: 'left', marginTop: 16 }}>Dzięki. To pokazuje mi, gdzie wynik przestrzelił.</p>}
           <button className="rx-save" type="button" onClick={shareSafe}>{saved ? 'Zapisano ✓' : 'Zapisz / udostępnij wynik'}</button>
+
+          <div className="rx-final-action">
+            <div className="rx-route-eyebrow">Zanim zamkniesz wynik</div>
+            <h3>{route.primaryKicker}</h3>
+            <p>{route.primaryNote}</p>
+            {route.primary === 'nabor' ? (
+              <>
+                <a className="rx-next rx-next-strong" href={naborHref} target="_blank" rel="noopener noreferrer" onClick={onNaborClick}>{route.primaryLabel} →</a>
+                {!committed && <button className="rx-route-alt" type="button" onClick={commitExperiment}>Nie teraz. Biorę test 72h</button>}
+                {committed && <div className="rx-action-confirm">Test 72h zapisany ✓</div>}
+              </>
+            ) : (
+              <>
+                {!committed ? <button className="rx-next rx-next-strong" type="button" onClick={commitExperiment}>{route.primaryLabel}</button> : <div className="rx-action-confirm">Test 72h zapisany ✓</div>}
+                {route.secondaryNabor && <a className="rx-route-alt" href={naborHref} target="_blank" rel="noopener noreferrer" onClick={onNaborClick}>{route.secondaryNabor.label} →</a>}
+              </>
+            )}
+          </div>
         </section>
 
       </div>
@@ -279,12 +321,21 @@ const css = `
 .rx-hero-panel::after{content:"";position:absolute;left:18%;right:18%;top:0;height:1px;background:linear-gradient(90deg,transparent,${C.goldB},transparent);opacity:.8}
 .rx-hero-panel>*{position:relative;z-index:1}
 .rx-hero-signature{display:flex;justify-content:center;gap:6px;margin:0 auto 18px}.rx-hero-signature span{display:block;width:24px;height:3px;border-radius:999px;background:${C.goldD};opacity:.62}.rx-hero-signature span:nth-child(2){width:44px;background:${C.goldB};opacity:.95}
+.rx-breakviz{width:100%;margin:22px 0 0;padding:14px 14px 12px;border:1px solid rgba(200,168,78,.18);border-radius:14px;background:rgba(255,255,255,.018);text-align:left}.rx-breakviz-now{font-family:${C.mono};font-size:10px;letter-spacing:.6px;color:${C.faint};margin-bottom:10px}.rx-breakviz-now strong{color:${C.goldB};font-weight:800}.rx-breakviz-line{position:relative;height:2px;background:linear-gradient(90deg,rgba(200,168,78,.18),${C.goldD},rgba(200,168,78,.18));border-radius:999px}.rx-breakviz-line span{position:absolute;top:50%;width:12px;height:12px;border-radius:50%;background:${C.goldB};border:2px solid ${C.ink};box-shadow:0 0 0 2px ${C.goldD},0 0 18px rgba(200,168,78,.35);transform:translate(-50%,-50%)}.rx-breakviz-scale{display:flex;justify-content:space-between;margin-top:9px;font-family:${C.mono};font-size:8px;letter-spacing:.8px;color:${C.faint}}
+.rx-map-readout{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}.rx-map-readout>div{padding:13px 15px;border:1px solid ${C.line};border-radius:12px;background:${C.pan2}}.rx-map-readout span{display:block;font-family:${C.mono};font-size:8px;letter-spacing:1.4px;text-transform:uppercase;color:${C.faint};margin-bottom:5px}.rx-map-readout strong{font-size:14px;color:${C.paper};line-height:1.3}
 .rx-receipts{margin-top:22px;display:grid;gap:10px;max-width:46ch;width:100%}
 .rx-receipt{color:${C.paper};line-height:1.5;font-size:14px;margin:0;padding:12px 14px;border:1px solid ${C.line2};border-radius:12px;background:rgba(255,255,255,.025);text-align:left}
 .rx-hero-sub{max-width:40ch;margin:0 auto}
 .rx-cue{position:absolute;left:50%;bottom:max(34px,calc(env(safe-area-inset-bottom) + 22px));transform:translateX(-50%);display:inline-flex;align-items:center;justify-content:center;gap:12px;font-family:${C.mono};font-size:clamp(18px,4.6vw,22px);font-weight:700;line-height:1;letter-spacing:.28em;color:${C.goldB};text-transform:uppercase;white-space:nowrap;text-shadow:0 0 18px rgba(200,168,78,.18);opacity:.96}
 .rx-cue-arrow{display:inline-block;font-size:1.4em;line-height:.7;letter-spacing:0;color:${C.gold};animation:rxbob 1.6s ease-in-out infinite}
 @keyframes rxbob{0%,100%{transform:translateY(0);opacity:.72}50%{transform:translateY(7px);opacity:1}}
+.rx-map-head{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;margin-bottom:22px}.rx-map-head .rx-h2{margin:0}.rx-map-head>span{font-family:${C.mono};font-size:10px;letter-spacing:1.2px;color:${C.faint};white-space:nowrap}
+.rx-map-visual{display:grid;grid-template-columns:minmax(200px,.82fr) minmax(260px,1.18fr);gap:28px;align-items:center;padding:22px;border:1px solid ${C.line2};border-radius:22px;background:linear-gradient(150deg,rgba(200,168,78,.055),${C.pan} 45%,${C.ink})}
+.rx-radar-wrap{position:relative;min-height:220px;display:grid;place-items:center}.rx-radar{width:100%;max-width:240px;filter:drop-shadow(0 20px 34px rgba(0,0,0,.34))}.rx-radar-grid{fill:none;stroke:rgba(236,231,219,.12);stroke-width:1}.rx-radar-axis{stroke:rgba(236,231,219,.08);stroke-width:1}.rx-radar-data{fill:rgba(200,168,78,.20);stroke:${C.goldB};stroke-width:2;stroke-linejoin:round;filter:drop-shadow(0 0 12px rgba(200,168,78,.22))}.rx-radar-core{position:absolute;display:grid;place-items:center;line-height:1;pointer-events:none}.rx-radar-core span{font-family:${C.mono};font-size:8px;letter-spacing:2px;color:${C.faint}}.rx-radar-core strong{font-family:${C.serif};font-size:24px;color:${C.goldB};font-weight:400}
+.rx-map{display:grid;gap:14px}.rx-axis-head{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-bottom:7px}.rx-axis-head span{font-size:13.5px;color:${C.paper};font-weight:650}.rx-axis-head strong{font-family:${C.mono};font-size:14px;color:${C.goldB}}.rx-axis-track{position:relative;height:9px;border-radius:999px;background:#242429;overflow:hidden;box-shadow:inset 0 1px 2px rgba(0,0,0,.55)}.rx-axis-fill{height:100%;border-radius:inherit;background:linear-gradient(90deg,${C.goldD},${C.goldB});box-shadow:0 0 16px rgba(200,168,78,.22)}.rx-axis-mid{position:absolute;left:50%;top:0;bottom:0;width:1px;background:rgba(255,255,255,.16)}.rx-map-note{margin:14px 2px 0;font-size:12px;line-height:1.55;color:${C.faint};font-family:${C.mono}}
+.rx-72line{display:flex;align-items:center;gap:8px;margin:0 0 18px;color:${C.goldB};font-family:${C.mono};font-size:10px;font-weight:700;letter-spacing:1px}.rx-72line i{height:1px;flex:1;background:linear-gradient(90deg,${C.goldD},rgba(200,168,78,.18));position:relative}.rx-72line i::after{content:"";position:absolute;right:-2px;top:-2px;width:5px;height:5px;border-radius:50%;background:${C.gold}}
+.rx-final-action{margin-top:34px;padding:22px;border:1px solid ${C.goldD};border-radius:18px;background:linear-gradient(160deg,rgba(200,168,78,.10),${C.pan2} 48%,${C.pan});box-shadow:0 24px 70px -42px rgba(200,168,78,.7)}.rx-final-action h3{font-family:${C.serif};font-size:clamp(25px,5vw,36px);line-height:1.05;font-weight:400;color:${C.paper};margin:8px 0 10px}.rx-final-action>p{color:${C.mute};font-size:14.5px;line-height:1.55;margin:0 0 18px}.rx-action-confirm{text-align:center;padding:16px;border:1px solid ${C.goldD};border-radius:13px;color:${C.goldB};font-weight:800;background:rgba(200,168,78,.06)}
+.rx-route-card{margin-top:30px;padding:24px;border-radius:20px;border:1px solid rgba(200,168,78,.34);background:radial-gradient(420px 180px at 50% 0%,rgba(200,168,78,.12),transparent 70%),${C.pan};box-shadow:0 28px 80px -52px rgba(200,168,78,.65)}.rx-route-eyebrow{font-family:${C.mono};font-size:10px;letter-spacing:2.4px;text-transform:uppercase;color:${C.gold};font-weight:800;margin-bottom:10px}.rx-route-card h3{font-family:${C.serif};font-weight:400;font-size:clamp(25px,4.8vw,34px);line-height:1.08;margin:0 0 12px;color:${C.paper}}.rx-route-card>p{font-size:14.5px;line-height:1.58;color:${C.mute};margin:0 0 20px}.rx-route-alt{display:block;width:100%;text-align:center;text-decoration:none;background:transparent;border:0;color:${C.mute};font-size:13px;font-weight:650;padding:9px 8px;cursor:pointer}.rx-route-alt:hover{color:${C.goldB}}
 .rx-quote{font-family:${C.serif};font-style:italic;font-size:clamp(19px,4vw,24px);color:${C.paper};line-height:1.34;border-left:2px solid ${C.goldD};padding-left:18px;margin:14px 0 0}
 .rx-cta{display:block;width:100%;text-align:center;text-decoration:none;font-weight:800;font-size:17px;color:${C.ink};background:linear-gradient(135deg,${C.gold},${C.goldB});padding:20px 26px;border-radius:16px;margin:0 0 12px;border:none;cursor:pointer;box-shadow:0 0 0 1px rgba(200,168,78,.35),0 22px 60px -18px rgba(200,168,78,.5);transition:transform .18s,box-shadow .18s}
 .rx-cta:hover{transform:translateY(-2px);box-shadow:0 0 0 1px rgba(200,168,78,.5),0 28px 74px -16px rgba(200,168,78,.62)}
@@ -301,8 +352,8 @@ const css = `
 .rx-exp-k{display:block;font-family:${C.mono};font-size:10px;letter-spacing:2px;text-transform:uppercase;color:${C.gold};font-weight:700;margin-bottom:8px}
 .rx-exp-row p{margin:0;font-size:15px;color:${C.paper};line-height:1.55}
 .rx-donemsg{font-family:${C.serif};font-style:italic;font-size:18px;color:${C.gold};text-align:left;line-height:1.4;background:${C.pan2};border:1px solid ${C.goldD};border-radius:14px;padding:18px 20px}
-.rx-loop{display:grid;gap:0;margin:0 0 8px}
-.rx-loop-node{background:${C.pan2};border:1px solid ${C.line};border-radius:14px;padding:14px 16px;position:relative;margin-bottom:18px}
+.rx-loop{display:grid;gap:0;margin:0 0 8px;position:relative;counter-reset:loop}.rx-loop::before{content:"";position:absolute;left:27px;top:22px;bottom:34px;width:1px;background:linear-gradient(${C.goldD},rgba(200,168,78,.12));z-index:0}
+.rx-loop-node{background:${C.pan2};border:1px solid ${C.line};border-radius:14px;padding:14px 16px 14px 56px;position:relative;margin-bottom:18px;counter-increment:loop;z-index:1}.rx-loop-node::before{content:counter(loop,decimal-leading-zero);position:absolute;left:13px;top:14px;width:29px;height:29px;border-radius:50%;display:grid;place-items:center;background:${C.ink};border:1px solid ${C.goldD};font-family:${C.mono};font-size:9px;color:${C.goldB};box-shadow:0 0 0 5px ${C.pan2}}
 .rx-loop-label{display:block;font-family:${C.mono};font-size:10px;letter-spacing:2px;text-transform:uppercase;color:${C.gold};font-weight:700;margin-bottom:6px}
 .rx-loop-node p{margin:0;font-size:14.5px;color:${C.paper};line-height:1.55}
 .rx-loop-arrow{position:absolute;left:24px;bottom:-22px;color:${C.goldD};font-size:14px}
@@ -329,6 +380,6 @@ const css = `
 .rx-save{margin-top:22px;font-family:${C.mono};font-size:12.5px;letter-spacing:.5px;color:${C.mute};background:transparent;border:1px solid ${C.line2};border-radius:10px;padding:11px 16px;cursor:pointer;transition:.15s}
 .rx-save:hover{border-color:${C.goldD};color:${C.paper}}
 .rx-hotcta{position:fixed;left:16px;right:16px;bottom:max(14px,env(safe-area-inset-bottom));z-index:8;display:block;text-align:center;text-decoration:none;font-weight:800;font-size:15px;color:${C.ink};background:linear-gradient(135deg,${C.gold},${C.goldB});padding:15px 18px;border-radius:14px;box-shadow:0 12px 34px -10px rgba(200,168,78,.55);max-width:588px;margin:0 auto}
-@media(max-width:640px){.rx-wrap{padding:0 18px}.rx-hero{padding-top:26px;padding-bottom:max(106px,calc(env(safe-area-inset-bottom) + 86px))}.rx-hero-panel{padding:24px 18px 22px;border-radius:20px}.rx-arch{font-size:clamp(31px,9vw,44px)}.rx-receipts{grid-template-columns:1fr}.rx-cue{bottom:max(26px,calc(env(safe-area-inset-bottom) + 16px))}}
+@media(max-width:640px){.rx-wrap{padding:0 18px}.rx-map-readout{grid-template-columns:1fr}.rx-map-head{display:block}.rx-map-head>span{display:block;margin-top:8px}.rx-map-visual{grid-template-columns:1fr;padding:18px;gap:16px}.rx-radar-wrap{min-height:190px}.rx-radar{max-width:210px}.rx-route-card{padding:20px}.rx-72line{gap:6px;font-size:9px}.rx-hero{padding-top:26px;padding-bottom:max(106px,calc(env(safe-area-inset-bottom) + 86px))}.rx-hero-panel{padding:24px 18px 22px;border-radius:20px}.rx-arch{font-size:clamp(31px,9vw,44px)}.rx-receipts{grid-template-columns:1fr}.rx-cue{bottom:max(26px,calc(env(safe-area-inset-bottom) + 16px))}}
 @media(prefers-reduced-motion:reduce){.rx-beat{opacity:1;transform:none}.rx-cue-arrow{animation:none}}
 `;

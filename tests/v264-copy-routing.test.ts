@@ -20,9 +20,11 @@ test('ready-to-buy intent is never downgraded by diagnostic tier (V3: routeDecis
   const router = fs.readFileSync(path.join(root, 'app/lib/result-router-v3.ts'), 'utf8');
   // routeDecision() nie przyjmuje score/tier/severity jako argumentu — nie ma jak je uwzglednic.
   assert.match(router, /export function routeDecision\(intentRaw: string, startWhenRaw: string\)/);
-  assert.match(router, /intent === 'in_prowadz' && \(sw === 'sw_7dni' \|\| sw === 'sw_30dni'\)/);
+  assert.match(router, /const near = sw === 'sw_7dni' \|\| sw === 'sw_30dni'/);
+  assert.match(router, /if \(intent === 'in_prowadz'\) return/);
   assert.match(page, /const route = routeDecision\(intentStr, startWhenStr\)/);
-  assert.match(result, /route\.primary === 'dm'/);
+  assert.doesNotMatch(result, /route\.primary === 'dm'/);
+  assert.match(result, /className="rx-final-action"/);
 });
 
 

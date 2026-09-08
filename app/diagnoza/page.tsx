@@ -280,9 +280,8 @@ export default function DiagnozaPage() {
   // ── P1-1 FAST FIT: tylko dla jawnego ready-to-buy (?mode=fast_fit). Zero forsowania 19 ekranow. ──
   // Ready-to-buy dostaje jasna sciezke do prowadzenia; kto woli, przechodzi do pelnej diagnostyki (never downgrade intent).
   if (phase === 'intro' && mode === 'fast_fit') {
-    // P0-2: ready-to-buy NIE wraca na stronę sprzedażową (nabor). Fast lane = bezpośredni DM do Michała z prefillem.
-    // Zero PII (handle Michała + generyczny prefill). Brak zweryfikowanego checkout/transaction route -> DM jest bezpiecznym fast lane.
-    const fastLaneDm = `https://ig.me/m/hantleitalerz?text=${encodeURIComponent('Jestem zdecydowany, chcę sprawdzić zakres i ruszyć.')}`;
+    // V4: ready-to-buy nie musi pisać pierwszy. Główna akcja prowadzi do zakresu/prowadzenia.
+    const fastLaneNabor = 'https://nabor.talerzihantle.com/?from=diag&mode=fast_fit#prowadzenie';
     return (
       <div style={{ minHeight: '100vh', background: BG, color: '#ece7db', fontFamily: '"Inter", sans-serif', display: 'flex', flexDirection: 'column', justifyContent: 'center', padding: '32px 22px', boxSizing: 'border-box', position: 'relative', overflow: 'hidden' }}>
         <Atmosphere />
@@ -294,13 +293,13 @@ export default function DiagnozaPage() {
             Wiesz już, że chcesz działać. Sprawdźmy tylko, czy zakres pasuje.
           </h1>
           <p style={{ fontSize: 16.5, color: '#c4bdb0', lineHeight: 1.65, margin: '0 0 26px' }}>
-            Napisz do mnie na Instagramie. Zobaczę, z czym wchodzisz. Ustalimy zakres. Od razu będziesz wiedział, czy to ma sens.
+            Zobacz zakres, sposób pracy i warunki. Jeśli to pasuje, ja mam już kontekst wejścia i nie musisz pisać pierwszej wiadomości.
           </p>
           <a
-            href={fastLaneDm}
+            href={fastLaneNabor}
             target="_blank"
             rel="noopener noreferrer"
-            onClick={() => trackDiag('fast_fit_to_dm')}
+            onClick={() => trackDiag('fast_fit_to_nabor')}
             style={{ display: 'block', textAlign: 'center', textDecoration: 'none', width: '100%', padding: '17px', borderRadius: 14, border: 'none', cursor: 'pointer', background: `linear-gradient(135deg, ${GOLD}, #8a7535)`, color: BG, fontWeight: 800, fontSize: 16, letterSpacing: 0.5, boxSizing: 'border-box' }}
           >
             Sprawdźmy, czy zakres pasuje &rarr;
@@ -481,8 +480,6 @@ export default function DiagnozaPage() {
     const costFacts = computeCostFacts(answers);
     const route = routeDecision(intentStr, startWhenStr);
     const submissionIdStr = typeof window !== 'undefined' ? (localStorage.getItem('diagnostyka_v2_submission_id') || '') : '';
-    // DM prefill: WYLACZNIE bezpieczny kontekst (etykieta wzorca), zero surowych odpowiedzi/bolu/instagrama cudzego.
-    const dmHrefSafe = `https://ig.me/m/hantleitalerz?text=${encodeURIComponent(`Cześć, zrobiłem Diagnostykę 168. Mój Punkt Pęknięcia: ${pack.ppTag}. Chcę ruszyć z prowadzeniem.`)}`;
     const userPainSafe = typeof answers.user_pain === 'string' && answers.user_pain.trim() ? answers.user_pain.trim() : undefined;
     return (
       <ResultExperience
@@ -491,6 +488,7 @@ export default function DiagnozaPage() {
         redCount={redCount}
         breakId={breakIdStr}
         domainLabel={leakLabel}
+        statuses={statuses}
         evidenceReceipts={evidenceReceipts}
         loop={loop}
         whyRepeats={whyRepeats}
@@ -502,7 +500,6 @@ export default function DiagnozaPage() {
         imie={imie}
         instagram={igClean}
         naborHref={naborUrl}
-        dmHref={dmHrefSafe}
         submissionId={submissionIdStr}
       />
     );

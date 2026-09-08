@@ -22,13 +22,13 @@ test('no free-manual-result-analysis promise remains anywhere in the result flow
 
 test('required expectation-reset copy is present verbatim in Beat 6', () => {
   assert.match(result, /Jeśli chcesz tylko zrozumieć swój wynik, masz go tutaj\./);
-  assert.match(result, /Nie musisz pisać do mnie po dodatkowe darmowe omówienie\./);
+  assert.match(result, /Na końcu wybierzesz jeden następny ruch\./);
 });
 
 test('analytics events use only the safe frozen event names', () => {
   const allowed = new Set([
     'result_viewed', 'fracture_viewed', 'loop_viewed', 'experiment_viewed', 'experiment_committed',
-    'method_demo_viewed', 'result_saved', 'cta_nabor_clicked', 'cta_dm_clicked', 'calibration_answer',
+    'method_demo_viewed', 'result_saved', 'cta_nabor_clicked', 'calibration_answer',
   ]);
   // literal trackDiag('x', ...) calls + the beat->event lookup map (dynamic trackDiag(EVT[b], ...))
   const direct = [...result.matchAll(/trackDiag\('([a-z_]+)'/g)].map((m) => m[1]);
@@ -54,11 +54,8 @@ test('share payload (result_saved) is built only from safe arch/exp/ref params, 
   assert.doesNotMatch(body, /instagram|user_pain|odpowiedzi|answers/i);
 });
 
-test('direct DM prefill is built only from a safe archetype tag, never raw pain/instagram/full answers', () => {
-  const m = page.match(/const dmHrefSafe = `[\s\S]*?;/);
-  assert.ok(m, 'dmHrefSafe not found in page.tsx');
-  assert.match(m![0], /pack\.ppTag/);
-  assert.doesNotMatch(m![0], /answers\.user_pain|answers\.instagram|answers\.odpowiedzi|leadBrief/);
+test('result page contains no direct-DM handoff or ig.me CTA', () => {
+  assert.doesNotMatch(result + page, /dmHref|ig\.me\/m|cta_dm_clicked/);
 });
 
 test('fracture-engine functions never throw and degrade gracefully when user_trigger and other optional answers are missing', () => {
@@ -88,6 +85,8 @@ test('evidence receipts (Beat 1) never exceed 2', () => {
   assert.ok(rich.length <= 2, 'Beat 1 must show at most 2 evidence receipts');
 });
 
-test('sticky hot CTA never covers the last section (Beat 7 save/calibration): extra bottom padding is applied when hotEarlyCta is active', () => {
-  assert.match(result, /route\.hotEarlyCta \? \{ paddingBottom:/);
+test('last result section always ends with a concrete action', () => {
+  assert.match(result, /className="rx-final-action"/);
+  assert.match(result, /Zanim zamkniesz wynik/);
+  assert.match(result, /Biorę test 72h/);
 });

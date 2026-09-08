@@ -58,7 +58,7 @@ export function computeLoop(pack: ResultPack, breakPhrase: string, evidence: str
     { label: 'Punkt Pęknięcia', text: breakPhrase },
     { label: 'Reakcja', text: pack.mechBody },
     { label: 'Widoczny skutek', text: evidence[0] || pack.mechPull },
-    { label: 'Powrót / restart', text: restartText },
+    { label: 'Powrót', text: restartText },
   ];
   return { nodes, uncertain: confidence === 'LOW' };
 }

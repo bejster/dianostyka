@@ -22,7 +22,7 @@ export interface ExperimentDef {
 
 export const EXPERIMENT_BANK: Record<ExperimentId, ExperimentDef> = {
   E1: {
-    id: 'E1', name: 'DECISION LOCK',
+    id: 'E1', name: 'BLOKADA DECYZJI',
     action: 'Do 16:00 zdecyduj, co jesz po 18:00. Po 18:00 nie podejmuj nowej decyzji żywieniowej.',
     moment: 'przed Twoim zwykłym popołudniowo-wieczornym pęknięciem',
     observe: 'liczba nieplanowanych decyzji o jedzeniu po 18:00',
@@ -30,7 +30,7 @@ export const EXPERIMENT_BANK: Record<ExperimentId, ExperimentDef> = {
     purpose: 'sprawdzić, czy późne podejmowanie decyzji jest częścią pętli',
   },
   E2: {
-    id: 'E2', name: 'PRE-FRACTURE CHECK',
+    id: 'E2', name: 'KONTROLA PRZED PĘKNIĘCIEM',
     action: '90 minut przed zwykłym Punktem Pęknięcia oceń trzy rzeczy: energię, głód i napięcie w skali 0-10.',
     moment: '90 minut przed zadeklarowanym oknem pęknięcia',
     observe: 'który z trzech sygnałów rusza pierwszy i czy powtarza się przez 3 dni',
@@ -38,7 +38,7 @@ export const EXPERIMENT_BANK: Record<ExperimentId, ExperimentDef> = {
     purpose: 'znaleźć najwcześniejszy powtarzalny sygnał',
   },
   E3: {
-    id: 'E3', name: 'FALLBACK MEAL',
+    id: 'E3', name: 'POSIŁEK AWARYJNY',
     action: 'Zanim zacznie się zwykły kryzys, ustal jedną gotową opcję awaryjną na jedzenie.',
     moment: 'przed typowym oknem rozjazdu',
     observe: 'ile razy dowóz albo przypadkowe jedzenie było decyzją z ostatniej chwili',
@@ -46,15 +46,15 @@ export const EXPERIMENT_BANK: Record<ExperimentId, ExperimentDef> = {
     purpose: 'sprawdzić, czy brak gotowej opcji napędza decyzję',
   },
   E4: {
-    id: 'E4', name: 'NEXT NORMAL DECISION',
+    id: 'E4', name: 'NASTĘPNA NORMALNA DECYZJA',
     action: 'Po pierwszym odstępstwie następna decyzja wraca do normalnego planu. Bez nadrabiania.',
     moment: 'zaraz po pierwszym odstępstwie',
     observe: 'ile czasu mija od odstępstwa do pierwszej normalnej decyzji',
     doNotChange: 'resztę planu na ten tydzień',
-    purpose: 'sprawdzić zdolność powrotu bez rytuału restartu',
+    purpose: 'sprawdzić zdolność powrotu bez rytuału zaczynania od nowa',
   },
   G1: {
-    id: 'G1', name: 'WORK SHUTDOWN',
+    id: 'G1', name: 'ZAMKNIĘCIE PRACY',
     action: 'Przed końcem pracy wypisz otwarte sprawy i pierwszą rzecz, od której zaczniesz jutro. Potem zamknij pracę.',
     moment: 'ostatnie 10-15 minut dnia pracy',
     observe: 'ile razy wieczorem wracasz do pracy myślami albo działaniem',
@@ -62,7 +62,7 @@ export const EXPERIMENT_BANK: Record<ExperimentId, ExperimentDef> = {
     purpose: 'sprawdzić, czy niedokończona praca zostaje poznawczo otwarta',
   },
   G2: {
-    id: 'G2', name: 'PARKING LOT',
+    id: 'G2', name: 'ODŁÓŻ NA JUTRO',
     action: 'Każdą sprawę, która wraca po pracy, zapisujesz w jednym miejscu. Nie otwierasz jej ponownie tego wieczoru.',
     moment: 'za każdym razem, gdy myśl o pracy wraca po godzinach',
     observe: 'liczba ponownych wejść w ten sam temat',
@@ -70,7 +70,7 @@ export const EXPERIMENT_BANK: Record<ExperimentId, ExperimentDef> = {
     purpose: 'sprawdzić, czy zapisanie otwartej sprawy ogranicza powroty do niej',
   },
   G3: {
-    id: 'G3', name: 'FRONTLOAD ONE TASK',
+    id: 'G3', name: 'JEDNA RZECZ WCZEŚNIEJ',
     action: 'Jedną wymagającą rzecz, którą zwykle robisz po spadku, przesuń przed przewidywany Punkt Pęknięcia.',
     moment: 'przed typowym spadkiem',
     observe: 'czy ta sama rzecz jest łatwiejsza do wykonania przed pęknięciem niż po nim',
@@ -78,7 +78,7 @@ export const EXPERIMENT_BANK: Record<ExperimentId, ExperimentDef> = {
     purpose: 'sprawdzić, czy pora zadania nasila problem',
   },
   G4: {
-    id: 'G4', name: 'EARLY EVENING DECISION',
+    id: 'G4', name: 'WCZEŚNIEJSZA DECYZJA',
     action: 'Godzinę przed końcem pracy podejmij jedną decyzję, którą zwykle zostawiasz na wieczór.',
     moment: 'około godziny przed końcem pracy',
     observe: 'czy wieczorem zostaje mniej decyzji do podjęcia na zmęczeniu',
@@ -87,14 +87,14 @@ export const EXPERIMENT_BANK: Record<ExperimentId, ExperimentDef> = {
   },
   T1: {
     id: 'T1', name: 'TRYB MINIMUM',
-    action: 'Przygotuj 20-minutową wersję najbliższego treningu. Jeśli pełny trening nie wchodzi, robisz Minimum w tym samym slocie.',
+    action: 'Przygotuj 20-minutową wersję najbliższego treningu. Jeśli pełny trening nie wchodzi, robisz Minimum w tym samym terminie.',
     moment: 'najbliższy zaplanowany trening',
     observe: 'trening wykonany: TAK / NIE',
     doNotChange: 'resztę planu treningowego',
     purpose: 'sprawdzić zachowanie całość-albo-nic',
   },
   T2: {
-    id: 'T2', name: 'MOVE ONCE',
+    id: 'T2', name: 'JEDNO PRZESUNIĘCIE',
     action: 'Każdy trening możesz przesunąć tylko raz. Przy drugim konflikcie wchodzi Tryb Minimum.',
     moment: 'gdy ten sam trening byłby przesuwany drugi raz',
     observe: 'liczba kolejnych przesunięć tego samego treningu',
@@ -102,7 +102,7 @@ export const EXPERIMENT_BANK: Record<ExperimentId, ExperimentDef> = {
     purpose: 'sprawdzić, czy to odkładanie, nie brak intencji, jest punktem awarii',
   },
   T3: {
-    id: 'T3', name: 'ONE PROTECTED SESSION',
+    id: 'T3', name: 'CHRONIONY TRENING',
     action: 'Przez 72 godziny chronisz tylko najbliższy trening. Reszta planu zostaje bez zmian.',
     moment: 'najbliższy zaplanowany trening',
     observe: 'czy jeden jasno chroniony termin jest dowieziony',
@@ -110,15 +110,15 @@ export const EXPERIMENT_BANK: Record<ExperimentId, ExperimentDef> = {
     purpose: 'sprawdzić, czy zbyt wiele równoległych priorytetów obniża wykonanie',
   },
   T4: {
-    id: 'T4', name: 'NO CATCH-UP',
-    action: 'Jeśli trening wypadnie, niczego nie nadrabiasz. Wracasz do kolejnego normalnie zaplanowanego slotu.',
+    id: 'T4', name: 'BEZ NADRABIANIA',
+    action: 'Jeśli trening wypadnie, niczego nie nadrabiasz. Wracasz do kolejnego normalnie zaplanowanego terminu.',
     moment: 'zaraz po opuszczonym treningu',
     observe: 'ile czasu mija do powrotu do normalnego planu',
     doNotChange: 'przyszłe sesje pod kątem odrabiania',
     purpose: 'sprawdzić, czy nadrabianie wydłuża rozjazd',
   },
   W1: {
-    id: 'W1', name: 'NEXT DAY RETURN',
+    id: 'W1', name: 'POWRÓT NASTĘPNEGO DNIA',
     action: 'Po pierwszym gorszym dniu pierwsza decyzja następnego dnia wraca do normalnego układu.',
     moment: 'pierwsza realna decyzja następnego ranka/dnia',
     observe: 'czy jeden gorszy dzień zamienia się w dwa albo trzy',
@@ -126,7 +126,7 @@ export const EXPERIMENT_BANK: Record<ExperimentId, ExperimentDef> = {
     purpose: 'sprawdzić czas trwania rozjazdu',
   },
   W2: {
-    id: 'W2', name: 'SUNDAY RETURN POINT',
+    id: 'W2', name: 'NIEDZIELNY PUNKT POWROTU',
     action: 'W niedzielę o ustalonej godzinie przygotuj dokładnie pierwszy punkt poniedziałku.',
     moment: 'stała godzina w niedzielny wieczór',
     observe: 'czy poniedziałek zaczyna się od gotowej decyzji czy od improwizacji',
@@ -134,7 +134,7 @@ export const EXPERIMENT_BANK: Record<ExperimentId, ExperimentDef> = {
     purpose: 'sprawdzić, czy weekendowi brakuje jasnego punktu powrotu',
   },
   W3: {
-    id: 'W3', name: 'WEEKEND FRACTURE LOG',
+    id: 'W3', name: 'DZIENNIK PĘKNIĘCIA WEEKENDU',
     action: 'Zapisz dokładny moment pierwszego odejścia od normalnego planu.',
     moment: 'pierwsze zauważalne odstępstwo w weekend',
     observe: 'pora i sytuacja pierwszego pęknięcia',
@@ -142,7 +142,7 @@ export const EXPERIMENT_BANK: Record<ExperimentId, ExperimentDef> = {
     purpose: 'zaobserwować realne pierwsze pęknięcie zamiast zgadywać',
   },
   W4: {
-    id: 'W4', name: 'RECOVERY MARKER',
+    id: 'W4', name: 'PUNKT POWROTU',
     action: 'Przez trzy kolejne dni o tej samej godzinie oceń energię 0-10.',
     moment: 'ta sama godzina: poniedziałek / wtorek / środa (albo równoważne okno 72h)',
     observe: 'pierwszy dzień, w którym wynik wraca do Twojej zwykłej wartości',
@@ -150,15 +150,15 @@ export const EXPERIMENT_BANK: Record<ExperimentId, ExperimentDef> = {
     purpose: 'ustalić realny czas powrotu do formy',
   },
   R1: {
-    id: 'R1', name: 'NO MONDAY RESTART',
+    id: 'R1', name: 'BEZ PONIEDZIAŁKOWEGO STARTU OD NOWA',
     action: 'Przez 72 godziny nie zaczynasz żadnego nowego planu. Kontynuujesz jedną rzecz, którą już robiłeś.',
     moment: 'gdy pojawia się chęć przeprojektowania albo zaczęcia od nowa',
     observe: 'czy potrafisz wrócić bez ceremonii nowego startu',
-    doNotChange: 'aplikacje, program, kalorie, split, cały system',
-    purpose: 'sprawdzić zależność od restartu',
+    doNotChange: 'aplikacje, program, kalorie, układ treningów, cały system',
+    purpose: 'sprawdzić zależność od zaczynania od nowa',
   },
   R2: {
-    id: 'R2', name: 'NO OPTIMIZATION',
+    id: 'R2', name: 'BEZ OPTYMALIZACJI',
     action: 'Przez 72 godziny niczego nie optymalizujesz. Obserwujesz tylko, kiedy pierwszy raz dzień wyraźnie zbacza z normalnego toru.',
     moment: 'przez całe okno 72h',
     observe: 'pierwszy powtarzalny moment albo sytuacja pęknięcia',
@@ -166,7 +166,7 @@ export const EXPERIMENT_BANK: Record<ExperimentId, ExperimentDef> = {
     purpose: 'znaleźć sygnał zanim przepiszesz działanie',
   },
   R3: {
-    id: 'R3', name: 'WAKE WINDOW',
+    id: 'R3', name: 'STAŁA PORA POBUDKI',
     action: 'Przez trzy pobudki trzymaj tę samą porę w oknie plus minus 30 minut.',
     moment: 'pora porannego wstawania',
     observe: 'subiektywna jakość poranka 0-10',
@@ -174,7 +174,7 @@ export const EXPERIMENT_BANK: Record<ExperimentId, ExperimentDef> = {
     purpose: 'prosty test spójności zachowania',
   },
   R4: {
-    id: 'R4', name: 'ENERGY MAP',
+    id: 'R4', name: 'MAPA ENERGII',
     action: 'Przez trzy dni oceń energię 0-10 o 10:00, 14:00 i 18:00.',
     moment: '10:00 / 14:00 / 18:00',
     observe: 'pierwsza godzina, w której spadek powtarza się w więcej niż jednym dniu',

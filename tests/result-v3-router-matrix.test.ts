@@ -5,72 +5,63 @@ import { routeDecision, type Intent, type StartWhen } from '../app/lib/result-ro
 const INTENTS: Intent[] = ['in_prowadz', 'in_zobacz', 'in_sam', 'in_niewiem'];
 const STARTS: StartWhen[] = ['sw_7dni', 'sw_30dni', 'sw_kwartal', 'sw_sprawdzam'];
 
-// ── AUTHORITATIVE 16-COMBO MATRIX (frozen spec 2026-09-08) ──
-const EXPECTED: Record<string, { primary: string; dmAllowed: boolean }> = {
-  'in_prowadz|sw_7dni': { primary: 'dm', dmAllowed: true },
-  'in_prowadz|sw_30dni': { primary: 'dm', dmAllowed: true },
-  'in_prowadz|sw_kwartal': { primary: 'nabor', dmAllowed: false },
-  'in_prowadz|sw_sprawdzam': { primary: 'nabor', dmAllowed: false },
-  'in_zobacz|sw_7dni': { primary: 'nabor', dmAllowed: false },
-  'in_zobacz|sw_30dni': { primary: 'nabor', dmAllowed: false },
-  'in_zobacz|sw_kwartal': { primary: 'experiment', dmAllowed: false },
-  'in_zobacz|sw_sprawdzam': { primary: 'experiment', dmAllowed: false },
-  'in_sam|sw_7dni': { primary: 'experiment', dmAllowed: false },
-  'in_sam|sw_30dni': { primary: 'experiment', dmAllowed: false },
-  'in_sam|sw_kwartal': { primary: 'experiment', dmAllowed: false },
-  'in_sam|sw_sprawdzam': { primary: 'experiment', dmAllowed: false },
-  'in_niewiem|sw_7dni': { primary: 'experiment', dmAllowed: false },
-  'in_niewiem|sw_30dni': { primary: 'experiment', dmAllowed: false },
-  'in_niewiem|sw_kwartal': { primary: 'experiment', dmAllowed: false },
-  'in_niewiem|sw_sprawdzam': { primary: 'experiment', dmAllowed: false },
+// V4 routing: użytkownik nigdy nie musi pisać pierwszy. Michał ma lead po completion.
+const EXPECTED: Record<string, 'nabor' | 'experiment'> = {
+  'in_prowadz|sw_7dni': 'nabor',
+  'in_prowadz|sw_30dni': 'nabor',
+  'in_prowadz|sw_kwartal': 'nabor',
+  'in_prowadz|sw_sprawdzam': 'nabor',
+  'in_zobacz|sw_7dni': 'nabor',
+  'in_zobacz|sw_30dni': 'nabor',
+  'in_zobacz|sw_kwartal': 'nabor',
+  'in_zobacz|sw_sprawdzam': 'nabor',
+  'in_sam|sw_7dni': 'experiment',
+  'in_sam|sw_30dni': 'experiment',
+  'in_sam|sw_kwartal': 'experiment',
+  'in_sam|sw_sprawdzam': 'experiment',
+  'in_niewiem|sw_7dni': 'nabor',
+  'in_niewiem|sw_30dni': 'nabor',
+  'in_niewiem|sw_kwartal': 'experiment',
+  'in_niewiem|sw_sprawdzam': 'experiment',
 };
-
-test('all 16 intent x start_when combinations resolve to the exact frozen-spec destination', () => {
+test('all 16 combinations resolve to the V4 action destination', () => {
   let count = 0;
-  for (const intent of INTENTS) {
-    for (const sw of STARTS) {
-      const key = `${intent}|${sw}`;
-      const expected = EXPECTED[key];
-      assert.ok(expected, `missing expectation for ${key}`);
-      const decision = routeDecision(intent, sw);
-      assert.equal(decision.primary, expected.primary, `${key} -> expected primary=${expected.primary}, got ${decision.primary}`);
-      if (!expected.dmAllowed) assert.notEqual(decision.primary, 'dm', `${key} must never route directly to DM`);
-      count++;
-    }
+  for (const intent of INTENTS) for (const sw of STARTS) {
+    const key = `${intent}|${sw}`;
+    assert.equal(routeDecision(intent, sw).primary, EXPECTED[key], key);
+    count++;
   }
   assert.equal(count, 16);
 });
 
-test('in_sam never routes to DM regardless of start_when (never direct DM invariant)', () => {
-  for (const sw of STARTS) assert.notEqual(routeDecision('in_sam', sw).primary, 'dm');
-});
-
-test('in_niewiem never routes to DM regardless of start_when (never direct DM invariant)', () => {
-  for (const sw of STARTS) assert.notEqual(routeDecision('in_niewiem', sw).primary, 'dm');
-});
-
-test('only in_prowadz + sw_7dni/sw_30dni ever gets hotEarlyCta', () => {
-  for (const intent of INTENTS) {
-    for (const sw of STARTS) {
-      const decision = routeDecision(intent, sw);
-      const shouldBeHot = intent === 'in_prowadz' && (sw === 'sw_7dni' || sw === 'sw_30dni');
-      assert.equal(decision.hotEarlyCta, shouldBeHot, `${intent}|${sw} hotEarlyCta mismatch`);
-    }
+test('no result route ever asks the lead to write a DM first', () => {
+  for (const intent of INTENTS) for (const sw of STARTS) {
+    assert.notEqual((routeDecision(intent, sw) as { primary: string }).primary, 'dm');
   }
 });
 
-test('routeDecision signature takes only intent + start_when — severity/score/tier physically cannot alter it', () => {
-  assert.equal(routeDecision.length, 2);
+test('ready/exploring help routes to NABOR', () => {
+  for (const sw of STARTS) {
+    assert.equal(routeDecision('in_prowadz', sw).primary, 'nabor');
+    assert.equal(routeDecision('in_zobacz', sw).primary, 'nabor');
+  }
 });
 
-test('in_niewiem secondary NABOR is prominent for near-term timing, soft for later/unsure timing', () => {
-  assert.equal(routeDecision('in_niewiem', 'sw_7dni').secondaryNabor?.prominence, 'prominent');
-  assert.equal(routeDecision('in_niewiem', 'sw_30dni').secondaryNabor?.prominence, 'prominent');
-  assert.equal(routeDecision('in_niewiem', 'sw_kwartal').secondaryNabor?.prominence, 'soft');
+test('self-directed routes to a concrete 72h commitment', () => {
+  for (const sw of STARTS) assert.equal(routeDecision('in_sam', sw).primary, 'experiment');
+});
+test('unsure near-term gets NABOR; later uncertainty gets 72h test', () => {
+  assert.equal(routeDecision('in_niewiem', 'sw_7dni').primary, 'nabor');
+  assert.equal(routeDecision('in_niewiem', 'sw_30dni').primary, 'nabor');
+  assert.equal(routeDecision('in_niewiem', 'sw_kwartal').primary, 'experiment');
+  assert.equal(routeDecision('in_niewiem', 'sw_sprawdzam').primary, 'experiment');
   assert.equal(routeDecision('in_niewiem', 'sw_sprawdzam').secondaryNabor?.prominence, 'soft');
 });
 
-test('unknown/empty intent falls back safely to experiment primary, never DM', () => {
-  const decision = routeDecision('', '');
-  assert.equal(decision.primary, 'experiment');
+test('routeDecision still depends only on intent and timing', () => {
+  assert.equal(routeDecision.length, 2);
+});
+
+test('unknown intent falls back to a concrete 72h action', () => {
+  assert.equal(routeDecision('', '').primary, 'experiment');
 });
