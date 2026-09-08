@@ -111,14 +111,17 @@ export default function ResultExperience({
         {/* BEAT 1 — PUNKT PĘKNIĘCIA jako primary payoff. Score/pct wtorny (brak w V3). Max 2 receipts. */}
         <section className="rx-beat rx-hero" data-beat="1">
           <div className="rx-kick rx-kick-c">Twój Punkt Pęknięcia{imie?.trim() ? ` · ${imie.trim()}` : ''}</div>
-          <h1 className="rx-arch">{breakPhrase}</h1>
-          {redLine && <div className="rx-redline">{redLine}</div>}
-          <p className="rx-sub rx-hero-sub">Z Twoich odpowiedzi najmocniej składa się właśnie ten moment. Dalej pokazuję, co po nim wraca.</p>
-          {evidenceReceipts.length > 0 && (
-            <div className="rx-receipts">
-              {evidenceReceipts.map((r, i) => (<p key={i} className="rx-receipt">{r}</p>))}
-            </div>
-          )}
+          <div className="rx-hero-panel">
+            <div className="rx-hero-signature" aria-hidden="true"><span/><span/><span/></div>
+            <h1 className="rx-arch">{breakPhrase}</h1>
+            {redLine && <div className="rx-redline">{redLine}</div>}
+            <p className="rx-sub rx-hero-sub">Z Twoich odpowiedzi najmocniej składa się właśnie ten moment. Dalej pokazuję, co po nim wraca.</p>
+            {evidenceReceipts.length > 0 && (
+              <div className="rx-receipts">
+                {evidenceReceipts.map((r, i) => (<p key={i} className="rx-receipt">{r}</p>))}
+              </div>
+            )}
+          </div>
           <div className="rx-cue" aria-hidden="true">
             <span className="rx-cue-arrow">↓</span>
             <span>SCROLLUJ</span>
@@ -268,8 +271,13 @@ const css = `
 .rx-hero{position:relative;min-height:100svh;display:flex;flex-direction:column;justify-content:center;text-align:center;align-items:center;padding:40px 0 max(112px,calc(env(safe-area-inset-bottom) + 92px))}
 .rx-arch{font-family:${C.serif};font-weight:400;line-height:1.1;font-size:clamp(30px,7.4vw,52px);color:${C.gold};margin:0 0 16px;letter-spacing:-.01em;text-shadow:0 0 44px ${C.glow};max-width:18ch}
 .rx-redline{font-family:${C.mono};font-size:12px;letter-spacing:1px;color:${C.mute};margin-bottom:22px;max-width:32ch}
-.rx-receipts{margin-top:22px;display:grid;gap:10px;max-width:46ch}
-.rx-receipt{color:${C.paper};line-height:1.55;font-size:14.5px;margin:0;padding-left:14px;border-left:2px solid ${C.goldD};text-align:left}
+.rx-hero-panel{position:relative;width:100%;max-width:560px;padding:30px 22px 26px;border:1px solid rgba(200,168,78,.22);border-radius:24px;background:linear-gradient(160deg,rgba(200,168,78,.075),rgba(255,255,255,.018) 42%,rgba(8,8,10,.68));box-shadow:0 34px 90px -54px rgba(200,168,78,.72),inset 0 1px 0 rgba(255,255,255,.04);overflow:hidden}
+.rx-hero-panel::before{content:"";position:absolute;inset:0;background:radial-gradient(420px 180px at 50% 0%,rgba(200,168,78,.13),transparent 68%);pointer-events:none}
+.rx-hero-panel::after{content:"";position:absolute;left:18%;right:18%;top:0;height:1px;background:linear-gradient(90deg,transparent,${C.goldB},transparent);opacity:.8}
+.rx-hero-panel>*{position:relative;z-index:1}
+.rx-hero-signature{display:flex;justify-content:center;gap:6px;margin:0 auto 18px}.rx-hero-signature span{display:block;width:24px;height:3px;border-radius:999px;background:${C.goldD};opacity:.62}.rx-hero-signature span:nth-child(2){width:44px;background:${C.goldB};opacity:.95}
+.rx-receipts{margin-top:22px;display:grid;gap:10px;max-width:46ch;width:100%}
+.rx-receipt{color:${C.paper};line-height:1.5;font-size:14px;margin:0;padding:12px 14px;border:1px solid ${C.line2};border-radius:12px;background:rgba(255,255,255,.025);text-align:left}
 .rx-hero-sub{max-width:40ch;margin:0 auto}
 .rx-cue{position:absolute;left:50%;bottom:max(34px,calc(env(safe-area-inset-bottom) + 22px));transform:translateX(-50%);display:inline-flex;align-items:center;justify-content:center;gap:12px;font-family:${C.mono};font-size:clamp(18px,4.6vw,22px);font-weight:700;line-height:1;letter-spacing:.28em;color:${C.goldB};text-transform:uppercase;white-space:nowrap;text-shadow:0 0 18px rgba(200,168,78,.18);opacity:.96}
 .rx-cue-arrow{display:inline-block;font-size:1.4em;line-height:.7;letter-spacing:0;color:${C.gold};animation:rxbob 1.6s ease-in-out infinite}
@@ -318,5 +326,6 @@ const css = `
 .rx-save{margin-top:22px;font-family:${C.mono};font-size:12.5px;letter-spacing:.5px;color:${C.mute};background:transparent;border:1px solid ${C.line2};border-radius:10px;padding:11px 16px;cursor:pointer;transition:.15s}
 .rx-save:hover{border-color:${C.goldD};color:${C.paper}}
 .rx-hotcta{position:fixed;left:16px;right:16px;bottom:max(14px,env(safe-area-inset-bottom));z-index:8;display:block;text-align:center;text-decoration:none;font-weight:800;font-size:15px;color:${C.ink};background:linear-gradient(135deg,${C.gold},${C.goldB});padding:15px 18px;border-radius:14px;box-shadow:0 12px 34px -10px rgba(200,168,78,.55);max-width:588px;margin:0 auto}
+@media(max-width:640px){.rx-wrap{padding:0 18px}.rx-hero{padding-top:26px;padding-bottom:max(106px,calc(env(safe-area-inset-bottom) + 86px))}.rx-hero-panel{padding:24px 18px 22px;border-radius:20px}.rx-arch{font-size:clamp(31px,9vw,44px)}.rx-receipts{grid-template-columns:1fr}.rx-cue{bottom:max(26px,calc(env(safe-area-inset-bottom) + 16px))}}
 @media(prefers-reduced-motion:reduce){.rx-beat{opacity:1;transform:none}.rx-cue-arrow{animation:none}}
 `;

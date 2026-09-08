@@ -96,6 +96,8 @@ export default function SingleQuestionFlow({ onComplete, initialAnswers }: Props
 
   // znacznik ekspozycji biezacego pytania -> elapsed_ms w question_answer (bez PII)
   const shownAt = useRef<number>(0);
+  const sliderRef = useRef<HTMLDivElement>(null);
+  const sliderGesture = useRef<{ pointerId:number; startX:number; startY:number; lastX:number; lastY:number; mode:'pending'|'horizontal'|'vertical' } | null>(null);
 
   const [transitionState, setTransitionState] = useState<'idle' | 'out' | 'in'>('idle');
   // Pytania realnie dotkniete (slider/number musi byc ruszony, inaczej "Zatwierdz" zablokowany).
@@ -268,6 +270,45 @@ export default function SingleQuestionFlow({ onComplete, initialAnswers }: Props
     setAnswers(prev => ({ ...prev, [currentQ.id]: val }));
   };
 
+  const setSliderFromClientX = (clientX: number) => {
+    const el = sliderRef.current; if (!el) return;
+    const min = Number(currentQ.min ?? 0), max = Number(currentQ.max ?? 100), step = Number(currentQ.step ?? 1);
+    const rect = el.getBoundingClientRect();
+    const ratio = Math.max(0, Math.min(1, (clientX - (rect.left + 22)) / Math.max(1, rect.width - 44)));
+    const raw = min + ratio * (max - min);
+    const value = Math.min(max, Math.max(min, Number((min + Math.round((raw - min) / step) * step).toFixed(4))));
+    handleSliderChange(value);
+  };
+
+  const onSliderPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (e.pointerType === 'mouse' && e.button !== 0) return;
+    sliderGesture.current = { pointerId:e.pointerId, startX:e.clientX, startY:e.clientY, lastX:e.clientX, lastY:e.clientY, mode:e.pointerType === 'mouse' ? 'horizontal' : 'pending' };
+    if (e.pointerType === 'mouse') { e.currentTarget.setPointerCapture(e.pointerId); setSliderFromClientX(e.clientX); }
+  };
+  const onSliderPointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    const g = sliderGesture.current; if (!g || g.pointerId !== e.pointerId) return;
+    g.lastX=e.clientX; g.lastY=e.clientY; const dx=e.clientX-g.startX, dy=e.clientY-g.startY;
+    if (g.mode === 'pending') {
+      if (Math.abs(dy) > 8 && Math.abs(dy) > Math.abs(dx) * 1.15) { g.mode='vertical'; return; }
+      if (Math.abs(dx) > 8 && Math.abs(dx) >= Math.abs(dy)) { g.mode='horizontal'; e.currentTarget.setPointerCapture(e.pointerId); }
+    }
+    if (g.mode === 'horizontal') { e.preventDefault(); setSliderFromClientX(e.clientX); }
+  };
+  const onSliderPointerEnd = (e: React.PointerEvent<HTMLDivElement>) => {
+    const g = sliderGesture.current; if (!g || g.pointerId !== e.pointerId) return;
+    if (g.mode === 'pending' && Math.hypot(g.lastX-g.startX, g.lastY-g.startY) < 8) setSliderFromClientX(e.clientX);
+    else if (g.mode === 'horizontal') setSliderFromClientX(e.clientX);
+    try { if (e.currentTarget.hasPointerCapture(e.pointerId)) e.currentTarget.releasePointerCapture(e.pointerId); } catch {}
+    sliderGesture.current=null;
+  };
+  const onSliderKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    const min=Number(currentQ.min ?? 0), max=Number(currentQ.max ?? 100), step=Number(currentQ.step ?? 1), cur=Number(answers[currentQ.id] ?? min);
+    if (e.key === 'ArrowRight' || e.key === 'ArrowUp') { e.preventDefault(); handleSliderChange(Math.min(max, Number((cur+step).toFixed(4)))); }
+    if (e.key === 'ArrowLeft' || e.key === 'ArrowDown') { e.preventDefault(); handleSliderChange(Math.max(min, Number((cur-step).toFixed(4)))); }
+    if (e.key === 'Home') { e.preventDefault(); handleSliderChange(min); }
+    if (e.key === 'End') { e.preventDefault(); handleSliderChange(max); }
+  };
+
   const handleNumberChange = (val: number) => {
     setTouched(t => new Set(t).add(currentQ.id));
     setAnswers(prev => ({ ...prev, [currentQ.id]: val }));
@@ -288,9 +329,14 @@ export default function SingleQuestionFlow({ onComplete, initialAnswers }: Props
     setAnswers(prev => ({ ...prev, [currentQ.id]: text.slice(0, 500) }));
   };
 
+  const sliderMin = Number(currentQ.min ?? 0);
+  const sliderMax = Number(currentQ.max ?? 100);
+  const sliderValue = Number(answers[currentQ.id] ?? sliderMin);
+  const sliderPct = sliderMax > sliderMin ? Math.max(0, Math.min(100, ((sliderValue - sliderMin) / (sliderMax - sliderMin)) * 100)) : 0;
+
   return (
     <div style={{
-      minHeight: '100vh',
+      minHeight: '100svh',
       background: '#08080a',
       color: '#f0f0f0',
       display: 'flex',
@@ -298,9 +344,21 @@ export default function SingleQuestionFlow({ onComplete, initialAnswers }: Props
       fontFamily: '"Inter", sans-serif',
       boxSizing: 'border-box',
       position: 'relative',
-      overflow: 'hidden',
+      overflowX: 'hidden',
+      overflowY: 'visible',
+      WebkitOverflowScrolling: 'touch',
+      touchAction: 'pan-y',
     }}>
       <Atmosphere />
+      <style>{`
+        .diag-slider-shell{overscroll-behavior-y:contain}
+        .diag-slider{position:relative;height:44px;touch-action:pan-y;user-select:none;-webkit-user-select:none;cursor:ew-resize;outline:none}
+        .diag-slider-track{position:absolute;left:22px;right:22px;top:17px;height:10px;border-radius:999px;background:rgba(255,255,255,.12);box-shadow:inset 0 0 0 1px rgba(255,255,255,.03);overflow:hidden;pointer-events:none}
+        .diag-slider-fill{height:100%;background:linear-gradient(90deg,#8a7535,#c8a84e);border-radius:inherit}
+        .diag-slider-thumb{position:absolute;top:0;width:44px;height:44px;border-radius:50%;background:#c8a84e;border:3px solid #0e0e0e;box-shadow:0 0 0 2px rgba(200,168,78,.55),0 8px 22px rgba(200,168,78,.28);transform:translateX(-50%);pointer-events:none}
+        .diag-slider:focus-visible .diag-slider-thumb{box-shadow:0 0 0 4px rgba(200,168,78,.35),0 8px 22px rgba(200,168,78,.32)}
+        @media (max-width:640px){.diag-slider-shell{padding-top:12px!important;padding-bottom:12px!important}}
+      `}</style>
       {/* ── TOP BAR: PROGRESS BAR + SEKCJA ── */}
       <div style={{
         position: 'sticky', top: 0, zIndex: 50, background: 'rgba(14,14,14,0.95)',
@@ -347,7 +405,7 @@ export default function SingleQuestionFlow({ onComplete, initialAnswers }: Props
 
       {/* ── EKRAN PYTANIA (1 NA WIDOK) ── */}
       <div style={{
-        flex: 1, maxWidth: 520, width: '100%', margin: '0 auto', padding: '24px 20px 100px',
+        flex: 1, maxWidth: 520, width: '100%', margin: '0 auto', padding: '24px 20px max(104px, calc(env(safe-area-inset-bottom) + 80px))',
         display: 'flex', flexDirection: 'column', justifyContent: 'center', boxSizing: 'border-box',
         position: 'relative', zIndex: 1,
         opacity: transitionState === 'out' ? 0 : 1,
@@ -411,7 +469,7 @@ export default function SingleQuestionFlow({ onComplete, initialAnswers }: Props
 
         {/* TYP 2: SLIDER */}
         {currentQ.type === 'slider' && (
-          <div style={{ padding: '20px 0' }}>
+          <div className="diag-slider-shell" style={{ padding: '20px 0', touchAction: 'pan-y' }}>
             <div style={{
               textAlign: 'center', fontFamily: 'monospace', fontSize: 48, fontWeight: 900,
               color: '#c8a84e', marginBottom: 20, fontVariantNumeric: 'tabular-nums',
@@ -419,19 +477,25 @@ export default function SingleQuestionFlow({ onComplete, initialAnswers }: Props
               {fmtVal(Number(answers[currentQ.id] ?? currentQ.min ?? 7), currentQ.unit)}
             </div>
 
-            <input
-              type="range"
-              min={currentQ.min ?? 4}
-              max={currentQ.max ?? 12}
-              step={currentQ.step ?? 0.5}
-              value={Number(answers[currentQ.id] ?? currentQ.min ?? 7)}
-              onPointerDown={() => { if (answers[currentQ.id] === undefined) handleSliderChange(Number(currentQ.min ?? 7)); }}
-              onChange={e => handleSliderChange(parseFloat(e.target.value))}
-              style={{
-                width: '100%', height: 10, borderRadius: 5, accentColor: '#c8a84e',
-                background: 'rgba(255,255,255,0.1)', cursor: 'pointer', outline: 'none',
-              }}
-            />
+            <div
+              ref={sliderRef}
+              className="diag-slider"
+              role="slider"
+              tabIndex={0}
+              aria-label={currentQ.title}
+              aria-valuemin={sliderMin}
+              aria-valuemax={sliderMax}
+              aria-valuenow={sliderValue}
+              aria-valuetext={fmtVal(sliderValue, currentQ.unit)}
+              onPointerDown={onSliderPointerDown}
+              onPointerMove={onSliderPointerMove}
+              onPointerUp={onSliderPointerEnd}
+              onPointerCancel={() => { sliderGesture.current = null; }}
+              onKeyDown={onSliderKeyDown}
+            >
+              <div className="diag-slider-track"><div className="diag-slider-fill" style={{ width: `${sliderPct}%` }} /></div>
+              <div className="diag-slider-thumb" style={{ left: `calc(22px + (100% - 44px) * ${sliderPct / 100})` }} />
+            </div>
 
             <div style={{ display: 'flex', justifyContent: 'space-between', fontFamily: 'monospace', fontSize: 11, color: '#666', marginTop: 12 }}>
               <span>{fmtVal(currentQ.min ?? 0, currentQ.unit)}</span>
