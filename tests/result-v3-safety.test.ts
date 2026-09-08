@@ -87,3 +87,7 @@ test('evidence receipts (Beat 1) never exceed 2', () => {
   });
   assert.ok(rich.length <= 2, 'Beat 1 must show at most 2 evidence receipts');
 });
+
+test('sticky hot CTA never covers the last section (Beat 7 save/calibration): extra bottom padding is applied when hotEarlyCta is active', () => {
+  assert.match(result, /route\.hotEarlyCta \? \{ paddingBottom:/);
+});

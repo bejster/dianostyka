@@ -106,7 +106,7 @@ export default function ResultExperience({
         </a>
       )}
 
-      <div className="rx-wrap">
+      <div className="rx-wrap" style={route.hotEarlyCta ? { paddingBottom: 'max(96px, calc(env(safe-area-inset-bottom) + 86px))' } : undefined}>
 
         {/* BEAT 1 — PUNKT PĘKNIĘCIA jako primary payoff. Score/pct wtorny (brak w V3). Max 2 receipts. */}
         <section className="rx-beat rx-hero" data-beat="1">
