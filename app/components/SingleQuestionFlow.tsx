@@ -96,10 +96,12 @@ export default function SingleQuestionFlow({ onComplete, initialAnswers }: Props
 
   // znacznik ekspozycji biezacego pytania -> elapsed_ms w question_answer (bez PII)
   const shownAt = useRef<number>(0);
+  const completionRef = useRef(false);
   const sliderRef = useRef<HTMLDivElement>(null);
   const sliderGesture = useRef<{ pointerId:number; startX:number; startY:number; lastX:number; lastY:number; mode:'pending'|'horizontal'|'vertical' } | null>(null);
 
   const [transitionState, setTransitionState] = useState<'idle' | 'out' | 'in'>('idle');
+  const [isCompleting, setIsCompleting] = useState(false);
   // Pytania realnie dotkniete (slider/number musi byc ruszony, inaczej "Zatwierdz" zablokowany).
   const [touched, setTouched] = useState<Set<string>>(new Set());
 
@@ -231,6 +233,9 @@ export default function SingleQuestionFlow({ onComplete, initialAnswers }: Props
         setTimeout(() => setTransitionState('idle'), 250);
       }, 200);
     } else {
+      if (completionRef.current) return;
+      completionRef.current = true;
+      setIsCompleting(true);
       vibe([20, 50, 20]);
       // diag_complete NIE tutaj — odpala page.tsx po realnym commit wyniku (setPhase 'teaser'), nie przed
       onComplete(answers);
@@ -703,8 +708,8 @@ export default function SingleQuestionFlow({ onComplete, initialAnswers }: Props
             />
 
             <button
-              onClick={() => goToNext()}
-              disabled={!advanceOk}
+              onClick={() => { if (!isCompleting) goToNext(); }}
+              disabled={!advanceOk || isCompleting}
               style={{
                 marginTop: 20, width: '100%', padding: '16px', borderRadius: 14,
                 background: 'linear-gradient(135deg, #c8a84e, #8a7535)', color: '#0e0e0e',
@@ -713,7 +718,7 @@ export default function SingleQuestionFlow({ onComplete, initialAnswers }: Props
                 letterSpacing: 1, textTransform: 'uppercase',
               }}
             >
-              Pokaż mój wynik &rarr;
+              {isCompleting ? 'Ładuję wynik…' : <>Pokaż mój wynik &rarr;</>}
             </button>
             <p style={{ marginTop: 12, fontSize: 12.5, color: '#6a6a6a', lineHeight: 1.5, textAlign: 'center' }}>
               @Instagram jest opcjonalny. Zostaw go, jeśli chcesz, żebym połączył wynik z Twoją późniejszą wiadomością.

@@ -125,6 +125,7 @@ export default function DiagnozaPage() {
   const [modeResolved, setModeResolved] = useState(false);
   // P0-1/P1-3: opaque lead_ref settera. TYLKO do prywatnego payloadu leada (Telegram/CRM). NIGDY do PostHog ani copy wyniku.
   const leadRef = useRef<string>('');
+  const completionHandledRef = useRef(false);
 
   // Wejscie na strone diagnostyki. Kolejnosc (P1-1): parsuj+zarejestruj atrybucje -> DOPIERO potem pierwsze eventy lejka.
   useEffect(() => {
@@ -158,6 +159,8 @@ export default function DiagnozaPage() {
   }, []);
 
   const handleComplete = (raw: RawAnswers) => {
+    if (completionHandledRef.current) return;
+    completionHandledRef.current = true;
     setAnswers(raw);
     setPhase('teaser');
     if (typeof window !== 'undefined') window.scrollTo({ top: 0 });

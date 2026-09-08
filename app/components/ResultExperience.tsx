@@ -53,13 +53,16 @@ export default function ResultExperience({
     trackDiag('result_viewed', { arch: archKey });
     const io = new IntersectionObserver((es) => es.forEach((e) => {
       if (e.isIntersecting) {
+        (e.target as HTMLElement).classList.add('in');
         const b = (e.target as HTMLElement).dataset.beat;
         const EVT: Record<string, string> = { '1': 'fracture_viewed', '2': 'loop_viewed', '5': 'experiment_viewed', '6': 'method_demo_viewed' };
         if (b && EVT[b]) trackDiag(EVT[b], { arch: archKey, ...(b === '5' ? { experiment_id: experiment.id, confidence: experimentConfidence } : {}) });
         io.unobserve(e.target);
       }
     }), { threshold: 0.16 });
-    document.querySelectorAll('.rx-beat').forEach((b) => io.observe(b));
+    const beats = document.querySelectorAll('.rx-beat');
+    beats.forEach((b) => io.observe(b));
+    document.querySelector('.rx-hero')?.classList.add('in');
     const onScroll = () => { const h = document.documentElement; const p = h.scrollTop / (h.scrollHeight - h.clientHeight || 1); if (progRef.current) progRef.current.style.width = (p * 100) + '%'; };
     window.addEventListener('scroll', onScroll, { passive: true });
     return () => { io.disconnect(); window.removeEventListener('scroll', onScroll); };
@@ -268,7 +271,7 @@ const css = `
 .rx-h2{font-family:${C.serif};font-weight:400;line-height:1.08;letter-spacing:-.01em;color:${C.paper};margin:0 0 22px;font-size:clamp(28px,5.2vw,44px)}
 .rx-sub{color:${C.mute};line-height:1.62;font-size:clamp(15px,2.1vw,17px)}
 .rx-pull{font-family:${C.serif};font-style:italic;color:${C.gold};border-left:2px solid ${C.goldD};padding-left:18px;line-height:1.4;font-size:clamp(19px,4vw,24px);margin:0}
-.rx-hero{position:relative;min-height:100svh;display:flex;flex-direction:column;justify-content:center;text-align:center;align-items:center;padding:40px 0 max(112px,calc(env(safe-area-inset-bottom) + 92px))}
+.rx-hero{position:relative;min-height:100svh;opacity:1;transform:none;display:flex;flex-direction:column;justify-content:center;text-align:center;align-items:center;padding:40px 0 max(112px,calc(env(safe-area-inset-bottom) + 92px))}
 .rx-arch{font-family:${C.serif};font-weight:400;line-height:1.1;font-size:clamp(30px,7.4vw,52px);color:${C.gold};margin:0 0 16px;letter-spacing:-.01em;text-shadow:0 0 44px ${C.glow};max-width:18ch}
 .rx-redline{font-family:${C.mono};font-size:12px;letter-spacing:1px;color:${C.mute};margin-bottom:22px;max-width:32ch}
 .rx-hero-panel{position:relative;width:100%;max-width:560px;padding:30px 22px 26px;border:1px solid rgba(200,168,78,.22);border-radius:24px;background:linear-gradient(160deg,rgba(200,168,78,.075),rgba(255,255,255,.018) 42%,rgba(8,8,10,.68));box-shadow:0 34px 90px -54px rgba(200,168,78,.72),inset 0 1px 0 rgba(255,255,255,.04);overflow:hidden}
