@@ -16,13 +16,13 @@ test('v2.6.4 uses Michał portrait and removes Human Performance Coach from rend
   assert.doesNotMatch(page + result, /Human Performance Coach|Performance Coach/i);
 });
 
-test('ready-to-buy intent is never downgraded by diagnostic tier', () => {
-  assert.match(result, /const fastLane = intent === 'in_prowadz'/);
-  assert.match(result, /startWhen === 'sw_7dni'/);
-  assert.match(result, /startWhen === 'sw_30dni'/);
-  assert.match(result, /nextStep\.route === 'dm' \? dmHref : ctaHref/);
-  assert.doesNotMatch(result, /const nextStep = tier === 'A'/);
-  assert.match(page, /startWhen=\{typeof answers\.start_when === 'string'/);
+test('ready-to-buy intent is never downgraded by diagnostic tier (V3: routeDecision is a pure function of intent+start_when only)', () => {
+  const router = fs.readFileSync(path.join(root, 'app/lib/result-router-v3.ts'), 'utf8');
+  // routeDecision() nie przyjmuje score/tier/severity jako argumentu — nie ma jak je uwzglednic.
+  assert.match(router, /export function routeDecision\(intentRaw: string, startWhenRaw: string\)/);
+  assert.match(router, /intent === 'in_prowadz' && \(sw === 'sw_7dni' \|\| sw === 'sw_30dni'\)/);
+  assert.match(page, /const route = routeDecision\(intentStr, startWhenStr\)/);
+  assert.match(result, /route\.primary === 'dm'/);
 });
 
 

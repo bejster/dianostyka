@@ -10,10 +10,13 @@ import SingleQuestionFlow from '../components/SingleQuestionFlow';
 import WeekPage from '../components/WeekPage';
 import { type RawAnswers } from '../lib/scoring-engine';
 import { answersToFD } from '../lib/answers-to-fd';
-import { score, costs, pickArchetype, tagScoreWeighted, hourRange, patternStrength } from '../lib/diagnostic-core';
+import { score, costs, pickArchetype, tagScoreWeighted, hourRange } from '../lib/diagnostic-core';
 import { buildWeekPlan } from '../lib/week-plan';
 import ResultExperience from '../components/ResultExperience';
-import { packFor, silnikExperiment, silnikBeat4, silnikEndLine } from '../lib/result-content';
+import { packFor } from '../lib/result-content';
+import { computeEvidenceReceipts, computeLoop, computeWhyRepeats, computeCostFacts, BREAK_PHRASE } from '../lib/fracture-engine';
+import { selectExperiment, type SelectorInput } from '../lib/experiment-bank';
+import { routeDecision } from '../lib/result-router-v3';
 import { ASSESSMENT_VERSION } from '../lib/assessment-config';
 import { buildLeadBrief } from '../lib/lead-brief';
 import { Atmosphere } from './atmosphere';
@@ -445,41 +448,59 @@ export default function DiagnozaPage() {
       reframe: reframe || undefined,
     });
     const pct = Math.max(35, Math.min(Math.round(SC), 78));
-    // Werdykt 3-tier: WYŁĄCZNIE ciezkosc/potrzeba z liczby domen "na czerwono". Intencja zakupu NIE podnosi diagnozy (P0-2).
+    // Werdykt 3-tier (nieuzywany bezposrednio w V3 result-router, zostawiony dla kompatybilnosci z redCount): WYLACZNIE ciezkosc/potrzeba z liczby domen "na czerwono".
     const redCount = catScores.filter((c) => c.pct < 45).length;
-    const tier: 'A' | 'B' | 'C' = redCount >= 3 ? 'C' : redCount <= 1 ? 'A' : 'B';
     const LEAK_LABEL: Record<string, string> = { Sen: 'sen', Stres: 'głowa wieczorem', 'Żywienie': 'wieczory', Weekend: 'weekend', Trening: 'wykonanie', 'Głowa': 'głowa wieczorem' };
     const leakLabel = LEAK_LABEL[worstW] || 'jeden dzień';
-    // Beat 3 evidence lines — WYLACZNIE z realnych odpowiedzi (truth gate: bez wsparcia nie renderuj)
-    const evidence: string[] = [];
-    if (answers.stress_level === 'st_high' || answers.stress_level === 'st_max') evidence.push('Jednym z sygnałów jest napięcie, które zostaje z Tobą po całym dniu.');
-    if (typeof answers.half_power_hours === 'number' && answers.half_power_hours >= 2.5) evidence.push('Do tego kilka godzin dziennie na pół mocy pokazuje, że energia zaczyna siadać wcześniej.');
-    if (answers.evening_eating === 'ee_binge' || answers.evening_eating === 'ee_uncontrolled' || answers.evening_eating === 'ee_chaos') evidence.push('Wieczorem częściej puszcza też jedzenie.');
-    // Beat 5 test: silnik_bez_paliwa izoluje TYLKO najmocniejszy sygnal (worstW); reszta bierze pack.experiment
-    const experiment = arch.key === 'silnik_bez_paliwa' ? silnikExperiment(worstW, worstState) : packFor(arch.key).experiment;
-    const beat4Teaser = arch.key === 'silnik_bez_paliwa' ? silnikBeat4(worstW, worstState) : undefined;
-    const endLineDyn = arch.key === 'silnik_bez_paliwa' ? silnikEndLine(worstW) : undefined;
+    // ── RESULT PAGE V3 (frozen spec 2026-09-08): Beat 1-4 z fracture-engine, Beat 5 z deterministycznego
+    //    bank-selectora (zero LLM), Beat 6 router z result-router-v3 (severity NIGDY nie zmienia trasy). ──
+    const pack = packFor(arch.key);
+    const breakIdStr = typeof answers.break_window === 'string' ? answers.break_window : '';
+    const intentStr = typeof answers.intent === 'string' ? answers.intent : '';
+    const startWhenStr = typeof answers.start_when === 'string' ? answers.start_when : '';
+    const evidenceReceipts = computeEvidenceReceipts(answers);
+    const selectorInput: SelectorInput = {
+      breakId: breakIdStr,
+      giveUpPoint: typeof answers.give_up_point === 'string' ? answers.give_up_point : '',
+      eveningEating: typeof answers.evening_eating === 'string' ? answers.evening_eating : '',
+      takeoutCost: typeof answers.takeout_cost === 'number' ? answers.takeout_cost : undefined,
+      stressLevel: typeof answers.stress_level === 'string' ? answers.stress_level : '',
+      halfPowerHours: typeof answers.half_power_hours === 'number' ? answers.half_power_hours : undefined,
+      plannedTrainings: typeof answers.planned_trainings === 'number' ? answers.planned_trainings : undefined,
+      missedTrainings: typeof answers.missed_trainings === 'number' ? answers.missed_trainings : undefined,
+      weekendPattern: typeof answers.weekend_pattern === 'string' ? answers.weekend_pattern : '',
+      mondayRecovery: typeof answers.monday_recovery === 'string' ? answers.monday_recovery : '',
+      triedBefore: typeof answers.tried_before === 'string' ? answers.tried_before : '',
+    };
+    const { experiment: pickedExperiment, confidence } = selectExperiment(selectorInput);
+    const loop = computeLoop(pack, BREAK_PHRASE[breakIdStr] || 'Twój tydzień nie ma jednego wyraźnego momentu, w którym pęka.', evidenceReceipts, answers, confidence);
+    const whyRepeats = computeWhyRepeats(pack, answers);
+    const costFacts = computeCostFacts(answers);
+    const route = routeDecision(intentStr, startWhenStr);
+    const submissionIdStr = typeof window !== 'undefined' ? (localStorage.getItem('diagnostyka_v2_submission_id') || '') : '';
+    // DM prefill: WYLACZNIE bezpieczny kontekst (etykieta wzorca), zero surowych odpowiedzi/bolu/instagrama cudzego.
+    const dmHrefSafe = `https://ig.me/m/hantleitalerz?text=${encodeURIComponent(`Cześć, zrobiłem Diagnostykę 168. Mój Punkt Pęknięcia: ${pack.ppTag}. Chcę ruszyć z prowadzeniem.`)}`;
+    const userPainSafe = typeof answers.user_pain === 'string' && answers.user_pain.trim() ? answers.user_pain.trim() : undefined;
     return (
       <ResultExperience
-        pack={packFor(arch.key)}
-        tier={tier}
         archLabel={arch.label}
         archKey={arch.key}
-        strength={patternStrength(SC)}
         redCount={redCount}
-        breakId={typeof answers.break_window === 'string' ? answers.break_window : ''}
-        mondayId={typeof answers.monday_recovery === 'string' ? answers.monday_recovery : ''}
-        evidence={evidence}
-        experiment={experiment}
-        firstMove={beat4Teaser}
-        endLine={endLineDyn}
-        cytat={reframe?.cytat}
+        breakId={breakIdStr}
+        domainLabel={leakLabel}
+        evidenceReceipts={evidenceReceipts}
+        loop={loop}
+        whyRepeats={whyRepeats}
+        costFacts={costFacts}
+        userPain={userPainSafe}
+        experiment={pickedExperiment}
+        experimentConfidence={confidence}
+        route={route}
         imie={imie}
         instagram={igClean}
-        ctaHref={naborUrl}
-        wantsHelp={wantsHelp}
-        intent={typeof answers.intent === 'string' ? answers.intent : ''}
-        startWhen={typeof answers.start_when === 'string' ? answers.start_when : ''}
+        naborHref={naborUrl}
+        dmHref={dmHrefSafe}
+        submissionId={submissionIdStr}
       />
     );
   }
