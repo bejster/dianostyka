@@ -192,7 +192,7 @@ export default function ResultExperience({
           </div>
           <h2 className="rx-h2" style={{ fontSize: 'clamp(23px,4.8vw,34px)' }}>Gdybym pracował z Twoim tygodniem, zrobiłbym dalej trzy rzeczy.</h2>
           <ol className="rx-demo">
-            <li><span className="rx-demo-n">1</span>Sprawdziłbym, czy {breakPhrase.charAt(0).toLowerCase() + breakPhrase.slice(1)} naprawdę powtarza się w normalnym tygodniu.</li>
+            <li><span className="rx-demo-n">1</span>Sprawdziłbym, czy to, co widać w Punkcie Pęknięcia, naprawdę powtarza się w normalnym tygodniu.</li>
             <li><span className="rx-demo-n">2</span>Ustawiłbym wersję minimum na moment, w którym pojawia się {domainLabel.toLowerCase()}.</li>
             <li><span className="rx-demo-n">3</span>Dopiero później ruszałbym {domainLabel.toLowerCase()} dalej.</li>
           </ol>
