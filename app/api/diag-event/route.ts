@@ -1,16 +1,20 @@
 // /api/diag-event — progresywny zapis pojedynczej odpowiedzi (event-per-row).
-// Forwarduje event do webhooka (DIAG_EVENT_WEBHOOK = Twoj n8n), a n8n upsertuje JEDEN wiersz
-// w Notion po submission_id. NIE piszemy per-odpowiedz prosto w Notion (rate limit, duplikaty).
-// Dzieki temu porzucona sesja (ktos rzucil na pytaniu 12) i tak zostawia dane 1-11.
-// Bez DIAG_EVENT_WEBHOOK = no-op (nic nie wybucha, apka dziala normalnie).
+// Forwarduje event WYLACZNIE gdy DIAG_EVENT_WEBHOOK jest jawnie ustawiony w env — n8n upsertuje
+// JEDEN wiersz w Notion po submission_id, zeby porzucona sesja i tak zostawiala dane 1-11.
+// 2026-09-08 (P1 backend closeout): workflow n8n `diagnostyka-events` jest SWIADOMIE OFF — to
+// progresywny lead-capture (per-odpowiedz, w tym wolny tekst user_pain/user_trigger + IG/imie),
+// NIE anonimowa analityka, wiec aktywacja wymaga osobnego privacy review, nie tego zamkniecia P1.
+// Stary hardcodowany fallback (https://n8n.srv1313512.hstgr.cloud/webhook/diagnostyka-events) byl
+// dead URL bijacy w wylaczony workflow na kazdym requescie w KAZDYM env (preview i produkcja) —
+// stad falszywy szum `[diag-event] downstream 404` w logach. Usuniety: bez jawnego env = no-op,
+// bez proby fetch, bez logu. Ustawienie DIAG_EVENT_WEBHOOK z powrotem wlacza forwarding.
 import { NextRequest, NextResponse } from 'next/server';
 
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json().catch(() => ({}));
-    // Analityczny sink zdarzen (ten sam, do ktorego bije beacon starej strony). Env moze nadpisac.
     // .trim() broni przed zablakanym \n w wartosci env.
-    const url = (process.env.DIAG_EVENT_WEBHOOK || 'https://n8n.srv1313512.hstgr.cloud/webhook/diagnostyka-events').trim();
+    const url = (process.env.DIAG_EVENT_WEBHOOK || '').trim();
     if (!url) return NextResponse.json({ ok: true, forwarded: false });
     let forwarded = false;
     try {
