@@ -28,7 +28,7 @@ export default function ResultExperience({
   imie, instagram, naborHref, submissionId, contentSignals,
 }: {
   archLabel: string; archKey: string; redCount?: number; breakId: string; domainLabel: string;
-  statuses: { label: string; score: number }[];
+  statuses: { label: string; score: number; reason: string }[];
   evidenceReceipts: string[]; loop: { nodes: LoopNode[]; uncertain: boolean }; whyRepeats: string;
   costFacts: string[]; userPain?: string;
   experiment: ExperimentDef; experimentConfidence: Confidence; route: RouteDecision;
@@ -85,6 +85,15 @@ export default function ResultExperience({
   const redLine = (redCount ?? 0) >= 2
     ? `${redCount} ${(redCount ?? 0) <= 4 ? 'obszary' : 'obszarów'} w Twoich odpowiedziach ${(redCount ?? 0) <= 4 ? 'wskazują' : 'wskazuje'} ten sam kierunek.`
     : (redCount ?? 0) === 1 ? 'Najmocniejszy sygnał pojawia się w jednym obszarze.' : '';
+
+  const axisBand = (score: number) => score < 45 ? 'niestabilna' : score < 70 ? 'mieszana' : 'stabilna';
+  // breakPos.label to fraza okolicznikowa ("po pracy", "rano", "weekend"). Wchodzi wyłącznie po dwukropku,
+  // nigdy po przyimku — "zacząłbym od po pracy" i "od momentu weekend" to złamana polszczyzna dla 7 z 7 wartości.
+  const repairLead = (redCount ?? 0) >= 3
+    ? 'Kilka obszarów traci stabilność jednocześnie. W 1:1 najpierw zamknąłbym jeden przeciek i sprawdził, co przestaje sypać się razem z nim.'
+    : (redCount ?? 0) === 2
+      ? `Dwa obszary składają się w jeden ciąg. W 1:1 zacząłbym od momentu, który wyszedł Ci najwcześniej: ${breakPos.label}. Tam najszybciej widać, czy reszta tygodnia reaguje.`
+      : `Masz jeden wyraźny punkt do sprawdzenia: ${breakPos.label}. W 1:1 zacząłbym właśnie tam i mierzył, czy po zabezpieczeniu tego miejsca reszta tygodnia zaczyna trzymać.`;
 
   const commitExperiment = () => {
     setCommitted(true);
@@ -160,8 +169,9 @@ export default function ResultExperience({
             <div className="rx-map">
               {statuses.map((st) => (
                 <div className="rx-axis" key={st.label}>
-                  <div className="rx-axis-head"><span>{st.label}</span><strong>{st.score}</strong></div>
+                  <div className="rx-axis-head"><span>{st.label}</span><div className="rx-axis-score"><em>{axisBand(st.score)}</em><strong>{st.score}</strong></div></div>
                   <div className="rx-axis-track" aria-label={`${st.label}: ${st.score} na 100`}><div className="rx-axis-fill" style={{ width: `${st.score}%` }} /><span className="rx-axis-mid" aria-hidden="true" /></div>
+                  <p className="rx-axis-reason">{st.reason}</p>
                 </div>
               ))}
             </div>
@@ -170,7 +180,11 @@ export default function ResultExperience({
             <div><span>Najmniej stabilna oś</span><strong>{weakestStatus?.label}</strong></div>
             <div><span>Najbardziej stabilna oś</span><strong>{strongestStatus?.label}</strong></div>
           </div>
-          <p className="rx-map-note">Indeks powstaje wyłącznie z Twoich odpowiedzi. Pokazuje proporcje: gdzie tydzień trzyma się najlepiej, a gdzie najłatwiej traci sterowność.</p>
+          <div className="rx-map-proof">
+            <span>Jak czytać te liczby</span>
+            <p><strong>{weakestStatus?.score}/100</strong> przy osi {weakestStatus?.label} nie jest wynikiem medycznym ani procentem formy. Liczba służy do porównania pięciu obszarów w tym samym kwestionariuszu.</p>
+            <p>Pod każdą osią pokazuję odpowiedź, która najmocniej wpłynęła na jej pozycję. Im niżej wypada oś, tym częściej Twoje odpowiedzi wskazywały rozjazd właśnie tam.</p>
+          </div>
         </section>
 
         {/* BEAT 2 — PĘTLA 168: deterministyczny łańcuch z realnych odpowiedzi + istniejącej, zatwierdzonej treści archetypu */}
@@ -239,11 +253,15 @@ export default function ResultExperience({
               <strong>Naprawiam facetom tydzień, który regularnie wykłada im formę i napęd.</strong>
             </div>
           </div>
-          <h2 className="rx-h2" style={{ fontSize: 'clamp(23px,4.8vw,34px)' }}>Gdybym pracował z Twoim tygodniem, zrobiłbym dalej trzy rzeczy.</h2>
+          <h2 className="rx-h2" style={{ fontSize: 'clamp(23px,4.8vw,34px)' }}>Tak rozebrałbym ten tydzień w prowadzeniu 1:1.</h2>
+          <p className="rx-method-lead">{repairLead}</p>
           <ol className="rx-demo">
-            <li><span className="rx-demo-n">1</span>Sprawdziłbym, czy to, co widać w Punkcie Pęknięcia, naprawdę powtarza się w normalnym tygodniu.</li>
-            <li><span className="rx-demo-n">2</span>Ustawiłbym wersję minimum na moment, w którym pojawia się {domainLabel.toLowerCase()}.</li>
-            <li><span className="rx-demo-n">3</span>Dopiero później ruszałbym {domainLabel.toLowerCase()} dalej.</li>
+            <li><span className="rx-demo-n">1</span><div><strong>Zamykamy moment: {breakPos.label}</strong><p>Ustawiamy wersję minimum dokładnie tam. Ma zadziałać także wtedy, gdy dzień jest gorszy niż plan.</p></div></li>
+            {/* experiment.name to kryptonim testu (wersaliki, część nazw w trybie rozkazującym), a observe jest w mianowniku.
+                Oba wchodzą jako apozycja po "testu" / po dwukropku — "test to ODŁÓŻ NA JUTRO" i "patrzymy na liczba..."
+                łamią gramatykę w całym banku 20 eksperymentów. */}
+            <li><span className="rx-demo-n">2</span><div><strong>Stabilizujemy: {weakestStatus?.label}</strong><p>Zaczynamy od testu {experiment.name}. Przez 72 godziny patrzymy na jedno: {experiment.observe.toLowerCase()}.</p></div></li>
+            <li><span className="rx-demo-n">3</span><div><strong>Punkt podparcia: {strongestStatus?.label}</strong><p>Tę oś zostawiłbym na początku w spokoju. Daje nam punkt odniesienia, żeby widzieć, czy zmiana naprawdę poprawia cały tydzień.</p></div></li>
           </ol>
           <div className="rx-expectation">
             <p>Jeśli chcesz tylko zrozumieć swój wynik, masz go tutaj.</p>
@@ -291,6 +309,8 @@ export default function ResultExperience({
             ) : (
               <>
                 {!committed ? <button className="rx-next rx-next-strong" type="button" onClick={commitExperiment}>{route.primaryLabel}</button> : <div className="rx-action-confirm">Test 72h zapisany ✓</div>}
+                {committed && !saved && <button className="rx-next rx-next-medium" type="button" onClick={shareSafe}>Zapisz wynik na te 72 godziny</button>}
+                {committed && saved && <div className="rx-action-done">Wynik zapisany. Teraz masz jeden test do wykonania.</div>}
                 {route.secondaryNabor && <a className="rx-route-alt" href={naborHref} target="_blank" rel="noopener noreferrer" onClick={onNaborClick}>{route.secondaryNabor.label} →</a>}
               </>
             )}
@@ -335,9 +355,9 @@ const css = `
 .rx-map-head{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;margin-bottom:22px}.rx-map-head .rx-h2{margin:0}.rx-map-head>span{font-family:${C.mono};font-size:10px;letter-spacing:1.2px;color:${C.faint};white-space:nowrap}
 .rx-map-visual{display:grid;grid-template-columns:minmax(200px,.82fr) minmax(260px,1.18fr);gap:28px;align-items:center;padding:22px;border:1px solid ${C.line2};border-radius:22px;background:linear-gradient(150deg,rgba(200,168,78,.055),${C.pan} 45%,${C.ink})}
 .rx-radar-wrap{position:relative;min-height:220px;display:grid;place-items:center}.rx-radar{width:100%;max-width:240px;filter:drop-shadow(0 20px 34px rgba(0,0,0,.34))}.rx-radar-grid{fill:none;stroke:rgba(236,231,219,.12);stroke-width:1}.rx-radar-axis{stroke:rgba(236,231,219,.08);stroke-width:1}.rx-radar-data{fill:rgba(200,168,78,.20);stroke:${C.goldB};stroke-width:2;stroke-linejoin:round;filter:drop-shadow(0 0 12px rgba(200,168,78,.22))}.rx-radar-core{position:absolute;display:grid;place-items:center;line-height:1;pointer-events:none}.rx-radar-core span{font-family:${C.mono};font-size:8px;letter-spacing:2px;color:${C.faint}}.rx-radar-core strong{font-family:${C.serif};font-size:24px;color:${C.goldB};font-weight:400}
-.rx-map{display:grid;gap:14px}.rx-axis-head{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-bottom:7px}.rx-axis-head span{font-size:13.5px;color:${C.paper};font-weight:650}.rx-axis-head strong{font-family:${C.mono};font-size:14px;color:${C.goldB}}.rx-axis-track{position:relative;height:9px;border-radius:999px;background:#242429;overflow:hidden;box-shadow:inset 0 1px 2px rgba(0,0,0,.55)}.rx-axis-fill{height:100%;border-radius:inherit;background:linear-gradient(90deg,${C.goldD},${C.goldB});box-shadow:0 0 16px rgba(200,168,78,.22)}.rx-axis-mid{position:absolute;left:50%;top:0;bottom:0;width:1px;background:rgba(255,255,255,.16)}.rx-map-note{margin:14px 2px 0;font-size:12px;line-height:1.55;color:${C.faint};font-family:${C.mono}}
+.rx-map{display:grid;gap:14px}.rx-axis-head{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-bottom:7px}.rx-axis-head span{font-size:13.5px;color:${C.paper};font-weight:650}.rx-axis-score{display:flex;align-items:baseline;gap:8px}.rx-axis-score em{font-family:${C.mono};font-style:normal;font-size:8px;letter-spacing:1px;text-transform:uppercase;color:${C.faint}}.rx-axis-score strong{font-family:${C.mono};font-size:14px;color:${C.goldB}}.rx-axis-reason{margin:7px 0 0;color:${C.faint};font-size:10.5px;line-height:1.42}.rx-axis-track{position:relative;height:9px;border-radius:999px;background:#242429;overflow:hidden;box-shadow:inset 0 1px 2px rgba(0,0,0,.55)}.rx-axis-fill{height:100%;border-radius:inherit;background:linear-gradient(90deg,${C.goldD},${C.goldB});box-shadow:0 0 16px rgba(200,168,78,.22)}.rx-axis-mid{position:absolute;left:50%;top:0;bottom:0;width:1px;background:rgba(255,255,255,.16)}.rx-map-proof{margin:14px 0 0;padding:16px 17px;border:1px solid rgba(200,168,78,.24);border-radius:14px;background:linear-gradient(150deg,rgba(200,168,78,.055),${C.pan})}.rx-map-proof>span{display:block;font-family:${C.mono};font-size:9px;letter-spacing:1.7px;text-transform:uppercase;color:${C.gold};font-weight:800;margin-bottom:9px}.rx-map-proof p{margin:0 0 8px;font-size:12.5px;line-height:1.55;color:${C.mute}}.rx-map-proof p:last-child{margin-bottom:0;color:${C.faint}}.rx-map-proof strong{color:${C.goldB}}
 .rx-72line{display:flex;align-items:center;gap:8px;margin:0 0 18px;color:${C.goldB};font-family:${C.mono};font-size:10px;font-weight:700;letter-spacing:1px}.rx-72line i{height:1px;flex:1;background:linear-gradient(90deg,${C.goldD},rgba(200,168,78,.18));position:relative}.rx-72line i::after{content:"";position:absolute;right:-2px;top:-2px;width:5px;height:5px;border-radius:50%;background:${C.gold}}
-.rx-final-action{margin-top:34px;padding:22px;border:1px solid ${C.goldD};border-radius:18px;background:linear-gradient(160deg,rgba(200,168,78,.10),${C.pan2} 48%,${C.pan});box-shadow:0 24px 70px -42px rgba(200,168,78,.7)}.rx-final-action h3{font-family:${C.serif};font-size:clamp(25px,5vw,36px);line-height:1.05;font-weight:400;color:${C.paper};margin:8px 0 10px}.rx-final-action>p{color:${C.mute};font-size:14.5px;line-height:1.55;margin:0 0 18px}.rx-action-confirm{text-align:center;padding:16px;border:1px solid ${C.goldD};border-radius:13px;color:${C.goldB};font-weight:800;background:rgba(200,168,78,.06)}
+.rx-final-action{margin-top:34px;padding:22px;border:1px solid ${C.goldD};border-radius:18px;background:linear-gradient(160deg,rgba(200,168,78,.10),${C.pan2} 48%,${C.pan});box-shadow:0 24px 70px -42px rgba(200,168,78,.7)}.rx-final-action h3{font-family:${C.serif};font-size:clamp(25px,5vw,36px);line-height:1.05;font-weight:400;color:${C.paper};margin:8px 0 10px}.rx-final-action>p{color:${C.mute};font-size:14.5px;line-height:1.55;margin:0 0 18px}.rx-action-confirm{text-align:center;padding:16px;border:1px solid ${C.goldD};border-radius:13px;color:${C.goldB};font-weight:800;background:rgba(200,168,78,.06);margin-bottom:10px}.rx-action-done{text-align:center;color:${C.mute};font-size:13px;line-height:1.5;padding:6px 8px 2px}
 .rx-route-card{margin-top:30px;padding:24px;border-radius:20px;border:1px solid rgba(200,168,78,.34);background:radial-gradient(420px 180px at 50% 0%,rgba(200,168,78,.12),transparent 70%),${C.pan};box-shadow:0 28px 80px -52px rgba(200,168,78,.65)}.rx-route-eyebrow{font-family:${C.mono};font-size:10px;letter-spacing:2.4px;text-transform:uppercase;color:${C.gold};font-weight:800;margin-bottom:10px}.rx-route-card h3{font-family:${C.serif};font-weight:400;font-size:clamp(25px,4.8vw,34px);line-height:1.08;margin:0 0 12px;color:${C.paper}}.rx-route-card>p{font-size:14.5px;line-height:1.58;color:${C.mute};margin:0 0 20px}.rx-route-alt{display:block;width:100%;text-align:center;text-decoration:none;background:transparent;border:0;color:${C.mute};font-size:13px;font-weight:650;padding:9px 8px;cursor:pointer}.rx-route-alt:hover{color:${C.goldB}}
 .rx-quote{font-family:${C.serif};font-style:italic;font-size:clamp(19px,4vw,24px);color:${C.paper};line-height:1.34;border-left:2px solid ${C.goldD};padding-left:18px;margin:14px 0 0}
 .rx-cta{display:block;width:100%;text-align:center;text-decoration:none;font-weight:800;font-size:17px;color:${C.ink};background:linear-gradient(135deg,${C.gold},${C.goldB});padding:20px 26px;border-radius:16px;margin:0 0 12px;border:none;cursor:pointer;box-shadow:0 0 0 1px rgba(200,168,78,.35),0 22px 60px -18px rgba(200,168,78,.5);transition:transform .18s,box-shadow .18s}
@@ -363,8 +383,8 @@ const css = `
 .rx-uncertain{font-family:${C.mono};font-size:12px;color:${C.faint};margin-top:14px;line-height:1.5}
 .rx-costfact{color:${C.paper};font-size:15px;line-height:1.6;margin:0 0 10px;padding-left:14px;border-left:2px solid ${C.goldD}}
 .rx-human{display:grid;grid-template-columns:86px 1fr;gap:14px;align-items:center;background:linear-gradient(145deg,rgba(200,168,78,.07),${C.pan});border:1px solid ${C.goldD};border-radius:16px;padding:16px;margin:0 0 22px}.rx-human img{width:86px;height:86px;border-radius:50%;object-fit:cover;object-position:center;border:1px solid ${C.goldD};box-shadow:0 0 0 5px rgba(200,168,78,.05)}.rx-human-head span{display:block;font-family:${C.mono};font-size:10px;letter-spacing:2px;color:${C.gold};font-weight:800;margin-bottom:6px}.rx-human-head strong{display:block;font-size:15px;line-height:1.42;color:${C.paper};font-weight:750}@media(max-width:380px){.rx-human{grid-template-columns:70px 1fr}.rx-human img{width:70px;height:70px}}
-.rx-demo{list-style:none;margin:0 0 22px;padding:0;display:grid;gap:12px}
-.rx-demo li{display:flex;gap:12px;align-items:flex-start;color:${C.paper};font-size:15px;line-height:1.58;background:${C.pan2};border:1px solid ${C.line};border-radius:12px;padding:14px 16px}
+.rx-method-lead{margin:-4px 0 20px;padding:15px 17px;border-left:2px solid ${C.goldD};background:linear-gradient(90deg,rgba(200,168,78,.07),transparent);color:${C.paper};font-size:14.5px;line-height:1.58}.rx-demo{list-style:none;margin:0 0 22px;padding:0;display:grid;gap:12px}
+.rx-demo li{display:flex;gap:12px;align-items:flex-start;color:${C.paper};font-size:15px;line-height:1.58;background:${C.pan2};border:1px solid ${C.line};border-radius:12px;padding:14px 16px}.rx-demo li>div{min-width:0}.rx-demo li strong{display:block;color:${C.goldB};font-size:14.5px;margin-bottom:4px}.rx-demo li p{margin:0;color:${C.mute};font-size:13.5px;line-height:1.55}
 .rx-demo-n{flex-shrink:0;width:24px;height:24px;border-radius:50%;background:${C.goldD};color:${C.ink};font-family:${C.mono};font-weight:800;font-size:12px;display:flex;align-items:center;justify-content:center}
 .rx-expectation{background:linear-gradient(180deg,${C.pan2},${C.pan});border:1px solid ${C.goldD};border-radius:16px;padding:18px 20px;margin:0 0 8px}
 .rx-expectation p{margin:0 0 10px;font-size:14.5px;color:${C.mute};line-height:1.6}

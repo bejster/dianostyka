@@ -7,11 +7,9 @@
 import { useState, useEffect, useRef } from 'react';
 import { track, trackDiag, registerContext } from '../lib/analytics';
 import SingleQuestionFlow from '../components/SingleQuestionFlow';
-import WeekPage from '../components/WeekPage';
 import { type RawAnswers } from '../lib/scoring-engine';
 import { answersToFD } from '../lib/answers-to-fd';
 import { score, costs, pickArchetype, tagScoreWeighted, hourRange } from '../lib/diagnostic-core';
-import { buildWeekPlan } from '../lib/week-plan';
 import ResultExperience from '../components/ResultExperience';
 import { packFor } from '../lib/result-content';
 import { computeEvidenceReceipts, computeLoop, computeWhyRepeats, computeCostFacts, BREAK_PHRASE } from '../lib/fracture-engine';
@@ -82,20 +80,6 @@ function WeekPulse() {
 
 type Phase = 'intro' | 'intake' | 'teaser';
 
-// Reframe z wlasnych slow usera (LLM /api/diagnoza). Ksztalt zgodny z json.reframe
-// z route.ts oraz z opcjonalnym polem `reframe` w WeekPlanInput (week-plan.ts).
-interface ReframeData {
-  cytat?: string;
-  falszywe_zalozenie?: string;
-  mechanizm?: string;
-  kolejnosc?: string[];
-  pulapka?: string;
-  // ── warstwa mostu (sekcja VII), pisana z realnych odpowiedzi leada ──
-  slaby_punkt?: string;   // slaby punkt jego jezykiem (frazy)
-  zaproszenie?: string;   // osobista linia "Ode mnie, na koniec"
-  most_intro?: string;    // akapit pod zaproszeniem (zastepuje generyk)
-}
-
 // ── Sygnały leada dla operatora (niewidoczne dla usera) — WYŁĄCZNIE z jawnych sygnałów kupna/startu ──
 // diag-setter-rc-003 / P0-1: brak composite "readiness". triedBefore (chronologia porażek), severity, symptomy,
 // score, koszt i archetyp NIE wchodzą do żadnego sygnału sprzedażowego. Payload niesie tylko jawne fakty osobno.
@@ -112,12 +96,6 @@ function qualify(raw: RawAnswers) {
 export default function DiagnozaPage() {
   const [phase, setPhase] = useState<Phase>('intro');
   const [answers, setAnswers] = useState<RawAnswers | null>(null);
-  // Reframe personalizujacy Karte Tygodnia. Dochodzi w tle po LLM, re-renderuje teaser.
-  const [reframe, setReframe] = useState<ReframeData | null>(null);
-  // Async reveal: status personalizacji dolu Karty (VI). 'off' brak wolnego tekstu, 'pending' LLM leci
-  // (shimmer „dopisuje pod Twoje slowa"), 'ready' wszedl, 'failed' timeout/blad (blok odczytu sie chowa,
-  // reszta dolu stoi deterministycznie). Gora (I, III) jest zawsze deterministyczna, nie zalezy od tego.
-  const [reframeStatus, setReframeStatus] = useState<'off' | 'pending' | 'ready' | 'failed'>('off');
   // P1-1: tryb wejscia. 'diagnostic' = domyslny (cold/warm, pelny flow). 'fast_fit' = tylko dla jawnego
   // ready-to-buy z ?mode=fast_fit (setter/DM), zeby NIE wpychac gotowego leada w 19 ekranow diagnozy.
   const [mode, setMode] = useState<'diagnostic' | 'fast_fit'>('diagnostic');
@@ -249,43 +227,6 @@ export default function DiagnozaPage() {
         },
       }),
     }).catch(() => {});
-
-    // ── Reframe z wlasnych slow usera (LLM), gdy cokolwiek napisal. Karmimy CALY brief (wszystkie
-    //    odpowiedzi), nie jedno zdanie. Fire-and-forget, Karta stoi bez niego (fallback deterministyczny). ──
-    if (leadBrief.hasFreeText) {
-      setReframeStatus('pending');
-      // Timeout async reveal: shimmer nie wisi w nieskonczonosc. Po 10s odslon deterministyczny dol
-      // (blok odczytu sie chowa). Jak LLM dojdzie pozniej, i tak podmieni (setReframe leci niezaleznie).
-      // 10s = gorna granica z handoffa; latwe do strojenia, jak zmierzysz realny czas odpowiedzi.
-      window.setTimeout(() => setReframeStatus((s) => (s === 'ready' ? s : 'failed')), 10000);
-      void (async () => {
-        try {
-          const res = await fetch('/api/diagnoza', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              brief: leadBrief.brief,
-              pain: leadBrief.pain,
-              trigger: leadBrief.trigger,
-              selfDx: leadBrief.selfDx,
-              worstCat, severity_band: severityBand, age: D.age, triedBefore: D.triedBefore,
-            }),
-          });
-          const json = await res.json();
-          if (json?.ok && json.reframe) {
-            setReframe(json.reframe as ReframeData);
-            setReframeStatus('ready');
-            // #17: wiemy, czy reframe z wlasnych slow usera realnie sie pokazal (wartosc Karty)
-            trackDiag('reframe_shown', { worstCat, severity_band: severityBand });
-          } else {
-            setReframeStatus((s) => (s === 'ready' ? s : 'failed'));
-          }
-        } catch {
-          // bez reframe dol Karty stoi deterministycznie, blok odczytu sie chowa
-          setReframeStatus((s) => (s === 'ready' ? s : 'failed'));
-        }
-      })();
-    }
   };
 
   // ── P1-2: dopoki tryb nie rozstrzygniety, neutralny shell (zero flash diagnostyki na ?mode=fast_fit) ──
@@ -410,17 +351,27 @@ export default function DiagnozaPage() {
     // istotnosc godziny pekniecia dnia dla snu: rano/wieczor najmocniej, indeks = D.breakWindow (0-6)
     const bwSleep = [1, 0.2, 0.3, 0.4, 0.8, 0.3, 0.5][D.breakWindow] ?? 0.5;
     const senSev = (0.40 * (D.sleepQ / 3) + 0.20 * bwSleep + 0.20 * (D.lost / 4) + 0.20 * (D.mondayFeel / 3)) * 100;
-    const napedSev = (0.42 * (D.morningWood / 2) + 0.40 * (cnt(['libido', 'motivation', 'confidence', 'recovery']) / 3) + 0.18 * (D.lost / 4)) * 100;
+    const napedSev = (0.68 * (cnt(['libido', 'motivation', 'confidence', 'recovery']) / 4) + 0.32 * (D.lost / 4)) * 100;
     const trainSev = D.plan >= 1 ? D.miss / D.plan : 0.85; // nie trenuje wcale = wysoki deficyt
-    const formaSev = (0.40 * trainSev + 0.30 * (D.binge / 4) + 0.15 * clamp01(D.junk / 700) + 0.15 * (T.has('belly') ? 1 : 0)) * 100;
+    const formaSev = (0.50 * trainSev + 0.35 * (D.binge / 4) + 0.15 * (T.has('belly') ? 1 : 0)) * 100;
     const wkndSev = (0.35 * clamp01(D.drinks / 10) + 0.35 * (D.wknd / 4) + 0.30 * (D.mondayFeel / 3)) * 100;
     const glowaSev = (0.40 * (D.stress / 3) + 0.25 * (D.lost / 4) + 0.20 * (cnt(['focus', 'anxiety', 'fatigue']) / 3) + 0.15 * (D.triedBefore / 3)) * 100;
+    const sleepReason = ['rano zwykle wstajesz gotowy', 'gotowy rano 3–4 dni w tygodniu', 'gotowy rano tylko 1–2 dni', 'rano prawie nigdy nie czujesz się gotowy'][D.sleepQ] || 'poranki są nierówne';
+    const stressReason = ['głowa zwykle odpuszcza wieczorem', '2–3 wieczory w tygodniu głowa zostaje w robocie', '4–5 wieczorów w tygodniu głowa zostaje w robocie', 'praktycznie codziennie zasypiasz z listą w głowie'][D.stress] || `${D.lost} h dziennie lecisz na pół mocy`;
+    const weekendReason = ['weekend zwykle trzyma rytm', 'mniej więcej raz w miesiącu coś się sypie', '2–3 weekendy w miesiącu psują rytm', 'prawie każdy weekend psuje rytm', 'prawie każdy weekend psuje rytm'][D.wknd] || 'weekend bywa niestabilny';
+    const driveLabels = [['libido','libido'],['motivation','motywacja'],['confidence','pewność siebie'],['recovery','regeneracja']].filter(([id]) => T.has(id)).map(([,label]) => label);
+    const driveReason = driveLabels.length ? `zaznaczyłeś: ${driveLabels.slice(0, 2).join(' + ')}` : (D.lost > 0 ? `${D.lost} h dziennie lecisz na pół mocy` : 'brak mocnego sygnału w tej osi');
+    // plan < 1 to najmocniejszy pojedynczy składnik formaSev (trainSev 0.85). Bez tej gałęzi oś schodzi w dół,
+    // a podpis mówi userowi, że trening trzyma rytm. Podpis ma zawsze zgadzać się z jego własną odpowiedzią.
+    const formReason = D.plan < 1 ? 'w zwykłym tygodniu nie planujesz treningów'
+      : D.miss > 0 ? `w cięższym tygodniu wypada ${D.miss} z ${D.plan} treningów`
+      : (D.binge >= 2 ? 'wieczorne jedzenie regularnie wychodzi poza plan' : 'trening i wieczorne jedzenie zwykle trzymają rytm');
     const statuses = [
-      { label: 'Forma', score: idx(formaSev) },
-      { label: 'Sen i regeneracja', score: idx(senSev) },
-      { label: 'Napęd i libido', score: idx(napedSev) },
-      { label: 'Głowa i stres', score: idx(glowaSev) },
-      { label: 'Weekend i rytm', score: idx(wkndSev) },
+      { label: 'Forma', score: idx(formaSev), reason: formReason },
+      { label: 'Sen i regeneracja', score: idx(senSev), reason: sleepReason },
+      { label: 'Napęd i libido', score: idx(napedSev), reason: driveReason },
+      { label: 'Głowa i stres', score: idx(glowaSev), reason: stressReason },
+      { label: 'Weekend i rytm', score: idx(wkndSev), reason: weekendReason },
     ];
     const rawImie = answers.imie ?? answers.name;
     const imie = typeof rawImie === 'string' ? rawImie : '';
@@ -432,19 +383,8 @@ export default function DiagnozaPage() {
     const igClean = typeof answers.instagram === 'string' ? answers.instagram.replace(/^@?/, '') : '';
     // URL naboru (Beat 8 End Experience): ZERO PII — tylko routing/analytics. IG/score/kwota NIE lecą.
     const naborUrl = `https://nabor.talerzihantle.com/?${new URLSearchParams({ from: 'diag', arch: arch.key, intent: typeof answers.intent === 'string' ? answers.intent : '', v: ASSESSMENT_VERSION }).toString()}#prowadzenie`;
-    const wkPlan = buildWeekPlan({
-      archetypeKey: arch.key, archetypeLabel: arch.label, archetypeTagline: arch.tagline, mirror: arch.mirror,
-      qualified: wantsHelp, // buildWeekPlan input key (bridge-only); wartość = jawna intencja
-      worstCat: worstW, breakWindow: D.breakWindow, score: SC, costTotal: C.total, wknd: D.wknd,
-      imie, potentialPct: 100 - SC, costMonths: C.stagnationMonths,
-      trigger: typeof answers.user_trigger === 'string' ? answers.user_trigger : undefined,
-      drinks: D.drinks, screenBed: D.screenBed, junk: D.junk, protein: D.protein,
-      sleep: D.sleep, miss: D.miss, binge: D.binge, gym: D.gym,
-      reframe: reframe || undefined,
-    });
-    const pct = Math.max(35, Math.min(Math.round(SC), 78));
     // Werdykt 3-tier (nieuzywany bezposrednio w V3 result-router, zostawiony dla kompatybilnosci z redCount): WYLACZNIE ciezkosc/potrzeba z liczby domen "na czerwono".
-    const redCount = catScores.filter((c) => c.pct < 45).length;
+    const redCount = statuses.filter((st) => st.score < 45).length;
     const LEAK_LABEL: Record<string, string> = { Sen: 'sen', Stres: 'głowa wieczorem', 'Żywienie': 'wieczory', Weekend: 'weekend', Trening: 'wykonanie', 'Głowa': 'głowa wieczorem' };
     const leakLabel = LEAK_LABEL[worstW] || 'jeden dzień';
     // ── RESULT PAGE V3 (frozen spec 2026-09-08): Beat 1-4 z fracture-engine, Beat 5 z deterministycznego

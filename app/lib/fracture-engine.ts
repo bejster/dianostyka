@@ -102,7 +102,8 @@ export function computeCostFacts(answers: RawAnswers): string[] {
 
   push(typeof hp === 'number' && hp > 0, `${hp} h dziennie lecisz według siebie na pół mocy.`);
   push(typeof missed === 'number' && typeof planned === 'number' && planned >= 1, `${missed} z ${planned} treningów wypada, kiedy tydzień się rozjeżdża.`);
-  const monLabel: Record<string, string> = { mon_1: 'w poniedziałek po południu', mon_2: 'dopiero we wtorek', mon_3: 'w środę albo później' };
+  // szablon nizej ma juz "dopiero" — etykieta nie moze go powtarzac ("wracasz do siebie dopiero dopiero we wtorek")
+  const monLabel: Record<string, string> = { mon_1: 'w poniedziałek po południu', mon_2: 'we wtorek', mon_3: 'w środę albo później' };
   push(!!monLabel[mon], `Po weekendzie wracasz do siebie dopiero ${monLabel[mon] || ''}.`);
   push(typeof takeout === 'number' && takeout > 0, `Na dowozy i jedzenie poza domem podałeś około ${takeout} zł miesięcznie.`);
   return out;
