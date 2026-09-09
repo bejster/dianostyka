@@ -8,11 +8,11 @@ const questions = fs.readFileSync('app/lib/assessment-config.ts', 'utf8');
 const packs = fs.readFileSync('app/lib/result-content.ts', 'utf8');
 const flow = fs.readFileSync('app/components/SingleQuestionFlow.tsx', 'utf8');
 
-test('v2.6.4 uses a real human trust anchor', () => {
+test('v2.6.4 moves the human trust anchor out of the cold entry and into the result', () => {
   assert.match(questions, /ASSESSMENT_VERSION = '2\.6\.4'/);
-  assert.match(page, /src="\/michal-portrait\.jpg"/);
+  assert.doesNotMatch(page, /src="\/michal-portrait\.jpg"/);
   assert.match(result, /src="\/michal-portrait\.jpg"/);
-  assert.match(page, /Naprawiam facetom tydzień, który regularnie wykłada im formę i napęd\./);
+  assert.match(page, /Który moment zabiera Ci resztę tygodnia\?/);
   assert.match(result, /Naprawiam facetom tydzień, który regularnie wykłada im formę i napęd\./);
   assert.match(page + result, /Michał · Metoda 168|MICHAŁ · METODA 168/);
   assert.doesNotMatch(page + result, /Human Performance Coach/i);

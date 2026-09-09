@@ -16,9 +16,10 @@ test('contact is required only after explicit help/coaching intent', () => {
 
 test('cold entry preserves curiosity and does not expose the hot sales branch', () => {
   assert.match(page, /PUNKT PĘKNIĘCIA: \?/);
-  assert.match(page, /odpowiedzi, które najmocniej go zdradziły/);
+  assert.match(page, /Który moment zabiera Ci resztę tygodnia\?/);
   assert.match(page, /jeden test na 72 godziny/);
-  assert.doesNotMatch(page, />\s*albo\s*</);
+  assert.doesNotMatch(page, /michal-portrait\.jpg/);
+  assert.doesNotMatch(page, /Wiem, że chcę działać/);
 });
 
 test('content intelligence emits one safe categorical summary on result view', () => {

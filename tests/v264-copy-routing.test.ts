@@ -9,9 +9,9 @@ const result = fs.readFileSync(path.join(root, 'app/components/ResultExperience.
 const cfg = fs.readFileSync(path.join(root, 'app/lib/assessment-config.ts'), 'utf8');
 const flow = fs.readFileSync(path.join(root, 'app/components/SingleQuestionFlow.tsx'), 'utf8');
 
-test('v2.6.4 uses Michał portrait and removes Human Performance Coach from rendered funnel', () => {
+test('v2.6.4 keeps cold entry minimal and human proof later in the result', () => {
   assert.match(cfg, /ASSESSMENT_VERSION = '2\.6\.4'/);
-  assert.match(page, /michal-portrait\.jpg/);
+  assert.doesNotMatch(page, /michal-portrait\.jpg/);
   assert.match(result, /michal-portrait\.jpg/);
   assert.doesNotMatch(page + result, /Human Performance Coach|Performance Coach/i);
 });
