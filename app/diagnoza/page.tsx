@@ -340,28 +340,19 @@ export default function DiagnozaPage() {
 
   if (phase === 'intro') {
     return (
-      <div style={{ minHeight: '100vh', background: BG, color: '#ece7db', fontFamily: '"Inter", sans-serif', display: 'flex', flexDirection: 'column', justifyContent: 'center', padding: '32px 22px', boxSizing: 'border-box', position: 'relative', overflow: 'hidden' }}>
+      <div style={{ minHeight: '100svh', background: BG, color: '#ece7db', fontFamily: '"Inter", sans-serif', display: 'flex', flexDirection: 'column', justifyContent: 'center', padding: '28px 22px max(28px, env(safe-area-inset-bottom))', boxSizing: 'border-box', position: 'relative', overflow: 'hidden' }}>
         <Atmosphere />
         <div style={{ maxWidth: 480, margin: '0 auto', width: '100%', position: 'relative', zIndex: 1 }}>
           <WeekPulse />
-          <div style={{ fontFamily: "'JetBrains Mono', ui-monospace, monospace", fontSize: 11, letterSpacing: 3, textTransform: 'uppercase', color: GOLD, fontWeight: 700, marginBottom: 22 }}>
-            Diagnostyka 168 · 5-7 min · prywatnie
+          <div style={{ fontFamily: "'JetBrains Mono', ui-monospace, monospace", fontSize: 10.5, letterSpacing: 3, textTransform: 'uppercase', color: GOLD, fontWeight: 800, marginBottom: 18 }}>
+            Diagnostyka 168 · 5 min
           </div>
-          <h1 style={{ fontFamily: "'Instrument Serif', Georgia, serif", fontSize: 'clamp(34px, 8vw, 54px)', lineHeight: 1.06, fontWeight: 400, color: '#fff', margin: '0 0 20px', letterSpacing: '-0.01em' }}>
-            Znajdź moment, od którego reszta tygodnia zaczyna lecieć w dół.
+          <h1 style={{ fontFamily: "'Instrument Serif', Georgia, serif", fontSize: 'clamp(38px, 9.4vw, 58px)', lineHeight: 0.99, fontWeight: 400, color: '#fff', margin: '0 0 18px', letterSpacing: '-0.018em', maxWidth: 445 }}>
+            Który moment zabiera Ci resztę tygodnia?
           </h1>
-          <p style={{ fontSize: 16.5, color: '#c4bdb0', lineHeight: 1.65, margin: '0 0 22px' }}>
-            Przejdziemy przez Twój normalny tydzień od rana do weekendu. Na końcu zobaczysz swój Punkt Pęknięcia, odpowiedzi, które najmocniej go zdradziły, oraz jeden test na 72 godziny. Jeśli sygnały będą się gryźć, wynik powie to wprost.
+          <p style={{ fontSize: 16, color: '#b9b2a7', lineHeight: 1.55, margin: '0 0 24px', maxWidth: 430 }}>
+            Znajdź swój Punkt Pęknięcia. Na końcu zobaczysz, co uruchamia dalej oraz jeden test na 72 godziny.
           </p>
-          {/* P1-3: usunięty niezweryfikowany pasek liczb (9 lat / 1200+ / 200+). Kotwica = człowiek + epistemiczna uczciwość. */}
-          <div style={{ margin: '0 0 22px', padding: '14px 16px', border: '1px solid #3b352a', borderRadius: 14, background: 'linear-gradient(145deg, rgba(200,168,78,.06), #141416 44%)', display: 'grid', gridTemplateColumns: '58px 1fr', gap: 13, alignItems: 'center' }}>
-            <img src="/michal-portrait.jpg" alt="Michał" width={58} height={58} style={{ width: 58, height: 58, borderRadius: '50%', objectFit: 'cover', objectPosition: 'center', border: '1px solid #8a7535', boxShadow: '0 0 0 4px rgba(200,168,78,.06)' }} />
-            <div>
-              <div style={{ fontFamily: "'JetBrains Mono', ui-monospace, monospace", fontSize: 10.5, letterSpacing: 1.8, textTransform: 'uppercase', color: GOLD, fontWeight: 800, marginBottom: 5 }}>Michał · Metoda 168</div>
-              <div style={{ fontSize: 14.5, color: '#ece7db', lineHeight: 1.42, fontWeight: 650 }}>Naprawiam facetom tydzień, który regularnie wykłada im formę i napęd.</div>
-            </div>
-            <div style={{ gridColumn: '1 / -1', fontSize: 13.5, color: '#8f887c', lineHeight: 1.55, paddingTop: 2 }}>Każdy wynik powstaje z tego, co zaznaczasz po drodze. Gdy wzorzec jest słaby, zobaczysz to wprost.</div>
-          </div>
           <button
             onClick={() => {
               registerContext({ mode: 'diagnostic' });
@@ -370,13 +361,12 @@ export default function DiagnozaPage() {
               setPhase('intake');
               if (typeof window !== 'undefined') window.scrollTo({ top: 0 });
             }}
-            style={{ width: '100%', padding: '17px', borderRadius: 14, border: 'none', cursor: 'pointer', background: `linear-gradient(135deg, ${GOLD}, #8a7535)`, color: BG, fontWeight: 800, fontSize: 16, letterSpacing: 0.5 }}
+            style={{ width: '100%', padding: '18px 17px', borderRadius: 14, border: 'none', cursor: 'pointer', background: `linear-gradient(135deg, ${GOLD}, #8a7535)`, color: BG, fontWeight: 850, fontSize: 16, letterSpacing: 0.35, boxShadow: '0 14px 34px rgba(200,168,78,.15)' }}
           >
             Znajdź mój Punkt Pęknięcia &rarr;
           </button>
-          {/* Publiczny cold/warm entry pokazuje tylko diagnostykę. Hot lane działa wyłącznie przez ?mode=fast_fit z DM/settera. */}
-          <p style={{ fontSize: 12.5, color: '#8f887c', lineHeight: 1.55, margin: '16px 2px 0', textAlign: 'center' }}>
-            Wynik zobaczysz od razu. Kontakt podajesz tylko wtedy, gdy chcesz zobaczyć pomoc albo prowadzenie.
+          <p style={{ fontFamily: "'JetBrains Mono', ui-monospace, monospace", fontSize: 10.5, letterSpacing: 1.5, color: '#6f6b64', lineHeight: 1.45, margin: '13px 0 0', textAlign: 'center', textTransform: 'uppercase' }}>
+            wynik od razu
           </p>
         </div>
       </div>
