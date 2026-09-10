@@ -3,7 +3,6 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import { computeEvidenceReceipts, computeWhyRepeats, computeCostFacts, computeLoop } from '../app/lib/fracture-engine.ts';
-import { packFor } from '../app/lib/result-content.ts';
 
 const root = process.cwd();
 const result = fs.readFileSync(path.join(root, 'app/components/ResultExperience.tsx'), 'utf8');
@@ -21,8 +20,8 @@ test('no free-manual-result-analysis promise remains anywhere in the result flow
 });
 
 test('required expectation-reset copy is present verbatim in Beat 6', () => {
-  assert.match(result, /Jeśli chcesz tylko zrozumieć swój wynik, masz go tutaj\./);
-  assert.match(result, /Na końcu wybierzesz jeden następny ruch\./);
+  assert.match(result, /Jeśli rozważasz prowadzenie, niżej masz kolejny krok\./);
+  assert.match(result, /Ta diagnostyka jest już punktem wyjścia\./);
 });
 
 test('analytics events use only the safe frozen event names', () => {
@@ -59,11 +58,14 @@ test('result page contains no direct-DM handoff or ig.me CTA', () => {
 });
 
 test('fracture-engine functions never throw and degrade gracefully when user_trigger and other optional answers are missing', () => {
-  const pack = packFor('wieczorny_odpad');
   assert.doesNotThrow(() => computeEvidenceReceipts({}));
-  assert.doesNotThrow(() => computeWhyRepeats(pack, {}));
+  assert.doesNotThrow(() => computeWhyRepeats({}));
   assert.doesNotThrow(() => computeCostFacts({}));
-  assert.doesNotThrow(() => computeLoop(pack, 'test break phrase', [], {}, 'LOW'));
+  assert.doesNotThrow(() => computeLoop('test break phrase', [], {}, 'LOW'));
+  const loop = computeLoop('Po pracy.', [], { give_up_point: 'gup_weekend', monday_recovery: 'mon_2' }, 'LOW');
+  assert.match(loop.nodes.map(n => n.text).join(' '), /Po pracy\./);
+  assert.match(loop.nodes.map(n => n.text).join(' '), /weekend/);
+  assert.match(loop.nodes.map(n => n.text).join(' '), /wtorek/);
   const receipts = computeEvidenceReceipts({});
   assert.equal(receipts.length, 0, 'no evidence should be fabricated when nothing was answered');
   const costs = computeCostFacts({});

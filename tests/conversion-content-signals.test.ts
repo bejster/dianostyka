@@ -15,11 +15,13 @@ test('contact is required only after explicit help/coaching intent', () => {
 });
 
 test('cold entry preserves curiosity and does not expose the hot sales branch', () => {
-  assert.match(page, /PUNKT PĘKNIĘCIA: \?/);
-  assert.match(page, /Który moment zabiera Ci resztę tygodnia\?/);
-  assert.match(page, /jeden test na 72 godziny/);
+  assert.match(page, /WEEKEND → FORMA: \?/);
+  assert.match(page, /Zacznijmy od weekendu\./);
+  assert.match(page, /Dwa pierwsze pytania wystarczą, żeby sprawdzić, czy Twój weekend naprawdę kończy się w niedzielę\./);
   assert.doesNotMatch(page, /michal-portrait\.jpg/);
   assert.doesNotMatch(page, /Wiem, że chcę działać/);
+  assert.match(flow, /EXCLUDED_COLD_IDS = new Set\(\['alcohol_intake'\]\)/);
+  assert.doesNotMatch(flow, /\{currentQ\.sectionNum\}\. \{currentQ\.section\}/);
 });
 
 test('content intelligence emits one safe categorical summary on result view', () => {

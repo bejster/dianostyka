@@ -12,7 +12,7 @@ test('V4 renders a real Mapa 168 visual from existing five-axis data', () => {
   assert.match(result, /className="rx-radar"/);
   assert.match(result, /className="rx-axis-track"/);
   assert.match(result, /Jak czytać te liczby/);
-  assert.match(result, /nie jest wynikiem medycznym ani procentem formy/);
+  assert.match(result, /Każda liczba powstaje wyłącznie z odpowiedzi/);
   assert.match(result, /Pod każdą osią pokazuję odpowiedź/);
   assert.match(result, /className="rx-axis-reason"/);
 });
@@ -29,12 +29,14 @@ test('Mapa 168 uses only answers still collected in the live flow', () => {
   assert.ok(block, 'Mapa 168 formula block missing');
   assert.doesNotMatch(block, /D\.morningWood/);
   assert.doesNotMatch(block, /D\.junk/);
+  assert.doesNotMatch(block, /wkndSev[^\n]*D\.drinks/);
+  assert.match(block, /0\.55 \* \(D\.wknd \/ 4\) \+ 0\.45 \* \(D\.mondayFeel \/ 3\)/);
   assert.match(block, /cnt\(\['libido', 'motivation', 'confidence', 'recovery'\]\)/);
   assert.match(block, /D\.miss \/ D\.plan/);
 });
 
 test('1:1 bridge is personalized from the actual result rather than generic coaching copy', () => {
-  assert.match(result, /Tak rozebrałbym ten tydzień w prowadzeniu 1:1/);
+  assert.match(result, /Gdybym brał ten wynik do prowadzenia, zacząłbym tak/);
   assert.match(result, /breakPos\.label/);
   assert.match(result, /weakestStatus\?\.label/);
   assert.match(result, /strongestStatus\?\.label/);

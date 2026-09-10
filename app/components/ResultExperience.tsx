@@ -73,7 +73,7 @@ export default function ResultExperience({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [archKey]);
 
-  const breakPhrase = BREAK_PHRASE[breakId] || 'Twój tydzień nie ma jednego wyraźnego momentu, w którym pęka.';
+  const breakPhrase = BREAK_PHRASE[breakId] || 'Odpowiedzi nie wskazują jednego stałego momentu. Wzorzec zmienia się zależnie od dnia.';
   const orderedStatuses = [...statuses].sort((a,b) => a.score - b.score);
   const weakestStatus = orderedStatuses[0];
   const strongestStatus = orderedStatuses[orderedStatuses.length - 1];
@@ -90,10 +90,10 @@ export default function ResultExperience({
   // breakPos.label to fraza okolicznikowa ("po pracy", "rano", "weekend"). Wchodzi wyłącznie po dwukropku,
   // nigdy po przyimku — "zacząłbym od po pracy" i "od momentu weekend" to złamana polszczyzna dla 7 z 7 wartości.
   const repairLead = (redCount ?? 0) >= 3
-    ? 'Kilka obszarów traci stabilność jednocześnie. W 1:1 najpierw zamknąłbym jeden przeciek i sprawdził, co przestaje sypać się razem z nim.'
+    ? `Kilka osi jest słabszych jednocześnie. Pierwszy ruch sprawdziłbym tutaj: ${breakPos.label}. Potem sprawdziłbym, które pozostałe problemy cofają się bez dokładania kolejnych zasad.`
     : (redCount ?? 0) === 2
-      ? `Dwa obszary składają się w jeden ciąg. W 1:1 zacząłbym od momentu, który wyszedł Ci najwcześniej: ${breakPos.label}. Tam najszybciej widać, czy reszta tygodnia reaguje.`
-      : `Masz jeden wyraźny punkt do sprawdzenia: ${breakPos.label}. W 1:1 zacząłbym właśnie tam i mierzył, czy po zabezpieczeniu tego miejsca reszta tygodnia zaczyna trzymać.`;
+      ? `Dwie słabsze osie układają się w jeden ciąg. Pierwszy ruch sprawdziłbym tutaj: ${breakPos.label}. To najszybszy sposób, żeby sprawdzić, czy reszta tygodnia zaczyna reagować.`
+      : `Masz jeden wyraźny obszar do sprawdzenia. Pierwszy ruch sprawdziłbym tutaj: ${breakPos.label}. Potem patrzyłbym, czy reszta tygodnia zaczyna trzymać lepiej.`;
 
   const commitExperiment = () => {
     setCommitted(true);
@@ -127,14 +127,14 @@ export default function ResultExperience({
 
         {/* BEAT 1 — PUNKT PĘKNIĘCIA jako primary payoff. Score/pct wtorny (brak w V3). Max 2 receipts. */}
         <section className="rx-beat rx-hero" data-beat="1">
-          <div className="rx-kick rx-kick-c">Twój Punkt Pęknięcia{imie?.trim() ? ` · ${imie.trim()}` : ''}</div>
+          <div className="rx-kick rx-kick-c">Najważniejsze z Twoich odpowiedzi{imie?.trim() ? ` · ${imie.trim()}` : ''}</div>
           <div className="rx-hero-panel">
             <div className="rx-hero-signature" aria-hidden="true"><span/><span/><span/></div>
             <h1 className="rx-arch">{breakPhrase}</h1>
             {redLine && <div className="rx-redline">{redLine}</div>}
-            <p className="rx-sub rx-hero-sub">Z Twoich odpowiedzi najmocniej składa się właśnie ten moment. Dalej pokazuję, co po nim wraca.</p>
+            <p className="rx-sub rx-hero-sub">Te odpowiedzi układają się w jeden wzorzec. Ten pierwszy moment nazywam Punktem Pęknięcia.</p>
             <div className="rx-breakviz">
-              <div className="rx-breakviz-now">Najwcześniejszy sygnał: <strong>{breakPos.label}</strong></div>
+              <div className="rx-breakviz-now">Pierwszy sygnał w odpowiedziach: <strong>{breakPos.label}</strong></div>
               <div className="rx-breakviz-line"><span style={{ left: `${breakPos.pct}%` }} /></div>
               <div className="rx-breakviz-scale"><span>rano</span><span>po pracy</span><span>weekend</span></div>
             </div>
@@ -146,7 +146,7 @@ export default function ResultExperience({
           </div>
           <div className="rx-cue" aria-hidden="true">
             <span className="rx-cue-arrow">↓</span>
-            <span>SCROLLUJ</span>
+            <span>ZOBACZ, SKĄD TO WYSZŁO</span>
           </div>
         </section>
 
@@ -154,7 +154,7 @@ export default function ResultExperience({
         <section className="rx-beat rx-map-section" data-beat="map">
           <div className="rx-kick">Mapa 168</div>
           <div className="rx-map-head">
-            <h2 className="rx-h2">Twój tydzień na pięciu osiach.</h2>
+            <h2 className="rx-h2">Pięć obszarów, które składają się na Twój tydzień.</h2>
             <span>wyżej = stabilniej</span>
           </div>
           <div className="rx-map-visual">
@@ -182,15 +182,15 @@ export default function ResultExperience({
           </div>
           <div className="rx-map-proof">
             <span>Jak czytać te liczby</span>
-            <p><strong>{weakestStatus?.score}/100</strong> przy osi {weakestStatus?.label} nie jest wynikiem medycznym ani procentem formy. Liczba służy do porównania pięciu obszarów w tym samym kwestionariuszu.</p>
-            <p>Pod każdą osią pokazuję odpowiedź, która najmocniej wpłynęła na jej pozycję. Im niżej wypada oś, tym częściej Twoje odpowiedzi wskazywały rozjazd właśnie tam.</p>
+            <p>Każda liczba powstaje wyłącznie z odpowiedzi, które podałeś w tej diagnostyce. <strong>{weakestStatus?.score}/100</strong> oznacza, że oś {weakestStatus?.label} była najmniej stabilna na tle pozostałych.</p>
+            <p>Te liczby służą do porównania pięciu obszarów między sobą. Nie są procentem Twojej formy ani wynikiem medycznym. Pod każdą osią pokazuję odpowiedź, która najmocniej przesunęła wynik.</p>
           </div>
         </section>
 
         {/* BEAT 2 — PĘTLA 168: deterministyczny łańcuch z realnych odpowiedzi + istniejącej, zatwierdzonej treści archetypu */}
         <section className="rx-beat" data-beat="2">
           <div className="rx-kick">Pętla 168</div>
-          <h2 className="rx-h2" style={{ fontSize: 'clamp(22px,4.6vw,32px)' }}>U Ciebie jedna rzecz pociąga kolejną mniej więcej tak.</h2>
+          <h2 className="rx-h2" style={{ fontSize: 'clamp(22px,4.6vw,32px)' }}>{loop.uncertain ? 'Te sygnały jeszcze nie składają się w jeden pewny ciąg.' : 'U Ciebie ten ciąg wygląda mniej więcej tak.'}</h2>
           <div className="rx-loop">
             {loop.nodes.map((node, i) => (
               <div key={i} className="rx-loop-node">
@@ -200,14 +200,14 @@ export default function ResultExperience({
               </div>
             ))}
           </div>
-          <p className="rx-pull" style={{ marginTop: 18 }}>Najciekawsze jest pierwsze ogniwo. Zanim widać już problem, kilka wcześniejszych decyzji zdążyło ustawić resztę dnia.</p>
+          <p className="rx-pull" style={{ marginTop: 18 }}>Pierwsze miejsce do sprawdzenia: <strong>{breakPos.label}</strong>. Jeśli tam zmieni się reakcja, zobaczymy, czy {weakestStatus?.label.toLowerCase()} zaczyna trzymać lepiej.</p>
           {loop.uncertain && <p className="rx-uncertain">To jest hipoteza do sprawdzenia przez 72 godziny, nie pewnik. Dokładnie po to jest test niżej.</p>}
         </section>
 
         {/* BEAT 3 — DLACZEGO TO WRACA (tried_before / give_up_point / break_window, zero wymyslonej przyczyny) */}
         <section className="rx-beat" data-beat="3">
           <div className="rx-kick">Dlaczego to wraca</div>
-          <h2 className="rx-h2" style={{ fontSize: 'clamp(24px,4.6vw,36px)' }}>Tu prawdopodobnie odpala się Twoja pętla.</h2>
+          <h2 className="rx-h2" style={{ fontSize: 'clamp(24px,4.6vw,36px)' }}>Tu widać, dlaczego ten sam schemat może wracać.</h2>
           <p className="rx-sub">{whyRepeats}</p>
         </section>
 
@@ -215,7 +215,7 @@ export default function ResultExperience({
         {(costFacts.length > 0 || userPain) && (
           <section className="rx-beat" data-beat="4">
             <div className="rx-kick">Co to już kosztuje</div>
-            <h2 className="rx-h2" style={{ fontSize: 'clamp(22px,4.6vw,32px)' }}>To jest część ceny, którą już płacisz.</h2>
+            <h2 className="rx-h2" style={{ fontSize: 'clamp(22px,4.6vw,32px)' }}>Twoje odpowiedzi pokazują koszt w normalnym tygodniu.</h2>
             {costFacts.map((f, i) => (<p key={i} className="rx-costfact">{f}</p>))}
             {userPain && <p className="rx-quote">„{userPain}”</p>}
           </section>
@@ -224,7 +224,7 @@ export default function ResultExperience({
         {/* BEAT 5 — JEDEN eksperyment 72h z banku 20. Zero LLM. Commit -> reveal osobistego momentu obserwacji. */}
         <section className="rx-beat" data-beat="5">
           <div className="rx-kick">Test na 72 godziny</div>
-          <h2 className="rx-h2" style={{ fontSize: 'clamp(24px,5vw,38px)' }}>Przez następne 72 godziny sprawdź jedną rzecz.</h2>
+          <h2 className="rx-h2" style={{ fontSize: 'clamp(24px,5vw,38px)' }}>Sprawdźmy, czy ta diagnoza ma sens w praktyce.</h2>
           <div className="rx-72line" aria-hidden="true"><span>0 h</span><i/><span>24 h</span><i/><span>48 h</span><i/><span>72 h</span></div>
           <div className="rx-exp">
             <div className="rx-exp-row"><span className="rx-exp-k">{experiment.name}</span><p>{experiment.action}</p></div>
@@ -245,27 +245,27 @@ export default function ResultExperience({
 
         {/* BEAT 6 — DEMONSTRACJA METODY. Zero obietnicy darmowej analizy. Router: DM/NABOR/eksperyment wg intent x start_when. */}
         <section className="rx-beat" data-beat="6">
-          <div className="rx-kick">Jak pracowałbym dalej</div>
+          <div className="rx-kick">Gdybym prowadził Cię 1:1</div>
           <div className="rx-human">
             <img src="/michal-portrait.jpg" alt="Michał" width={86} height={86} />
             <div className="rx-human-head">
               <span>MICHAŁ · METODA 168</span>
-              <strong>Naprawiam facetom tydzień, który regularnie wykłada im formę i napęd.</strong>
+              <strong>Z tego wyniku da się już ustawić pierwszy ruch. W 1:1 sprawdzam go na Twoim normalnym tygodniu i koryguję po tym, co faktycznie wydarza się przez kolejne dni.</strong>
             </div>
           </div>
-          <h2 className="rx-h2" style={{ fontSize: 'clamp(23px,4.8vw,34px)' }}>Tak rozebrałbym ten tydzień w prowadzeniu 1:1.</h2>
+          <h2 className="rx-h2" style={{ fontSize: 'clamp(23px,4.8vw,34px)' }}>Gdybym brał ten wynik do prowadzenia, zacząłbym tak.</h2>
           <p className="rx-method-lead">{repairLead}</p>
           <ol className="rx-demo">
-            <li><span className="rx-demo-n">1</span><div><strong>Zamykamy moment: {breakPos.label}</strong><p>Ustawiamy wersję minimum dokładnie tam. Ma zadziałać także wtedy, gdy dzień jest gorszy niż plan.</p></div></li>
+            <li><span className="rx-demo-n">1</span><div><strong>Pierwszy punkt: {breakPos.label}</strong><p>Ustawiamy wersję minimum właśnie tutaj. Ma zadziałać także w dniu, który odbiega od planu.</p></div></li>
             {/* experiment.name to kryptonim testu (wersaliki, część nazw w trybie rozkazującym), a observe jest w mianowniku.
                 Oba wchodzą jako apozycja po "testu" / po dwukropku — "test to ODŁÓŻ NA JUTRO" i "patrzymy na liczba..."
                 łamią gramatykę w całym banku 20 eksperymentów. */}
-            <li><span className="rx-demo-n">2</span><div><strong>Stabilizujemy: {weakestStatus?.label}</strong><p>Zaczynamy od testu {experiment.name}. Przez 72 godziny patrzymy na jedno: {experiment.observe.toLowerCase()}.</p></div></li>
-            <li><span className="rx-demo-n">3</span><div><strong>Punkt podparcia: {strongestStatus?.label}</strong><p>Tę oś zostawiłbym na początku w spokoju. Daje nam punkt odniesienia, żeby widzieć, czy zmiana naprawdę poprawia cały tydzień.</p></div></li>
+            <li><span className="rx-demo-n">2</span><div><strong>Sprawdzamy: {weakestStatus?.label}</strong><p>Na start dostajesz jedno zadanie na 72 godziny: {experiment.action} Obserwujemy: {experiment.observe.toLowerCase()}.</p></div></li>
+            <li><span className="rx-demo-n">3</span><div><strong>Tego na start nie ruszam: {strongestStatus?.label}</strong><p>Tego na początku nie ruszam. Dzięki temu mamy punkt odniesienia i widzimy, czy pierwsza zmiana faktycznie poprawia tydzień.</p></div></li>
           </ol>
           <div className="rx-expectation">
-            <p>Jeśli chcesz tylko zrozumieć swój wynik, masz go tutaj.</p>
-            <p>Na końcu wybierzesz jeden następny ruch. Ja mam już zapis Twojej diagnostyki, więc nie musisz pisać pierwszej wiadomości.</p>
+            <p>Jeśli rozważasz prowadzenie, niżej masz kolejny krok.</p>
+            <p>Nie będę prosił Cię o ponowne opisywanie tego, co właśnie wypełniłeś. Ta diagnostyka jest już punktem wyjścia.</p>
           </div>
 
           <a className="rx-badge" style={{ marginTop: 16 }} href={GOOGLE_AGG.url} target="_blank" rel="noopener noreferrer">
@@ -280,21 +280,7 @@ export default function ResultExperience({
               </div>
             ))}
           </div>
-          {instagram && <p className="rx-fine">@{instagram} pozwala mi połączyć ten wynik z Twoją wiadomością.</p>}
-        </section>
-
-        {/* BEAT 7 — KALIBRACJA (bez zmian wartości) + bezpieczny Zapisz/Udostepnij */}
-        <section className="rx-beat" data-beat="7">
-          <div className="rx-kick">Doprecyzuj wynik</div>
-          <h2 className="rx-h2" style={{ fontSize: 'clamp(22px,4.6vw,32px)', marginBottom: 12 }}>Co w tym wyniku najmniej do Ciebie pasuje?</h2>
-          <p className="rx-sub" style={{ marginBottom: 20 }}>Jedno kliknięcie. Chcę wiedzieć, gdzie przestrzeliłem.</p>
-          <div className="rx-calibwrap">
-            {CALIB.map((c) => (
-              <button key={c.id} className={'rx-cchip' + (calib === c.id ? ' on' : '')} onClick={() => sendCalib(c.id)}>{c.label}</button>
-            ))}
-          </div>
-          {calib && <p className="rx-fine" style={{ textAlign: 'left', marginTop: 16 }}>Dzięki. To pokazuje mi, gdzie wynik przestrzelił.</p>}
-          <button className="rx-save" type="button" onClick={shareSafe}>{saved ? 'Zapisano ✓' : 'Zapisz / udostępnij wynik'}</button>
+          {instagram && <p className="rx-fine">Mam ten wynik przypisany do @{instagram}. Nie musisz niczego wypełniać drugi raz.</p>}
 
           <div className="rx-final-action">
             <div className="rx-route-eyebrow">Zanim zamkniesz wynik</div>
@@ -315,6 +301,22 @@ export default function ResultExperience({
               </>
             )}
           </div>
+        </section>
+
+        {/* BEAT 7 — KALIBRACJA (bez zmian wartości) + bezpieczny Zapisz/Udostepnij */}
+        <section className="rx-beat" data-beat="7">
+          <div className="rx-kick">Doprecyzuj wynik</div>
+          <h2 className="rx-h2" style={{ fontSize: 'clamp(22px,4.6vw,32px)', marginBottom: 12 }}>Co w tym wyniku najmniej do Ciebie pasuje?</h2>
+          <p className="rx-sub" style={{ marginBottom: 20 }}>Jedno kliknięcie. Chcę wiedzieć, gdzie przestrzeliłem.</p>
+          <div className="rx-calibwrap">
+            {CALIB.map((c) => (
+              <button key={c.id} className={'rx-cchip' + (calib === c.id ? ' on' : '')} onClick={() => sendCalib(c.id)}>{c.label}</button>
+            ))}
+          </div>
+          {calib && <p className="rx-fine" style={{ textAlign: 'left', marginTop: 16 }}>Dzięki. To pokazuje mi, gdzie wynik przestrzelił.</p>}
+          <button className="rx-save" type="button" onClick={shareSafe}>{saved ? 'Zapisano ✓' : 'Zapisz / udostępnij wynik'}</button>
+
+
         </section>
 
       </div>

@@ -27,8 +27,8 @@ export const metadata: Metadata = {
     images: ['https://diagnostyka.talerzihantle.com/og.png'],
   },
   icons: {
-    icon: '/favicon.png',
-    apple: '/favicon.png',
+    icon: '/icon.png',
+    apple: '/apple-icon.png',
   },
   other: {
     'theme-color': '#0a0a0a',

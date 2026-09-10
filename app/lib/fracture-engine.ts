@@ -2,7 +2,6 @@
 // Zero runtime LLM. Zero nowej psychologii: Petla i "dlaczego wraca" sklejaja ISTNIEJACA, zatwierdzona
 // tresc per archetyp (result-content.ts) z realnymi odpowiedziami usera. Koszt = wylacznie jawne fakty.
 import type { RawAnswers } from './scoring-engine';
-import type { ResultPack } from './result-content';
 import type { Confidence } from './experiment-bank';
 
 // uczciwa rozdzielczość pęknięcia — WYLACZNIE bucket, który user podał (zero zmyślonej godziny)
@@ -44,23 +43,44 @@ export function computeEvidenceReceipts(answers: RawAnswers): string[] {
   return out;
 }
 
-// ── BEAT 2: Petla 168, 5 wezlow. Reuzywa ISTNIEJACA tresc archetypu (pack), nie wymysla nowej. ──
+// ── BEAT 2: Pętla 168. Wyłącznie fakty z odpowiedzi tej osoby. Zero archetypowego dopowiadania. ──
 export interface LoopNode { label: string; text: string; }
-export function computeLoop(pack: ResultPack, breakPhrase: string, evidence: string[], answers: RawAnswers, confidence: Confidence): { nodes: LoopNode[]; uncertain: boolean } {
-  const tried = s(answers.tried_before);
-  const restartText =
-    tried === 'tb_3' ? 'Zwykle kończy się to kolejnym całkiem nowym planem od poniedziałku.'
-    : tried === 'tb_2' ? 'Zwykle wracasz, ale zaczynasz właściwie od nowa.'
-    : tried === 'tb_1' ? 'Czasem wracasz szybko, czasem dopiero po dłuższej przerwie.'
-    : 'Nie masz jeszcze ustalonego wzorca powrotu, bo rzadko to się zdarza.';
-  const nodes: LoopNode[] = [
-    { label: 'Wcześniejszy sygnał', text: pack.beat1Line },
-    { label: 'Punkt Pęknięcia', text: breakPhrase },
-    { label: 'Reakcja', text: pack.mechBody },
-    { label: 'Widoczny skutek', text: evidence[0] || pack.mechPull },
-    { label: 'Powrót', text: restartText },
-  ];
-  return { nodes, uncertain: confidence === 'LOW' };
+const GUP_NODE: Record<string, string> = {
+  gup_weekend: 'Najłatwiej odpuszczasz, kiedy wchodzi weekend.',
+  gup_wieczor: 'Najłatwiej odpuszczasz wieczorem, po całym dniu.',
+  gup_stres: 'Najłatwiej odpuszczasz, kiedy rośnie presja w pracy albo w głowie.',
+  gup_efekt: 'Najłatwiej odpuszczasz, kiedy przez jakiś czas nie widzisz efektu.',
+  gup_czas: 'Najłatwiej odpuszczasz, kiedy dzień robi się za ciasny.',
+};
+function visibleEffect(answers: RawAnswers, evidence: string[]): string {
+  const planned=n(answers.planned_trainings), missed=n(answers.missed_trainings), hp=n(answers.half_power_hours);
+  const ee=s(answers.evening_eating), stress=s(answers.stress_level), wp=s(answers.weekend_pattern);
+  if (typeof planned === 'number' && planned > 0 && typeof missed === 'number' && missed > 0) return `W cięższym tygodniu wypada ${missed} z ${planned} treningów.`;
+  if (['ee_binge','ee_uncontrolled','ee_chaos'].includes(ee)) return 'Pod koniec dnia jedzenie częściej wychodzi poza plan.';
+  if (typeof hp === 'number' && hp >= 2) return `Około ${hp} h dziennie oceniasz jako jazdę na pół mocy.`;
+  if (['st_high','st_max'].includes(stress)) return 'Wieczorem głowa nadal zostaje w pracy.';
+  if (['wp_shifted','wp_reset'].includes(wp)) return 'Weekend wyraźnie zmienia Twój zwykły rytm.';
+  return evidence[0] || 'Nie widać jeszcze jednego mocnego skutku, który powtarza się co tydzień.';
+}
+function returnSignal(answers: RawAnswers): string {
+  const mon=s(answers.monday_recovery), tried=s(answers.tried_before);
+  const monday: Record<string,string>={mon_0:'Po weekendzie wracasz na swój zwykły poziom już w poniedziałek rano.',mon_1:'Po weekendzie potrzebujesz do południa, żeby wrócić do zwykłego poziomu.',mon_2:'Po weekendzie swój normalny poziom czujesz dopiero we wtorek.',mon_3:'Po weekendzie swój normalny poziom czujesz dopiero w środę albo później.'};
+  if (monday[mon]) return monday[mon];
+  if (tried === 'tb_3') return 'W ostatnim roku wiele razy kończyło się to całkiem nowym startem.';
+  if (tried === 'tb_2') return 'W ostatnim roku kilka razy wracałeś właściwie od początku.';
+  if (tried === 'tb_1') return 'Zdarza Ci się wrócić szybko, ale nie zawsze.';
+  return 'Nie widać jeszcze stałego problemu z powrotem.';
+}
+export function computeLoop(breakPhrase: string, evidence: string[], answers: RawAnswers, confidence: Confidence): { nodes: LoopNode[]; uncertain: boolean } {
+  const gup=s(answers.give_up_point);
+  const uncertain=confidence === 'LOW';
+  return { uncertain, nodes: [
+    { label: 'Pierwszy moment', text: breakPhrase },
+    { label: 'Kiedy najłatwiej odpuszczasz', text: GUP_NODE[gup] || 'Nie wskazałeś jednego stałego momentu odpuszczenia.' },
+    { label: 'Co widać w tygodniu', text: visibleEffect(answers, evidence) },
+    { label: 'Powrót po weekendzie', text: returnSignal(answers) },
+    { label: 'Wniosek', text: uncertain ? 'Odpowiedzi pokazują kilka różnych momentów. Nie łączę ich na siłę. Test 72h ma sprawdzić pierwszy z nich.' : 'Te odpowiedzi składają się w jeden roboczy ciąg. Najpierw sprawdzamy pierwszy moment, bo tam najszybciej widać, czy kolejne elementy zmieniają się razem z nim.' },
+  ] };
 }
 
 // ── BEAT 3: dlaczego to wraca. Sklejone z give_up_point + tried_before + break_window (realne pola). ──
@@ -80,7 +100,7 @@ const KONKRET_LABEL: Record<string, string> = {
   wp_shifted: 'stały rytm weekendu',
   wp_reset: 'stały rytm weekendu',
 };
-export function computeWhyRepeats(pack: ResultPack, answers: RawAnswers): string {
+export function computeWhyRepeats(answers: RawAnswers): string {
   const gup = s(answers.give_up_point);
   const trigger = GUP_LABEL[gup] || 'coś nieplanowanego wchodzi w tydzień';
   const eeOrSt = s(answers.evening_eating) || s(answers.stress_level) || s(answers.weekend_pattern);

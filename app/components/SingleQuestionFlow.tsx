@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { QUESTIONS, QuestionDef, QuestionOption } from '../lib/assessment-config';
+import { QUESTIONS as CONFIG_QUESTIONS, QuestionDef, QuestionOption } from '../lib/assessment-config';
 import { RawAnswers } from '../lib/scoring-engine';
 import { track, trackDiag } from '../lib/analytics';
 import { Atmosphere } from '../diagnoza/atmosphere';
@@ -12,7 +12,21 @@ interface Props {
 }
 
 const STORAGE_KEY = 'diagnostyka_v2_session_answers';
-const STEP_KEY = 'diagnostyka_v2_session_step';
+const STEP_KEY = 'diagnostyka_v2_session_step_weekend_first';
+
+// Cold flow zaczyna od konkretu, który każdy potrafi ocenić bez samo-diagnozy.
+// Scoring i ID pytań pozostają bez zmian; zmieniamy wyłącznie kolejność ekspozycji.
+const FIRST_VISIBLE_IDS = ['weekend_pattern', 'monday_recovery', 'primary_goal'];
+const EXCLUDED_COLD_IDS = new Set(['alcohol_intake']);
+function sanitizeFlowAnswers(raw: RawAnswers): RawAnswers {
+  const clean = { ...raw } as RawAnswers;
+  for (const id of EXCLUDED_COLD_IDS) delete (clean as Record<string, unknown>)[id];
+  return clean;
+}
+const FLOW_QUESTIONS: QuestionDef[] = [
+  ...FIRST_VISIBLE_IDS.map(id => CONFIG_QUESTIONS.find(q => q.id === id)).filter((q): q is QuestionDef => Boolean(q)),
+  ...CONFIG_QUESTIONS.filter(q => !FIRST_VISIBLE_IDS.includes(q.id) && !EXCLUDED_COLD_IDS.has(q.id)),
+];
 
 // Polska odmiana jednostek w suwaku. Sztywny unit lamal "4 lat" zamiast "4 lata", "1 rok".
 function fmtVal(val: number, unit?: string): string {
@@ -57,11 +71,11 @@ function enoughContent(raw: string): boolean {
 
 export default function SingleQuestionFlow({ onComplete, initialAnswers }: Props) {
   const [answers, setAnswers] = useState<RawAnswers>(() => {
-    if (initialAnswers && Object.keys(initialAnswers).length > 0) return initialAnswers;
+    if (initialAnswers && Object.keys(initialAnswers).length > 0) return sanitizeFlowAnswers(initialAnswers);
     if (typeof window !== 'undefined') {
       try {
         const saved = localStorage.getItem(STORAGE_KEY);
-        if (saved) return JSON.parse(saved);
+        if (saved) return sanitizeFlowAnswers(JSON.parse(saved));
       } catch (_e) {}
     }
     // Zero domyslnych wartosci: slider/number bez ruchu = brak odpowiedzi (nie zapisujemy smieci).
@@ -70,26 +84,26 @@ export default function SingleQuestionFlow({ onComplete, initialAnswers }: Props
 
   const [currentIndex, setCurrentIndex] = useState<number>(() => {
     // Start/resume zawsze na pytaniu, które jest faktycznie widoczne.
-    // Wcześniej QUESTIONS[0] mogło mieć condition:false, więc ukryte `age` flashowało jako 1/18.
-    let seed: RawAnswers = initialAnswers && Object.keys(initialAnswers).length > 0 ? initialAnswers : { symptoms_chips: [] };
+    // Wcześniej FLOW_QUESTIONS[0] mogło mieć condition:false, więc ukryte `age` flashowało jako 1/18.
+    let seed: RawAnswers = initialAnswers && Object.keys(initialAnswers).length > 0 ? sanitizeFlowAnswers(initialAnswers) : { symptoms_chips: [] };
     let candidate = 0;
     if (typeof window !== 'undefined') {
       try {
         const savedAnswers = localStorage.getItem(STORAGE_KEY);
-        if ((!initialAnswers || Object.keys(initialAnswers).length === 0) && savedAnswers) seed = JSON.parse(savedAnswers);
+        if ((!initialAnswers || Object.keys(initialAnswers).length === 0) && savedAnswers) seed = sanitizeFlowAnswers(JSON.parse(savedAnswers));
         const savedStep = localStorage.getItem(STEP_KEY);
         if (savedStep) {
           const parsed = parseInt(savedStep, 10);
-          if (!isNaN(parsed) && parsed >= 0 && parsed < QUESTIONS.length) candidate = parsed;
+          if (!isNaN(parsed) && parsed >= 0 && parsed < FLOW_QUESTIONS.length) candidate = parsed;
         }
       } catch (_e) {}
     }
     const visible = (idx: number) => {
-      const q = QUESTIONS[idx];
+      const q = FLOW_QUESTIONS[idx];
       return Boolean(q && (!q.condition || q.condition(seed as Record<string, unknown>)));
     };
     if (visible(candidate)) return candidate;
-    for (let idx = candidate + 1; idx < QUESTIONS.length; idx++) if (visible(idx)) return idx;
+    for (let idx = candidate + 1; idx < FLOW_QUESTIONS.length; idx++) if (visible(idx)) return idx;
     for (let idx = 0; idx < candidate; idx++) if (visible(idx)) return idx;
     return 0;
   });
@@ -129,10 +143,10 @@ export default function SingleQuestionFlow({ onComplete, initialAnswers }: Props
     } catch (_e) {}
   }, [answers, currentIndex]);
 
-  const currentQ: QuestionDef = QUESTIONS[currentIndex] || QUESTIONS[0];
+  const currentQ: QuestionDef = FLOW_QUESTIONS[currentIndex] || FLOW_QUESTIONS[0];
   // Pytania warunkowe (np. wydatki weekendowe) pokazujemy tylko gdy warunek spełniony.
   // Licznik i pasek liczą po WIDOCZNYCH pytaniach, nie po całej tablicy, więc długość maleje.
-  const visibleQuestions = QUESTIONS.filter(q => !q.condition || q.condition(answers as Record<string, unknown>));
+  const visibleQuestions = FLOW_QUESTIONS.filter(q => !q.condition || q.condition(answers as Record<string, unknown>));
   const visiblePos = Math.max(1, visibleQuestions.findIndex(q => q.id === currentQ.id) + 1);
   const visibleTotal = visibleQuestions.length;
   const progressPct = Math.round((visiblePos / visibleTotal) * 100);
@@ -200,9 +214,9 @@ export default function SingleQuestionFlow({ onComplete, initialAnswers }: Props
 
   const goToNext = useCallback((opts?: { skipped?: boolean }) => {
     // Zapis odpowiedzi biezacego pytania (single leci osobno w handleSingleSelect, tu reszta typow).
-    const cq = QUESTIONS[currentIndex] || QUESTIONS[0];
+    const cq = FLOW_QUESTIONS[currentIndex] || FLOW_QUESTIONS[0];
     // ── Analytics per-pytanie (PostHog): BEZ PII, BEZ tresci odpowiedzi. Surowe wartosci ida tylko do Notion (postEvent). ──
-    const vq = QUESTIONS.filter(q => !q.condition || q.condition(answers as Record<string, unknown>));
+    const vq = FLOW_QUESTIONS.filter(q => !q.condition || q.condition(answers as Record<string, unknown>));
     const pos = Math.max(1, vq.findIndex(q => q.id === cq.id) + 1);
     // question_answer = COMMIT (przejscie dalej), NIE kazdy input/ruch slidera. Jeden commit = jeden event. ZERO wartosci odpowiedzi.
     const ev = { question_id: cq.id, index: currentIndex, pos, total: vq.length, elapsed_ms: Math.max(0, Date.now() - shownAt.current) };
@@ -221,12 +235,12 @@ export default function SingleQuestionFlow({ onComplete, initialAnswers }: Props
       postEvent(cq.id, v);
     }
     let next = currentIndex + 1;
-    while (next < QUESTIONS.length) {
-      const c = QUESTIONS[next].condition;
+    while (next < FLOW_QUESTIONS.length) {
+      const c = FLOW_QUESTIONS[next].condition;
       if (!c || c(answers as Record<string, unknown>)) break;
       next++;
     }
-    if (next < QUESTIONS.length) {
+    if (next < FLOW_QUESTIONS.length) {
       vibe(12);
       setTransitionState('out');
       setTimeout(() => {
@@ -245,10 +259,10 @@ export default function SingleQuestionFlow({ onComplete, initialAnswers }: Props
   }, [currentIndex, answers, onComplete, vibe, postEvent, contactRequired]);
 
   const goToPrev = useCallback(() => {
-    trackDiag('question_back', { question_id: (QUESTIONS[currentIndex] || QUESTIONS[0]).id, index: currentIndex });
+    trackDiag('question_back', { question_id: (FLOW_QUESTIONS[currentIndex] || FLOW_QUESTIONS[0]).id, index: currentIndex });
     let prev = currentIndex - 1;
     while (prev >= 0) {
-      const c = QUESTIONS[prev].condition;
+      const c = FLOW_QUESTIONS[prev].condition;
       if (!c || c(answers as Record<string, unknown>)) break;
       prev--;
     }
@@ -401,11 +415,11 @@ export default function SingleQuestionFlow({ onComplete, initialAnswers }: Props
           ) : <div />}
 
           <div style={{ fontFamily: 'monospace', fontSize: 10, letterSpacing: 2, textTransform: 'uppercase', color: '#c8a84e', fontWeight: 700 }}>
-            {currentQ.sectionNum}. {currentQ.section}
+            {currentQ.section}
           </div>
 
           <div style={{ fontFamily: 'monospace', fontSize: 11, color: '#888', fontVariantNumeric: 'tabular-nums' }}>
-            {visiblePos} / {visibleTotal}
+            KROK {visiblePos}
           </div>
         </div>
       </div>

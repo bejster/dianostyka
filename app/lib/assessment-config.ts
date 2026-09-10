@@ -1,6 +1,6 @@
 // assessment-config.ts, Wersjonowana konfiguracja pytań, domen i profili Diagnostyki Tygodnia V2
 
-export const ASSESSMENT_VERSION = '2.6.4';
+export const ASSESSMENT_VERSION = '2.7.0';
 
 export type DomainKey = 'sleep' | 'energy' | 'nutrition' | 'training' | 'weekend' | 'chaos';
 
@@ -82,7 +82,7 @@ export interface QuestionDef {
 }
 
 // ── ŹRÓDŁO PRAWDY: pytania w głosie Michała, JĘZYK MAKSYMALNIE PROSTY (poziom "5-latek zrozumie").
-// Zero metafor, zero slangu, ktory zaciemnia. Os: energia, glowa, uzywki, libido, nie sylwetka.
+// Zero metafor, zero slangu, który zaciemnia. Front: forma/sylwetka jako widoczny cel; weekend/sen/stres/jedzenie jako mechanizmy do odkrycia.
 //
 // TWARDE OGRANICZENIA SILNIKA (scoring-engine.ts + answers-to-fd.ts):
 // - id opcji scoringowych (sleep_quality sq_*, break_window bw_*, stress_level st_*,
@@ -146,14 +146,14 @@ export const QUESTIONS: QuestionDef[] = [
     id: 'primary_goal',
     section: 'Po co tu jesteś',
     sectionNum: 'I',
-    title: 'Na czym Ci teraz najbardziej zależy?',
-    subtitle: 'Wybierz jedną. Tę, która dzisiaj najbardziej Cię obchodzi.',
+    title: 'Co najbardziej chcesz poprawić w najbliższych miesiącach?',
+    subtitle: 'Wybierz rzecz, po której najbardziej zauważysz, że to działa.',
     type: 'single',
     domain: 'chaos',
     upstreamWeight: 0,
     crossDomainImpact: 0,
     options: [
-      { id: 'goal_forma', label: 'Forma i wygląd, chcę wreszcie widzieć różnicę.', value: 0 },
+      { id: 'goal_forma', label: 'Sylwetkę i wygląd. Chcę wreszcie widzieć różnicę.', value: 0 },
       { id: 'goal_energia', label: 'Moc na cały dzień, bez zjazdów.', value: 0 },
       { id: 'goal_sen', label: 'Sen i regeneracja, budzić się wyspanym.', value: 0 },
       { id: 'goal_glowa', label: 'Spokój w głowie, mniej napięcia.', value: 0 },
@@ -324,34 +324,34 @@ export const QUESTIONS: QuestionDef[] = [
     id: 'weekend_pattern',
     section: 'Weekend',
     sectionNum: 'VI',
-    title: 'Jak często weekend psuje Ci sen, jedzenie albo ruch?',
+    title: 'Jak bardzo Twój weekend różni się od zwykłego dnia w tygodniu?',
     subtitle: 'Pomyśl o ostatnich czterech weekendach.',
     type: 'single',
     domain: 'weekend',
     upstreamWeight: 0.85,
     crossDomainImpact: 0.85,
     options: [
-      { id: 'wp_same', label: 'Prawie nigdy. Weekend wygląda jak reszta tygodnia.', value: 0 },
-      { id: 'wp_slight', label: 'Raz na miesiąc coś się psuje.', value: 35 },
-      { id: 'wp_shifted', label: '2-3 weekendy w miesiącu.', value: 75 },
-      { id: 'wp_reset', label: 'Prawie każdy weekend psuje rytm.', value: 100 },
+      { id: 'wp_same', label: 'Prawie wcale. Godziny, jedzenie i ruch są podobne.', value: 0 },
+      { id: 'wp_slight', label: 'Trochę luźniej, ale rytm zwykle zostaje.', value: 35 },
+      { id: 'wp_shifted', label: 'Wyraźnie inaczej. Później śpię, jem albo ruszam się inaczej.', value: 75 },
+      { id: 'wp_reset', label: 'Weekend rządzi się własnymi prawami.', value: 100 },
     ],
   },
   {
     id: 'monday_recovery',
     section: 'Weekend',
     sectionNum: 'VI',
-    title: 'Po trudniejszym weekendzie, kiedy czujesz, że znowu jesteś na swoim poziomie?',
-    subtitle: 'Chodzi o dzień, w którym znowu funkcjonujesz normalnie.',
+    title: 'W poniedziałek rano jesteś zwykle…',
+    subtitle: 'Zaznacz tylko, jak szybko wracasz do swojego zwykłego poziomu.',
     type: 'single',
     domain: 'weekend',
     upstreamWeight: 0.70,
     crossDomainImpact: 0.75,
     options: [
-      { id: 'mon_0', label: 'Zero. W poniedziałek rano jestem gotowy.', value: 0 },
-      { id: 'mon_1', label: 'W poniedziałek po południu wracam do formy.', value: 40 },
-      { id: 'mon_2', label: 'Dopiero we wtorek.', value: 70 },
-      { id: 'mon_3', label: 'W środę albo później. Pół tygodnia zdycham.', value: 100 },
+      { id: 'mon_0', label: 'Na swoim zwykłym poziomie.', value: 0 },
+      { id: 'mon_1', label: 'Do południa potrzebuję się rozkręcić.', value: 40 },
+      { id: 'mon_2', label: 'Dopiero we wtorek czuję swój normalny poziom.', value: 70 },
+      { id: 'mon_3', label: 'W środę albo później.', value: 100 },
     ],
   },
   {
@@ -547,8 +547,8 @@ export const QUESTIONS: QuestionDef[] = [
     id: 'instagram',
     section: 'Kontakt',
     sectionNum: 'IX',
-    title: 'Jeśli chcesz, żebym zobaczył Twój wynik, zostaw @ z Instagrama.',
-    subtitle: 'Opcjonalne. Wynik zobaczysz od razu. Dzięki @ będę wiedział, który wynik jest Twój, gdy do mnie napiszesz.',
+    title: 'Chcesz, żebym mógł wrócić do Ciebie z tym wynikiem?',
+    subtitle: 'Zostaw @ z Instagrama. Jeśli wybrałeś prowadzenie albo chcesz zobaczyć, jak pracuję, potrzebuję go tylko po to, żeby wiedzieć, do kogo należy wynik.',
     type: 'contact',
     domain: 'chaos',
     upstreamWeight: 0,

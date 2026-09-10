@@ -9,8 +9,8 @@ const result = fs.readFileSync(path.join(root, 'app/components/ResultExperience.
 const cfg = fs.readFileSync(path.join(root, 'app/lib/assessment-config.ts'), 'utf8');
 const flow = fs.readFileSync(path.join(root, 'app/components/SingleQuestionFlow.tsx'), 'utf8');
 
-test('v2.6.4 keeps cold entry minimal and human proof later in the result', () => {
-  assert.match(cfg, /ASSESSMENT_VERSION = '2\.6\.4'/);
+test('v2.7.0 keeps cold entry minimal and human proof later in the result', () => {
+  assert.match(cfg, /ASSESSMENT_VERSION = '2\.7\.0'/);
   assert.doesNotMatch(page, /michal-portrait\.jpg/);
   assert.match(result, /michal-portrait\.jpg/);
   assert.doesNotMatch(page + result, /Human Performance Coach|Performance Coach/i);
@@ -31,5 +31,5 @@ test('ready-to-buy intent is never downgraded by diagnostic tier (V3: routeDecis
 test('flow never starts or resumes on a condition-false question', () => {
   assert.match(flow, /const visible = \(idx: number\)/);
   assert.match(flow, /if \(visible\(candidate\)\) return candidate/);
-  assert.match(flow, /for \(let idx = candidate \+ 1; idx < QUESTIONS\.length; idx\+\+\) if \(visible\(idx\)\) return idx/);
+  assert.match(flow, /for \(let idx = candidate \+ 1; idx < FLOW_QUESTIONS\.length; idx\+\+\) if \(visible\(idx\)\) return idx/);
 });

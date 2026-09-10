@@ -11,7 +11,6 @@ import { type RawAnswers } from '../lib/scoring-engine';
 import { answersToFD } from '../lib/answers-to-fd';
 import { score, costs, pickArchetype, tagScoreWeighted, hourRange } from '../lib/diagnostic-core';
 import ResultExperience from '../components/ResultExperience';
-import { packFor } from '../lib/result-content';
 import { computeEvidenceReceipts, computeLoop, computeWhyRepeats, computeCostFacts, BREAK_PHRASE } from '../lib/fracture-engine';
 import { selectExperiment, type SelectorInput } from '../lib/experiment-bank';
 import { routeDecision } from '../lib/result-router-v3';
@@ -72,7 +71,7 @@ function WeekPulse() {
         ))}
       </svg>
       <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 10, letterSpacing: 2.5, textTransform: 'uppercase', color: '#8f887c', textAlign: 'center', marginTop: 8 }}>
-        PUNKT PĘKNIĘCIA: ?
+        WEEKEND → FORMA: ?
       </div>
     </div>
   );
@@ -289,10 +288,10 @@ export default function DiagnozaPage() {
             Diagnostyka 168 · 5 min
           </div>
           <h1 style={{ fontFamily: "'Instrument Serif', Georgia, serif", fontSize: 'clamp(38px, 9.4vw, 58px)', lineHeight: 0.99, fontWeight: 400, color: '#fff', margin: '0 0 18px', letterSpacing: '-0.018em', maxWidth: 445 }}>
-            Który moment zabiera Ci resztę tygodnia?
+            Zacznijmy od weekendu.
           </h1>
           <p style={{ fontSize: 16, color: '#b9b2a7', lineHeight: 1.55, margin: '0 0 24px', maxWidth: 430 }}>
-            Znajdź swój Punkt Pęknięcia. Na końcu zobaczysz, co uruchamia dalej oraz jeden test na 72 godziny.
+            Dwa pierwsze pytania wystarczą, żeby sprawdzić, czy Twój weekend naprawdę kończy się w niedzielę.
           </p>
           <button
             onClick={() => {
@@ -304,7 +303,7 @@ export default function DiagnozaPage() {
             }}
             style={{ width: '100%', padding: '18px 17px', borderRadius: 14, border: 'none', cursor: 'pointer', background: `linear-gradient(135deg, ${GOLD}, #8a7535)`, color: BG, fontWeight: 850, fontSize: 16, letterSpacing: 0.35, boxShadow: '0 14px 34px rgba(200,168,78,.15)' }}
           >
-            Znajdź mój Punkt Pęknięcia &rarr;
+            Sprawdź mój weekend &rarr;
           </button>
           <p style={{ fontFamily: "'JetBrains Mono', ui-monospace, monospace", fontSize: 10.5, letterSpacing: 1.5, color: '#6f6b64', lineHeight: 1.45, margin: '13px 0 0', textAlign: 'center', textTransform: 'uppercase' }}>
             wynik od razu
@@ -354,11 +353,11 @@ export default function DiagnozaPage() {
     const napedSev = (0.68 * (cnt(['libido', 'motivation', 'confidence', 'recovery']) / 4) + 0.32 * (D.lost / 4)) * 100;
     const trainSev = D.plan >= 1 ? D.miss / D.plan : 0.85; // nie trenuje wcale = wysoki deficyt
     const formaSev = (0.50 * trainSev + 0.35 * (D.binge / 4) + 0.15 * (T.has('belly') ? 1 : 0)) * 100;
-    const wkndSev = (0.35 * clamp01(D.drinks / 10) + 0.35 * (D.wknd / 4) + 0.30 * (D.mondayFeel / 3)) * 100;
+    const wkndSev = (0.55 * (D.wknd / 4) + 0.45 * (D.mondayFeel / 3)) * 100;
     const glowaSev = (0.40 * (D.stress / 3) + 0.25 * (D.lost / 4) + 0.20 * (cnt(['focus', 'anxiety', 'fatigue']) / 3) + 0.15 * (D.triedBefore / 3)) * 100;
-    const sleepReason = ['rano zwykle wstajesz gotowy', 'gotowy rano 3–4 dni w tygodniu', 'gotowy rano tylko 1–2 dni', 'rano prawie nigdy nie czujesz się gotowy'][D.sleepQ] || 'poranki są nierówne';
-    const stressReason = ['głowa zwykle odpuszcza wieczorem', '2–3 wieczory w tygodniu głowa zostaje w robocie', '4–5 wieczorów w tygodniu głowa zostaje w robocie', 'praktycznie codziennie zasypiasz z listą w głowie'][D.stress] || `${D.lost} h dziennie lecisz na pół mocy`;
-    const weekendReason = ['weekend zwykle trzyma rytm', 'mniej więcej raz w miesiącu coś się sypie', '2–3 weekendy w miesiącu psują rytm', 'prawie każdy weekend psuje rytm', 'prawie każdy weekend psuje rytm'][D.wknd] || 'weekend bywa niestabilny';
+    const sleepReason = ['rano zwykle wstajesz gotowy', 'gotowy rano 3-4 dni w tygodniu', 'gotowy rano tylko 1-2 dni', 'rano prawie nigdy nie czujesz się gotowy'][D.sleepQ] || 'poranki są nierówne';
+    const stressReason = ['głowa zwykle odpuszcza wieczorem', '2-3 wieczory w tygodniu głowa zostaje w robocie', '4-5 wieczorów w tygodniu głowa zostaje w robocie', 'praktycznie codziennie zasypiasz z listą w głowie'][D.stress] || `${D.lost} h dziennie lecisz na pół mocy`;
+    const weekendReason = ['weekend zwykle trzyma rytm', 'mniej więcej raz w miesiącu coś się sypie', '2-3 weekendy w miesiącu psują rytm', 'prawie każdy weekend psuje rytm', 'prawie każdy weekend psuje rytm'][D.wknd] || 'weekend bywa niestabilny';
     const driveLabels = [['libido','libido'],['motivation','motywacja'],['confidence','pewność siebie'],['recovery','regeneracja']].filter(([id]) => T.has(id)).map(([,label]) => label);
     const driveReason = driveLabels.length ? `zaznaczyłeś: ${driveLabels.slice(0, 2).join(' + ')}` : (D.lost > 0 ? `${D.lost} h dziennie lecisz na pół mocy` : 'brak mocnego sygnału w tej osi');
     // plan < 1 to najmocniejszy pojedynczy składnik formaSev (trainSev 0.85). Bez tej gałęzi oś schodzi w dół,
@@ -389,7 +388,6 @@ export default function DiagnozaPage() {
     const leakLabel = LEAK_LABEL[worstW] || 'jeden dzień';
     // ── RESULT PAGE V3 (frozen spec 2026-09-08): Beat 1-4 z fracture-engine, Beat 5 z deterministycznego
     //    bank-selectora (zero LLM), Beat 6 router z result-router-v3 (severity NIGDY nie zmienia trasy). ──
-    const pack = packFor(arch.key);
     const breakIdStr = typeof answers.break_window === 'string' ? answers.break_window : '';
     const intentStr = typeof answers.intent === 'string' ? answers.intent : '';
     const startWhenStr = typeof answers.start_when === 'string' ? answers.start_when : '';
@@ -408,8 +406,8 @@ export default function DiagnozaPage() {
       triedBefore: typeof answers.tried_before === 'string' ? answers.tried_before : '',
     };
     const { experiment: pickedExperiment, confidence } = selectExperiment(selectorInput);
-    const loop = computeLoop(pack, BREAK_PHRASE[breakIdStr] || 'Twój tydzień nie ma jednego wyraźnego momentu, w którym pęka.', evidenceReceipts, answers, confidence);
-    const whyRepeats = computeWhyRepeats(pack, answers);
+    const loop = computeLoop(BREAK_PHRASE[breakIdStr] || 'Odpowiedzi nie wskazują jednego stałego momentu. Wzorzec zmienia się zależnie od dnia.', evidenceReceipts, answers, confidence);
+    const whyRepeats = computeWhyRepeats(answers);
     const costFacts = computeCostFacts(answers);
     const route = routeDecision(intentStr, startWhenStr);
     // CONTENT SIGNALS: anonimowe kategorie do uczenia contentu. Bez PII, treści otwartych, symptomów, używek, libido.
