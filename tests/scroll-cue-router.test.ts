@@ -6,7 +6,7 @@ const result = fs.readFileSync('app/components/ResultExperience.tsx','utf8');
 const page = fs.readFileSync('app/diagnoza/page.tsx','utf8');
 
 test('result scroll cue is large lower and safe-area aware', () => {
-  assert.match(result, /<span>ZOBACZ, SKĄD TO WYSZŁO<\/span>/);
+  assert.match(result, /<span>ZOBACZ CAŁĄ MAPĘ<\/span>/);
   assert.match(result, /font-size:clamp\(18px,4\.6vw,22px\)/);
   assert.match(result, /bottom:max\(34px,calc\(env\(safe-area-inset-bottom\) \+ 22px\)\)/);
   assert.match(result, /min-height:100svh/);

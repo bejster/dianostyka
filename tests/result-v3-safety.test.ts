@@ -26,12 +26,16 @@ test('required expectation-reset copy is present verbatim in Beat 6', () => {
 
 test('analytics events use only the safe frozen event names', () => {
   const allowed = new Set([
-    'result_viewed', 'fracture_viewed', 'loop_viewed', 'experiment_viewed', 'experiment_committed',
+    'result_viewed', 'current_state_viewed', 'map_viewed', 'evidence_viewed', 'fracture_viewed',
+    'loop_viewed', 'experiment_viewed', 'horizon_viewed', 'experiment_committed',
     'method_demo_viewed', 'result_saved', 'cta_nabor_clicked', 'calibration_answer', 'content_signal',
   ]);
   // literal trackDiag('x', ...) calls + the beat->event lookup map (dynamic trackDiag(EVT[b], ...))
   const direct = [...result.matchAll(/trackDiag\('([a-z_]+)'/g)].map((m) => m[1]);
-  const mapped = [...result.matchAll(/'\d': '([a-z_]+)'/g)].map((m) => m[1]);
+  // czytamy CALY blok EVT, nie tylko klucze numeryczne — inaczej nowy beat moglby przemycic nieautoryzowany event
+  const evtBlock = result.match(/const EVT: Record<string, string> = \{([^}]*)\}/)?.[1] ?? '';
+  assert.ok(evtBlock, 'beat->event lookup map (EVT) not found');
+  const mapped = [...evtBlock.matchAll(/: '([a-z_]+)'/g)].map((m) => m[1]);
   const calls = [...direct, ...mapped];
   assert.ok(calls.length >= 8, `expected the full V3 event set to be wired, found ${calls.length}: ${calls.join(',')}`);
   for (const ev of calls) assert.ok(allowed.has(ev), `unexpected/unsafe analytics event name: ${ev}`);

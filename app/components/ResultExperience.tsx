@@ -59,7 +59,7 @@ export default function ResultExperience({
       if (e.isIntersecting) {
         (e.target as HTMLElement).classList.add('in');
         const b = (e.target as HTMLElement).dataset.beat;
-        const EVT: Record<string, string> = { '1': 'fracture_viewed', '2': 'loop_viewed', '5': 'experiment_viewed', '6': 'method_demo_viewed' };
+        const EVT: Record<string, string> = { '1': 'current_state_viewed', map: 'map_viewed', evidence: 'evidence_viewed', fracture: 'fracture_viewed', '2': 'loop_viewed', '5': 'experiment_viewed', horizon: 'horizon_viewed', '6': 'method_demo_viewed' };
         if (b && EVT[b]) trackDiag(EVT[b], { arch: archKey, ...(b === '5' ? { experiment_id: experiment.id, confidence: experimentConfidence } : {}) });
         io.unobserve(e.target);
       }
@@ -82,11 +82,23 @@ export default function ResultExperience({
   const radarPoints = statuses.map((st, i) => { const a = -Math.PI / 2 + i * (Math.PI * 2 / statuses.length); const r = Math.max(24, Math.min(st.score, 90)) * 0.82; return `${110 + Math.cos(a) * r},${110 + Math.sin(a) * r}`; }).join(' ');
   const radarGrid = [30, 55, 80].map((r) => statuses.map((_, i) => { const a = -Math.PI / 2 + i * (Math.PI * 2 / statuses.length); return `${110 + Math.cos(a) * r},${110 + Math.sin(a) * r}`; }).join(' '));
 
-  const redLine = (redCount ?? 0) >= 2
-    ? `${redCount} ${(redCount ?? 0) <= 4 ? 'obszary' : 'obszarów'} w Twoich odpowiedziach ${(redCount ?? 0) <= 4 ? 'wskazują' : 'wskazuje'} ten sam kierunek.`
-    : (redCount ?? 0) === 1 ? 'Najmocniejszy sygnał pojawia się w jednym obszarze.' : '';
-
-  const axisBand = (score: number) => score < 45 ? 'niestabilna' : score < 70 ? 'mieszana' : 'stabilna';
+  // ── V2.8 ZAPAS: język pojemności zamiast fałszywej precyzji. Zero "% potencjału", zero wymyślonych zysków.
+  //    Pasma czytają ten sam indeks 24-90, który user widzi na osi, więc etykieta zawsze zgadza się z liczbą.
+  //    Progi liczone na realnej skali osi (24-90, srodek 57), nie na starym progu czerwieni 45.
+  //    Inaczej "2-3 weekendy w miesiacu psuja rytm" ladowalo jako "malo zapasu" i przeczylo wlasnemu dowodowi.
+  const reserveBand = (score: number): 'wyraźny' | 'umiarkowany' | 'mały' => score < 50 ? 'wyraźny' : score < 68 ? 'umiarkowany' : 'mały';
+  const axisBand = (score: number) => { const b = reserveBand(score); return b === 'mały' ? 'mało zapasu' : `${b} zapas`; };
+  const bigReserve = statuses.filter((st) => reserveBand(st.score) === 'wyraźny').length;
+  const anyReserve = statuses.filter((st) => reserveBand(st.score) !== 'mały').length;
+  const hasCeilingRoom = anyReserve > 0;
+  const reserveLine = bigReserve >= 1
+    ? `${bigReserve} z ${statuses.length} obszarów ${bigReserve === 1 ? 'ma' : 'mają'} dziś wyraźnie więcej miejsca do poprawy niż reszta.`
+    : anyReserve >= 1
+      ? `Żaden obszar nie leży, ale ${anyReserve} z ${statuses.length} ${anyReserve === 1 ? 'ma' : 'mają'} jeszcze umiarkowany zapas.`
+      : 'Wszystkie pięć obszarów trzyma się dziś podobnie wysoko.';
+  // Napęd i libido nisko = sygnał do weryfikacji badaniami, nie do diagnozy z quizu.
+  const driveAxis = statuses.find((st) => st.label.toLowerCase().includes('napęd'));
+  const flagDriveCheck = Boolean(driveAxis && reserveBand(driveAxis.score) === 'wyraźny');
   // breakPos.label to fraza okolicznikowa ("po pracy", "rano", "weekend"). Wchodzi wyłącznie po dwukropku,
   // nigdy po przyimku — "zacząłbym od po pracy" i "od momentu weekend" to złamana polszczyzna dla 7 z 7 wartości.
   const repairLead = (redCount ?? 0) >= 3
@@ -125,28 +137,31 @@ export default function ResultExperience({
 
       <div className="rx-wrap">
 
-        {/* BEAT 1 — PUNKT PĘKNIĘCIA jako primary payoff. Score/pct wtorny (brak w V3). Max 2 receipts. */}
+        {/* BEAT 1 (V2.8) — GDZIE JESTEŚ TERAZ + GDZIE MASZ ZAPAS. Awareness-first: stan i pojemność
+            przed nazwaniem Punktu Pęknięcia. Zero procentu potencjału, zero wymyślonych zysków. */}
         <section className="rx-beat rx-hero" data-beat="1">
-          <div className="rx-kick rx-kick-c">Najważniejsze z Twoich odpowiedzi{imie?.trim() ? ` · ${imie.trim()}` : ''}</div>
+          <div className="rx-kick rx-kick-c">Gdzie jesteś teraz{imie?.trim() ? ` · ${imie.trim()}` : ''}</div>
           <div className="rx-hero-panel">
             <div className="rx-hero-signature" aria-hidden="true"><span/><span/><span/></div>
-            <h1 className="rx-arch">{breakPhrase}</h1>
-            {redLine && <div className="rx-redline">{redLine}</div>}
-            <p className="rx-sub rx-hero-sub">Te odpowiedzi układają się w jeden wzorzec. Ten pierwszy moment nazywam Punktem Pęknięcia.</p>
-            <div className="rx-breakviz">
-              <div className="rx-breakviz-now">Pierwszy sygnał w odpowiedziach: <strong>{breakPos.label}</strong></div>
-              <div className="rx-breakviz-line"><span style={{ left: `${breakPos.pct}%` }} /></div>
-              <div className="rx-breakviz-scale"><span>rano</span><span>po pracy</span><span>weekend</span></div>
-            </div>
-            {evidenceReceipts.length > 0 && (
-              <div className="rx-receipts">
-                {evidenceReceipts.map((r, i) => (<p key={i} className="rx-receipt">{r}</p>))}
+            <h1 className="rx-arch">{hasCeilingRoom ? 'Poziom, na którym dziś jedziesz, nie jest jeszcze Twoim sufitem.' : 'Twój tydzień trzyma się dziś równo w pięciu obszarach.'}</h1>
+            <div className="rx-redline">{reserveLine}</div>
+            <p className="rx-sub rx-hero-sub">Policzyłem to wyłącznie z Twoich odpowiedzi. Poniżej masz każdy obszar osobno, razem z odpowiedzią, która najmocniej przesunęła wynik.</p>
+            <div className="rx-reserve">
+              <div className="rx-reserve-row rx-reserve-top">
+                <span>Największy zapas</span>
+                <strong>{weakestStatus?.label}</strong>
+                <p>{weakestStatus?.reason}</p>
               </div>
-            )}
+              <div className="rx-reserve-row">
+                <span>Trzyma się dziś najlepiej</span>
+                <strong>{strongestStatus?.label}</strong>
+                <p>{strongestStatus?.reason}</p>
+              </div>
+            </div>
           </div>
           <div className="rx-cue" aria-hidden="true">
             <span className="rx-cue-arrow">↓</span>
-            <span>ZOBACZ, SKĄD TO WYSZŁO</span>
+            <span>ZOBACZ CAŁĄ MAPĘ</span>
           </div>
         </section>
 
@@ -155,7 +170,6 @@ export default function ResultExperience({
           <div className="rx-kick">Mapa 168</div>
           <div className="rx-map-head">
             <h2 className="rx-h2">Pięć obszarów, które składają się na Twój tydzień.</h2>
-            <span>wyżej = stabilniej</span>
           </div>
           <div className="rx-map-visual">
             <div className="rx-radar-wrap" aria-hidden="true">
@@ -167,6 +181,9 @@ export default function ResultExperience({
               <div className="rx-radar-core"><span>MAPA</span><strong>168</strong></div>
             </div>
             <div className="rx-map">
+              {/* klucz do odczytu calego wykresu wisial wczesniej przy naglowku, 8-10px i poza kartą.
+                  Stoi tam, gdzie sie go potrzebuje: nad pierwszym paskiem. */}
+              <p className="rx-map-key">Dłuższy pasek = mniej miejsca do poprawy.</p>
               {statuses.map((st) => (
                 <div className="rx-axis" key={st.label}>
                   <div className="rx-axis-head"><span>{st.label}</span><div className="rx-axis-score"><em>{axisBand(st.score)}</em><strong>{st.score}</strong></div></div>
@@ -177,13 +194,39 @@ export default function ResultExperience({
             </div>
           </div>
           <div className="rx-map-readout">
-            <div><span>Najmniej stabilna oś</span><strong>{weakestStatus?.label}</strong></div>
-            <div><span>Najbardziej stabilna oś</span><strong>{strongestStatus?.label}</strong></div>
+            <div><span>Największy zapas</span><strong>{weakestStatus?.label}</strong></div>
+            <div><span>Trzyma się dziś najlepiej</span><strong>{strongestStatus?.label}</strong></div>
           </div>
           <div className="rx-map-proof">
             <span>Jak czytać te liczby</span>
-            <p>Każda liczba powstaje wyłącznie z odpowiedzi, które podałeś w tej diagnostyce. <strong>{weakestStatus?.score}/100</strong> oznacza, że oś {weakestStatus?.label} była najmniej stabilna na tle pozostałych.</p>
-            <p>Te liczby służą do porównania pięciu obszarów między sobą. Nie są procentem Twojej formy ani wynikiem medycznym. Pod każdą osią pokazuję odpowiedź, która najmocniej przesunęła wynik.</p>
+            <p>Każda liczba powstaje wyłącznie z odpowiedzi, które podałeś w tej diagnostyce. <strong>{weakestStatus?.score}/100</strong> na osi {weakestStatus?.label} bierze się stąd: {weakestStatus?.reason}.</p>
+            <p>To indeks porównawczy pięciu obszarów między sobą. Nie jest procentem Twojej formy, procentem wykorzystanego potencjału ani wynikiem medycznym. Pod każdą osią masz odpowiedź, która najmocniej przesunęła liczbę.</p>
+            {flagDriveCheck && <p className="rx-medical">Napęd i libido siedzą u Ciebie nisko. Jeśli trwa to dłużej niż kilka tygodni, warto zrobić badania i omówić wyniki z lekarzem. Ta diagnostyka opiera się na Twoich odpowiedziach i tego nie zastąpi.</p>}
+          </div>
+        </section>
+
+        {/* EVIDENCE — skąd te wnioski wyszły. Zawsze PRZED nazwaniem Punktu Pęknięcia (V2.8). */}
+        {evidenceReceipts.length > 0 && (
+          <section className="rx-beat" data-beat="evidence">
+            <div className="rx-kick">Skąd to wiem</div>
+            <h2 className="rx-h2" style={{ fontSize: 'clamp(22px,4.6vw,32px)' }}>To są Twoje własne odpowiedzi, nie moja interpretacja.</h2>
+            <div className="rx-receipts">
+              {evidenceReceipts.map((r, i) => (<p key={i} className="rx-receipt">{r}</p>))}
+            </div>
+          </section>
+        )}
+
+        {/* PUNKT PĘKNIĘCIA — reveal PO dowodzie. Najpierw zjawisko, potem nazwa (V2.8). */}
+        <section className="rx-beat" data-beat="fracture">
+          <div className="rx-kick">Punkt Pęknięcia</div>
+          <h2 className="rx-h2">{breakPhrase}</h2>
+          <p className="rx-sub" style={{ marginBottom: 22 }}>Te odpowiedzi układają się w jeden powtarzalny wzorzec. Pierwszy moment tygodnia, w którym on odpala, nazywam Punktem Pęknięcia. Od niego zaczynam pracę, bo wszystko dalej się na nim opiera.</p>
+          <div className="rx-breakviz">
+            <div className="rx-breakviz-now">Pierwszy sygnał w odpowiedziach: <strong>{breakPos.label}</strong></div>
+            <div className="rx-breakviz-line"><span style={{ left: `${breakPos.pct}%` }} /></div>
+            {/* srodkowa etykieta stoi pod 50%, a bw_afternoon siada na 43%. Przy "po pracy" (62%)
+                znacznik "po 14" ladowal wizualnie na cudzej etykiecie. Skala ma teraz trzy rowne przystanki dnia. */}
+            <div className="rx-breakviz-scale"><span>rano</span><span>po południu</span><span>weekend</span></div>
           </div>
         </section>
 
@@ -227,10 +270,12 @@ export default function ResultExperience({
           <h2 className="rx-h2" style={{ fontSize: 'clamp(24px,5vw,38px)' }}>Sprawdźmy, czy ta diagnoza ma sens w praktyce.</h2>
           <div className="rx-72line" aria-hidden="true"><span>0 h</span><i/><span>24 h</span><i/><span>48 h</span><i/><span>72 h</span></div>
           <div className="rx-exp">
-            <div className="rx-exp-row"><span className="rx-exp-k">{experiment.name}</span><p>{experiment.action}</p></div>
-            <div className="rx-exp-row"><span className="rx-exp-k">Kiedy</span><p>{experiment.moment}</p></div>
-            <div className="rx-exp-row"><span className="rx-exp-k">Obserwuj</span><p>{experiment.observe}</p></div>
-            <div className="rx-exp-row"><span className="rx-exp-k">Przez te 3 dni nie ruszaj</span><p>{experiment.doNotChange}</p></div>
+            {/* Cztery identyczne karty czytaly sie jak lista rownorzednych polecen. Samo zadanie prowadzi,
+                trzy parametry sa doprecyzowaniem i dostaja lzejszy, cichszy wiersz. */}
+            <div className="rx-exp-row rx-exp-lead"><span className="rx-exp-k">{experiment.name}</span><p>{experiment.action}</p></div>
+            <div className="rx-exp-row rx-exp-meta"><span className="rx-exp-k">Kiedy</span><p>{experiment.moment}</p></div>
+            <div className="rx-exp-row rx-exp-meta"><span className="rx-exp-k">Obserwuj</span><p>{experiment.observe}</p></div>
+            <div className="rx-exp-row rx-exp-meta"><span className="rx-exp-k">Przez te 3 dni nie ruszaj</span><p>{experiment.doNotChange}</p></div>
           </div>
           {!committed ? (
             <button className="rx-cta" onClick={commitExperiment} type="button">Robię ten test</button>
@@ -241,6 +286,27 @@ export default function ResultExperience({
               Nie oceniaj testu po tym, czy cały tydzień był idealny.
             </div>
           )}
+        </section>
+
+        {/* HORYZONT (V2.8) — orientacja w czasie bez obietnic. Trzy okna: co sprawdzamy po 72h,
+            co widać przez kolejne tygodnie, czego nie da się przyspieszyć. Zero dat, zero gwarancji. */}
+        <section className="rx-beat" data-beat="horizon">
+          <div className="rx-kick">Co i kiedy da się zobaczyć</div>
+          <h2 className="rx-h2" style={{ fontSize: 'clamp(24px,4.8vw,36px)' }}>Każde okno czasowe odpowiada na inne pytanie.</h2>
+          <div className="rx-horizon">
+            <div className="rx-hz">
+              <span className="rx-hz-k">72 godziny</span>
+              <p>Patrzysz tylko na jedno: {experiment.observe.toLowerCase()}. Na ocenę efektu jest wtedy za wcześnie. To okno odpowiada na pytanie, czy dobrze wybraliśmy miejsce.</p>
+            </div>
+            <div className="rx-hz">
+              <span className="rx-hz-k">Najbliższe tygodnie</span>
+              <p>Tu widać, czy {weakestStatus?.label.toLowerCase()} zaczyna trzymać także w gorszym tygodniu, a nie tylko w idealnym. Zmiana, która działa, przestaje wymagać pilnowania.</p>
+            </div>
+            <div className="rx-hz">
+              <span className="rx-hz-k">Dłuższy horyzont</span>
+              <p>Sylwetka, wyniki w treningu i rytm, który się sam utrzymuje, potrzebują powtórzonych tygodni. Ile ich będzie, zależy od punktu startu i od tego, co realnie wykonasz. Daty tutaj nie podam, bo byłaby zmyślona.</p>
+            </div>
+          </div>
         </section>
 
         {/* BEAT 6 — DEMONSTRACJA METODY. Zero obietnicy darmowej analizy. Router: DM/NABOR/eksperyment wg intent x start_when. */}
@@ -262,6 +328,7 @@ export default function ResultExperience({
                 łamią gramatykę w całym banku 20 eksperymentów. */}
             <li><span className="rx-demo-n">2</span><div><strong>Sprawdzamy: {weakestStatus?.label}</strong><p>Na start dostajesz jedno zadanie na 72 godziny: {experiment.action} Obserwujemy: {experiment.observe.toLowerCase()}.</p></div></li>
             <li><span className="rx-demo-n">3</span><div><strong>Tego na start nie ruszam: {strongestStatus?.label}</strong><p>Tego na początku nie ruszam. Dzięki temu mamy punkt odniesienia i widzimy, czy pierwsza zmiana faktycznie poprawia tydzień.</p></div></li>
+            <li><span className="rx-demo-n">4</span><div><strong>Dokładam dopiero po dowodzie</strong><p>Kolejny element wchodzi wtedy, gdy pierwszy przeżyje gorszy tydzień. Jeśli nie przeżyje, zmieniam ruch, a nie dokładam Ci kolejnych zasad.</p></div></li>
           </ol>
           <div className="rx-expectation">
             <p>Jeśli rozważasz prowadzenie, niżej masz kolejny krok.</p>
@@ -340,7 +407,9 @@ const css = `
 .rx-pull{font-family:${C.serif};font-style:italic;color:${C.gold};border-left:2px solid ${C.goldD};padding-left:18px;line-height:1.4;font-size:clamp(19px,4vw,24px);margin:0}
 .rx-hero{position:relative;min-height:100svh;opacity:1;transform:none;display:flex;flex-direction:column;justify-content:center;text-align:center;align-items:center;padding:40px 0 max(112px,calc(env(safe-area-inset-bottom) + 92px))}
 .rx-arch{font-family:${C.serif};font-weight:400;line-height:1.1;font-size:clamp(30px,7.4vw,52px);color:${C.gold};margin:0 0 16px;letter-spacing:-.01em;text-shadow:0 0 44px ${C.glow};max-width:18ch}
-.rx-redline{font-family:${C.mono};font-size:12px;letter-spacing:1px;color:${C.mute};margin-bottom:22px;max-width:32ch}
+/* To zdanie niesie caly wniosek otwarcia. W wersji mono 12px bylo najslabszym elementem bloku,
+   czyli dowod czytal sie jak systemowa etykieta pod naglowkiem. Ma wage zdania, nie labelki. */
+.rx-redline{font-family:${C.sans};font-size:clamp(15px,4.1vw,17px);line-height:1.5;color:${C.paper};margin:0 auto 22px;max-width:34ch}
 .rx-hero-panel{position:relative;width:100%;max-width:560px;padding:30px 22px 26px;border:1px solid rgba(200,168,78,.22);border-radius:24px;background:linear-gradient(160deg,rgba(200,168,78,.075),rgba(255,255,255,.018) 42%,rgba(8,8,10,.68));box-shadow:0 34px 90px -54px rgba(200,168,78,.72),inset 0 1px 0 rgba(255,255,255,.04);overflow:hidden}
 .rx-hero-panel::before{content:"";position:absolute;inset:0;background:radial-gradient(420px 180px at 50% 0%,rgba(200,168,78,.13),transparent 68%);pointer-events:none}
 .rx-hero-panel::after{content:"";position:absolute;left:18%;right:18%;top:0;height:1px;background:linear-gradient(90deg,transparent,${C.goldB},transparent);opacity:.8}
@@ -348,13 +417,29 @@ const css = `
 .rx-hero-signature{display:flex;justify-content:center;gap:6px;margin:0 auto 18px}.rx-hero-signature span{display:block;width:24px;height:3px;border-radius:999px;background:${C.goldD};opacity:.62}.rx-hero-signature span:nth-child(2){width:44px;background:${C.goldB};opacity:.95}
 .rx-breakviz{width:100%;margin:22px 0 0;padding:14px 14px 12px;border:1px solid rgba(200,168,78,.18);border-radius:14px;background:rgba(255,255,255,.018);text-align:left}.rx-breakviz-now{font-family:${C.mono};font-size:10px;letter-spacing:.6px;color:${C.faint};margin-bottom:10px}.rx-breakviz-now strong{color:${C.goldB};font-weight:800}.rx-breakviz-line{position:relative;height:2px;background:linear-gradient(90deg,rgba(200,168,78,.18),${C.goldD},rgba(200,168,78,.18));border-radius:999px}.rx-breakviz-line span{position:absolute;top:50%;width:12px;height:12px;border-radius:50%;background:${C.goldB};border:2px solid ${C.ink};box-shadow:0 0 0 2px ${C.goldD},0 0 18px rgba(200,168,78,.35);transform:translate(-50%,-50%)}.rx-breakviz-scale{display:flex;justify-content:space-between;margin-top:9px;font-family:${C.mono};font-size:8px;letter-spacing:.8px;color:${C.faint}}
 .rx-map-readout{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}.rx-map-readout>div{padding:13px 15px;border:1px solid ${C.line};border-radius:12px;background:${C.pan2}}.rx-map-readout span{display:block;font-family:${C.mono};font-size:8px;letter-spacing:1.4px;text-transform:uppercase;color:${C.faint};margin-bottom:5px}.rx-map-readout strong{font-size:14px;color:${C.paper};line-height:1.3}
+.rx-reserve{width:100%;margin:22px 0 0;display:grid;gap:10px;text-align:left}
+.rx-reserve-row{padding:14px 16px;border:1px solid ${C.line2};border-radius:14px;background:rgba(255,255,255,.022)}
+.rx-reserve-row.rx-reserve-top{border-color:rgba(200,168,78,.34);background:linear-gradient(150deg,rgba(200,168,78,.085),rgba(255,255,255,.02))}
+.rx-reserve-row span{display:block;font-family:${C.mono};font-size:8.5px;letter-spacing:1.6px;text-transform:uppercase;color:${C.faint};margin-bottom:6px}
+.rx-reserve-row.rx-reserve-top span{color:${C.gold};font-weight:800}
+.rx-reserve-row strong{display:block;font-size:16px;color:${C.paper};line-height:1.25;margin-bottom:5px}
+.rx-reserve-row.rx-reserve-top strong{color:${C.goldB}}
+.rx-reserve-row p{margin:0;font-size:12.5px;line-height:1.5;color:${C.mute}}
+.rx-medical{margin-top:10px!important;padding-top:10px;border-top:1px solid ${C.line2};color:${C.mute}!important}
+.rx-horizon{display:grid;gap:12px}
+.rx-hz{padding:16px 18px;border:1px solid ${C.line};border-radius:14px;background:${C.pan2};position:relative}
+.rx-hz:first-child{border-color:${C.goldD};background:linear-gradient(150deg,rgba(200,168,78,.075),${C.pan2})}
+.rx-hz-k{display:block;font-family:${C.mono};font-size:10px;letter-spacing:2px;text-transform:uppercase;color:${C.gold};font-weight:700;margin-bottom:8px}
+.rx-hz p{margin:0;font-size:14.5px;line-height:1.55;color:${C.paper}}
+.rx-hz:not(:first-child) p{color:${C.mute}}
 .rx-receipts{margin-top:22px;display:grid;gap:10px;max-width:46ch;width:100%}
 .rx-receipt{color:${C.paper};line-height:1.5;font-size:14px;margin:0;padding:12px 14px;border:1px solid ${C.line2};border-radius:12px;background:rgba(255,255,255,.025);text-align:left}
 .rx-hero-sub{max-width:40ch;margin:0 auto}
 .rx-cue{position:absolute;left:50%;bottom:max(34px,calc(env(safe-area-inset-bottom) + 22px));transform:translateX(-50%);display:inline-flex;align-items:center;justify-content:center;gap:12px;font-family:${C.mono};font-size:clamp(18px,4.6vw,22px);font-weight:700;line-height:1;letter-spacing:.28em;color:${C.goldB};text-transform:uppercase;white-space:nowrap;text-shadow:0 0 18px rgba(200,168,78,.18);opacity:.96}
 .rx-cue-arrow{display:inline-block;font-size:1.4em;line-height:.7;letter-spacing:0;color:${C.gold};animation:rxbob 1.6s ease-in-out infinite}
 @keyframes rxbob{0%,100%{transform:translateY(0);opacity:.72}50%{transform:translateY(7px);opacity:1}}
-.rx-map-head{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;margin-bottom:22px}.rx-map-head .rx-h2{margin:0}.rx-map-head>span{font-family:${C.mono};font-size:10px;letter-spacing:1.2px;color:${C.faint};white-space:nowrap}
+.rx-map-head{margin-bottom:22px}.rx-map-head .rx-h2{margin:0}
+.rx-map-key{margin:0 0 14px;font-size:12.5px;letter-spacing:.2px;color:${C.mute}}
 .rx-map-visual{display:grid;grid-template-columns:minmax(200px,.82fr) minmax(260px,1.18fr);gap:28px;align-items:center;padding:22px;border:1px solid ${C.line2};border-radius:22px;background:linear-gradient(150deg,rgba(200,168,78,.055),${C.pan} 45%,${C.ink})}
 .rx-radar-wrap{position:relative;min-height:220px;display:grid;place-items:center}.rx-radar{width:100%;max-width:240px;filter:drop-shadow(0 20px 34px rgba(0,0,0,.34))}.rx-radar-grid{fill:none;stroke:rgba(236,231,219,.12);stroke-width:1}.rx-radar-axis{stroke:rgba(236,231,219,.08);stroke-width:1}.rx-radar-data{fill:rgba(200,168,78,.20);stroke:${C.goldB};stroke-width:2;stroke-linejoin:round;filter:drop-shadow(0 0 12px rgba(200,168,78,.22))}.rx-radar-core{position:absolute;display:grid;place-items:center;line-height:1;pointer-events:none}.rx-radar-core span{font-family:${C.mono};font-size:8px;letter-spacing:2px;color:${C.faint}}.rx-radar-core strong{font-family:${C.serif};font-size:24px;color:${C.goldB};font-weight:400}
 .rx-map{display:grid;gap:14px}.rx-axis-head{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-bottom:7px}.rx-axis-head span{font-size:13.5px;color:${C.paper};font-weight:650}.rx-axis-score{display:flex;align-items:baseline;gap:8px}.rx-axis-score em{font-family:${C.mono};font-style:normal;font-size:8px;letter-spacing:1px;text-transform:uppercase;color:${C.faint}}.rx-axis-score strong{font-family:${C.mono};font-size:14px;color:${C.goldB}}.rx-axis-reason{margin:7px 0 0;color:${C.faint};font-size:10.5px;line-height:1.42}.rx-axis-track{position:relative;height:9px;border-radius:999px;background:#242429;overflow:hidden;box-shadow:inset 0 1px 2px rgba(0,0,0,.55)}.rx-axis-fill{height:100%;border-radius:inherit;background:linear-gradient(90deg,${C.goldD},${C.goldB});box-shadow:0 0 16px rgba(200,168,78,.22)}.rx-axis-mid{position:absolute;left:50%;top:0;bottom:0;width:1px;background:rgba(255,255,255,.16)}.rx-map-proof{margin:14px 0 0;padding:16px 17px;border:1px solid rgba(200,168,78,.24);border-radius:14px;background:linear-gradient(150deg,rgba(200,168,78,.055),${C.pan})}.rx-map-proof>span{display:block;font-family:${C.mono};font-size:9px;letter-spacing:1.7px;text-transform:uppercase;color:${C.gold};font-weight:800;margin-bottom:9px}.rx-map-proof p{margin:0 0 8px;font-size:12.5px;line-height:1.55;color:${C.mute}}.rx-map-proof p:last-child{margin-bottom:0;color:${C.faint}}.rx-map-proof strong{color:${C.goldB}}
@@ -372,10 +457,15 @@ const css = `
 .rx-gcard{background:linear-gradient(180deg,${C.pan2},${C.ink});border:1px solid ${C.line2};border-radius:12px;padding:13px 15px}
 .rx-gtop{display:flex;justify-content:space-between;align-items:baseline;gap:10px;margin-bottom:6px;font-size:12px}
 .rx-gq{font-family:${C.serif};font-style:italic;color:${C.paper};line-height:1.42;margin:0;font-size:15px}
-.rx-exp{display:grid;gap:12px;margin:0 0 22px}
+.rx-exp{display:grid;gap:10px;margin:0 0 22px}
 .rx-exp-row{background:${C.pan2};border:1px solid ${C.line};border-radius:14px;padding:16px 18px}
 .rx-exp-k{display:block;font-family:${C.mono};font-size:10px;letter-spacing:2px;text-transform:uppercase;color:${C.gold};font-weight:700;margin-bottom:8px}
 .rx-exp-row p{margin:0;font-size:15px;color:${C.paper};line-height:1.55}
+.rx-exp-lead{background:linear-gradient(180deg,${C.pan2},${C.pan});border-color:${C.goldD};padding:18px 20px;margin-bottom:4px}
+.rx-exp-lead p{font-size:16.5px;line-height:1.5}
+.rx-exp-meta{background:transparent;border-color:rgba(255,255,255,.06);border-radius:12px;padding:11px 16px}
+.rx-exp-meta .rx-exp-k{color:${C.faint};font-weight:600;letter-spacing:1.4px;margin-bottom:4px}
+.rx-exp-meta p{font-size:14px;color:${C.mute}}
 .rx-donemsg{font-family:${C.serif};font-style:italic;font-size:18px;color:${C.gold};text-align:left;line-height:1.4;background:${C.pan2};border:1px solid ${C.goldD};border-radius:14px;padding:18px 20px}
 .rx-loop{display:grid;gap:0;margin:0 0 8px;position:relative;counter-reset:loop}.rx-loop::before{content:"";position:absolute;left:27px;top:22px;bottom:34px;width:1px;background:linear-gradient(${C.goldD},rgba(200,168,78,.12));z-index:0}
 .rx-loop-node{background:${C.pan2};border:1px solid ${C.line};border-radius:14px;padding:14px 16px 14px 56px;position:relative;margin-bottom:18px;counter-increment:loop;z-index:1}.rx-loop-node::before{content:counter(loop,decimal-leading-zero);position:absolute;left:13px;top:14px;width:29px;height:29px;border-radius:50%;display:grid;place-items:center;background:${C.ink};border:1px solid ${C.goldD};font-family:${C.mono};font-size:9px;color:${C.goldB};box-shadow:0 0 0 5px ${C.pan2}}
@@ -405,6 +495,6 @@ const css = `
 .rx-save{margin-top:22px;font-family:${C.mono};font-size:12.5px;letter-spacing:.5px;color:${C.mute};background:transparent;border:1px solid ${C.line2};border-radius:10px;padding:11px 16px;cursor:pointer;transition:.15s}
 .rx-save:hover{border-color:${C.goldD};color:${C.paper}}
 .rx-hotcta{position:fixed;left:16px;right:16px;bottom:max(14px,env(safe-area-inset-bottom));z-index:8;display:block;text-align:center;text-decoration:none;font-weight:800;font-size:15px;color:${C.ink};background:linear-gradient(135deg,${C.gold},${C.goldB});padding:15px 18px;border-radius:14px;box-shadow:0 12px 34px -10px rgba(200,168,78,.55);max-width:588px;margin:0 auto}
-@media(max-width:640px){.rx-wrap{padding:0 18px}.rx-map-readout{grid-template-columns:1fr}.rx-map-head{display:block}.rx-map-head>span{display:block;margin-top:8px}.rx-map-visual{grid-template-columns:1fr;padding:18px;gap:16px}.rx-radar-wrap{min-height:190px}.rx-radar{max-width:210px}.rx-route-card{padding:20px}.rx-72line{gap:6px;font-size:9px}.rx-hero{padding-top:26px;padding-bottom:max(106px,calc(env(safe-area-inset-bottom) + 86px))}.rx-hero-panel{padding:24px 18px 22px;border-radius:20px}.rx-arch{font-size:clamp(31px,9vw,44px)}.rx-receipts{grid-template-columns:1fr}.rx-cue{bottom:max(26px,calc(env(safe-area-inset-bottom) + 16px))}}
+@media(max-width:640px){.rx-wrap{padding:0 18px}.rx-map-readout{grid-template-columns:1fr}.rx-map-visual{grid-template-columns:1fr;padding:18px;gap:16px}.rx-radar-wrap{min-height:190px}.rx-radar{max-width:210px}.rx-route-card{padding:20px}.rx-72line{gap:6px;font-size:9px}.rx-hero{padding-top:26px;padding-bottom:max(106px,calc(env(safe-area-inset-bottom) + 86px))}.rx-hero-panel{padding:24px 18px 22px;border-radius:20px}.rx-arch{font-size:clamp(31px,9vw,44px)}.rx-receipts{grid-template-columns:1fr}.rx-cue{bottom:max(26px,calc(env(safe-area-inset-bottom) + 16px))}}
 @media(prefers-reduced-motion:reduce){.rx-beat{opacity:1;transform:none}.rx-cue-arrow{animation:none}}
 `;

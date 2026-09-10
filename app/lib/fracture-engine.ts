@@ -22,6 +22,26 @@ function n(v: unknown): number | undefined {
   return typeof v === 'number' && Number.isFinite(v) ? v : undefined;
 }
 
+// ── Formatowanie liczb, ktore user widzi na wyniku ──
+// Suwak godzin ma krok 0.5, wiec surowe wstawienie daje "0.5 h" — zapis angielski w polskim zdaniu.
+function hoursPl(h: number): string {
+  return String(h).replace('.', ',');
+}
+// Suwak "ile wypada" nie jest zwiazany z suwakiem "ile planuje", wiec user moze zostawic 5 wypadajacych
+// przy 3 planowanych. Scoring to clampuje (answers-to-fd), copy nie clampowalo i pokazywalo liczbe,
+// ktorej sam wynik nie uzywa. Jedno zrodlo prawdy: te same dwie liczby w tekscie i w scoringu.
+function trainingPair(answers: RawAnswers): { planned: number; missed: number } | undefined {
+  const planned = n(answers.planned_trainings);
+  const missedRaw = n(answers.missed_trainings);
+  if (typeof planned !== 'number' || planned < 1 || typeof missedRaw !== 'number') return undefined;
+  return { planned, missed: Math.max(0, Math.min(missedRaw, planned)) };
+}
+// "1 z 1 treningow" czyta sie jak blad danych, nie jak zdanie. Przy komplecie mowimy to wprost.
+function missedPhrase(planned: number, missed: number): string {
+  if (missed >= planned) return planned === 1 ? 'wypada ten jeden trening, który planujesz' : `wypadają wszystkie ${planned} zaplanowane treningi`;
+  return `wypada ${missed} z ${planned} treningów`;
+}
+
 // ── BEAT 1: max 2 evidence receipts, WYLACZNIE z realnych odpowiedzi (truth gate) ──
 export function computeEvidenceReceipts(answers: RawAnswers): string[] {
   const out: string[] = [];
@@ -30,15 +50,14 @@ export function computeEvidenceReceipts(answers: RawAnswers): string[] {
   const hp = n(answers.half_power_hours);
   const ee = s(answers.evening_eating);
   const wp = s(answers.weekend_pattern);
-  const missed = n(answers.missed_trainings);
-  const planned = n(answers.planned_trainings);
+  const pair = trainingPair(answers);
   const tried = s(answers.tried_before);
 
   push(stress === 'st_high' || stress === 'st_max', 'Powiedziałeś, że wieczorem głowa dalej jest w robocie.');
-  push(typeof hp === 'number' && hp >= 2, `Do tego oceniłeś, że lecisz około ${hp} h dziennie na pół mocy.`);
+  push(typeof hp === 'number' && hp >= 2, `Do tego oceniłeś, że lecisz około ${hoursPl(hp as number)} h dziennie na pół mocy.`);
   push(ee === 'ee_binge' || ee === 'ee_uncontrolled' || ee === 'ee_chaos', 'Zaznaczyłeś, że wieczorem częściej puszcza kontrola nad jedzeniem.');
   push(wp === 'wp_shifted' || wp === 'wp_reset', 'Powiedziałeś, że weekend regularnie rozjeżdża Ci rytm.');
-  push(typeof missed === 'number' && typeof planned === 'number' && planned >= 1 && missed >= 1, `Z ${planned} treningów w tygodniu ${missed} wypada, kiedy robi się ciężej.`);
+  push(Boolean(pair && pair.missed >= 1), pair ? `W cięższym tygodniu ${missedPhrase(pair.planned, pair.missed)}.` : '');
   push(tried === 'tb_2' || tried === 'tb_3', 'Sam napisałeś, że kilka planów w tym roku nie dożyło miesiąca.');
   return out;
 }
@@ -53,11 +72,11 @@ const GUP_NODE: Record<string, string> = {
   gup_czas: 'Najłatwiej odpuszczasz, kiedy dzień robi się za ciasny.',
 };
 function visibleEffect(answers: RawAnswers, evidence: string[]): string {
-  const planned=n(answers.planned_trainings), missed=n(answers.missed_trainings), hp=n(answers.half_power_hours);
+  const pair = trainingPair(answers), hp=n(answers.half_power_hours);
   const ee=s(answers.evening_eating), stress=s(answers.stress_level), wp=s(answers.weekend_pattern);
-  if (typeof planned === 'number' && planned > 0 && typeof missed === 'number' && missed > 0) return `W cięższym tygodniu wypada ${missed} z ${planned} treningów.`;
+  if (pair && pair.missed > 0) return `W cięższym tygodniu ${missedPhrase(pair.planned, pair.missed)}.`;
   if (['ee_binge','ee_uncontrolled','ee_chaos'].includes(ee)) return 'Pod koniec dnia jedzenie częściej wychodzi poza plan.';
-  if (typeof hp === 'number' && hp >= 2) return `Około ${hp} h dziennie oceniasz jako jazdę na pół mocy.`;
+  if (typeof hp === 'number' && hp >= 2) return `Około ${hoursPl(hp)} h dziennie oceniasz jako jazdę na pół mocy.`;
   if (['st_high','st_max'].includes(stress)) return 'Wieczorem głowa nadal zostaje w pracy.';
   if (['wp_shifted','wp_reset'].includes(wp)) return 'Weekend wyraźnie zmienia Twój zwykły rytm.';
   return evidence[0] || 'Nie widać jeszcze jednego mocnego skutku, który powtarza się co tydzień.';
@@ -115,13 +134,13 @@ export function computeCostFacts(answers: RawAnswers): string[] {
   const out: string[] = [];
   const push = (cond: boolean, line: string) => { if (cond && out.length < 3) out.push(line); };
   const hp = n(answers.half_power_hours);
-  const missed = n(answers.missed_trainings);
-  const planned = n(answers.planned_trainings);
+  const pair = trainingPair(answers);
   const mon = s(answers.monday_recovery);
   const takeout = n(answers.takeout_cost);
 
-  push(typeof hp === 'number' && hp > 0, `${hp} h dziennie lecisz według siebie na pół mocy.`);
-  push(typeof missed === 'number' && typeof planned === 'number' && planned >= 1, `${missed} z ${planned} treningów wypada, kiedy tydzień się rozjeżdża.`);
+  push(typeof hp === 'number' && hp > 0, `${hoursPl(hp as number)} h dziennie lecisz według siebie na pół mocy.`);
+  // zero wypadajacych treningow nie jest kosztem — bez tego warunku blok "co to juz kosztuje" otwieral sie zdaniem "0 z 3 treningow wypada"
+  push(Boolean(pair && pair.missed >= 1), pair ? `Kiedy tydzień się rozjeżdża, ${missedPhrase(pair.planned, pair.missed)}.` : '');
   // szablon nizej ma juz "dopiero" — etykieta nie moze go powtarzac ("wracasz do siebie dopiero dopiero we wtorek")
   const monLabel: Record<string, string> = { mon_1: 'w poniedziałek po południu', mon_2: 'we wtorek', mon_3: 'w środę albo później' };
   push(!!monLabel[mon], `Po weekendzie wracasz do siebie dopiero ${monLabel[mon] || ''}.`);

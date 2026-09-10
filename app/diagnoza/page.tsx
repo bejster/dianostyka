@@ -71,7 +71,7 @@ function WeekPulse() {
         ))}
       </svg>
       <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 10, letterSpacing: 2.5, textTransform: 'uppercase', color: '#8f887c', textAlign: 'center', marginTop: 8 }}>
-        WEEKEND → FORMA: ?
+        TWÓJ ZWYKŁY TYDZIEŃ · 168 H
       </div>
     </div>
   );
@@ -288,10 +288,10 @@ export default function DiagnozaPage() {
             Diagnostyka 168 · 5 min
           </div>
           <h1 style={{ fontFamily: "'Instrument Serif', Georgia, serif", fontSize: 'clamp(38px, 9.4vw, 58px)', lineHeight: 0.99, fontWeight: 400, color: '#fff', margin: '0 0 18px', letterSpacing: '-0.018em', maxWidth: 445 }}>
-            Zacznijmy od weekendu.
+            Sprawdź, czy Twój obecny poziom to naprawdę Twój sufit.
           </h1>
           <p style={{ fontSize: 16, color: '#b9b2a7', lineHeight: 1.55, margin: '0 0 24px', maxWidth: 430 }}>
-            Dwa pierwsze pytania wystarczą, żeby sprawdzić, czy Twój weekend naprawdę kończy się w niedzielę.
+            Kilkanaście krótkich pytań o to, jak funkcjonujesz w zwykłym tygodniu. Wynik pokaże, gdzie masz największy zapas, co ruszyć najpierw i po czym poznasz, że idziesz w dobrą stronę.
           </p>
           <button
             onClick={() => {
@@ -303,7 +303,7 @@ export default function DiagnozaPage() {
             }}
             style={{ width: '100%', padding: '18px 17px', borderRadius: 14, border: 'none', cursor: 'pointer', background: `linear-gradient(135deg, ${GOLD}, #8a7535)`, color: BG, fontWeight: 850, fontSize: 16, letterSpacing: 0.35, boxShadow: '0 14px 34px rgba(200,168,78,.15)' }}
           >
-            Sprawdź mój weekend &rarr;
+            Sprawdź mój poziom &rarr;
           </button>
           <p style={{ fontFamily: "'JetBrains Mono', ui-monospace, monospace", fontSize: 10.5, letterSpacing: 1.5, color: '#6f6b64', lineHeight: 1.45, margin: '13px 0 0', textAlign: 'center', textTransform: 'uppercase' }}>
             wynik od razu
@@ -355,14 +355,19 @@ export default function DiagnozaPage() {
     const formaSev = (0.50 * trainSev + 0.35 * (D.binge / 4) + 0.15 * (T.has('belly') ? 1 : 0)) * 100;
     const wkndSev = (0.55 * (D.wknd / 4) + 0.45 * (D.mondayFeel / 3)) * 100;
     const glowaSev = (0.40 * (D.stress / 3) + 0.25 * (D.lost / 4) + 0.20 * (cnt(['focus', 'anxiety', 'fatigue']) / 3) + 0.15 * (D.triedBefore / 3)) * 100;
+    // suwak godzin ma krok 0.5, wiec surowa liczba wchodzi do polskiego zdania jako "0.5 h"
+    const hoursPl = (h: number) => String(h).replace('.', ',');
     const sleepReason = ['rano zwykle wstajesz gotowy', 'gotowy rano 3-4 dni w tygodniu', 'gotowy rano tylko 1-2 dni', 'rano prawie nigdy nie czujesz się gotowy'][D.sleepQ] || 'poranki są nierówne';
-    const stressReason = ['głowa zwykle odpuszcza wieczorem', '2-3 wieczory w tygodniu głowa zostaje w robocie', '4-5 wieczorów w tygodniu głowa zostaje w robocie', 'praktycznie codziennie zasypiasz z listą w głowie'][D.stress] || `${D.lost} h dziennie lecisz na pół mocy`;
+    const stressReason = ['głowa zwykle odpuszcza wieczorem', '2-3 wieczory w tygodniu głowa zostaje w robocie', '4-5 wieczorów w tygodniu głowa zostaje w robocie', 'praktycznie codziennie zasypiasz z listą w głowie'][D.stress] || `${hoursPl(D.lost)} h dziennie lecisz na pół mocy`;
     const weekendReason = ['weekend zwykle trzyma rytm', 'mniej więcej raz w miesiącu coś się sypie', '2-3 weekendy w miesiącu psują rytm', 'prawie każdy weekend psuje rytm', 'prawie każdy weekend psuje rytm'][D.wknd] || 'weekend bywa niestabilny';
     const driveLabels = [['libido','libido'],['motivation','motywacja'],['confidence','pewność siebie'],['recovery','regeneracja']].filter(([id]) => T.has(id)).map(([,label]) => label);
-    const driveReason = driveLabels.length ? `zaznaczyłeś: ${driveLabels.slice(0, 2).join(' + ')}` : (D.lost > 0 ? `${D.lost} h dziennie lecisz na pół mocy` : 'brak mocnego sygnału w tej osi');
+    // godziny na pol mocy naleza do osi glowy i stresu. Podstawione tutaj tlumaczyly WYSOKI wynik napedu
+    // negatywnym faktem, wiec dowod przeczyl ocenie tuz obok niego.
+    const driveReason = driveLabels.length ? `zaznaczyłeś: ${driveLabels.slice(0, 2).join(' + ')}` : 'nie zaznaczyłeś tu żadnego mocnego sygnału';
     // plan < 1 to najmocniejszy pojedynczy składnik formaSev (trainSev 0.85). Bez tej gałęzi oś schodzi w dół,
     // a podpis mówi userowi, że trening trzyma rytm. Podpis ma zawsze zgadzać się z jego własną odpowiedzią.
     const formReason = D.plan < 1 ? 'w zwykłym tygodniu nie planujesz treningów'
+      : D.miss >= D.plan ? (D.plan === 1 ? 'w cięższym tygodniu wypada ten jeden trening, który planujesz' : `w cięższym tygodniu wypadają wszystkie ${D.plan} zaplanowane treningi`)
       : D.miss > 0 ? `w cięższym tygodniu wypada ${D.miss} z ${D.plan} treningów`
       : (D.binge >= 2 ? 'wieczorne jedzenie regularnie wychodzi poza plan' : 'trening i wieczorne jedzenie zwykle trzymają rytm');
     const statuses = [

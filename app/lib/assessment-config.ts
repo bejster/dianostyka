@@ -1,6 +1,6 @@
 // assessment-config.ts, Wersjonowana konfiguracja pytań, domen i profili Diagnostyki Tygodnia V2
 
-export const ASSESSMENT_VERSION = '2.7.0';
+export const ASSESSMENT_VERSION = '2.8.0';
 
 export type DomainKey = 'sleep' | 'energy' | 'nutrition' | 'training' | 'weekend' | 'chaos';
 
@@ -322,7 +322,9 @@ export const QUESTIONS: QuestionDef[] = [
   // ── SEKCJA VI: WEEKEND (kotwica domeny 'weekend' -> wagi 0.85/0.85) ──
   {
     id: 'weekend_pattern',
-    section: 'Weekend',
+    // Te dwa pytania sa w cold flow ekranem 1 i 2. Etykieta "WEEKEND" nad pierwszym ekranem kasowala
+    // obietnice z hero i robila z calosci diagnostyke weekendu. Pytanie zostaje, naglowek sekcji sie poszerza.
+    section: 'Rytm tygodnia',
     sectionNum: 'VI',
     title: 'Jak bardzo Twój weekend różni się od zwykłego dnia w tygodniu?',
     subtitle: 'Pomyśl o ostatnich czterech weekendach.',
@@ -339,7 +341,7 @@ export const QUESTIONS: QuestionDef[] = [
   },
   {
     id: 'monday_recovery',
-    section: 'Weekend',
+    section: 'Rytm tygodnia',
     sectionNum: 'VI',
     title: 'W poniedziałek rano jesteś zwykle…',
     subtitle: 'Zaznacz tylko, jak szybko wracasz do swojego zwykłego poziomu.',

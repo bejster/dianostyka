@@ -2,12 +2,12 @@ import type { Metadata } from 'next';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'Diagnostyka 168: gdzie zaczyna się rozjeżdżać Twój tydzień | Hantle i Talerz',
-  description: 'Kilka minut pytań o sen, energię, jedzenie, ruch i weekend. Na końcu dostajesz wzorzec z własnych odpowiedzi i jeden test do sprawdzenia.',
+  title: 'Diagnostyka 168: sprawdź, czy Twój obecny poziom to Twój sufit | Hantle i Talerz',
+  description: 'Kilkanaście pytań o to, jak funkcjonujesz w zwykłym tygodniu. Na końcu widzisz, gdzie masz największy zapas, co ruszyć najpierw i jeden test na 72 godziny.',
   alternates: { canonical: 'https://diagnostyka.talerzihantle.com/' },
   openGraph: {
-    title: 'Diagnostyka 168: gdzie zaczyna się rozjeżdżać Twój tydzień | Hantle i Talerz',
-    description: 'Kilka minut pytań o sen, energię, jedzenie, ruch i weekend. Na końcu dostajesz wzorzec z własnych odpowiedzi i jeden test do sprawdzenia.',
+    title: 'Diagnostyka 168: sprawdź, czy Twój obecny poziom to Twój sufit | Hantle i Talerz',
+    description: 'Kilkanaście pytań o to, jak funkcjonujesz w zwykłym tygodniu. Na końcu widzisz, gdzie masz największy zapas, co ruszyć najpierw i jeden test na 72 godziny.',
     url: 'https://diagnostyka.talerzihantle.com',
     siteName: 'Diagnostyka | Hantle i Talerz',
     images: [
@@ -22,8 +22,8 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Diagnostyka 168: gdzie zaczyna się rozjeżdżać Twój tydzień | Hantle i Talerz',
-    description: 'Kilka minut pytań o sen, energię, jedzenie, ruch i weekend. Na końcu dostajesz wzorzec z własnych odpowiedzi i jeden test do sprawdzenia.',
+    title: 'Diagnostyka 168: sprawdź, czy Twój obecny poziom to Twój sufit | Hantle i Talerz',
+    description: 'Kilkanaście pytań o to, jak funkcjonujesz w zwykłym tygodniu. Na końcu widzisz, gdzie masz największy zapas, co ruszyć najpierw i jeden test na 72 godziny.',
     images: ['https://diagnostyka.talerzihantle.com/og.png'],
   },
   icons: {

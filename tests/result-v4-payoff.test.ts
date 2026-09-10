@@ -13,7 +13,7 @@ test('V4 renders a real Mapa 168 visual from existing five-axis data', () => {
   assert.match(result, /className="rx-axis-track"/);
   assert.match(result, /Jak czytać te liczby/);
   assert.match(result, /Każda liczba powstaje wyłącznie z odpowiedzi/);
-  assert.match(result, /Pod każdą osią pokazuję odpowiedź/);
+  assert.match(result, /Pod każdą osią masz odpowiedź, która najmocniej przesunęła liczbę\./);
   assert.match(result, /className="rx-axis-reason"/);
 });
 

@@ -20,10 +20,10 @@ test('public entry stays diagnostic while hot lane remains available by explicit
   assert.match(page, /fast_fit_to_nabor/);
   assert.match(page, /route: 'diagnostic'/);
   assert.doesNotMatch(page, /Wiem, że chcę działać\. Sprawdźmy, czy zakres pasuje/);
-  assert.match(page, /Zacznijmy od weekendu\./);
+  assert.match(page, /Sprawdź, czy Twój obecny poziom to naprawdę Twój sufit\./);
   assert.doesNotMatch(page, /michal-portrait\.jpg/);
 });
 
 test('release telemetry is versioned separately', () => {
-  assert.match(cfg, /ASSESSMENT_VERSION = '2\.7\.0'/);
+  assert.match(cfg, /ASSESSMENT_VERSION = '2\.8\.0'/);
 });
