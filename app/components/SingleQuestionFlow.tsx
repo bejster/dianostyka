@@ -110,6 +110,7 @@ export default function SingleQuestionFlow({ onComplete, initialAnswers }: Props
 
   // znacznik ekspozycji biezacego pytania -> elapsed_ms w question_answer (bez PII)
   const shownAt = useRef<number>(0);
+  const questionHiddenAtRef = useRef<number>(0);
   const completionRef = useRef(false);
   const sliderRef = useRef<HTMLDivElement>(null);
   const sliderGesture = useRef<{ pointerId:number; startX:number; startY:number; lastX:number; lastY:number; mode:'pending'|'horizontal'|'vertical' } | null>(null);
@@ -173,18 +174,35 @@ export default function SingleQuestionFlow({ onComplete, initialAnswers }: Props
     shownAt.current = Date.now();
     const base = { question_id: currentQ.id, index: currentIndex, pos: visiblePos, total: visibleTotal };
     trackDiag('question_view', base);
-    track('diag_step_viewed', { index: currentIndex, id: currentQ.id, pos: visiblePos, total: visibleTotal }); // legacy alias
+    trackDiag('diag_step_viewed', { index: currentIndex, id: currentQ.id, pos: visiblePos, total: visibleTotal }); // legacy alias, wspólny schema
     if (currentQ.type === 'contact') trackDiag('contact_view', base);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentIndex]);
 
-  // elapsed_ms: pauzuj timer gdy karta ukryta (nie licz „11 minut", gdy user przelaczyl karte)
+  // Abandonment proof: zapisuje ostatni ekran i realny czas aktywności na nim przy wyjściu/reloadzie.
+  // Zero treści odpowiedzi i zero PII. Dzięki temu drop-off nie jest zgadywany tylko z braku kolejnego eventu.
   useEffect(() => {
-    const hiddenAt = { t: 0 };
+    const onPageHide = () => {
+      const now = Date.now();
+      const pendingHidden = questionHiddenAtRef.current ? now - questionHiddenAtRef.current : 0;
+      trackDiag('question_exit', {
+        question_id: currentQ.id, index: currentIndex, pos: visiblePos, total: visibleTotal,
+        active_ms: Math.max(0, now - shownAt.current - pendingHidden), progress_pct: progressPct,
+      });
+    };
+    if (typeof window !== 'undefined') window.addEventListener('pagehide', onPageHide);
+    return () => { if (typeof window !== 'undefined') window.removeEventListener('pagehide', onPageHide); };
+  }, [currentIndex, currentQ.id, visiblePos, visibleTotal, progressPct]);
+
+  // Czas aktywny: pauzuj timer gdy karta ukryta (nie licz czasu w innej karcie/apce).
+  useEffect(() => {
     const onVis = () => {
       if (typeof document === 'undefined') return;
-      if (document.visibilityState === 'hidden') hiddenAt.t = Date.now();
-      else if (hiddenAt.t) { shownAt.current += Date.now() - hiddenAt.t; hiddenAt.t = 0; }
+      if (document.visibilityState === 'hidden') questionHiddenAtRef.current = Date.now();
+      else if (questionHiddenAtRef.current) {
+        shownAt.current += Date.now() - questionHiddenAtRef.current;
+        questionHiddenAtRef.current = 0;
+      }
     };
     if (typeof document !== 'undefined') document.addEventListener('visibilitychange', onVis);
     return () => { if (typeof document !== 'undefined') document.removeEventListener('visibilitychange', onVis); };

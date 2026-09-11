@@ -28,7 +28,7 @@ export function track(event: string, props?: Props): void {
 // Event diagnostyki: wstrzykuje `version` z JEDNEGO centralnego zrodla (ASSESSMENT_VERSION),
 // zeby moc porownac 2.5.0 vs 2.5.1 bez mieszania danych. Uzywaj do wszystkich eventow diagnostyki.
 export function trackDiag(event: string, props?: Props): void {
-  track(event, { version: ASSESSMENT_VERSION, ...props });
+  track(event, { analytics_schema: 'site-analytics-v1', surface: 'diagnostyka', version: ASSESSMENT_VERSION, ...props });
 }
 
 // P1-1 (rc-003): rejestruje NIE-PII kontekst atrybucji settera (src/lane/campaign/mode) jako super-properties.

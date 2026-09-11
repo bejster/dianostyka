@@ -36,6 +36,14 @@ export default function ResultExperience({
   contentSignals?: Record<string, string | boolean>;
 }) {
   const progRef = useRef<HTMLDivElement>(null);
+  const resultStartedAt = useRef<number>(Date.now());
+  const maxScrollRef = useRef<number>(0);
+  const lastBeatRef = useRef<string>('');
+  const beatSeenAtRef = useRef<number>(Date.now());
+  const hiddenAtRef = useRef<number>(0);
+  const hiddenMsRef = useRef<number>(0);
+  const beatHiddenMsRef = useRef<number>(0);
+  const scrollMarksRef = useRef<Set<number>>(new Set());
   const [calib, setCalib] = useState<string>('');
   const [committed, setCommitted] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -52,24 +60,49 @@ export default function ResultExperience({
   };
 
   useEffect(() => {
+    resultStartedAt.current = Date.now();
+    beatSeenAtRef.current = Date.now();
     trackDiag('result_viewed', { arch: archKey });
     // Jedna anonimowa paczka content intelligence. Wyłącznie bezpieczne kategorie, zero PII/free text/health data.
     if (contentSignals) trackDiag('content_signal', contentSignals);
     const io = new IntersectionObserver((es) => es.forEach((e) => {
-      if (e.isIntersecting) {
-        (e.target as HTMLElement).classList.add('in');
-        const b = (e.target as HTMLElement).dataset.beat;
-        const EVT: Record<string, string> = { '1': 'current_state_viewed', map: 'map_viewed', evidence: 'evidence_viewed', fracture: 'fracture_viewed', '2': 'loop_viewed', '5': 'experiment_viewed', horizon: 'horizon_viewed', '6': 'method_demo_viewed' };
-        if (b && EVT[b]) trackDiag(EVT[b], { arch: archKey, ...(b === '5' ? { experiment_id: experiment.id, confidence: experimentConfidence } : {}) });
-        io.unobserve(e.target);
+      if (!e.isIntersecting) return;
+      (e.target as HTMLElement).classList.add('in');
+      const b = (e.target as HTMLElement).dataset.beat;
+      const EVT: Record<string, string> = { '1': 'current_state_viewed', map: 'map_viewed', evidence: 'evidence_viewed', fracture: 'fracture_viewed', '2': 'loop_viewed', '5': 'experiment_viewed', horizon: 'horizon_viewed', '6': 'method_demo_viewed' };
+      if (b && EVT[b]) {
+        const now = Date.now();
+        if (lastBeatRef.current && lastBeatRef.current !== b) trackDiag('result_beat_dwell', { arch: archKey, beat: lastBeatRef.current, dwell_ms: Math.max(0, now - beatSeenAtRef.current - beatHiddenMsRef.current) });
+        lastBeatRef.current = b; beatSeenAtRef.current = now; beatHiddenMsRef.current = 0;
+        trackDiag(EVT[b], { arch: archKey, ...(b === '5' ? { experiment_id: experiment.id, confidence: experimentConfidence } : {}) });
       }
+      io.unobserve(e.target);
     }), { threshold: 0.16 });
     const beats = document.querySelectorAll('.rx-beat');
     beats.forEach((b) => io.observe(b));
     document.querySelector('.rx-hero')?.classList.add('in');
-    const onScroll = () => { const h = document.documentElement; const p = h.scrollTop / (h.scrollHeight - h.clientHeight || 1); if (progRef.current) progRef.current.style.width = (p * 100) + '%'; };
+    const marks = [25, 50, 75, 90, 100];
+    const onScroll = () => {
+      const h = document.documentElement; const pct = Math.max(0, Math.min(100, Math.round((h.scrollTop / (h.scrollHeight - h.clientHeight || 1)) * 100)));
+      maxScrollRef.current = Math.max(maxScrollRef.current, pct);
+      if (progRef.current) progRef.current.style.width = pct + '%';
+      for (const mark of marks) if (pct >= mark && !scrollMarksRef.current.has(mark)) { scrollMarksRef.current.add(mark); trackDiag('result_scroll_depth', { arch: archKey, pct: mark }); }
+    };
+    const onVisibility = () => {
+      const now = Date.now();
+      if (document.visibilityState === 'hidden') hiddenAtRef.current = now;
+      else if (hiddenAtRef.current) { const delta = now - hiddenAtRef.current; hiddenMsRef.current += delta; beatHiddenMsRef.current += delta; hiddenAtRef.current = 0; }
+    };
+    const onPageHide = () => {
+      const now = Date.now(); const pendingHidden = hiddenAtRef.current ? now - hiddenAtRef.current : 0;
+      if (lastBeatRef.current) trackDiag('result_beat_dwell', { arch: archKey, beat: lastBeatRef.current, dwell_ms: Math.max(0, now - beatSeenAtRef.current - beatHiddenMsRef.current - pendingHidden), final: true });
+      trackDiag('result_exit_snapshot', { arch: archKey, last_beat: lastBeatRef.current || 'hero', max_scroll_pct: maxScrollRef.current, active_ms: Math.max(0, now - resultStartedAt.current - hiddenMsRef.current - pendingHidden) });
+    };
     window.addEventListener('scroll', onScroll, { passive: true });
-    return () => { io.disconnect(); window.removeEventListener('scroll', onScroll); };
+    document.addEventListener('visibilitychange', onVisibility);
+    window.addEventListener('pagehide', onPageHide);
+    onScroll();
+    return () => { io.disconnect(); window.removeEventListener('scroll', onScroll); document.removeEventListener('visibilitychange', onVisibility); window.removeEventListener('pagehide', onPageHide); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [archKey]);
 
