@@ -216,3 +216,28 @@ test('the first two cold-flow screens are not labelled as a weekend section', ()
     assert.doesNotMatch(section, /[Ww]eekend/, `screen for ${id} still opens under a weekend section label: ${section}`);
   }
 });
+
+test('the closing block confronts the ceiling belief without inventing precision', () => {
+  // Domkniecie bylo uprzejme i przez to bezzebne. ICP wychodzil z przekonaniem "u mnie jest ok,
+  // ogarne sam". Trigger ma uderzac w to przekonanie, ale wylacznie liczbami z pasm zapasu.
+  const src = fs.readFileSync(path.join(root, 'app/components/ResultExperience.tsx'), 'utf8');
+  assert.match(src, /const ceilingHit = 'Nie wiesz, gdzie masz sufit/);
+  assert.match(src, /className="rx-ceiling"/);
+  // trigger stoi PRZED handlowym CTA, a CTA dalej stoi przed kalibracja
+  const ceilingAt = src.indexOf('className="rx-ceiling"');
+  const kickerAt = src.indexOf('{route.primaryKicker}');
+  const calibAt = src.indexOf('data-beat="7"');
+  assert.ok(ceilingAt > 0 && ceilingAt < kickerAt, 'ceiling trigger does not stand above the routed CTA');
+  assert.ok(kickerAt < calibAt, 'commercial CTA slipped below calibration');
+  // liczba w triggerze pochodzi z pasm zapasu, nie z wymyslonego procentu potencjalu
+  const block = src.slice(src.indexOf('const ceilingCount'), src.indexOf('const commitExperiment'));
+  assert.ok(block.length > 200, 'ceiling copy block not found');
+  assert.match(block, /bigReserve|anyReserve/);
+  assert.doesNotMatch(block, /%|procent/, 'closing trigger invented a potential percentage');
+  assert.doesNotMatch(block, /testosteron|kortyzol|hormon/i, 'closing trigger makes a hormonal claim');
+  // zakaz sloganowej antytezy X/Y w gotowym copy domkniecia
+  assert.doesNotMatch(block, /[Tt]o nie .{2,40}, to /);
+  assert.doesNotMatch(block, /[Nn]ie chodzi o /);
+  // twardy gate jezykowy: przecinek bezposrednio przed spojnikiem "i"
+  assert.doesNotMatch(block, /, i /);
+});
