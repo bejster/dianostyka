@@ -13,8 +13,10 @@ const cfg = fs.readFileSync(path.join(root, 'app/lib/assessment-config.ts'), 'ut
 // a nie silnika scoringu nizej w pliku (tam slowo "Weekend" jest legalna etykieta osi).
 const coldEntry = page.match(/if \(phase === 'intro'\) \{([\s\S]*?)\n  \}/)?.[1] ?? '';
 
-test('v2.8 release is versioned 2.8.0', () => {
-  assert.match(cfg, /ASSESSMENT_VERSION = '2\.8\.0'/);
+test('v2.8 release is versioned 2.8.1', () => {
+  // 2.8.1 = ten sam release awareness-first plus blok sufitu w domknieciu. Wersja jedzie w href CTA,
+  // wiec musi sie zmienic razem z copy, inaczej konwersja sprzed i po triggerze wpada do jednego worka.
+  assert.match(cfg, /ASSESSMENT_VERSION = '2\.8\.1'/);
 });
 
 test('cold entry sells an awareness gap, not a weekend audit', () => {

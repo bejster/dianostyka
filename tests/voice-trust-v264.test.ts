@@ -8,8 +8,8 @@ const questions = fs.readFileSync('app/lib/assessment-config.ts', 'utf8');
 const packs = fs.readFileSync('app/lib/result-content.ts', 'utf8');
 const flow = fs.readFileSync('app/components/SingleQuestionFlow.tsx', 'utf8');
 
-test('v2.8.0 moves the human trust anchor out of the cold entry and into the result', () => {
-  assert.match(questions, /ASSESSMENT_VERSION = '2\.8\.0'/);
+test('v2.8.1 moves the human trust anchor out of the cold entry and into the result', () => {
+  assert.match(questions, /ASSESSMENT_VERSION = '2\.8\.1'/);
   assert.doesNotMatch(page, /src="\/michal-portrait\.jpg"/);
   assert.match(result, /src="\/michal-portrait\.jpg"/);
   assert.match(page, /Sprawdź, czy Twój obecny poziom to naprawdę Twój sufit\./);
