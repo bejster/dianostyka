@@ -150,11 +150,12 @@ const EE_CONSEQUENCE: Record<string, string> = {
   ee_chaos: 'stały rytm jedzenia',
 };
 function crossDomainConsequence(answers: RawAnswers, triggerDomain: string): string {
-  const sq = s(answers.sleep_quality), screen = s(answers.screen_bed);
+  // screen_bed jest wyciety z flow na stale, wiec czytanie go bylo martwym warunkiem. Zostaje sleep_quality.
+  const sq = s(answers.sleep_quality);
   const pair = trainingPair(answers);
   const st = s(answers.stress_level), wp = s(answers.weekend_pattern);
   const candidates: Array<{ domain: string; text?: string }> = [
-    { domain: 'sen', text: sq === 'sq_heavy' || sq === 'sq_wrecked' || screen === 'sb_bed' || screen === 'sb_fallasleep' ? 'godzina, o której naprawdę gasisz światło' : undefined },
+    { domain: 'sen', text: sq === 'sq_heavy' || sq === 'sq_wrecked' ? 'godzina, o której naprawdę gasisz światło' : undefined },
     { domain: 'trening', text: pair && pair.missed >= 1 ? 'trening, który miałeś wpisany w tydzień' : undefined },
     { domain: 'wieczor', text: EE_CONSEQUENCE[s(answers.evening_eating)] },
     { domain: 'praca', text: st === 'st_high' || st === 'st_max' ? 'spokojne zejście z pracy' : undefined },
@@ -191,7 +192,6 @@ export function computeCostFacts(answers: RawAnswers): string[] {
   const hp = n(answers.half_power_hours);
   const pair = trainingPair(answers);
   const mon = s(answers.monday_recovery);
-  const takeout = n(answers.takeout_cost);
 
   push(typeof hp === 'number' && hp > 0, `${hoursPl(hp as number)} h dziennie lecisz według siebie na pół mocy.`);
   // zero wypadajacych treningow nie jest kosztem — bez tego warunku blok "co to juz kosztuje" otwieral sie zdaniem "0 z 3 treningow wypada"
@@ -199,6 +199,7 @@ export function computeCostFacts(answers: RawAnswers): string[] {
   // szablon nizej ma juz "dopiero" — etykieta nie moze go powtarzac ("wracasz do siebie dopiero dopiero we wtorek")
   const monLabel: Record<string, string> = { mon_1: 'w poniedziałek po południu', mon_2: 'we wtorek', mon_3: 'w środę albo później' };
   push(!!monLabel[mon], `Po weekendzie wracasz do siebie dopiero ${monLabel[mon] || ''}.`);
-  push(typeof takeout === 'number' && takeout > 0, `Na dowozy i jedzenie poza domem podałeś około ${takeout} zł miesięcznie.`);
+  // takeout_cost jest wyciety z flow na stale, wiec linia o kwocie za dowozy nie mogla sie nigdy pokazac.
+  // Lepiej nie trzymac w silniku faktu, ktory udaje, ze dziala.
   return out;
 }

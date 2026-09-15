@@ -15,6 +15,25 @@ function num(v: unknown, fallback: number): number {
   return typeof v === 'number' && !Number.isNaN(v) ? v : fallback;
 }
 
+// ── workHours bez pytania o godziny ──
+// Zywy flow nie ma suwaka work_hours, wiec do tej pory FD.workHours bylo stale rowne 8 i dwie
+// galezie w diagnostic-core (dodatek do Glowy oraz archetyp 'glowa_zajezdza') nigdy sie nie
+// odpalaly. Zamiast je kasowac, karmimy je odpowiedzia, ktora czlowiek realnie daje: work_load.
+// To nie jest zmierzona liczba godzin, tylko obciazenie przelozone na skale godzinowa, ktorej
+// uzywa rdzen. Dlatego kazda wartosc siedzi blisko osmiu i zadna nie trafia na wynik jako liczba.
+const WORK_LOAD_HOURS: Record<string, number> = {
+  wl_clock: 8,      // zamyka laptopa o 17
+  wl_deadline: 9,   // termin wisi, wiec dzien sie rozciaga
+  wl_people: 9,     // kilka osob czeka, koniec dnia zalezy od nich
+  wl_firefight: 10, // swoja robote odrabia po nocy, wprost z tresci odpowiedzi
+  wl_owner: 10,     // wlasna firma, kazda niezrobiona rzecz wraca
+};
+
+function workHoursFromLoad(a: RawAnswers): number {
+  const load = typeof a.work_load === 'string' ? a.work_load : '';
+  return WORK_LOAD_HOURS[load] ?? INIT.workHours;
+}
+
 export function answersToFD(a: RawAnswers): FD {
   // wiek -> age (slider 18-50, wartosc wprost)
   const age = num(a.age, INIT.age);
@@ -170,7 +189,7 @@ export function answersToFD(a: RawAnswers): FD {
     ...INIT,
     age,
     sleep: num(a.sleep_hours, INIT.sleep),      // slider 3-9 h, wartosc wprost
-    workHours: num(a.work_hours, INIT.workHours), // slider 4-14 h, wartosc wprost
+    workHours: workHoursFromLoad(a),            // patrz WORK_LOAD_HOURS: obciazenie pracy z work_load
     lost: num(a.half_power_hours, INIT.lost),   // slider 0-4 h na pol mocy dziennie
     junk: num(a.takeout_cost, INIT.junk),        // miesieczny wydatek na dowozy/jedzenie na miescie (zL/mies)
     cash: num(a.weekend_cash, INIT.cash),        // typowe jedno wyjscie (zL): alkohol/kluby/taksowki/jedzenie

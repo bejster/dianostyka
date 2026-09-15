@@ -466,7 +466,9 @@ export const QUESTIONS: QuestionDef[] = [
     section: 'Napęd',
     sectionNum: 'VII',
     title: 'Poranne wzwody, szczerze, jak często?',
-    subtitle: 'Bez oceniania. To jeden z najlepszych domowych sygnałów snu i testosteronu, dlatego pytam wprost.',
+    // Zadnej tezy hormonalnej. Pytanie jest wylaczone, ale nawet wylaczone nie moze niesc claimu,
+    // ktorego nie wolno nam postawic bez badan. Zostaje obserwacja regeneracji i zaproszenie do lekarza.
+    subtitle: 'Bez oceniania. To sygnał regeneracji, który sam u siebie widzisz, dlatego pytam wprost. Jeśli coś się zmieniło na dłużej, warto to sprawdzić u lekarza.',
     type: 'single',
     domain: 'chaos',
     upstreamWeight: 0.55,
@@ -677,7 +679,8 @@ export const PROFILES: Record<string, ProfileDef> = {
     code: 'E',
     title: 'Cały tydzień jedziesz na napięciu',
     tagline: 'Dowozisz wynik siłą, ale rachunek przychodzi wtedy, gdy puszcza kontrola.',
-    coreInsight: 'Ciągłe napięcie trzyma wysoki poziom kortyzolu, a to blokuje regenerację i zbija formę.',
+    // Bez tezy o kortyzolu. Opisujemy zachowanie i jego skutek, nie stan hormonalny, ktorego nie badamy.
+    coreInsight: 'Dzień kończy się na tych samych obrotach, na których się zaczął, więc wieczór nie jest regeneracją, tylko ciszą przy tym samym napięciu.',
     mirrorText: 'Pracujesz na wysokich obrotach i wszystko dowozisz. Ale po pracy nie umiesz wyłączyć głowy, więc ciało się nie regeneruje.',
     primaryDomain: 'energy',
   },

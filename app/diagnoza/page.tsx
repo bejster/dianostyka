@@ -402,7 +402,11 @@ export default function DiagnozaPage() {
     // URL naboru (Beat 8 End Experience): ZERO PII — tylko routing/analytics. IG/score/kwota NIE lecą.
     // Bez kotwicy. Na zywej stronie naboru (candidate-20260915) nie ma id="prowadzenie", wiec #prowadzenie
     // bylo martwym fragmentem. Czlowiek ma wejsc od gory strony oferty i sam dojsc do formularza.
-    const naborUrl = `https://nabor.talerzihantle.com/?${new URLSearchParams({ from: 'diag', arch: arch.key, intent: typeof answers.intent === 'string' ? answers.intent : '', v: ASSESSMENT_VERSION }).toString()}`;
+    // sub = anonimowy identyfikator wypelnienia diagnostyki (ten sam, ktory idzie w shareSafe). Nie jest
+    // PII i niczego o czlowieku nie zdradza, a pozwala Michalowi zlaczyc zgloszenie z formularza naboru
+    // z konkretna diagnoza zamiast zgadywac po dacie.
+    const submissionRef = typeof window !== 'undefined' ? (localStorage.getItem('diagnostyka_v2_submission_id') || '') : '';
+    const naborUrl = `https://nabor.talerzihantle.com/?${new URLSearchParams({ from: 'diag', arch: arch.key, intent: typeof answers.intent === 'string' ? answers.intent : '', v: ASSESSMENT_VERSION, ...(submissionRef ? { sub: submissionRef } : {}) }).toString()}`;
     // Werdykt 3-tier (nieuzywany bezposrednio w V3 result-router, zostawiony dla kompatybilnosci z redCount): WYLACZNIE ciezkosc/potrzeba z liczby domen "na czerwono".
     const redCount = statuses.filter((st) => st.score < 45).length;
     const LEAK_LABEL: Record<string, string> = { Sen: 'sen', Stres: 'głowa wieczorem', 'Żywienie': 'wieczory', Weekend: 'weekend', Trening: 'wykonanie', 'Głowa': 'głowa wieczorem' };
@@ -446,7 +450,7 @@ export default function DiagnozaPage() {
       has_pain_text: typeof answers.user_pain === 'string' && answers.user_pain.trim().length > 0,
       has_trigger_text: typeof answers.user_trigger === 'string' && answers.user_trigger.trim().length > 0,
     };
-    const submissionIdStr = typeof window !== 'undefined' ? (localStorage.getItem('diagnostyka_v2_submission_id') || '') : '';
+    const submissionIdStr = submissionRef;
     const userPainSafe = typeof answers.user_pain === 'string' && answers.user_pain.trim() ? answers.user_pain.trim() : undefined;
     return (
       <ResultExperience
