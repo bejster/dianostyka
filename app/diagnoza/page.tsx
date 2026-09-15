@@ -400,7 +400,9 @@ export default function DiagnozaPage() {
     // Same-tab (#2) + parametry = ciaglosc lejka, zero przepisywania danych przez usera.
     const igClean = typeof answers.instagram === 'string' ? answers.instagram.replace(/^@?/, '') : '';
     // URL naboru (Beat 8 End Experience): ZERO PII — tylko routing/analytics. IG/score/kwota NIE lecą.
-    const naborUrl = `https://nabor.talerzihantle.com/?${new URLSearchParams({ from: 'diag', arch: arch.key, intent: typeof answers.intent === 'string' ? answers.intent : '', v: ASSESSMENT_VERSION }).toString()}#prowadzenie`;
+    // Bez kotwicy. Na zywej stronie naboru (candidate-20260915) nie ma id="prowadzenie", wiec #prowadzenie
+    // bylo martwym fragmentem. Czlowiek ma wejsc od gory strony oferty i sam dojsc do formularza.
+    const naborUrl = `https://nabor.talerzihantle.com/?${new URLSearchParams({ from: 'diag', arch: arch.key, intent: typeof answers.intent === 'string' ? answers.intent : '', v: ASSESSMENT_VERSION }).toString()}`;
     // Werdykt 3-tier (nieuzywany bezposrednio w V3 result-router, zostawiony dla kompatybilnosci z redCount): WYLACZNIE ciezkosc/potrzeba z liczby domen "na czerwono".
     const redCount = statuses.filter((st) => st.score < 45).length;
     const LEAK_LABEL: Record<string, string> = { Sen: 'sen', Stres: 'głowa wieczorem', 'Żywienie': 'wieczory', Weekend: 'weekend', Trening: 'wykonanie', 'Głowa': 'głowa wieczorem' };

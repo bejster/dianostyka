@@ -161,15 +161,41 @@ export default function ResultExperience({
     : 'Ten wynik nie daje Ci dziś nic do gaszenia.';
   // Zadnego "wiekszosc osob". To bylaby statystyka, ktorej nikt nie policzyl. Zostaje scena.
   const ceilingBody = hasCeilingRoom
-    ? 'Zwykle wygląda to tak, że nic nie jest złe: robota idzie, trening jakoś leci, weekend się odbywa. I dokładnie dlatego nic się nie rusza. Nie ma jednego dnia, po którym mówisz dość. Jest za to poniedziałek, który wygląda tak samo jak dwa lata temu.'
+    ? 'Zwykle wygląda to tak, że nic nie jest złe: robota idzie, trening jakoś leci, weekend się odbywa. I dokładnie dlatego nic się nie rusza. Jest za to poniedziałek, który wygląda tak samo jak dwa lata temu.'
     : 'To jest ten moment, w którym najłatwiej odpuścić, bo nic nie pali. Jest też jedyny moment, w którym da się spokojnie sprawdzić, na ile Cię realnie stać.';
-  const ceilingData = hasCeilingRoom
-    ? `U Ciebie ${ceilingCount} z ${statuses.length} obszarów ${ceilingCount === 1 ? 'ma' : 'mają'} dziś ${bigReserve >= 1 ? 'wyraźny' : 'umiarkowany'} zapas. Każdy z nich stoi na Twojej własnej odpowiedzi sprzed pięciu minut.`
-    : `Wszystkie ${statuses.length} obszarów trzyma się dziś wysoko. Nie masz czego naprawiać. Masz czego nie sprawdziłeś.`;
   // Wczesniej jeden literal dla kazdego. Teraz domkniecie wskazuje realny obszar z jego wlasnego wyniku.
   const ceilingHit = hasCeilingRoom
     ? `Nie wiesz, ile zapasu siedzi tutaj: ${breakPos.label}. Nigdy nie sprawdziłeś tego przy tygodniu, który trzyma.`
     : 'Nie wiesz, gdzie jest Twój pułap, bo nie było jeszcze tygodnia, w którym wszystko zagrało naraz.';
+
+  // ── V2.8.3 BRAKI: zamiast abstrakcyjnego "N z 5 obszarow ma zapas" domkniecie nazywa konkretne
+  //    luki z jego wlasnych osi, ale w jezyku, ktorym czlowiek mysli o swoim dniu: sylwetka, glowa,
+  //    energia, czas. Energia jest tu opisana przez skupienie, bo tak dziala u tego ICP: krotszy
+  //    fokus = ta sama robota zjada wiecej godzin = "nie mam czasu". Zero wymyslonych liczb.
+  const GAP_COST: Record<string, string> = {
+    'Forma': 'sylwetka stoi w tym samym miejscu, chociaż wkładasz w nią więcej niż rok temu',
+    'Sen i regeneracja': 'dzień startuje z mniejszym zapasem, więc wieczór dostaje Cię już zużytego',
+    'Napęd i libido': 'chęć na cokolwiek poza robotą wraca wolniej, niż kiedyś wracała',
+    'Głowa i stres': 'skupienie trzyma krócej, więc ta sama robota zjada Ci więcej godzin z dnia',
+    'Weekend i rytm': 'dwa dni rozkładają to, co ustawiłeś przez poprzednie pięć',
+  };
+  const gaps = orderedStatuses
+    .filter((st) => reserveBand(st.score) !== 'mały')
+    .slice(0, 3)
+    .map((st) => ({ label: st.label, cost: GAP_COST[st.label] || 'ten obszar ma dziś najwięcej miejsca do poprawy' }));
+  const gapsLead = gaps.length === 1
+    ? 'Z Twoich odpowiedzi wychodzi jedno miejsce z realnym zapasem.'
+    : `Z Twoich odpowiedzi wychodzą ${gaps.length === 2 ? 'dwa miejsca' : 'trzy miejsca'} z realnym zapasem.`;
+
+  // Fakt z mojego arkusza "PODSUMOWANIE TYGODNIA": 431 cotygodniowych check-inow od 44 osob, od grudnia.
+  // Podane jako obserwacja z wlasnych danych, nie jako dowod przyczynowy i nie jako teza medyczna.
+  // Ta wiedza celowo nie powtarza niczego ze strony naboru.
+  const knowledgeLine = 'Jedna rzecz z moich check-inów, zanim pójdziesz dalej. Mam 431 cotygodniowych podsumowań od 44 osób, zbieranych od grudnia. Wychodzi z nich, że sama liczba godzin snu tłumaczy zaskakująco mało. Ludzie, którzy śpią po siedem i pół godziny, mają tygodnie od bardzo dobrych po całkiem rozjechane. Różnicę robi ocena jakości snu zestawiona z energią następnego dnia, czyli dokładnie te dwie rzeczy, które ustawia się wieczorem, a nie budzikiem.';
+
+  // Zaproszenie w moim jezyku, nie w jezyku landing page. Bez obietnicy wyniku, bez presji,
+  // z jawnym powiedzeniem, co sie stanie po wyslaniu formularza.
+  const naborInvite = 'Tyle ode mnie w tym wyniku. Jak chcesz, żebym pomógł Ci to poukładać, obadaj sobie na spokojnie stronę prowadzenia. W środku jest formularz. Wypełnij go śmiało, nic za to nie płacisz i do niczego Cię to nie zobowiązuje. Przeczytam go osobiście i powiem wprost, czy widzę tutaj sens wspólnej roboty.';
+  const naborInviteSoft = 'A jeśli wolisz, żeby ktoś poukładał Ci to z zewnątrz, obadaj stronę prowadzenia. W środku jest formularz, wypełnij go śmiało. Przeczytam go osobiście.';
 
   const commitExperiment = () => {
     setCommitted(true);
@@ -404,7 +430,7 @@ export default function ResultExperience({
             <span className="rx-r">{GOOGLE_AGG.rating} <span style={{ color: C.gold }}>★★★★★</span><span style={{ color: C.mute, fontWeight: 400 }}> · {GOOGLE_AGG.count} opinii w Google</span></span>
           </a>
           <div className="rx-gcards">
-            {GOOGLE_CARDS.slice(0, 2).map((r, i) => (
+            {GOOGLE_CARDS.slice(0, 1).map((r, i) => (
               <div key={i} className="rx-gcard">
                 <div className="rx-gtop"><span style={{ color: C.gold, letterSpacing: 1 }}>★★★★★</span><span style={{ fontFamily: C.mono, fontSize: 10, color: C.faint }}>{r.name}</span></div>
                 <p className="rx-gq">„{r.text}”</p>
@@ -418,13 +444,24 @@ export default function ResultExperience({
             <div className="rx-ceiling">
               <p className="rx-ceiling-lead">{ceilingLead}</p>
               <p>{ceilingBody}</p>
-              <p>{ceilingData}</p>
               <p className="rx-ceiling-hit">{ceilingHit}</p>
             </div>
+            {gaps.length > 0 && (
+              <div className="rx-gaps">
+                <p className="rx-gaps-lead">{gapsLead}</p>
+                <ul>
+                  {gaps.map((g) => (
+                    <li key={g.label}><strong>{g.label}:</strong> {g.cost}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            <p className="rx-know">{knowledgeLine}</p>
             <h3>{route.primaryKicker}</h3>
             <p>{route.primaryNote}</p>
             {route.primary === 'nabor' ? (
               <>
+                <p className="rx-invite">{naborInvite}</p>
                 <a className="rx-next rx-next-strong" href={naborHref} target="_blank" rel="noopener noreferrer" onClick={onNaborClick}>{route.primaryLabel} →</a>
                 {!committed && <button className="rx-route-alt" type="button" onClick={commitExperiment}>Nie teraz. Biorę test 72h</button>}
                 {committed && <div className="rx-action-confirm">Test 72h zapisany ✓</div>}
@@ -434,6 +471,7 @@ export default function ResultExperience({
                 {!committed ? <button className="rx-next rx-next-strong" type="button" onClick={commitExperiment}>{route.primaryLabel}</button> : <div className="rx-action-confirm">Test 72h zapisany ✓</div>}
                 {committed && !saved && <button className="rx-next rx-next-medium" type="button" onClick={shareSafe}>Zapisz wynik na te 72 godziny</button>}
                 {committed && saved && <div className="rx-action-done">Wynik zapisany. Zostaje Ci jeden test.</div>}
+                {route.secondaryNabor && <p className="rx-invite rx-invite-soft">{naborInviteSoft}</p>}
                 {route.secondaryNabor && <a className="rx-route-alt" href={naborHref} target="_blank" rel="noopener noreferrer" onClick={onNaborClick}>{route.secondaryNabor.label} →</a>}
               </>
             )}
@@ -515,6 +553,9 @@ const css = `
 .rx-map{display:grid;gap:14px}.rx-axis-head{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-bottom:7px}.rx-axis-head span{font-size:13.5px;color:${C.paper};font-weight:650}.rx-axis-score{display:flex;align-items:baseline;gap:8px}.rx-axis-score em{font-family:${C.mono};font-style:normal;font-size:8px;letter-spacing:1px;text-transform:uppercase;color:${C.faint}}.rx-axis-score strong{font-family:${C.mono};font-size:14px;color:${C.goldB}}.rx-axis-reason{margin:7px 0 0;color:${C.faint};font-size:10.5px;line-height:1.42}.rx-axis-track{position:relative;height:9px;border-radius:999px;background:#242429;overflow:hidden;box-shadow:inset 0 1px 2px rgba(0,0,0,.55)}.rx-axis-fill{height:100%;border-radius:inherit;background:linear-gradient(90deg,${C.goldD},${C.goldB});box-shadow:0 0 16px rgba(200,168,78,.22)}.rx-axis-mid{position:absolute;left:50%;top:0;bottom:0;width:1px;background:rgba(255,255,255,.16)}.rx-map-proof{margin:14px 0 0;padding:16px 17px;border:1px solid rgba(200,168,78,.24);border-radius:14px;background:linear-gradient(150deg,rgba(200,168,78,.055),${C.pan})}.rx-map-proof>span{display:block;font-family:${C.mono};font-size:9px;letter-spacing:1.7px;text-transform:uppercase;color:${C.gold};font-weight:800;margin-bottom:9px}.rx-map-proof p{margin:0 0 8px;font-size:12.5px;line-height:1.55;color:${C.mute}}.rx-map-proof p:last-child{margin-bottom:0;color:${C.faint}}.rx-map-proof strong{color:${C.goldB}}
 .rx-72line{display:flex;align-items:center;gap:8px;margin:0 0 18px;color:${C.goldB};font-family:${C.mono};font-size:10px;font-weight:700;letter-spacing:1px}.rx-72line i{height:1px;flex:1;background:linear-gradient(90deg,${C.goldD},rgba(200,168,78,.18));position:relative}.rx-72line i::after{content:"";position:absolute;right:-2px;top:-2px;width:5px;height:5px;border-radius:50%;background:${C.gold}}
 .rx-ceiling{margin:2px 0 20px;padding:2px 0 2px 16px;border-left:2px solid ${C.goldD}}.rx-ceiling p{margin:0 0 9px;font-size:14.5px;line-height:1.6;color:${C.mute}}.rx-ceiling p:last-child{margin-bottom:0}.rx-ceiling p.rx-ceiling-lead{font-family:${C.serif};font-weight:400;font-size:clamp(22px,4.4vw,30px);line-height:1.14;color:${C.paper};margin-bottom:12px}.rx-ceiling p.rx-ceiling-hit{color:${C.goldB};font-weight:700;font-size:15.5px;line-height:1.5}
+.rx-gaps{margin:0 0 18px}.rx-gaps .rx-gaps-lead{font-family:${C.mono};font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:${C.faint};margin:0 0 10px}.rx-gaps ul{list-style:none;margin:0;padding:0}.rx-gaps li{font-family:${C.sans};font-size:14.5px;line-height:1.55;color:${C.mute};padding:9px 0 9px 14px;border-left:1px solid ${C.goldD};margin-bottom:7px}.rx-gaps li:last-child{margin-bottom:0}.rx-gaps li strong{color:${C.paper};font-weight:600}
+.rx-know{font-family:${C.sans};font-size:14px;line-height:1.7;color:${C.faint};margin:0 0 22px;padding:14px 16px;background:rgba(255,255,255,.028);border-radius:4px}
+.rx-invite{font-family:${C.sans};font-size:15.5px;line-height:1.68;color:${C.paper};margin:0 0 16px}.rx-invite.rx-invite-soft{font-size:14.5px;color:${C.mute};margin-top:18px}
 .rx-final-action{margin-top:34px;padding:22px;border:1px solid ${C.goldD};border-radius:18px;background:linear-gradient(160deg,rgba(200,168,78,.10),${C.pan2} 48%,${C.pan});box-shadow:0 24px 70px -42px rgba(200,168,78,.7)}.rx-final-action h3{font-family:${C.serif};font-size:clamp(25px,5vw,36px);line-height:1.05;font-weight:400;color:${C.paper};margin:8px 0 10px}.rx-final-action>p{color:${C.mute};font-size:14.5px;line-height:1.55;margin:0 0 18px}.rx-action-confirm{text-align:center;padding:16px;border:1px solid ${C.goldD};border-radius:13px;color:${C.goldB};font-weight:800;background:rgba(200,168,78,.06);margin-bottom:10px}.rx-action-done{text-align:center;color:${C.mute};font-size:13px;line-height:1.5;padding:6px 8px 2px}
 .rx-route-card{margin-top:30px;padding:24px;border-radius:20px;border:1px solid rgba(200,168,78,.34);background:radial-gradient(420px 180px at 50% 0%,rgba(200,168,78,.12),transparent 70%),${C.pan};box-shadow:0 28px 80px -52px rgba(200,168,78,.65)}.rx-route-eyebrow{font-family:${C.mono};font-size:10px;letter-spacing:2.4px;text-transform:uppercase;color:${C.gold};font-weight:800;margin-bottom:10px}.rx-route-card h3{font-family:${C.serif};font-weight:400;font-size:clamp(25px,4.8vw,34px);line-height:1.08;margin:0 0 12px;color:${C.paper}}.rx-route-card>p{font-size:14.5px;line-height:1.58;color:${C.mute};margin:0 0 20px}.rx-route-alt{display:block;width:100%;text-align:center;text-decoration:none;background:transparent;border:0;color:${C.mute};font-size:13px;font-weight:650;padding:9px 8px;cursor:pointer}.rx-route-alt:hover{color:${C.goldB}}
 .rx-quote{font-family:${C.serif};font-style:italic;font-size:clamp(19px,4vw,24px);color:${C.paper};line-height:1.34;border-left:2px solid ${C.goldD};padding-left:18px;margin:14px 0 0}
