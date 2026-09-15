@@ -202,7 +202,11 @@ test('axis evidence never explains one axis with another axis signal', () => {
   const drive = page.match(/const driveReason = .*/)?.[0] ?? '';
   assert.ok(drive, 'driveReason not found');
   assert.doesNotMatch(drive, /D\.lost/, 'drive axis borrows the stress-axis half-power number as its evidence');
-  assert.match(drive, /nie zaznaczyłeś tu żadnego mocnego sygnału/);
+  assert.match(drive, /nie zaznaczyłeś tu żadnego z czterech sygnałów/);
+  // v2.8.4: sam objaw jako dowod ("zaznaczyles: motywacja") przeczyl etykiecie pasma, kiedy os wypadla
+  // najlepiej z pieciu. Dowod ma niesc proporcje, bo ta sama liczba tlumaczy wysoki wynik rownie dobrze jak niski.
+  assert.match(drive, /z czterech sygnałów/, 'drive evidence states a bare symptom instead of its proportion');
+  assert.doesNotMatch(drive, /`zaznaczyłeś: /, 'bare symptom label can contradict the band rendered above it');
 });
 
 test('the first two cold-flow screens are not labelled as a weekend section', () => {

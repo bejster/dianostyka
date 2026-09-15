@@ -377,7 +377,12 @@ export default function DiagnozaPage() {
     const driveLabels = [['libido','libido'],['motivation','motywacja'],['confidence','pewność siebie'],['recovery','regeneracja']].filter(([id]) => T.has(id)).map(([,label]) => label);
     // godziny na pol mocy naleza do osi glowy i stresu. Podstawione tutaj tlumaczyly WYSOKI wynik napedu
     // negatywnym faktem, wiec dowod przeczyl ocenie tuz obok niego.
-    const driveReason = driveLabels.length ? `zaznaczyłeś: ${driveLabels.slice(0, 2).join(' + ')}` : 'nie zaznaczyłeś tu żadnego mocnego sygnału';
+    // Sam objaw tez tego nie zamykal. "zaznaczyles: motywacja" pod etykieta TRZYMA SIE DZIS NAJLEPIEJ
+    // czytalo sie jak zaprzeczenie, bo goly objaw brzmi jak zarzut niezaleznie od tego, jak wypadla os.
+    // Liczba zaznaczonych sygnalow wobec czterech mozliwych tlumaczy oba konce skali tym samym zdaniem:
+    // jeden z czterech uzasadnia wysoki wynik, trzy z czterech uzasadniaja niski. Zrodlo zostaje w tej osi.
+    const DRIVE_COUNT_PL = ['', 'jeden', 'dwa', 'trzy', 'cztery'];
+    const driveReason = driveLabels.length ? `zaznaczyłeś tu ${DRIVE_COUNT_PL[driveLabels.length]} z czterech sygnałów: ${driveLabels.join(', ')}` : 'nie zaznaczyłeś tu żadnego z czterech sygnałów';
     // plan < 1 to najmocniejszy pojedynczy składnik formaSev (trainSev 0.85). Bez tej gałęzi oś schodzi w dół,
     // a podpis mówi userowi, że trening trzyma rytm. Podpis ma zawsze zgadzać się z jego własną odpowiedzią.
     const formReason = D.plan < 1 ? 'w zwykłym tygodniu nie planujesz treningów'
