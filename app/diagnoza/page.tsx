@@ -305,7 +305,7 @@ export default function DiagnozaPage() {
             Sprawdź, czy Twój obecny poziom to naprawdę Twój sufit.
           </h1>
           <p style={{ fontSize: 16, color: '#b9b2a7', lineHeight: 1.55, margin: '0 0 24px', maxWidth: 430 }}>
-            Kilkanaście krótkich pytań o to, jak funkcjonujesz w zwykłym tygodniu. Wynik pokaże, gdzie masz największy zapas, co ruszyć najpierw i po czym poznasz, że idziesz w dobrą stronę.
+            Kilkanaście krótkich pytań o to, jak wygląda Twój zwykły tydzień. Wynik pokaże, gdzie masz największy zapas, co ruszyć najpierw i po czym poznasz, że idziesz w dobrą stronę.
           </p>
           <button
             onClick={() => {

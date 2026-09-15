@@ -17,7 +17,9 @@ test('contact is required only after explicit help/coaching intent', () => {
 test('cold entry preserves curiosity and does not expose the hot sales branch', () => {
   assert.match(page, /TWÓJ ZWYKŁY TYDZIEŃ · 168 H/);
   assert.match(page, /Sprawdź, czy Twój obecny poziom to naprawdę Twój sufit\./);
-  assert.match(page, /Kilkanaście krótkich pytań o to, jak funkcjonujesz w zwykłym tygodniu\./);
+  // v2.8.3 pass jezykowy: "jak funkcjonujesz" to jezyk ankiety, nie Michala. Funkcja zdania zostaje
+  // ta sama (uczciwe ustawienie oczekiwan przed startem), wiec kontrakt trzyma dalej ten sam poziom.
+  assert.match(page, /Kilkanaście krótkich pytań o to, jak wygląda Twój zwykły tydzień\./);
   assert.doesNotMatch(page, /michal-portrait\.jpg/);
   assert.doesNotMatch(page, /Wiem, że chcę działać/);
   assert.match(flow, /EXCLUDED_COLD_IDS = new Set\(\['alcohol_intake'\]\)/);
