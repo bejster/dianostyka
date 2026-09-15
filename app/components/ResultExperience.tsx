@@ -51,6 +51,18 @@ export default function ResultExperience({
     { id: 'sen', label: 'Sen' }, { id: 'energia', label: 'Energia i głowa' }, { id: 'jedzenie', label: 'Jedzenie' },
     { id: 'ruch', label: 'Ruch' }, { id: 'weekend', label: 'Weekend' }, { id: 'naped', label: 'Napęd i libido' }, { id: 'ok', label: 'Wszystko pasuje' },
   ];
+  // Kalibracja nie moze konczyc sie podziekowaniem. Klikniecie oznacza, ze czlowiek wlasnie wykluczyl
+  // jeden obszar, a to jest informacja diagnostyczna: skoro nie tam, to gdzie indziej. Kazdy chip
+  // dostaje wiec konkretna reakcje z nastepnym miejscem do sprawdzenia. Wartosci wyniku sie nie zmieniaja.
+  const CALIB_REPLY: Record<string, string> = {
+    sen: 'Czyli tydzień rozjeżdża Ci się przy w miarę zebranym śnie. Wtedy patrzę najpierw na obciążenie w pracy oraz na to, co dzieje się między osiemnastą a dwudziestą drugą.',
+    energia: 'Czyli energię masz, a i tak coś wypada. To zwykle znaczy, że problemem jest kolejność dnia, nie zasoby. Sprawdziłbym, o której realnie kończysz robotę.',
+    jedzenie: 'Czyli punkt pęknięcia nie siedzi w jedzeniu. Jedzenie najczęściej tylko odbija to, co wydarzyło się wcześniej, więc następne pytanie brzmi: co robisz w godzinie przed pierwszą przekąską.',
+    ruch: 'Czyli treningi dowozisz. Wtedy różnicę robi reszta tygodnia, te godziny, w których nie ma siłowni.',
+    weekend: 'Czyli pęknięcie jest wcześniej niż sobota. Sprawdziłbym czwartek wieczorem, bo tam zwykle zapada decyzja o tym, jak będzie wyglądał piątek.',
+    naped: 'Czyli ten obszar trzyma. To dobry znak, bo zwykle schodzi jako jeden z ostatnich. Reszta wyniku zostaje w mocy.',
+    ok: 'To znaczy, że pracujemy na tym wyniku bez korekty. Test 72h ma teraz sprawdzić, czy pierwszy moment naprawdę trzyma.',
+  };
   const sendCalib = (id: string) => {
     setCalib(id);
     try {
@@ -147,13 +159,17 @@ export default function ResultExperience({
   const ceilingLead = hasCeilingRoom
     ? 'Ten wynik nie mówi, że jest u Ciebie źle.'
     : 'Ten wynik nie daje Ci dziś nic do gaszenia.';
+  // Zadnego "wiekszosc osob". To bylaby statystyka, ktorej nikt nie policzyl. Zostaje scena.
   const ceilingBody = hasCeilingRoom
-    ? 'Większość osób, które to wypełniają, żyje normalnie: robota idzie, trening jakoś leci, weekend się odbywa. I dokładnie dlatego nic się nie rusza. Nie ma jednego dnia, po którym mówisz dość. Jest za to poniedziałek, który wygląda tak samo jak dwa lata temu.'
-    : 'To jest ten moment, w którym większość odpuszcza, bo nic nie pali. Jest też jedyny moment, w którym da się spokojnie sprawdzić, jak wysoko sięga Twoja górna półka.';
+    ? 'Zwykle wygląda to tak, że nic nie jest złe: robota idzie, trening jakoś leci, weekend się odbywa. I dokładnie dlatego nic się nie rusza. Nie ma jednego dnia, po którym mówisz dość. Jest za to poniedziałek, który wygląda tak samo jak dwa lata temu.'
+    : 'To jest ten moment, w którym najłatwiej odpuścić, bo nic nie pali. Jest też jedyny moment, w którym da się spokojnie sprawdzić, na ile Cię realnie stać.';
   const ceilingData = hasCeilingRoom
     ? `U Ciebie ${ceilingCount} z ${statuses.length} obszarów ${ceilingCount === 1 ? 'ma' : 'mają'} dziś ${bigReserve >= 1 ? 'wyraźny' : 'umiarkowany'} zapas. Każdy z nich stoi na Twojej własnej odpowiedzi sprzed pięciu minut.`
     : `Wszystkie ${statuses.length} obszarów trzyma się dziś wysoko. Nie masz czego naprawiać. Masz czego nie sprawdziłeś.`;
-  const ceilingHit = 'Nie wiesz, gdzie masz sufit, bo jeszcze na nim nie stałeś.';
+  // Wczesniej jeden literal dla kazdego. Teraz domkniecie wskazuje realny obszar z jego wlasnego wyniku.
+  const ceilingHit = hasCeilingRoom
+    ? `Nie wiesz, ile zapasu siedzi tutaj: ${breakPos.label}. Nigdy nie sprawdziłeś tego przy tygodniu, który trzyma.`
+    : 'Nie wiesz, gdzie jest Twój pułap, bo nie było jeszcze tygodnia, w którym wszystko zagrało naraz.';
 
   const commitExperiment = () => {
     setCommitted(true);
@@ -235,7 +251,7 @@ export default function ResultExperience({
               {statuses.map((st) => (
                 <div className="rx-axis" key={st.label}>
                   <div className="rx-axis-head"><span>{st.label}</span><div className="rx-axis-score"><em>{axisBand(st.score)}</em><strong>{st.score}</strong></div></div>
-                  <div className="rx-axis-track" aria-label={`${st.label}: ${st.score} na 100`}><div className="rx-axis-fill" style={{ width: `${st.score}%` }} /><span className="rx-axis-mid" aria-hidden="true" /></div>
+                  <div className="rx-axis-track" aria-label={`${st.label}: ${st.score} punktów na wspólnej osi pięciu obszarów, ${axisBand(st.score)}`}><div className="rx-axis-fill" style={{ width: `${st.score}%` }} /><span className="rx-axis-mid" aria-hidden="true" /></div>
                   <p className="rx-axis-reason">{st.reason}</p>
                 </div>
               ))}
@@ -434,7 +450,7 @@ export default function ResultExperience({
               <button key={c.id} className={'rx-cchip' + (calib === c.id ? ' on' : '')} onClick={() => sendCalib(c.id)}>{c.label}</button>
             ))}
           </div>
-          {calib && <p className="rx-fine" style={{ textAlign: 'left', marginTop: 16 }}>Dzięki. To pokazuje mi, gdzie wynik przestrzelił.</p>}
+          {calib && <p className="rx-calibreply">{CALIB_REPLY[calib] || 'Dzięki. To pokazuje mi, gdzie wynik przestrzelił.'}</p>}
           <button className="rx-save" type="button" onClick={shareSafe}>{saved ? 'Zapisano ✓' : 'Zapisz / udostępnij wynik'}</button>
 
 
@@ -547,6 +563,7 @@ const css = `
 .rx-cchip{font-family:${C.sans};font-size:14px;color:${C.mute};background:${C.pan2};border:1px solid ${C.line2};border-radius:999px;padding:10px 16px;cursor:pointer;transition:.15s}
 .rx-cchip:hover{border-color:${C.goldD};color:${C.paper}}
 .rx-cchip.on{background:linear-gradient(135deg,${C.gold},${C.goldB});color:${C.ink};border-color:transparent;font-weight:700}
+.rx-calibreply{font-family:${C.sans};font-size:15px;line-height:1.65;color:${C.mute};text-align:left;margin:18px 0 0;padding-left:14px;border-left:2px solid ${C.goldD}}
 .rx-save{margin-top:22px;font-family:${C.mono};font-size:12.5px;letter-spacing:.5px;color:${C.mute};background:transparent;border:1px solid ${C.line2};border-radius:10px;padding:11px 16px;cursor:pointer;transition:.15s}
 .rx-save:hover{border-color:${C.goldD};color:${C.paper}}
 .rx-hotcta{position:fixed;left:16px;right:16px;bottom:max(14px,env(safe-area-inset-bottom));z-index:8;display:block;text-align:center;text-decoration:none;font-weight:800;font-size:15px;color:${C.ink};background:linear-gradient(135deg,${C.gold},${C.goldB});padding:15px 18px;border-radius:14px;box-shadow:0 12px 34px -10px rgba(200,168,78,.55);max-width:588px;margin:0 auto}

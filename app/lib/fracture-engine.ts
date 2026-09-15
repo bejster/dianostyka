@@ -90,57 +90,98 @@ function returnSignal(answers: RawAnswers): string {
   if (tried === 'tb_1') return 'Zdarza Ci się wrócić szybko, ale nie zawsze.';
   return 'Nie widać jeszcze stałego problemu z powrotem.';
 }
+// Wniosek ma nazwac, ktory wezel jest przyczyna, a ktory skutkiem. Wczesniej mowil tylko
+// "te odpowiedzi skladaja sie w jeden ciag", czyli opisywal sam siebie i nie dawal zadnej decyzji.
+const GUP_CAUSE: Record<string, string> = {
+  gup_weekend: 'wejście w weekend',
+  gup_wieczor: 'wieczór po pracy',
+  gup_stres: 'moment, w którym rośnie presja',
+  gup_efekt: 'kilka tygodni bez widocznego efektu',
+  gup_czas: 'dzień, który robi się za ciasny',
+};
 export function computeLoop(breakPhrase: string, evidence: string[], answers: RawAnswers, confidence: Confidence): { nodes: LoopNode[]; uncertain: boolean } {
   const gup=s(answers.give_up_point);
   const uncertain=confidence === 'LOW';
+  const cause = GUP_CAUSE[gup] || 'pierwszy moment z tej listy';
   return { uncertain, nodes: [
     { label: 'Pierwszy moment', text: breakPhrase },
     { label: 'Kiedy najłatwiej odpuszczasz', text: GUP_NODE[gup] || 'Nie wskazałeś jednego stałego momentu odpuszczenia.' },
     { label: 'Co widać w tygodniu', text: visibleEffect(answers, evidence) },
     { label: 'Powrót po weekendzie', text: returnSignal(answers) },
-    { label: 'Wniosek', text: uncertain ? 'Odpowiedzi pokazują kilka różnych momentów. Nie łączę ich na siłę. Test 72h ma sprawdzić pierwszy z nich.' : 'Te odpowiedzi składają się w jeden roboczy ciąg. Najpierw sprawdzamy pierwszy moment, bo tam najszybciej widać, czy kolejne elementy zmieniają się razem z nim.' },
+    { label: 'Wniosek', text: uncertain
+      ? `Odpowiedzi pokazują kilka różnych momentów, więc nie ustawiam przyczyny na siłę. Roboczo bierzemy ${cause} jako pierwszy podejrzany. Test 72h ma go potwierdzić albo wykluczyć.`
+      : `Roboczo ustawiam to tak: przyczyną jest ${cause}. Wszystko, co widać dalej w tygodniu i w poniedziałek, jest już skutkiem. Dlatego test 72h wchodzi w przyczynę zamiast poprawiać skutki, bo skutki trzeba poprawiać co tydzień od nowa.` },
   ] };
 }
 
-// ── BEAT 3: dlaczego to wraca. Sklejone z give_up_point + tried_before + break_window (realne pola). ──
-const GUP_LABEL: Record<string, string> = {
-  gup_weekend: 'wchodzi weekend',
-  gup_wieczor: 'kończy się dzień i wchodzi wieczór',
-  gup_stres: 'w robocie albo w głowie zaczyna się palić',
-  gup_efekt: 'nie widać jeszcze efektów',
-  gup_czas: 'brakuje czasu',
+// ── BEAT 3: dlaczego to wraca.
+// Zdanie stoi na trzech realnych polach: work_load (co trzyma tydzien z zewnatrz), give_up_point
+// (kiedy to trzymanie znika) i monday_recovery (ile kosztuje powrot).
+//
+// REGULA ANTY-TAUTOLOGIA: konsekwencja MUSI pochodzic z innej domeny niz trigger.
+// Poprzednia wersja robila dokladnie odwrotnie — dobierala konkret pasujacy do triggera — wiec
+// zdanie zjadalo samo siebie: "wchodzi weekend, wiec wypada staly rytm weekendu". Tautologia
+// zamiast mechanizmu. Kolejnosc kandydatow idzie od najcichszego sygnalu, bo sen i trening sa tym,
+// czego czlowiek sam nie laczy z momentem odpuszczenia, wiec niosa najwiecej informacji.
+const WORK_ANCHOR: Record<string, string> = {
+  wl_clock: 'grafik, który zaczyna się i kończy o tej samej godzinie',
+  wl_deadline: 'termin, który nad Tobą wisi',
+  wl_firefight: 'gaszenie cudzych pożarów od samego rana',
+  wl_people: 'to, że kilka osób czeka, aż coś powiesz',
+  wl_owner: 'świadomość, że każda niezrobiona rzecz i tak wróci na Twoje biurko',
 };
-const KONKRET_LABEL: Record<string, string> = {
+const TRIGGER_LINE: Record<string, string> = {
+  gup_weekend: 'W piątek to trzymanie z zewnątrz się kończy i wszystkie decyzje wracają do Ciebie naraz.',
+  gup_wieczor: 'Po pracy to trzymanie z zewnątrz się kończy i wszystkie decyzje wracają do Ciebie naraz.',
+  gup_stres: 'Kiedy w robocie albo w głowie zaczyna się palić, praca zabiera również to miejsce, które zostawiłeś dla reszty dnia.',
+  gup_czas: 'Kiedy dzień robi się za ciasny, praca zabiera również to miejsce, które zostawiłeś dla reszty dnia.',
+  gup_efekt: 'Kiedy przez kilka tygodni nic nie widać, przestajesz płacić za ten rytm uwagą.',
+};
+const TRIGGER_DOMAIN: Record<string, string> = {
+  gup_weekend: 'weekend',
+  gup_wieczor: 'wieczor',
+  gup_stres: 'praca',
+  gup_czas: 'praca',
+};
+const EE_CONSEQUENCE: Record<string, string> = {
+  ee_snack: 'kontrola nad podjadaniem wieczorem',
   ee_binge: 'kontrola nad jedzeniem wieczorem',
   ee_uncontrolled: 'kontrola nad jedzeniem wieczorem',
-  ee_snack: 'kontrola nad podjadaniem wieczorem',
   ee_chaos: 'stały rytm jedzenia',
-  st_high: 'spokojne zejście z pracy',
-  st_max: 'spokojne zejście z pracy',
-  wp_shifted: 'stały rytm weekendu',
-  wp_reset: 'stały rytm weekendu',
+};
+function crossDomainConsequence(answers: RawAnswers, triggerDomain: string): string {
+  const sq = s(answers.sleep_quality), screen = s(answers.screen_bed);
+  const pair = trainingPair(answers);
+  const st = s(answers.stress_level), wp = s(answers.weekend_pattern);
+  const candidates: Array<{ domain: string; text?: string }> = [
+    { domain: 'sen', text: sq === 'sq_heavy' || sq === 'sq_wrecked' || screen === 'sb_bed' || screen === 'sb_fallasleep' ? 'godzina, o której naprawdę gasisz światło' : undefined },
+    { domain: 'trening', text: pair && pair.missed >= 1 ? 'trening, który miałeś wpisany w tydzień' : undefined },
+    { domain: 'wieczor', text: EE_CONSEQUENCE[s(answers.evening_eating)] },
+    { domain: 'praca', text: st === 'st_high' || st === 'st_max' ? 'spokojne zejście z pracy' : undefined },
+    { domain: 'weekend', text: wp === 'wp_shifted' || wp === 'wp_reset' ? 'stały rytm weekendu' : undefined },
+  ];
+  const hit = candidates.find((c) => c.text && c.domain !== triggerDomain);
+  return hit?.text || 'pierwszy punkt planu';
+}
+// Liczba dni jest jawnie rozpisana, zeby nikt nie musial wierzyc mi na slowo. Zrodlem jest
+// wylacznie monday_recovery, wiec mon_0 nie dostaje zadnego kosztu.
+const RETURN_COST: Record<string, { days: number; span: string }> = {
+  mon_1: { days: 3, span: 'sobota, niedziela i poniedziałkowe przedpołudnie' },
+  mon_2: { days: 4, span: 'sobota, niedziela, poniedziałek i wtorek' },
+  mon_3: { days: 5, span: 'od soboty do środy' },
 };
 export function computeWhyRepeats(answers: RawAnswers): string {
   const gup = s(answers.give_up_point);
-  const trigger = GUP_LABEL[gup] || 'coś nieplanowanego wchodzi w tydzień';
-  // Wczesniej szlo to przez ||, czyli pierwsza NIEPUSTA odpowiedz. evening_eating wypelnia kazdy,
-  // wiec przy ee_clean lancuch konczyl sie na wartosci bez etykiety i stres oraz weekend nigdy nie
-  // dochodzily do glosu. Czlowiek z ee_clean i st_max dostawal ogolnik zamiast swojego wlasnego punktu.
-  // Do tego kolejnosc byla stala, wiec zdanie potrafilo odjechac od wskazanego momentu odpuszczenia:
-  // ktos odpuszcza na weekendzie, a wynik mowil mu o podjadaniu. Teraz pierwszenstwo ma ten obszar,
-  // ktory pasuje do triggera, a dopiero potem reszta.
-  const evening = s(answers.evening_eating), stress = s(answers.stress_level), weekend = s(answers.weekend_pattern);
-  const ORDER: Record<string, string[]> = {
-    gup_weekend: [weekend, evening, stress],
-    gup_stres: [stress, evening, weekend],
-    gup_wieczor: [evening, stress, weekend],
-  };
-  const konkret = (ORDER[gup] || [evening, stress, weekend])
-    .map((id) => KONKRET_LABEL[id])
-    .find(Boolean) || 'pierwszy punkt planu';
+  const anchor = WORK_ANCHOR[s(answers.work_load)] || 'rytm pracy, w którym z góry wiadomo, co masz robić';
+  const trigger = TRIGGER_LINE[gup] || 'Kiedy w tydzień wchodzi coś nieplanowanego, pierwsze ustępuje to, czego nikt od Ciebie nie rozliczy.';
+  const konkret = crossDomainConsequence(answers, TRIGGER_DOMAIN[gup] || '');
   const tried = s(answers.tried_before);
-  const restart = tried === 'tb_2' || tried === 'tb_3' ? 'zaczynasz od nowa, jakby poprzedni tydzień się nie liczył' : 'próbujesz wrócić tam, gdzie skończyłeś';
-  return `Zaczynasz od dobrego punktu i przez kilka dni to trzyma. Potem ${trigger}. Pierwsza rzecz, która wtedy wypada, to ${konkret}. Później ${restart}.`;
+  const restart = tried === 'tb_2' || tried === 'tb_3'
+    ? 'W poniedziałek zaczynasz od nowa, jakby poprzedni tydzień się nie liczył.'
+    : 'W poniedziałek próbujesz wrócić tam, gdzie skończyłeś.';
+  const cost = RETURN_COST[s(answers.monday_recovery)];
+  const costLine = cost ? ` Sam powrót liczy się tak: ${cost.span}. To ${cost.days} dni z siedmiu, w których nie jedziesz na swoim poziomie.` : '';
+  return `Przez pięć dni tydzień trzyma Cię ${anchor}. Tam decyzje są podjęte za Ciebie. ${trigger} Pierwsze, co wtedy wypada, to ${konkret}. ${restart}${costLine}`;
 }
 
 // ── BEAT 4: realny koszt, WYLACZNIE jawne fakty z odpowiedzi. Max 3. Zero zmyslonych rocznych kwot. ──
