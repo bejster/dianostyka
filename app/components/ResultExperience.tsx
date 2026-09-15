@@ -219,8 +219,13 @@ export default function ResultExperience({
 
   const onNaborClick = () => trackDiag('cta_nabor_clicked', { arch: archKey, route: route.primary });
 
+  // overflowX MUSI byc 'clip', nie 'hidden'. 'hidden' na jednej osi wymusza 'auto' na drugiej, wiec ten div
+  // stawal sie wlasnym kontenerem scrolla. Nieodsloniete .rx-beat maja transform:translateY(24px), co dawalo
+  // mu 24px wlasnego przewijania (zmierzone w przegladarce: scrollHeight 10408 przy clientHeight 10384).
+  // Na dotyku kazdy swipe najpierw wchodzil w ten wewnetrzny scroller, dopiero potem w dokument, wiec strona
+  // wyniku nie przewijala sie w dol. 'clip' przycina poziom bez robienia scrollportu. Ten sam fix co w naborze.
   return (
-    <div className="rx" style={{ background: C.ink, color: C.paper, fontFamily: C.sans, minHeight: '100vh', overflowX: 'hidden', position: 'relative' }}>
+    <div className="rx" style={{ background: C.ink, color: C.paper, fontFamily: C.sans, minHeight: '100vh', overflowX: 'clip', position: 'relative' }}>
       <style>{css}</style>
       <div className="rx-atmo" aria-hidden />
       <div className="rx-prog" ref={progRef} aria-hidden />
