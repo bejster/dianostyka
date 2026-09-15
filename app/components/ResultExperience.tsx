@@ -135,9 +135,9 @@ export default function ResultExperience({
   // breakPos.label to fraza okolicznikowa ("po pracy", "rano", "weekend"). Wchodzi wyłącznie po dwukropku,
   // nigdy po przyimku — "zacząłbym od po pracy" i "od momentu weekend" to złamana polszczyzna dla 7 z 7 wartości.
   const repairLead = (redCount ?? 0) >= 3
-    ? `Kilka osi jest słabszych jednocześnie. Pierwszy ruch sprawdziłbym tutaj: ${breakPos.label}. Potem sprawdziłbym, które pozostałe problemy cofają się bez dokładania kolejnych zasad.`
+    ? `Kilka obszarów jest słabszych naraz. Pierwszy ruch sprawdziłbym tutaj: ${breakPos.label}. Potem patrzyłbym, które z pozostałych rzeczy cofają się same, bez dokładania Ci kolejnych zasad.`
     : (redCount ?? 0) === 2
-      ? `Dwie słabsze osie układają się w jeden ciąg. Pierwszy ruch sprawdziłbym tutaj: ${breakPos.label}. To najszybszy sposób, żeby sprawdzić, czy reszta tygodnia zaczyna reagować.`
+      ? `Dwa słabsze obszary układają się w jeden ciąg. Pierwszy ruch sprawdziłbym tutaj: ${breakPos.label}. Najszybciej z tego widać, czy reszta tygodnia w ogóle reaguje.`
       : `Masz jeden wyraźny obszar do sprawdzenia. Pierwszy ruch sprawdziłbym tutaj: ${breakPos.label}. Potem patrzyłbym, czy reszta tygodnia zaczyna trzymać lepiej.`;
 
   // ── V2.8.1 SUFIT: domknięcie ma trafiać w przekonanie "u mnie jest w porządku, ogarnę sam",
@@ -148,7 +148,7 @@ export default function ResultExperience({
     ? 'Ten wynik nie mówi, że jest u Ciebie źle.'
     : 'Ten wynik nie daje Ci dziś nic do gaszenia.';
   const ceilingBody = hasCeilingRoom
-    ? 'Większość osób, które to wypełniają, funkcjonuje normalnie. Robota idzie, trening jakoś leci, weekend się odbywa. Nic nie boli na tyle, żeby ruszyć. Na tym samym poziomie schodzą kolejne dwa albo trzy lata.'
+    ? 'Większość osób, które to wypełniają, żyje normalnie: robota idzie, trening jakoś leci, weekend się odbywa. I dokładnie dlatego nic się nie rusza. Nie ma jednego dnia, po którym mówisz dość. Jest za to poniedziałek, który wygląda tak samo jak dwa lata temu.'
     : 'To jest ten moment, w którym większość odpuszcza, bo nic nie pali. Jest też jedyny moment, w którym da się spokojnie sprawdzić, jak wysoko sięga Twoja górna półka.';
   const ceilingData = hasCeilingRoom
     ? `U Ciebie ${ceilingCount} z ${statuses.length} obszarów ${ceilingCount === 1 ? 'ma' : 'mają'} dziś ${bigReserve >= 1 ? 'wyraźny' : 'umiarkowany'} zapas. Każdy z nich stoi na Twojej własnej odpowiedzi sprzed pięciu minut.`
@@ -248,7 +248,7 @@ export default function ResultExperience({
           <div className="rx-map-proof">
             <span>Jak czytać te liczby</span>
             <p>Każda liczba powstaje wyłącznie z odpowiedzi, które podałeś w tej diagnostyce. <strong>{weakestStatus?.score}/100</strong> na osi {weakestStatus?.label} bierze się stąd: {weakestStatus?.reason}.</p>
-            <p>To indeks porównawczy pięciu obszarów między sobą. Nie jest procentem Twojej formy, procentem wykorzystanego potencjału ani wynikiem medycznym. Pod każdą osią masz odpowiedź, która najmocniej przesunęła liczbę.</p>
+            <p>Ta liczba porównuje pięć obszarów wyłącznie między sobą. Nie jest procentem Twojej formy, procentem wykorzystanego potencjału ani wynikiem medycznym. Pod każdą osią masz odpowiedź, która najmocniej przesunęła liczbę.</p>
             {flagDriveCheck && <p className="rx-medical">Napęd i libido siedzą u Ciebie nisko. Jeśli trwa to dłużej niż kilka tygodni, warto zrobić badania i omówić wyniki z lekarzem. Ta diagnostyka opiera się na Twoich odpowiedziach i tego nie zastąpi.</p>}
           </div>
         </section>
@@ -268,7 +268,7 @@ export default function ResultExperience({
         <section className="rx-beat" data-beat="fracture">
           <div className="rx-kick">Punkt Pęknięcia</div>
           <h2 className="rx-h2">{breakPhrase}</h2>
-          <p className="rx-sub" style={{ marginBottom: 22 }}>Te odpowiedzi układają się w jeden powtarzalny wzorzec. Pierwszy moment tygodnia, w którym on odpala, nazywam Punktem Pęknięcia. Od niego zaczynam pracę, bo wszystko dalej się na nim opiera.</p>
+          <p className="rx-sub" style={{ marginBottom: 22 }}>Te odpowiedzi układają się w jeden wzorzec, który wraca co tydzień. Pierwszy moment, w którym się odpala, nazywam Punktem Pęknięcia. Od niego zaczynam, bo cała reszta tygodnia stoi na nim.</p>
           <div className="rx-breakviz">
             <div className="rx-breakviz-now">Pierwszy sygnał w odpowiedziach: <strong>{breakPos.label}</strong></div>
             <div className="rx-breakviz-line"><span style={{ left: `${breakPos.pct}%` }} /></div>
@@ -291,14 +291,14 @@ export default function ResultExperience({
               </div>
             ))}
           </div>
-          <p className="rx-pull" style={{ marginTop: 18 }}>Pierwsze miejsce do sprawdzenia: <strong>{breakPos.label}</strong>. Jeśli tam zmieni się reakcja, zobaczymy, czy {weakestStatus?.label.toLowerCase()} zaczyna trzymać lepiej.</p>
+          <p className="rx-pull" style={{ marginTop: 18 }}>Pierwsze miejsce do sprawdzenia: <strong>{breakPos.label}</strong>. Jeśli tam coś się ruszy, zobaczymy, czy {weakestStatus?.label.toLowerCase()} zaczyna trzymać lepiej.</p>
           {loop.uncertain && <p className="rx-uncertain">To jest hipoteza do sprawdzenia przez 72 godziny, nie pewnik. Dokładnie po to jest test niżej.</p>}
         </section>
 
         {/* BEAT 3 — DLACZEGO TO WRACA (tried_before / give_up_point / break_window, zero wymyslonej przyczyny) */}
         <section className="rx-beat" data-beat="3">
           <div className="rx-kick">Dlaczego to wraca</div>
-          <h2 className="rx-h2" style={{ fontSize: 'clamp(24px,4.6vw,36px)' }}>Tu widać, dlaczego ten sam schemat może wracać.</h2>
+          <h2 className="rx-h2" style={{ fontSize: 'clamp(24px,4.6vw,36px)' }}>Tu widać, dlaczego to wraca w to samo miejsce.</h2>
           <p className="rx-sub">{whyRepeats}</p>
         </section>
 
@@ -306,7 +306,7 @@ export default function ResultExperience({
         {(costFacts.length > 0 || userPain) && (
           <section className="rx-beat" data-beat="4">
             <div className="rx-kick">Co to już kosztuje</div>
-            <h2 className="rx-h2" style={{ fontSize: 'clamp(22px,4.6vw,32px)' }}>Twoje odpowiedzi pokazują koszt w normalnym tygodniu.</h2>
+            <h2 className="rx-h2" style={{ fontSize: 'clamp(22px,4.6vw,32px)' }}>Tyle to zabiera w zwykłym tygodniu, według Twoich własnych odpowiedzi.</h2>
             {costFacts.map((f, i) => (<p key={i} className="rx-costfact">{f}</p>))}
             {userPain && <p className="rx-quote">„{userPain}”</p>}
           </section>
@@ -315,7 +315,7 @@ export default function ResultExperience({
         {/* BEAT 5 — JEDEN eksperyment 72h z banku 20. Zero LLM. Commit -> reveal osobistego momentu obserwacji. */}
         <section className="rx-beat" data-beat="5">
           <div className="rx-kick">Test na 72 godziny</div>
-          <h2 className="rx-h2" style={{ fontSize: 'clamp(24px,5vw,38px)' }}>Sprawdźmy, czy ta diagnoza ma sens w praktyce.</h2>
+          <h2 className="rx-h2" style={{ fontSize: 'clamp(24px,5vw,38px)' }}>Sprawdźmy, czy to się potwierdza w Twoim tygodniu.</h2>
           <div className="rx-72line" aria-hidden="true"><span>0 h</span><i/><span>24 h</span><i/><span>48 h</span><i/><span>72 h</span></div>
           <div className="rx-exp">
             {/* Cztery identyczne karty czytaly sie jak lista rownorzednych polecen. Samo zadanie prowadzi,
@@ -340,11 +340,11 @@ export default function ResultExperience({
             co widać przez kolejne tygodnie, czego nie da się przyspieszyć. Zero dat, zero gwarancji. */}
         <section className="rx-beat" data-beat="horizon">
           <div className="rx-kick">Co i kiedy da się zobaczyć</div>
-          <h2 className="rx-h2" style={{ fontSize: 'clamp(24px,4.8vw,36px)' }}>Każde okno czasowe odpowiada na inne pytanie.</h2>
+          <h2 className="rx-h2" style={{ fontSize: 'clamp(24px,4.8vw,36px)' }}>Na każdym z tych odcinków widać co innego.</h2>
           <div className="rx-horizon">
             <div className="rx-hz">
               <span className="rx-hz-k">72 godziny</span>
-              <p>Patrzysz tylko na jedno: {experiment.observe.toLowerCase()}. Na ocenę efektu jest wtedy za wcześnie. To okno odpowiada na pytanie, czy dobrze wybraliśmy miejsce.</p>
+              <p>Patrzysz tylko na jedno: {experiment.observe.toLowerCase()}. Na efekt jest wtedy dużo za wcześnie. Te trzy dni mają rozstrzygnąć jedno: czy trafiliśmy w miejsce.</p>
             </div>
             <div className="rx-hz">
               <span className="rx-hz-k">Najbliższe tygodnie</span>
@@ -352,7 +352,7 @@ export default function ResultExperience({
             </div>
             <div className="rx-hz">
               <span className="rx-hz-k">Dłuższy horyzont</span>
-              <p>Sylwetka, wyniki w treningu i rytm, który się sam utrzymuje, potrzebują powtórzonych tygodni. Ile ich będzie, zależy od punktu startu i od tego, co realnie wykonasz. Daty tutaj nie podam, bo byłaby zmyślona.</p>
+              <p>Sylwetka, wyniki w treningu i rytm, który trzyma się sam, biorą się z wielu takich samych tygodni pod rząd. Ile ich potrzeba, zależy od tego, skąd startujesz i ile z tego dowieziesz. Daty tutaj nie podam, bo byłaby zmyślona.</p>
             </div>
           </div>
         </section>
@@ -364,23 +364,23 @@ export default function ResultExperience({
             <img src="/michal-portrait.jpg" alt="Michał" width={86} height={86} />
             <div className="rx-human-head">
               <span>MICHAŁ · METODA 168</span>
-              <strong>Z tego wyniku da się już ustawić pierwszy ruch. W 1:1 sprawdzam go na Twoim normalnym tygodniu i koryguję po tym, co faktycznie wydarza się przez kolejne dni.</strong>
+              <strong>Z tego wyniku da się już ustawić pierwszy ruch. W 1:1 sprawdzam go na Twoim zwykłym tygodniu i poprawiam po tym, co wychodzi przez kolejne dni.</strong>
             </div>
           </div>
           <h2 className="rx-h2" style={{ fontSize: 'clamp(23px,4.8vw,34px)' }}>Gdybym brał ten wynik do prowadzenia, zacząłbym tak.</h2>
           <p className="rx-method-lead">{repairLead}</p>
           <ol className="rx-demo">
-            <li><span className="rx-demo-n">1</span><div><strong>Pierwszy punkt: {breakPos.label}</strong><p>Ustawiamy wersję minimum właśnie tutaj. Ma zadziałać także w dniu, który odbiega od planu.</p></div></li>
+            <li><span className="rx-demo-n">1</span><div><strong>Pierwszy punkt: {breakPos.label}</strong><p>Ustawiamy wersję minimum właśnie tutaj. Ma zadziałać też w dniu, w którym nic nie idzie po planie.</p></div></li>
             {/* experiment.name to kryptonim testu (wersaliki, część nazw w trybie rozkazującym), a observe jest w mianowniku.
                 Oba wchodzą jako apozycja po "testu" / po dwukropku — "test to ODŁÓŻ NA JUTRO" i "patrzymy na liczba..."
                 łamią gramatykę w całym banku 20 eksperymentów. */}
             <li><span className="rx-demo-n">2</span><div><strong>Sprawdzamy: {weakestStatus?.label}</strong><p>Na start dostajesz jedno zadanie na 72 godziny: {experiment.action} Obserwujemy: {experiment.observe.toLowerCase()}.</p></div></li>
-            <li><span className="rx-demo-n">3</span><div><strong>Tego na start nie ruszam: {strongestStatus?.label}</strong><p>Tego na początku nie ruszam. Dzięki temu mamy punkt odniesienia i widzimy, czy pierwsza zmiana faktycznie poprawia tydzień.</p></div></li>
+            <li><span className="rx-demo-n">3</span><div><strong>Tego na start nie ruszam: {strongestStatus?.label}</strong><p>Zostawiam to bez zmian, żeby był punkt odniesienia. Wtedy widać, czy tydzień poprawia pierwszy ruch, czy coś zupełnie innego.</p></div></li>
             <li><span className="rx-demo-n">4</span><div><strong>Dokładam dopiero po dowodzie</strong><p>Kolejny element wchodzi wtedy, gdy pierwszy przeżyje gorszy tydzień. Jeśli nie przeżyje, zmieniam ruch, a nie dokładam Ci kolejnych zasad.</p></div></li>
           </ol>
           <div className="rx-expectation">
-            <p>Jeśli rozważasz prowadzenie, niżej masz kolejny krok.</p>
-            <p>Nie będę prosił Cię o ponowne opisywanie tego, co właśnie wypełniłeś. Ta diagnostyka jest już punktem wyjścia.</p>
+            <p>Jeśli myślisz o prowadzeniu, niżej masz następny krok.</p>
+            <p>Nie każę Ci opisywać od nowa tego, co przed chwilą wypełniłeś. Ta diagnostyka jest już punktem wyjścia.</p>
           </div>
 
           <a className="rx-badge" style={{ marginTop: 16 }} href={GOOGLE_AGG.url} target="_blank" rel="noopener noreferrer">
@@ -417,7 +417,7 @@ export default function ResultExperience({
               <>
                 {!committed ? <button className="rx-next rx-next-strong" type="button" onClick={commitExperiment}>{route.primaryLabel}</button> : <div className="rx-action-confirm">Test 72h zapisany ✓</div>}
                 {committed && !saved && <button className="rx-next rx-next-medium" type="button" onClick={shareSafe}>Zapisz wynik na te 72 godziny</button>}
-                {committed && saved && <div className="rx-action-done">Wynik zapisany. Teraz masz jeden test do wykonania.</div>}
+                {committed && saved && <div className="rx-action-done">Wynik zapisany. Zostaje Ci jeden test.</div>}
                 {route.secondaryNabor && <a className="rx-route-alt" href={naborHref} target="_blank" rel="noopener noreferrer" onClick={onNaborClick}>{route.secondaryNabor.label} →</a>}
               </>
             )}

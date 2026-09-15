@@ -20,7 +20,9 @@ test('no free-manual-result-analysis promise remains anywhere in the result flow
 });
 
 test('required expectation-reset copy is present verbatim in Beat 6', () => {
-  assert.match(result, /Jeśli rozważasz prowadzenie, niżej masz kolejny krok\./);
+  // v2.8.1 pass jezykowy: "rozwazasz" -> "myslisz o". Ta sama funkcja (reset oczekiwan przed CTA),
+  // ten sam poziom asercji: fraza musi stac w Beacie 6 doslownie, inaczej test pada.
+  assert.match(result, /Jeśli myślisz o prowadzeniu, niżej masz następny krok\./);
   assert.match(result, /Ta diagnostyka jest już punktem wyjścia\./);
 });
 

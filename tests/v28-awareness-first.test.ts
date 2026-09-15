@@ -63,7 +63,9 @@ test('reserve language replaces fake potential precision', () => {
   assert.doesNotMatch(live, /marnujesz \d+/i, 'fabricated waste figure');
   assert.doesNotMatch(live, /wykorzystujesz \d+\s*%/i, 'fabricated utilization figure');
   // indeks musi byc jawnie opisany jako porownawczy, nie jako procent formy ani wynik medyczny
-  assert.match(result, /To indeks porównawczy pięciu obszarów między sobą\./);
+  // v2.8.1 pass jezykowy: "To indeks porownawczy..." -> zdanie mowione. Ta sama tresc kontraktu
+  // (liczba porownuje piec obszarow WYLACZNIE miedzy soba), ten sam poziom asercji: literal albo fail.
+  assert.match(result, /Ta liczba porównuje pięć obszarów wyłącznie między sobą\./);
   assert.match(result, /Nie jest procentem Twojej formy, procentem wykorzystanego potencjału ani wynikiem medycznym\./);
 });
 
