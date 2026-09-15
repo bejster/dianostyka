@@ -76,6 +76,7 @@ export interface QuestionDef {
   unit?: string;
   placeholder?: string; // podpowiedź w polu tekstowym (per pytanie, nie jeden generyk)
   options?: QuestionOption[];
+  maxSelect?: number; // tylko dla 'multi': ile chipow wolno zaznaczyc. Domyslnie 3.
   condition?: (answers: Record<string, unknown>) => boolean;
   upstreamWeight: number; // jak bardzo ten problem jest przyrodzoną przyczyną
   crossDomainImpact: number; // ile innych domen pogarsza
@@ -159,6 +160,27 @@ export const QUESTIONS: QuestionDef[] = [
       { id: 'goal_glowa', label: 'Spokój w głowie, mniej napięcia.', value: 0 },
       { id: 'goal_naped', label: 'Napęd i libido, wrócić do siebie.', value: 0 },
       { id: 'goal_inne', label: 'Coś innego.', value: 0 },
+    ],
+  },
+  // ── PREMIUM ICP PATCH V1 §3A: ODPOWIEDZIALNOSC. Wartosc 0, zero wplywu na severity.
+  //    To jest router calej galezi kwalifikacyjnej: odpowiedz inna niz wl_clock odblokowuje 'spillover'.
+  //    Pytamy o CZYJE sprawy zjadaja dzien, nie o godziny (§2: dlugie godziny NIE sa sygnalem premium). ──
+  {
+    id: 'work_load',
+    section: 'Rytm tygodnia',
+    sectionNum: 'I',
+    title: 'Czyje sprawy zjadają Ci dzień?',
+    subtitle: 'Weź zwykły dzień roboczy, nie ten najgorszy w miesiącu.',
+    type: 'single',
+    domain: 'chaos',
+    upstreamWeight: 0,
+    crossDomainImpact: 0,
+    options: [
+      { id: 'wl_clock', label: 'Swoje. Robię, co mam zrobić, i o 17 zamykam laptopa.', value: 0 },
+      { id: 'wl_deadline', label: 'Swoje, ale termin wisi nade mną. Jak nie dowiozę, widać to od razu.', value: 0 },
+      { id: 'wl_firefight', label: 'Cudze. Cały dzień gaszę pożary, a swoją robotę odrabiam po nocy.', value: 0 },
+      { id: 'wl_people', label: 'Ludzie czekają, aż coś powiem. Jak ja stoję, stoi kilka osób.', value: 0 },
+      { id: 'wl_owner', label: 'Wszystko. To moja firma, więc każda niezrobiona rzecz i tak wraca do mnie.', value: 0 },
     ],
   },
   {
@@ -415,6 +437,29 @@ export const QUESTIONS: QuestionDef[] = [
       { id: 'confidence', label: 'Mniej pewny siebie niż rok temu, omijam lustra.', value: 15 },
     ],
   },
+  // ── PREMIUM ICP PATCH V1 §3B/3E: SPILLOVER I STAWKA. Wartosc 0, zero wplywu na severity.
+  //    Widoczne tylko dla kogos, kto niesie realna odpowiedzialnosc (work_load != wl_clock),
+  //    wiec lead bez stakes nie ogląda tego ekranu i nie placi za niego dlugoscia quizu. ──
+  {
+    id: 'spillover',
+    section: 'Rytm tygodnia',
+    sectionNum: 'I',
+    title: 'Po czym poznajesz, że forma zaczyna Ci mieszać poza siłownią?',
+    subtitle: 'Zaznacz maksymalnie 2. Jeśli nic takiego nie widzisz, zaznacz ostatnią odpowiedź.',
+    type: 'multi',
+    maxSelect: 2,
+    domain: 'chaos',
+    upstreamWeight: 0,
+    crossDomainImpact: 0,
+    condition: (a) => a.work_load !== 'wl_clock',
+    options: [
+      { id: 'sp_night', label: 'Zadanie, które rano zajęłoby 20 minut, robię o północy.', value: 0 },
+      { id: 'sp_slow', label: 'Na spotkaniu jestem obecny, a głowa mieli wolniej niż rok temu.', value: 0 },
+      { id: 'sp_home', label: 'Wieczorem nie zostaje mi już nic dla ludzi w domu.', value: 0 },
+      { id: 'sp_ceiling', label: 'Wiem, że stać mnie na więcej, a od dwóch lat stoję w tym samym miejscu.', value: 0 },
+      { id: 'sp_none', label: 'Nie mieszało. Chodzi mi po prostu o sylwetkę.', value: 0 },
+    ],
+  },
   {
     id: 'morning_wood',
     condition: () => false, // 2.5.0: usuniete z main flow (nie wplywa na severity), zostaje disabled
@@ -524,6 +569,27 @@ export const QUESTIONS: QuestionDef[] = [
       { id: 'in_zobacz', label: 'Chcę zobaczyć, jak wygląda praca z kimś.', value: 0 },
       { id: 'in_prowadz', label: 'Wolę, żeby ktoś mnie poprowadził i rozliczył.', value: 0 },
       { id: 'in_niewiem', label: 'Jeszcze nie wiem.', value: 0 },
+    ],
+  },
+  // ── PREMIUM ICP PATCH V1 §3D/§4: AGENCY x CONTROL NEED. Wartosc 0, zero wplywu na severity.
+  //    'intent' pyta, CZEGO chcesz po wyniku. To pyta, JAK sie zachowujesz po dostaniu kierunku.
+  //    Kto wybral in_sam juz na to odpowiedzial, wiec tego ekranu nie oglada. ──
+  {
+    id: 'agency_mode',
+    section: 'Co dalej',
+    sectionNum: 'VIII',
+    title: 'Powiedzmy, że dostajesz jasny kierunek na najbliższe tygodnie. Co się dzieje dalej?',
+    subtitle: 'Bez ściemy. Po tym poznaję, czy prowadzenie w ogóle ma u Ciebie sens.',
+    type: 'single',
+    domain: 'chaos',
+    upstreamWeight: 0,
+    crossDomainImpact: 0,
+    condition: (a) => a.intent !== 'in_sam',
+    options: [
+      { id: 'ag_solo', label: 'Zrobię. Jak coś się posypie, sam się odezwę.', value: 0 },
+      { id: 'ag_data', label: 'Zrobię, tylko chcę, żeby ktoś patrzył w dane i mówił, co poprawić.', value: 0 },
+      { id: 'ag_return', label: 'Ruszę mocno, a przy pierwszym gorszym tygodniu siadam i sam nie wracam.', value: 0 },
+      { id: 'ag_handoff', label: 'Wolałbym dostać wszystko podane i nie musieć o tym myśleć.', value: 0 },
     ],
   },
   {

@@ -209,7 +209,7 @@ export default function SingleQuestionFlow({ onComplete, initialAnswers }: Props
   }, []);
 
   // Bramka "Dalej": slider/number musi być ruszony, multi min 1 chip, tekst min 15 znaków.
-  const chipsCount = Array.isArray(answers.symptoms_chips) ? (answers.symptoms_chips as string[]).length : 0;
+  const chipsCount = Array.isArray(answers[currentQ.id]) ? (answers[currentQ.id] as string[]).length : 0;
   // Kontakt jest warunkowy: jawna chęć pomocy/prowadzenia wymaga IG, self-serve zostaje bez tarcia.
   const igClean = String(answers.instagram || '').replace(/[@\s]/g, '');
   const intentId = String(answers.intent || '');
@@ -230,11 +230,15 @@ export default function SingleQuestionFlow({ onComplete, initialAnswers }: Props
     } catch (_e) {}
   }, []);
 
-  const goToNext = useCallback((opts?: { skipped?: boolean }) => {
+  const goToNext = useCallback((opts?: { skipped?: boolean; answersOverride?: Record<string, unknown> }) => {
     // Zapis odpowiedzi biezacego pytania (single leci osobno w handleSingleSelect, tu reszta typow).
     const cq = FLOW_QUESTIONS[currentIndex] || FLOW_QUESTIONS[0];
+    // Przy single setAnswers jeszcze nie zdazyl wrocic do tej domkniecia, a nastepne pytanie moze
+    // warunkowac sie wlasnie na tej odpowiedzi (agency_mode patrzy na intent). Dlatego liczymy
+    // widocznosc na swiezym stanie przekazanym z handleSingleSelect, nie na stanie sprzed kliku.
+    const ans = (opts?.answersOverride || answers) as Record<string, unknown>;
     // ── Analytics per-pytanie (PostHog): BEZ PII, BEZ tresci odpowiedzi. Surowe wartosci ida tylko do Notion (postEvent). ──
-    const vq = FLOW_QUESTIONS.filter(q => !q.condition || q.condition(answers as Record<string, unknown>));
+    const vq = FLOW_QUESTIONS.filter(q => !q.condition || q.condition(ans));
     const pos = Math.max(1, vq.findIndex(q => q.id === cq.id) + 1);
     // question_answer = COMMIT (przejscie dalej), NIE kazdy input/ruch slidera. Jeden commit = jeden event. ZERO wartosci odpowiedzi.
     const ev = { question_id: cq.id, index: currentIndex, pos, total: vq.length, elapsed_ms: Math.max(0, Date.now() - shownAt.current) };
@@ -248,14 +252,13 @@ export default function SingleQuestionFlow({ onComplete, initialAnswers }: Props
     else trackDiag('question_answer', ev);
     if (cq.type !== 'single') {
       const v = cq.type === 'contact' ? { instagram: answers.instagram, imie: answers.imie }
-        : cq.type === 'multi' ? answers.symptoms_chips
         : answers[cq.id];
       postEvent(cq.id, v);
     }
     let next = currentIndex + 1;
     while (next < FLOW_QUESTIONS.length) {
       const c = FLOW_QUESTIONS[next].condition;
-      if (!c || c(answers as Record<string, unknown>)) break;
+      if (!c || c(ans)) break;
       next++;
     }
     if (next < FLOW_QUESTIONS.length) {
@@ -272,7 +275,8 @@ export default function SingleQuestionFlow({ onComplete, initialAnswers }: Props
       setIsCompleting(true);
       vibe([20, 50, 20]);
       // diag_complete NIE tutaj — odpala page.tsx po realnym commit wyniku (setPhase 'teaser'), nie przed
-      onComplete(answers);
+      // ostatnie pytanie tez moze byc typu single, wiec oddajemy stan ze swieza odpowiedzia
+      onComplete(ans as typeof answers);
     }
   }, [currentIndex, answers, onComplete, vibe, postEvent, contactRequired]);
 
@@ -297,10 +301,11 @@ export default function SingleQuestionFlow({ onComplete, initialAnswers }: Props
 
   const handleSingleSelect = (opt: QuestionOption) => {
     vibe(10);
+    const fresh = { ...answers, [currentQ.id]: opt.id };
     setAnswers(prev => ({ ...prev, [currentQ.id]: opt.id }));
     postEvent(currentQ.id, opt.id);
     setTimeout(() => {
-      goToNext();
+      goToNext({ answersOverride: fresh as Record<string, unknown> });
     }, 280);
   };
 
@@ -353,14 +358,19 @@ export default function SingleQuestionFlow({ onComplete, initialAnswers }: Props
     setAnswers(prev => ({ ...prev, [currentQ.id]: val }));
   };
 
+  // Chipy zapisujemy pod ID pytania, nie pod 'symptoms_chips'. Wczesniej multi bylo tylko jedno,
+  // wiec klucz mogl byc na sztywno. Teraz spillover tez jest multi i wpadalby do listy objawow,
+  // ktora idzie do scoringu. Limit bierzemy z pytania, zeby label nie klamal.
   const handleMultiChipToggle = (chipId: string) => {
     vibe(8);
+    const key = currentQ.id;
+    const limit = currentQ.maxSelect ?? 3;
     setAnswers(prev => {
-      const existing: string[] = Array.isArray(prev.symptoms_chips) ? [...prev.symptoms_chips] : [];
+      const existing: string[] = Array.isArray(prev[key]) ? [...(prev[key] as string[])] : [];
       const idx = existing.indexOf(chipId);
       if (idx >= 0) existing.splice(idx, 1);
-      else if (existing.length < 3) existing.push(chipId); // TWARDY limit max 3 (label nie kłamie)
-      return { ...prev, symptoms_chips: existing };
+      else if (existing.length < limit) existing.push(chipId);
+      return { ...prev, [key]: existing };
     });
   };
 
@@ -605,7 +615,7 @@ export default function SingleQuestionFlow({ onComplete, initialAnswers }: Props
         {currentQ.type === 'multi' && currentQ.options && (
           <div style={{ display: 'grid', gap: 10 }}>
             {currentQ.options.map(opt => {
-              const selectedArr: string[] = Array.isArray(answers.symptoms_chips) ? answers.symptoms_chips : [];
+              const selectedArr: string[] = Array.isArray(answers[currentQ.id]) ? (answers[currentQ.id] as string[]) : [];
               const isSelected = selectedArr.includes(opt.id);
               return (
                 <button
@@ -644,7 +654,7 @@ export default function SingleQuestionFlow({ onComplete, initialAnswers }: Props
                 letterSpacing: 1, textTransform: 'uppercase',
               }}
             >
-              Dalej ({Array.isArray(answers.symptoms_chips) ? answers.symptoms_chips.length : 0}) &rarr;
+              Dalej ({chipsCount}) &rarr;
             </button>
           </div>
         )}

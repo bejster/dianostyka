@@ -34,6 +34,23 @@ export async function POST(req: NextRequest) {
       gup_weekend: 'weekend', gup_wieczor: 'wieczor', gup_stres: 'stres/robota', gup_efekt: 'brak efektu', gup_czas: 'brak czasu',
     };
     const tierMap: Record<string, string> = { A: 'TRZYMA SAM (git)', B: 'JEDEN WYCIEK', C: 'ZAJEZDZA CALY TYDZIEN' };
+    // ── PREMIUM ICP PATCH V1 §3/§4: jak z nim gadac, nie jak go ocenic. Hipoteza do walidacji na close rate. ──
+    const fitMap: Record<string, string> = {
+      PRO: 'dowozi i chce kontroli — najlepszy kandydat na 1:1',
+      KIERUNEK: 'dowozi sam — wystarczy mu kierunek',
+      RYZYKO: 'chce, zeby ktos zrobil to za niego — uwazaj',
+      PODSTAWA: 'brak odpowiedzialnosci albo stawki poza sylwetka',
+    };
+    const fitIco: Record<string, string> = { PRO: '💎', KIERUNEK: '🧭', RYZYKO: '⚠️', PODSTAWA: '·' };
+    const workLoadMap: Record<string, string> = {
+      wl_clock: 'konczy o 17', wl_deadline: 'odpowiada za termin', wl_firefight: 'gasi cudze pozary, odrabia po nocy',
+      wl_people: 'ludzie czekaja na jego decyzje', wl_owner: 'wlasna firma',
+    };
+    const spillMap: Record<string, string> = {
+      sp_night: 'robota o polnocy', sp_slow: 'wolniejsza glowa na spotkaniach', sp_home: 'nic nie zostaje dla domu',
+      sp_ceiling: 'stoi dwa lata w miejscu', sp_none: 'tylko sylwetka',
+    };
+    const spillTxt = s(b.spillover, 200).split(',').map((x) => spillMap[x.trim()]).filter(Boolean).join(' · ');
 
     // ── Gotowy opener DM (per archetyp, w glosie Michala) + wskazowka jak grac ──
     const im = s(b.imie, 40);
@@ -105,6 +122,10 @@ export async function POST(req: NextRequest) {
       `Peka: ${s(b.godzina, 40)} · Hamulec: ${s(b.worstCat, 30)} · Koszt: ${s(b.kwota, 20)} zl`,
       (b.primary_goal || b.tier) ? `Cel: ${goalMap[s(b.primary_goal, 30)] || '—'} · Odpuszcza: ${giveupMap[s(b.give_up_point, 30)] || '—'} · Werdykt: ${tierMap[s(b.tier, 2)] || '—'}` : '',
       `Gotowosc: ${intentMap[s(b.intencja, 20)] || '—'} · Start: ${startMap[s(b.kiedy_start, 20)] || '—'}`,
+      // PREMIUM ICP PATCH V1: linia fit stoi POD gotowoscia, bo to sygnal do sposobu rozmowy, nie do diagnozy.
+      // Fit liczy klient (premium-fit.ts); tutaj tylko formatujemy. Brak pola = brak linii, zero zgadywania.
+      b.premium_fit ? `${fitIco[s(b.premium_fit, 12)] || '·'} Fit: ${fitMap[s(b.premium_fit, 12)] || '—'}${workLoadMap[s(b.work_load, 20)] ? ` · ${workLoadMap[s(b.work_load, 20)]}` : ''}` : '',
+      spillTxt ? `Koszt poza lustrem: ${spillTxt}` : '',
       `Priorytet kontaktu: ${priority ? 'TAK (chce prowadzenia + termin startu)' : 'nie'}${b.wants_help === true ? ' · chce pomocy' : ''}`,
       b.pain ? `Wkurza: „${s(b.pain, 300)}”` : '',
     ].filter(Boolean);

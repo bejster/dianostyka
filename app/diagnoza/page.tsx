@@ -16,6 +16,7 @@ import { selectExperiment, type SelectorInput } from '../lib/experiment-bank';
 import { routeDecision } from '../lib/result-router-v3';
 import { ASSESSMENT_VERSION } from '../lib/assessment-config';
 import { buildLeadBrief } from '../lib/lead-brief';
+import { classifyPremiumFit } from '../lib/premium-fit';
 import { Atmosphere } from './atmosphere';
 
 const GOLD = '#c8a84e';
@@ -181,6 +182,8 @@ export default function DiagnozaPage() {
     // Werdykt 3-tier do Telegrama = TYLKO ciezkosc/potrzeba z domen (P0-2: intencja zakupu NIE podnosi diagnozy).
     const tgRedCount = catScores.filter((c) => c.pct < 45).length;
     const tgTier: 'A' | 'B' | 'C' = tgRedCount >= 3 ? 'C' : tgRedCount <= 1 ? 'A' : 'B';
+    // PREMIUM ICP PATCH V1: sygnaly fit z trzech pytan o wartosci 0. Kanal prywatny, zero wplywu na wynik.
+    const premium = classifyPremiumFit(raw as Record<string, unknown>);
 
     // ── Powiadomienie leada na Telegram: ZAWSZE, gdy ktoś skończył quiz (Michał chce wiedzieć od razu) ──
     void fetch('/api/lead-notify', {
@@ -208,6 +211,12 @@ export default function DiagnozaPage() {
         primary_goal: typeof raw.primary_goal === 'string' ? raw.primary_goal : '',
         give_up_point: typeof raw.give_up_point === 'string' ? raw.give_up_point : '',
         tier: tgTier,
+        // PREMIUM ICP PATCH V1 §3/§4 — surowe odpowiedzi + wyliczony fit. Telegram i n8n->Notion, NIGDY PostHog.
+        work_load: typeof raw.work_load === 'string' ? raw.work_load : '',
+        spillover: Array.isArray(raw.spillover) ? (raw.spillover as string[]).join(',') : '',
+        agency_mode: typeof raw.agency_mode === 'string' ? raw.agency_mode : '',
+        premium_fit: premium.fit,
+        premium_signals: premium,
         raw_answers: raw,
         diagnostyka_brief: leadBrief.brief,
         derived_signals: {
@@ -223,6 +232,11 @@ export default function DiagnozaPage() {
           primary_goal: typeof raw.primary_goal === 'string' ? raw.primary_goal : '',
           give_up_point: typeof raw.give_up_point === 'string' ? raw.give_up_point : '',
           tier: tgTier,
+          premium_fit: premium.fit,
+          agency: premium.agency,
+          control_need: premium.controlNeed,
+          responsibility: premium.responsibility,
+          stakes: premium.stakes,
         },
       }),
     }).catch(() => {});
