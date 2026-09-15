@@ -113,6 +113,7 @@ const GUP_LABEL: Record<string, string> = {
 const KONKRET_LABEL: Record<string, string> = {
   ee_binge: 'kontrola nad jedzeniem wieczorem',
   ee_uncontrolled: 'kontrola nad jedzeniem wieczorem',
+  ee_snack: 'kontrola nad podjadaniem wieczorem',
   ee_chaos: 'stały rytm jedzenia',
   st_high: 'spokojne zejście z pracy',
   st_max: 'spokojne zejście z pracy',
@@ -122,8 +123,21 @@ const KONKRET_LABEL: Record<string, string> = {
 export function computeWhyRepeats(answers: RawAnswers): string {
   const gup = s(answers.give_up_point);
   const trigger = GUP_LABEL[gup] || 'coś nieplanowanego wchodzi w tydzień';
-  const eeOrSt = s(answers.evening_eating) || s(answers.stress_level) || s(answers.weekend_pattern);
-  const konkret = KONKRET_LABEL[eeOrSt] || 'pierwszy punkt planu';
+  // Wczesniej szlo to przez ||, czyli pierwsza NIEPUSTA odpowiedz. evening_eating wypelnia kazdy,
+  // wiec przy ee_clean lancuch konczyl sie na wartosci bez etykiety i stres oraz weekend nigdy nie
+  // dochodzily do glosu. Czlowiek z ee_clean i st_max dostawal ogolnik zamiast swojego wlasnego punktu.
+  // Do tego kolejnosc byla stala, wiec zdanie potrafilo odjechac od wskazanego momentu odpuszczenia:
+  // ktos odpuszcza na weekendzie, a wynik mowil mu o podjadaniu. Teraz pierwszenstwo ma ten obszar,
+  // ktory pasuje do triggera, a dopiero potem reszta.
+  const evening = s(answers.evening_eating), stress = s(answers.stress_level), weekend = s(answers.weekend_pattern);
+  const ORDER: Record<string, string[]> = {
+    gup_weekend: [weekend, evening, stress],
+    gup_stres: [stress, evening, weekend],
+    gup_wieczor: [evening, stress, weekend],
+  };
+  const konkret = (ORDER[gup] || [evening, stress, weekend])
+    .map((id) => KONKRET_LABEL[id])
+    .find(Boolean) || 'pierwszy punkt planu';
   const tried = s(answers.tried_before);
   const restart = tried === 'tb_2' || tried === 'tb_3' ? 'zaczynasz od nowa, jakby poprzedni tydzień się nie liczył' : 'próbujesz wrócić tam, gdzie skończyłeś';
   return `Zaczynasz od dobrego punktu i przez kilka dni to trzyma. Potem ${trigger}. Pierwsza rzecz, która wtedy wypada, to ${konkret}. Później ${restart}.`;

@@ -94,6 +94,35 @@ test('evidence receipts (Beat 1) never exceed 2', () => {
   assert.ok(rich.length <= 2, 'Beat 1 must show at most 2 evidence receipts');
 });
 
+// Regresja: "dlaczego to wraca" bralo pierwsza NIEPUSTA odpowiedz zamiast pierwszej ZNACZACEJ.
+// evening_eating wypelnia kazdy, wiec przy spokojnym jedzeniu lancuch urywal sie na wartosci bez
+// etykiety i czlowiek ze stresem albo rozjechanym weekendem dostawal ogolnik zamiast swojego punktu.
+test('czysty wieczor nie zasłania stresu ani weekendu w bloku "dlaczego to wraca"', () => {
+  const stres = computeWhyRepeats({ give_up_point: 'gup_stres', evening_eating: 'ee_clean', stress_level: 'st_max' });
+  assert.match(stres, /spokojne zejście z pracy/);
+
+  const weekend = computeWhyRepeats({ give_up_point: 'gup_weekend', evening_eating: 'ee_clean', stress_level: 'st_low', weekend_pattern: 'wp_reset' });
+  assert.match(weekend, /stały rytm weekendu/);
+
+  // jedzenie dalej wygrywa, kiedy naprawde jest sygnalem
+  const jedzenie = computeWhyRepeats({ give_up_point: 'gup_wieczor', evening_eating: 'ee_binge', stress_level: 'st_max' });
+  assert.match(jedzenie, /kontrola nad jedzeniem wieczorem/);
+
+  // konkret trzyma sie momentu, ktory czlowiek sam wskazal: odpuszcza na weekendzie,
+  // wiec nie dostaje zdania o podjadaniu, chociaz podjadanie tez zaznaczyl
+  const zgodnosc = computeWhyRepeats({ give_up_point: 'gup_weekend', evening_eating: 'ee_snack', weekend_pattern: 'wp_reset' });
+  assert.match(zgodnosc, /stały rytm weekendu/);
+  assert.doesNotMatch(zgodnosc, /podjadaniem/);
+
+  // podjadanie to osobny, lagodniejszy sygnal, a nie brak sygnalu
+  const podjadanie = computeWhyRepeats({ give_up_point: 'gup_wieczor', evening_eating: 'ee_snack' });
+  assert.match(podjadanie, /podjadaniem/);
+
+  // kiedy nic nie jest podniesione, ogolnik jest uczciwy
+  const spokoj = computeWhyRepeats({ give_up_point: 'gup_czas', evening_eating: 'ee_clean', stress_level: 'st_low', weekend_pattern: 'wp_same' });
+  assert.match(spokoj, /pierwszy punkt planu/);
+});
+
 test('last result section always ends with a concrete action', () => {
   assert.match(result, /className="rx-final-action"/);
   assert.match(result, /Zanim zamkniesz wynik/);
