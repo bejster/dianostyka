@@ -28,7 +28,7 @@ function withAutoplay(src: string): string {
 
 export default function HeroVideo({ kind, src, poster, caption }: HeroVideoConfig) {
   const [playing, setPlaying] = useState(false);
-  const cap = caption || 'Jak realnie patrzę na taki wynik';
+  const cap = caption || 'Jak patrzę na taki wynik';
 
   return (
     <div style={{ margin: '0 0 18px' }}>

@@ -58,7 +58,7 @@ export default function ResultExperience({
   // dostaje wiec konkretna reakcje z nastepnym miejscem do sprawdzenia. Wartosci wyniku sie nie zmieniaja.
   const CALIB_REPLY: Record<string, string> = {
     sen: 'Czyli tydzień rozjeżdża Ci się przy w miarę zebranym śnie. Wtedy patrzę najpierw na obciążenie w pracy oraz na to, co dzieje się między osiemnastą a dwudziestą drugą.',
-    energia: 'Czyli energię masz, a i tak coś wypada. To zwykle znaczy, że problemem jest kolejność dnia, nie zasoby. Sprawdziłbym, o której realnie kończysz robotę.',
+    energia: 'Czyli energię masz, a i tak coś wypada. Wtedy zwykle rozjeżdża się kolejność dnia: wszystko przesuwa się o godzinę i wieczorem nie zostaje miejsca na to, co miało być. Sprawdziłbym, o której faktycznie kończysz robotę.',
     jedzenie: 'Czyli punkt pęknięcia nie siedzi w jedzeniu. Jedzenie najczęściej tylko odbija to, co wydarzyło się wcześniej, więc następne pytanie brzmi: co robisz w godzinie przed pierwszą przekąską.',
     ruch: 'Czyli treningi dowozisz. Wtedy różnicę robi reszta tygodnia, te godziny, w których nie ma siłowni.',
     weekend: 'Czyli pęknięcie jest wcześniej niż sobota. Sprawdziłbym czwartek wieczorem, bo tam zwykle zapada decyzja o tym, jak będzie wyglądał piątek.',
@@ -164,7 +164,7 @@ export default function ResultExperience({
   // Zadnego "wiekszosc osob". To bylaby statystyka, ktorej nikt nie policzyl. Zostaje scena.
   const ceilingBody = hasCeilingRoom
     ? 'Zwykle wygląda to tak, że nic nie jest złe: robota idzie, trening jakoś leci, weekend się odbywa. I dokładnie dlatego nic się nie rusza. Jest za to poniedziałek, który wygląda tak samo jak dwa lata temu.'
-    : 'To jest ten moment, w którym najłatwiej odpuścić, bo nic nie pali. Jest też jedyny moment, w którym da się spokojnie sprawdzić, na ile Cię realnie stać.';
+    : 'To jest ten moment, w którym najłatwiej odpuścić, bo nic nie pali. Jest też jedyny moment, w którym da się spokojnie sprawdzić, na ile Cię stać, bez gaszenia pożaru przy okazji.';
   // Wczesniej jeden literal dla kazdego. Teraz domkniecie wskazuje realny obszar z jego wlasnego wyniku.
   const ceilingHit = hasCeilingRoom
     ? `Nie wiesz, ile zapasu siedzi tutaj: ${breakPos.label}. Nigdy nie sprawdziłeś tego przy tygodniu, który trzyma.`

@@ -123,7 +123,7 @@ function hiddenCost(input: WeekPlanInput): WeekPlan['hiddenCost'] {
     case 'weekend_reset':
       return { headline: 'Jeden rozbity weekend zabiera wysokie obroty przez 3 kolejne dni.', math: `W skali miesiąca to nie 4 luźne dni, ale 8-10 dni roboczych spędzonych na ponownym wchodzeniu w rytm.${kasa}${mies}`, multiplier: 'Rozkojarzony poniedziałek i wtorek to ukryty koszt niespójnego weekendu.' };
     case 'wieczorny_odpad':
-      return { headline: 'Rozwalony wieczór zabiera Ci następny dzień, zanim się zacznie.', math: `Wstajesz niedospany, z ciężką głową, i pierwsze godziny w pracy nadrabiasz kawą, zamiast robić robotę.${kasa}${mies}`, multiplier: 'Jeden zjedzony wieczór, jeden dzień na pół gwizdka.' };
+      return { headline: 'Rozwalony wieczór zabiera Ci następny dzień, zanim się zacznie.', math: `Wstajesz niedospany, z ciężką głową. Pierwsze godziny w pracy nadrabiasz wtedy kawą, zamiast robić robotę.${kasa}${mies}`, multiplier: 'Jeden zjedzony wieczór, jeden dzień na pół gwizdka.' };
     case 'glowa_zajezdza':
       return { headline: 'Brak wyłączenia głowy po pracy zjada regenerację i sen.', math: `Dni w ciągłym napięciu kumulują zmęczenie, przez co wolny czas idzie na zbieranie sił, a nie na odpoczynek.${kasa}${mies}`, multiplier: 'Głowa, która po pracy nie schodzi z obrotów, okrada Cię z jutra, zanim jeszcze wstaniesz.' };
     case 'wiedza_bez_wdrozenia':
@@ -216,7 +216,7 @@ function invitationLine(input: WeekPlanInput): string {
 // ── MOST_INTRO ── akapit pod zaproszeniem. LLM-owy z jego historii, inaczej deterministyczny fallback.
 function bridgeIntroLine(input: WeekPlanInput): string {
   if (input.reframe?.most_intro?.trim()) return input.reframe.most_intro.trim();
-  return `Pewnie nieraz wywaliłeś kasę na dietę z neta albo plan, który po dwóch tygodniach się rozsypał. Ze mną nie dostajesz gotowca do wydrukowania. Patrzę, gdzie konkretnie pęka Twój tydzień, i wiem, co zdjąć najpierw. Nie każdego biorę. Jak nie widzę, że da się ruszyć, powiem wprost. Napisz z tym wynikiem, odpisuję sam, nie żaden zespół.`;
+  return `Pewnie nieraz wywaliłeś kasę na dietę z neta albo plan, który po dwóch tygodniach się rozsypał. Ze mną nie dostajesz gotowca do wydrukowania. Patrzę, gdzie konkretnie pęka Twój tydzień. Wiem, co zdjąć najpierw. Nie każdego biorę. Jak nie widzę, że da się ruszyć, powiem wprost. Napisz z tym wynikiem, odpisuję sam, nie żaden zespół.`;
 }
 
 // ── MOST DO KOLEJNEGO KROKU ──
@@ -226,7 +226,7 @@ function buildBridge(input: WeekPlanInput): WeekPlan['bridge'] {
   const hot = input.qualified || (input.potentialPct ?? (100 - input.score)) <= 45;
   const ladder = { tier: 'Siadamy nad tym raz', line: 'Przechodzimy Twój wynik na spokojnie i wychodzisz z jednym planem na najbliższy miesiąc.', kind: 'ladder' as const };
   const coopHot = { tier: 'Prowadzę Cię 1:1', line: 'Układam Ci tydzień pod grafik i co tydzień rozliczam z wykonania, aż to zacznie siedzieć samo.', kind: 'coop' as const };
-  const coopCold = { tier: 'Prowadzę Cię 1:1', line: 'Jak zobaczysz, jak pracuję z innymi, i uznasz, że chcesz to robić ze mną, a nie sam, odezwij się.', kind: 'coop' as const };
+  const coopCold = { tier: 'Prowadzę Cię 1:1', line: 'Zobacz najpierw, jak pracuję z innymi. Jak uznasz, że chcesz to robić ze mną zamiast w pojedynkę, odezwij się.', kind: 'coop' as const };
   return hot ? [ladder, coopHot] : [ladder, coopCold];
 }
 
@@ -254,7 +254,7 @@ const VALUE_BY_ARCHETYPE: Record<string, ValueBlock> = {
   },
   wiedza_bez_wdrozenia: {
     widze: 'Wiedzy masz aż za dużo. Brakuje Ci architektury wykonania. Głowa dostaje zastrzyk dopaminy za samo czytanie i planowanie, czuje postęp, choć w tygodniu nic się nie ruszyło. Dlatego kolejny „lepszy plan” nic nie zmieni.',
-    ruch: 'Przez 7 dni odwróć to: zero nowej teorii. Tylko wersja minimum, 20 minut treningu wpisane na sztywno jak spotkanie, i jedna liczba na koniec dnia: zrobione czy nie. Rozliczasz wykonanie, nie wiedzę.',
+    ruch: 'Przez 7 dni odwróć to: zero nowej teorii. Tylko wersja minimum, 20 minut treningu wpisane na sztywno jak spotkanie. Do tego jedna liczba na koniec dnia: zrobione czy nie. Rozliczasz wykonanie, nie wiedzę.',
     efekt: 'Zobaczysz na własne oczy, że problem nigdy nie siedział w wiedzy. Jak to klapnie, odezwij się, bo dalej najszybciej idzie z kimś, kto Cię z tego rozlicza.',
   },
   silnik_bez_paliwa: {
