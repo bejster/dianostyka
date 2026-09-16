@@ -16,6 +16,7 @@ import { selectExperiment, type SelectorInput } from '../lib/experiment-bank';
 import { routeDecision } from '../lib/result-router-v3';
 import { ASSESSMENT_VERSION } from '../lib/assessment-config';
 import { buildLeadBrief } from '../lib/lead-brief';
+import { computeAwarenessGap } from '../lib/awareness-gap';
 import { classifyPremiumFit } from '../lib/premium-fit';
 import { Atmosphere } from './atmosphere';
 
@@ -440,12 +441,20 @@ export default function DiagnozaPage() {
     const whyRepeats = computeWhyRepeats(answers);
     const costFacts = computeCostFacts(answers);
     const route = routeDecision(intentStr, startWhenStr);
+    // LUSTRO (v2.9): samoocena z ekranu 2 obok energii policzonej z zachowan. Zero wplywu na
+    // severity, archetyp i trase. Gdy brak samooceny albo za malo skladowych, sekcja znika.
+    const awareness = computeAwarenessGap(answers);
     // CONTENT SIGNALS: anonimowe kategorie do uczenia contentu. Bez PII, treści otwartych, symptomów, używek, libido.
     const contentSignals: Record<string, string | boolean> = {
       break_window: breakIdStr || 'unknown',
       give_up_point: typeof answers.give_up_point === 'string' ? answers.give_up_point : 'unknown',
       weekend_pattern: typeof answers.weekend_pattern === 'string' ? answers.weekend_pattern : 'unknown',
       tried_before: typeof answers.tried_before === 'string' ? answers.tried_before : 'unknown',
+      // v2.9: dwa nowe sygnaly do contentu. stagnation_12m mowi, czy cialo w ogole ruszylo,
+      // gap_verdict mowi, czy czlowiek widzi u siebie to, co widac w jego odpowiedziach.
+      // Samooceny libido tu NIE ma i miec nie bedzie, tak samo jak objawow i uzywek.
+      stagnation_12m: typeof answers.stagnation_12m === 'string' ? answers.stagnation_12m : 'unknown',
+      gap_verdict: awareness.verdict,
       intent: intentStr || 'unknown',
       start_when: startWhenStr || 'unknown',
       archetype: arch.key,
@@ -478,6 +487,7 @@ export default function DiagnozaPage() {
         naborHref={naborUrl}
         submissionId={submissionIdStr}
         contentSignals={contentSignals}
+        awareness={awareness}
       />
     );
   }

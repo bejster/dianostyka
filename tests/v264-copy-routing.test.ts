@@ -10,7 +10,7 @@ const cfg = fs.readFileSync(path.join(root, 'app/lib/assessment-config.ts'), 'ut
 const flow = fs.readFileSync(path.join(root, 'app/components/SingleQuestionFlow.tsx'), 'utf8');
 
 test('v2.8.1 keeps cold entry minimal and human proof later in the result', () => {
-  assert.match(cfg, /ASSESSMENT_VERSION = '2\.8\.1'/);
+  assert.match(cfg, /ASSESSMENT_VERSION = '2\.9\.0'/);
   assert.doesNotMatch(page, /michal-portrait\.jpg/);
   assert.match(result, /michal-portrait\.jpg/);
   assert.doesNotMatch(page + result, /Human Performance Coach|Performance Coach/i);

@@ -1,6 +1,6 @@
 // assessment-config.ts, Wersjonowana konfiguracja pytań, domen i profili Diagnostyki Tygodnia V2
 
-export const ASSESSMENT_VERSION = '2.8.1';
+export const ASSESSMENT_VERSION = '2.9.0';
 
 export type DomainKey = 'sleep' | 'energy' | 'nutrition' | 'training' | 'weekend' | 'chaos';
 
@@ -162,6 +162,27 @@ export const QUESTIONS: QuestionDef[] = [
       { id: 'goal_inne', label: 'Coś innego.', value: 0 },
     ],
   },
+  // ── SAMOOCENA (v2.9): jedyne pytanie w calym flow, w ktorym czlowiek ocenia SAM SIEBIE liczba.
+  //    Stoi celowo jako ekran 2, PRZED jakimkolwiek pytaniem o zachowanie. Kto najpierw przeczyta
+  //    dwadziescia pytan o sen, wieczory i weekend, ten poda liczbe juz skalibrowana i cala roznica
+  //    znika. Wartosc nie wchodzi do score ani do FD. Sluzy wylacznie sekcji LUSTRO na stronie wyniku
+  //    (app/lib/awareness-gap.ts), gdzie stoi obok energii policzonej z jego wlasnych klikniec. ──
+  {
+    id: 'self_energy',
+    section: 'Po co tu jesteś',
+    sectionNum: 'I',
+    title: 'W skali 1-10, ile masz dziś energii?',
+    subtitle: 'Pierwsza liczba, jaka Ci przychodzi do głowy. Nie licz jej i nie poprawiaj.',
+    type: 'slider',
+    domain: 'chaos',
+    min: 1,
+    max: 10,
+    step: 1,
+    unit: '/10',
+    upstreamWeight: 0,
+    crossDomainImpact: 0,
+  },
+
   // ── PREMIUM ICP PATCH V1 §3A: ODPOWIEDZIALNOSC. Wartosc 0, zero wplywu na severity.
   //    To jest router calej galezi kwalifikacyjnej: odpowiedz inna niz wl_clock odblokowuje 'spillover'.
   //    Pytamy o CZYJE sprawy zjadaja dzien, nie o godziny (§2: dlugie godziny NIE sa sygnalem premium). ──
@@ -437,6 +458,26 @@ export const QUESTIONS: QuestionDef[] = [
       { id: 'confidence', label: 'Mniej pewny siebie niż rok temu, omijam lustra.', value: 15 },
     ],
   },
+  // ── SAMOOCENA NAPEDU (v2.9). Michal wymienil libido wprost jako nawyk do zebrania. Do tej pory
+  //    siedzialo wylacznie jako jeden chip wsrod dziesieciu, wiec czlowiek, ktory uwaza, ze u niego
+  //    wszystko gra, po prostu go nie zaznaczal. Liczba zmusza do zajecia stanowiska.
+  //    ZERO TEZY HORMONALNEJ, tak samo jak przy wylaczonym 'morning_wood'. Wartosc poza score. ──
+  {
+    id: 'self_drive',
+    section: 'Napęd',
+    sectionNum: 'VII',
+    title: 'W skali 1-10, jak oceniasz swój napęd oraz libido w ostatnim miesiącu?',
+    subtitle: 'Bez oceniania. To sygnał, który sam u siebie widzisz, a prawie nikt o nim głośno nie mówi. Jeśli coś zmieniło się na dłużej, warto to sprawdzić u lekarza.',
+    type: 'slider',
+    domain: 'chaos',
+    min: 1,
+    max: 10,
+    step: 1,
+    unit: '/10',
+    upstreamWeight: 0,
+    crossDomainImpact: 0,
+  },
+
   // ── PREMIUM ICP PATCH V1 §3B/3E: SPILLOVER I STAWKA. Wartosc 0, zero wplywu na severity.
   //    Widoczne tylko dla kogos, kto niesie realna odpowiedzialnosc (work_load != wl_clock),
   //    wiec lead bez stakes nie ogląda tego ekranu i nie placi za niego dlugoscia quizu. ──
@@ -477,6 +518,28 @@ export const QUESTIONS: QuestionDef[] = [
       { id: 'mw_0', label: 'Większość poranków, normalnie.', value: 0 },
       { id: 'mw_1', label: 'Czasem, kilka razy w tygodniu.', value: 50 },
       { id: 'mw_2', label: 'Rzadko. Widzę, że to już nie to.', value: 100 },
+    ],
+  },
+  // ── STAGNACJA 12 MIESIECY (v2.9). 'tried_before' liczy plany, ktore padly. To jest inne pytanie:
+  //    czy CIALO w ogole ruszylo. Czlowiek, ktory uwaza, ze u niego wszystko gra, ma tu zwykle zero
+  //    padnietych planow, bo niczego nie zaczynal, i plaskie dwanascie miesiecy. Dopiero ta para
+  //    liczb go zatrzymuje. Opcja 'nie sprawdzalem' jest tu najwazniejsza, bo to jest wlasnie on.
+  //    Wartosc 0: uswiadomienie robi strona wyniku, nie severity (§10, trasa sprzedazowa bez zmian). ──
+  {
+    id: 'stagnation_12m',
+    section: 'Napęd',
+    sectionNum: 'VII',
+    title: 'Ostatnie 12 miesięcy. Twoja forma poszła do przodu?',
+    subtitle: 'Nie chodzi o plany ani o chęci. Chodzi o to, co widzisz w lustrze oraz co czujesz na treningu.',
+    type: 'single',
+    domain: 'chaos',
+    upstreamWeight: 0,
+    crossDomainImpact: 0,
+    options: [
+      { id: 'st12_forward', label: 'Tak. Widać różnicę.', value: 0 },
+      { id: 'st12_flat', label: 'Stoję w tym samym miejscu.', value: 0 },
+      { id: 'st12_back', label: 'Cofnęło się.', value: 0 },
+      { id: 'st12_unknown', label: 'Nie wiem. Nie sprawdzałem.', value: 0 },
     ],
   },
   {
@@ -530,6 +593,10 @@ export const QUESTIONS: QuestionDef[] = [
   },
   {
     id: 'user_trigger',
+    // 2026-09-16 (v2.9): WYLACZONE, zeby zaplacic za trzy nowe ekrany swiadomosci dlugoscia, nie completionem.
+    // To bylo drugie z rzedu pole tekstowe, czyli najdrozszy ekran w calym flow. Jedyne, co niosLo dalej,
+    // to flaga has_trigger_text w content signals oraz jedno zdanie w brief. 'user_pain' zostaje i pokrywa VOC.
+    condition: () => false,
     optional: true, // 2026-08-26: kto wypelni mimo opcjonalnosci = goracy lead (self-select); zimny nie odbija sie o 3. pole tekstowe
     section: 'Główna przeszkoda',
     sectionNum: 'VII',

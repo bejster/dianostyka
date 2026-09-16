@@ -13,6 +13,7 @@ import { trackDiag } from '../lib/analytics';
 import type { ExperimentDef, Confidence } from '../lib/experiment-bank';
 import type { RouteDecision } from '../lib/result-router-v3';
 import { BREAK_PHRASE, type LoopNode } from '../lib/fracture-engine';
+import type { AwarenessGap } from '../lib/awareness-gap';
 
 const C = {
   ink: '#08080a', pan: '#141416', pan2: '#1a1a1d', line: '#26262b', line2: '#33333a',
@@ -25,7 +26,7 @@ export default function ResultExperience({
   archLabel, archKey, redCount, breakId, domainLabel, statuses,
   evidenceReceipts, loop, whyRepeats, costFacts, userPain,
   experiment, experimentConfidence, route,
-  imie, instagram, naborHref, submissionId, contentSignals,
+  imie, instagram, naborHref, submissionId, contentSignals, awareness,
 }: {
   archLabel: string; archKey: string; redCount?: number; breakId: string; domainLabel: string;
   statuses: { label: string; score: number; reason: string }[];
@@ -34,6 +35,7 @@ export default function ResultExperience({
   experiment: ExperimentDef; experimentConfidence: Confidence; route: RouteDecision;
   imie?: string; instagram?: string; naborHref: string; submissionId?: string;
   contentSignals?: Record<string, string | boolean>;
+  awareness?: AwarenessGap;
 }) {
   const progRef = useRef<HTMLDivElement>(null);
   const resultStartedAt = useRef<number>(Date.now());
@@ -81,7 +83,7 @@ export default function ResultExperience({
       if (!e.isIntersecting) return;
       (e.target as HTMLElement).classList.add('in');
       const b = (e.target as HTMLElement).dataset.beat;
-      const EVT: Record<string, string> = { '1': 'current_state_viewed', map: 'map_viewed', evidence: 'evidence_viewed', fracture: 'fracture_viewed', '2': 'loop_viewed', '5': 'experiment_viewed', horizon: 'horizon_viewed', '6': 'method_demo_viewed' };
+      const EVT: Record<string, string> = { '1': 'current_state_viewed', mirror: 'mirror_viewed', map: 'map_viewed', evidence: 'evidence_viewed', fracture: 'fracture_viewed', '2': 'loop_viewed', '5': 'experiment_viewed', horizon: 'horizon_viewed', '6': 'method_demo_viewed' };
       if (b && EVT[b]) {
         const now = Date.now();
         if (lastBeatRef.current && lastBeatRef.current !== b) trackDiag('result_beat_dwell', { arch: archKey, beat: lastBeatRef.current, dwell_ms: Math.max(0, now - beatSeenAtRef.current - beatHiddenMsRef.current) });
@@ -259,6 +261,39 @@ export default function ResultExperience({
             <span>ZOBACZ CAŁĄ MAPĘ</span>
           </div>
         </section>
+
+        {/* LUSTRO (v2.9) — jedyne miejsce na tej stronie, gdzie czlowiek widzi siebie obok siebie.
+            Po lewej liczba, ktora sobie dal na ekranie 2. Po prawej ta sama skala policzona z jego
+            zachowan. Pod spodem kazda odpowiedz, ktora zabrala punkt, wiec roznicy nie da sie
+            zbyc zdaniem "no tak mi sie kliknelo". Zero oceny, zero diagnozy, sam rachunek.
+            Stoi PRZED mapa, bo mapa jest odpowiedzia na pytanie, ktore dopiero tutaj powstaje. */}
+        {awareness && awareness.verdict !== 'NONE' && (
+          <section className="rx-beat rx-mirror" data-beat="mirror">
+            <div className="rx-kick">Lustro</div>
+            <h2 className="rx-h2" style={{ fontSize: 'clamp(22px,4.6vw,32px)' }}>{awareness.headline}</h2>
+            <div className="rx-mirror-pair">
+              <div className="rx-mirror-cell">
+                <span>Tak się oceniasz</span>
+                <strong>{String(awareness.selfEnergy).replace('.', ',')}</strong>
+                <em>Twoja odpowiedź z drugiego ekranu</em>
+              </div>
+              <div className={`rx-mirror-cell ${awareness.verdict === 'ABOVE' ? 'rx-mirror-hot' : ''}`}>
+                <span>Tak wychodzi z odpowiedzi</span>
+                <strong>{String(awareness.measuredEnergy).replace('.', ',')}</strong>
+                <em>Policzone z pięciu Twoich kliknięć</em>
+              </div>
+            </div>
+            <p className="rx-sub">{awareness.body}</p>
+            {awareness.drivers.length > 0 && (
+              <ul className="rx-mirror-drivers">
+                {awareness.drivers.map((d, i) => (<li key={i}>{d}</li>))}
+              </ul>
+            )}
+            {awareness.stagnationLine && <p className="rx-mirror-stagnation">{awareness.stagnationLine}</p>}
+            <p className="rx-mirror-note">Ta liczba porównuje Cię wyłącznie z Twoją własną oceną sprzed kilku minut. Nie jest wynikiem medycznym ani procentem Twojego potencjału.</p>
+            {awareness.driveLine && <p className="rx-medical">{awareness.driveLine}</p>}
+          </section>
+        )}
 
         {/* MAPA 168 — wizualny payoff z pięciu osi już liczonych z odpowiedzi. */}
         <section className="rx-beat rx-map-section" data-beat="map">
@@ -539,6 +574,20 @@ const css = `
 .rx-reserve-row.rx-reserve-top strong{color:${C.goldB}}
 .rx-reserve-row p{margin:0;font-size:12.5px;line-height:1.5;color:${C.mute}}
 .rx-medical{margin-top:10px!important;padding-top:10px;border-top:1px solid ${C.line2};color:${C.mute}!important}
+.rx-mirror-pair{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:22px 0 18px}
+.rx-mirror-cell{padding:18px 16px;border:1px solid ${C.line2};border-radius:16px;background:rgba(255,255,255,.022);text-align:center}
+.rx-mirror-cell span{display:block;font-family:${C.mono};font-size:8.5px;letter-spacing:1.6px;text-transform:uppercase;color:${C.faint};margin-bottom:10px}
+.rx-mirror-cell strong{display:block;font-family:${C.serif};font-size:clamp(38px,11vw,56px);line-height:1;color:${C.paper}}
+.rx-mirror-cell em{display:block;margin-top:9px;font-style:normal;font-size:11.5px;line-height:1.45;color:${C.mute}}
+.rx-mirror-cell.rx-mirror-hot{border-color:rgba(224,85,46,.42);background:linear-gradient(150deg,rgba(224,85,46,.1),rgba(255,255,255,.02))}
+.rx-mirror-cell.rx-mirror-hot span{color:${C.hot};font-weight:800}
+.rx-mirror-cell.rx-mirror-hot strong{color:${C.hot}}
+.rx-mirror-drivers{margin:16px 0 0;padding:0;list-style:none;display:grid;gap:8px}
+.rx-mirror-drivers li{position:relative;padding:12px 14px 12px 34px;border:1px solid ${C.line};border-radius:12px;background:rgba(255,255,255,.018);font-size:13.5px;line-height:1.5;color:${C.paper}}
+.rx-mirror-drivers li::before{content:"−";position:absolute;left:14px;top:11px;font-family:${C.mono};font-size:13px;color:${C.gold}}
+.rx-mirror-stagnation{margin:16px 0 0;padding:14px 16px;border-left:2px solid ${C.gold};background:rgba(200,168,78,.06);font-size:14.5px;line-height:1.55;color:${C.goldB}}
+.rx-mirror-note{margin:16px 0 0;font-size:11.5px;line-height:1.55;color:${C.faint}}
+@media(max-width:380px){.rx-mirror-pair{grid-template-columns:1fr}}
 .rx-horizon{display:grid;gap:12px}
 .rx-hz{padding:16px 18px;border:1px solid ${C.line};border-radius:14px;background:${C.pan2};position:relative}
 .rx-hz:first-child{border-color:${C.goldD};background:linear-gradient(150deg,rgba(200,168,78,.075),${C.pan2})}

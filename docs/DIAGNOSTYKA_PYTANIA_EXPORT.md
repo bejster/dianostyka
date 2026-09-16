@@ -7,6 +7,19 @@ Cały funnel tekstowy: **PIERWSZA STRONA (intro) → 21 PYTAŃ → STRONA WYNIKU
 
 ---
 
+## DELTA v2.9 — LUSTRO (świadomość skali)
+
+Ten export opisuje stan sprzed v2.9. Numeracja poniżej jest snapshotem, nie kanonem. Kanon pytań to zawsze `app/lib/assessment-config.ts`. Zmiany v2.9, żeby człowiek przekonany, że u niego wszystko gra, zobaczył własną różnicę:
+
+- **DODANE `self_energy`** (zaraz po `primary_goal`, sekcja I) — slider 1-10, „W skali 1-10, ile masz dziś energii?". Musi stać przed każdym pytaniem o zachowanie, inaczej człowiek poda liczbę już skalibrowaną i cała różnica znika.
+- **DODANE `self_drive`** (sekcja VI, po `symptoms_chips`) — slider 1-10, napęd oraz libido. Zero tezy hormonalnej, jedyne zdanie, jakie może wygenerować, zaprasza do lekarza. Poza `contentSignals`.
+- **DODANE `stagnation_12m`** (sekcja VII, przed `tried_before`) — single, cztery opcje `st12_*`, ostatnie 12 miesięcy formy.
+- **WYCIĘTE `user_trigger`** — drugie pole wolnego tekstu z rzędu, najdroższy ekran flow. `user_pain` zostaje i pokrywa VOC.
+
+Wszystkie trzy nowe pytania mają `value: 0` oraz `upstreamWeight`/`crossDomainImpact` na zerze. Severity, archetyp i trasa sprzedażowa zostają nietknięte. Liczą się wyłącznie w `app/lib/awareness-gap.ts`, który renderuje sekcję Lustro między hero a Mapą 168.
+
+---
+
 ## AUDIT BRIEF (dla ChatGPT)
 
 Cel diagnostyki, w kolejności ważności:
@@ -157,7 +170,7 @@ Kolejność elementów na ekranie (góra → dół):
 - Tytuł: **Co Cię w tym wszystkim najbardziej wkurwia?**
 - Podtytuł: Jedno, dwa zdania, własnymi słowami. Bez ładnego pisania, tak jak myślisz.
 
-### 18. `user_trigger` — SCORED (0.85/0.80) · OPCJONALNE
+### 18. `user_trigger` — WYCIĘTE w v2.9 (`condition: () => false`)
 - Sekcja: VII · Główna przeszkoda
 - Typ: text (esej, można pominąć)
 - Tytuł: **Czemu akurat teraz to sprawdzasz?**
