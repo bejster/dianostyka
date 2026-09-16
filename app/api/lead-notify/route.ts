@@ -7,12 +7,39 @@ import { NextRequest, NextResponse } from 'next/server';
 export async function POST(req: NextRequest) {
   try {
     const b = (await req.json().catch(() => ({}))) as Record<string, unknown>;
+
+    // ── Pelny lead -> n8n (diagnostyka-hit) -> Notion. Kazde ukonczone wypelnienie ląduje jako wiersz. ──
+    // Ten blok stoi PRZED bramka Telegrama swiadomie. Wczesniej siedzial nizej i brak tokenu Telegrama
+    // konczyl caly handler wczesnym returnem, wiec zgubiony sekret zabieral przy okazji wiersz w Notion.
+    // To sa dwa niezalezne kanaly i padniecie jednego nie moze kasowac drugiego.
+    // P0-3 (rc-004): private-boundary compat. Realny mapping n8n->Notion zyje w chmurze (nie w repo), wiec defensywnie
+    // dokladamy LEGACY NAZWY pol niosace NOWE, poprawne wartosci — zeby stary mapping po renamingu nie zgubil danych.
+    // To wylacznie alias NAZW, NIE przywrocenie zlej semantyki: zero budgetProxy, zero readiness, segment = neutralny
+    // severity_band (nie sales temperature). TODO(verify): potwierdzic realny mapping i po 1 release usunac aliasy.
+    const n8nUrl = (process.env.N8N_DIAGNOSTYKA_WEBHOOK || '').trim();
+    let n8nOk: boolean | null = null; // null = nie skonfigurowany, nie probowalismy
+    if (n8nUrl) {
+      const n8nBody = {
+        event: 'diagnostyka_complete',
+        ...b,
+        priority_lead: b.followup_priority, // legacy nazwa -> wartosc = nowy followup_priority (waska flaga kolejki kontaktu)
+        segment: b.severity_band,           // legacy nazwa -> wartosc = neutralny severity_band (NIE temperatura sprzedazowa)
+        received_at: new Date().toISOString(),
+      };
+      n8nOk = await fetch(n8nUrl, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify(n8nBody),
+      }).then((r) => r.ok).catch(() => false);
+    }
+
     // Osobny bot dla leadow (Nocna Zmiana, admin w HiT Leady). Fallback na wspolny, gdy nieustawiony.
     const token = process.env.TELEGRAM_LEADS_BOT_TOKEN || process.env.TELEGRAM_BOT_TOKEN;
     // Domyslnie kanal "HiT Leady" (chat_id z t.me/c/4328603395). Env moze nadpisac.
     const chat = process.env.TELEGRAM_LEADS_CHAT_ID || '-1004328603395';
     if (!token || !chat) {
-      return NextResponse.json({ ok: false, reason: 'no_telegram_config' });
+      // Notion juz dostal swoje wyzej. Lead nie ginie, brakuje tylko powiadomienia.
+      return NextResponse.json({ ok: false, reason: 'no_telegram_config', telegram: false, n8n: n8nOk });
     }
 
     const s = (v: unknown, max = 200) => String(v ?? '').replace(/\s+/g, ' ').trim().slice(0, max);
@@ -130,28 +157,6 @@ export async function POST(req: NextRequest) {
       b.pain ? `Wkurza: „${s(b.pain, 300)}”` : '',
     ].filter(Boolean);
 
-    // ── Pelny lead -> n8n (diagnostyka-hit) -> Notion. Kazde ukonczone wypelnienie ląduje jako wiersz.
-    //    Nie blokuje ani nie wywala Telegrama; .trim() broni przed zablakanym \n w wartosci env. ──
-    const n8nUrl = (process.env.N8N_DIAGNOSTYKA_WEBHOOK || '').trim();
-    if (n8nUrl) {
-      // P0-3 (rc-004): private-boundary compat. Realny mapping n8n->Notion zyje w chmurze (nie w repo), wiec defensywnie
-      // dokladamy LEGACY NAZWY pol niosace NOWE, poprawne wartosci — zeby stary mapping po renamingu nie zgubil danych.
-      // To wylacznie alias NAZW, NIE przywrocenie zlej semantyki: zero budgetProxy, zero readiness, segment = neutralny
-      // severity_band (nie sales temperature). TODO(verify): potwierdzic realny mapping i po 1 release usunac aliasy.
-      const n8nBody = {
-        event: 'diagnostyka_complete',
-        ...b,
-        priority_lead: b.followup_priority, // legacy nazwa -> wartosc = nowy followup_priority (waska flaga kolejki kontaktu)
-        segment: b.severity_band,           // legacy nazwa -> wartosc = neutralny severity_band (NIE temperatura sprzedazowa)
-        received_at: new Date().toISOString(),
-      };
-      await fetch(n8nUrl, {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify(n8nBody),
-      }).catch(() => {});
-    }
-
     const res = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -178,7 +183,10 @@ export async function POST(req: NextRequest) {
         } : {}),
       }),
     });
-    return NextResponse.json({ ok: res.ok });
+    // Oba kanaly raportowane osobno, zeby dalo sie odroznic cichy brak wiersza w Notion
+    // od braku powiadomienia na Telegramie. Wywolanie z page.tsx jest fire-and-forget,
+    // wiec to widac dopiero w logach Vercela, ale tam widac dokladnie ktora rura padla.
+    return NextResponse.json({ ok: res.ok, telegram: res.ok, n8n: n8nOk });
   } catch {
     return NextResponse.json({ ok: false, reason: 'error' });
   }
