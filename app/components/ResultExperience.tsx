@@ -185,9 +185,10 @@ export default function ResultExperience({
     .filter((st) => reserveBand(st.score) !== 'mały')
     .slice(0, 3)
     .map((st) => ({ label: st.label, cost: GAP_COST[st.label] || 'ten obszar ma dziś najwięcej miejsca do poprawy' }));
+  // Bez kolejnego "z Twoich odpowiedzi". To zdanie bylo piatym powtorzeniem tego samego dowodu na stronie.
   const gapsLead = gaps.length === 1
-    ? 'Z Twoich odpowiedzi wychodzi jedno miejsce z realnym zapasem.'
-    : `Z Twoich odpowiedzi wychodzą ${gaps.length === 2 ? 'dwa miejsca' : 'trzy miejsca'} z realnym zapasem.`;
+    ? 'Zapas został dziś w jednym miejscu.'
+    : `Zapas został dziś w ${gaps.length === 2 ? 'dwóch miejscach' : 'trzech miejscach'}.`;
 
   // Fakt z mojego arkusza "PODSUMOWANIE TYGODNIA": 431 cotygodniowych check-inow od 44 osob, od grudnia.
   // Podane jako obserwacja z wlasnych danych, nie jako dowod przyczynowy i nie jako teza medyczna.
@@ -242,7 +243,9 @@ export default function ResultExperience({
             <div className="rx-hero-signature" aria-hidden="true"><span/><span/><span/></div>
             <h1 className="rx-arch">{hasCeilingRoom ? 'Poziom, na którym dziś jedziesz, nie jest jeszcze Twoim sufitem.' : 'Twój tydzień trzyma się dziś równo w pięciu obszarach.'}</h1>
             <div className="rx-redline">{reserveLine}</div>
-            <p className="rx-sub rx-hero-sub">Policzyłem to wyłącznie z Twoich odpowiedzi. Poniżej masz każdy obszar osobno, razem z odpowiedzią, która najmocniej przesunęła wynik.</p>
+            {/* Podpis pod naglowkiem wycialem w calosci. Pierwsze zdanie ("Policzylem to wylacznie z Twoich
+                odpowiedzi") bylo pierwszym z pieciu wystapien tego samego dowodu, a drugie zapowiadalo
+                odczyt spod osi, ktory i tak stoi przy mapie. Handoff w dol robi strzalka ZOBACZ CALA MAPE. */}
             <div className="rx-reserve">
               <div className="rx-reserve-row rx-reserve-top">
                 <span>Największy zapas</span>
@@ -290,7 +293,9 @@ export default function ResultExperience({
               </ul>
             )}
             {awareness.stagnationLine && <p className="rx-mirror-stagnation">{awareness.stagnationLine}</p>}
-            <p className="rx-mirror-note">Ta liczba porównuje Cię wyłącznie z Twoją własną oceną sprzed kilku minut. Nie jest wynikiem medycznym ani procentem Twojego potencjału.</p>
+            {/* Zastrzezenie zostaje, bo pilnuje innej liczby niz to przy mapie. Wycialem tylko czlon
+                o procencie potencjalu, ktory pada slowo w slowo dwa ekrany nizej. */}
+            <p className="rx-mirror-note">Ta liczba porównuje Cię wyłącznie z Twoją własną oceną sprzed kilku minut. Nie jest wynikiem medycznym.</p>
             {awareness.driveLine && <p className="rx-medical">{awareness.driveLine}</p>}
           </section>
         )}
@@ -323,10 +328,10 @@ export default function ResultExperience({
               ))}
             </div>
           </div>
-          <div className="rx-map-readout">
-            <div><span>Największy zapas</span><strong>{weakestStatus?.label}</strong></div>
-            <div><span>Trzyma się dziś najlepiej</span><strong>{strongestStatus?.label}</strong></div>
-          </div>
+          {/* rx-map-readout wycialem: te same dwie etykiety z tymi samymi wartosciami stoja juz w hero,
+              a tutaj siedzialy 60px pod paskami, ktore pokazuja to samo dokladniej. Czlowiek widzial
+              identyczny kafelek drugi raz i to najmocniej odbieralo stronie powage. Hero zostaje,
+              bo tam ten odczyt pada pierwszy raz i ma kontekst. */}
           <div className="rx-map-proof">
             <span>Jak czytać te liczby</span>
             <p>Każda liczba powstaje wyłącznie z odpowiedzi, które podałeś w tej diagnostyce. <strong>{weakestStatus?.score}/100</strong> na osi {weakestStatus?.label} bierze się stąd: {weakestStatus?.reason}.</p>
@@ -379,7 +384,9 @@ export default function ResultExperience({
 
         {/* BEAT 3 — DLACZEGO TO WRACA (tried_before / give_up_point / break_window, zero wymyslonej przyczyny) */}
         <section className="rx-beat" data-beat="3">
-          <div className="rx-kick">Dlaczego to wraca</div>
+          {/* Kicker brzmial "Dlaczego to wraca" nad naglowkiem "Tu widac, dlaczego to wraca...".
+              Zlota etykieta zuzywala sie na zapowiedz zdania, ktore pada pol sekundy pozniej. */}
+          <div className="rx-kick">Mechanizm</div>
           <h2 className="rx-h2" style={{ fontSize: 'clamp(24px,4.6vw,36px)' }}>Tu widać, dlaczego to wraca w to samo miejsce.</h2>
           <p className="rx-sub">{whyRepeats}</p>
         </section>
@@ -388,7 +395,7 @@ export default function ResultExperience({
         {(costFacts.length > 0 || userPain) && (
           <section className="rx-beat" data-beat="4">
             <div className="rx-kick">Co to już kosztuje</div>
-            <h2 className="rx-h2" style={{ fontSize: 'clamp(22px,4.6vw,32px)' }}>Tyle to zabiera w zwykłym tygodniu, według Twoich własnych odpowiedzi.</h2>
+            <h2 className="rx-h2" style={{ fontSize: 'clamp(22px,4.6vw,32px)' }}>Tyle to zabiera w zwykłym tygodniu.</h2>
             {costFacts.map((f, i) => (<p key={i} className="rx-costfact">{f}</p>))}
             {userPain && <p className="rx-quote">„{userPain}”</p>}
           </section>
@@ -426,7 +433,9 @@ export default function ResultExperience({
           <div className="rx-horizon">
             <div className="rx-hz">
               <span className="rx-hz-k">72 godziny</span>
-              <p>Patrzysz tylko na jedno: {experiment.observe.toLowerCase()}. Na efekt jest wtedy dużo za wcześnie. Te trzy dni mają rozstrzygnąć jedno: czy trafiliśmy w miejsce.</p>
+              {/* Trzecie powtorzenie experiment.observe na jednej stronie. Test wyzej mowi to doslownie,
+                  demonstracja metody powtarza to w swoim kontekscie. Tutaj liczy sie tylko horyzont. */}
+              <p>Na efekt jest wtedy dużo za wcześnie. Te trzy dni mają rozstrzygnąć jedno: czy trafiliśmy w miejsce.</p>
             </div>
             <div className="rx-hz">
               <span className="rx-hz-k">Najbliższe tygodnie</span>
@@ -663,5 +672,10 @@ const css = `
 .rx-save:hover{border-color:${C.goldD};color:${C.paper}}
 .rx-hotcta{position:fixed;left:16px;right:16px;bottom:max(14px,env(safe-area-inset-bottom));z-index:8;display:block;text-align:center;text-decoration:none;font-weight:800;font-size:15px;color:${C.ink};background:linear-gradient(135deg,${C.gold},${C.goldB});padding:15px 18px;border-radius:14px;box-shadow:0 12px 34px -10px rgba(200,168,78,.55);max-width:588px;margin:0 auto}
 @media(max-width:640px){.rx-wrap{padding:0 18px}.rx-map-readout{grid-template-columns:1fr}.rx-map-visual{grid-template-columns:1fr;padding:18px;gap:16px}.rx-radar-wrap{min-height:190px}.rx-radar{max-width:210px}.rx-route-card{padding:20px}.rx-72line{gap:6px;font-size:9px}.rx-hero{padding-top:26px;padding-bottom:max(106px,calc(env(safe-area-inset-bottom) + 86px))}.rx-hero-panel{padding:24px 18px 22px;border-radius:20px}.rx-arch{font-size:clamp(31px,9vw,44px)}.rx-receipts{grid-template-columns:1fr}.rx-cue{bottom:max(26px,calc(env(safe-area-inset-bottom) + 16px))}}
+/* Hero trzymal 100svh z trescia wysrodkowana w pionie, a .rx-cue wisialo absolutnie przy dolnej krawedzi
+   okna. Na telefonie okno jest niskie, wiec panel i strzalka stoja obok siebie. Na desktopie miedzy nimi
+   otwieralo sie ~200px pustki i kafelek czytal sie tak, jakby cos z niego wycieto. Na szerokim ekranie
+   hero dostaje wysokosc od wlasnej tresci, a strzalka wraca do normalnego przeplywu. Mobile bez zmian. */
+@media(min-width:721px){.rx-hero{min-height:auto;padding-bottom:72px}.rx-cue{position:static;transform:none;margin-top:34px}}
 @media(prefers-reduced-motion:reduce){.rx-beat{opacity:1;transform:none}.rx-cue-arrow{animation:none}}
 `;
