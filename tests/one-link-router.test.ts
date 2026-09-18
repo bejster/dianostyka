@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import fs from 'node:fs';
 
-const page = fs.readFileSync(new URL('../app/diagnoza/page.tsx', import.meta.url), 'utf8');
+const page = fs.readFileSync(new URL('../app/components/DecisionDiagnostic.tsx', import.meta.url), 'utf8');
 const home = fs.readFileSync(new URL('../app/page.tsx', import.meta.url), 'utf8');
 const cfg = fs.readFileSync(new URL('../app/lib/assessment-config.ts', import.meta.url), 'utf8');
 const layout = fs.readFileSync(new URL('../app/layout.tsx', import.meta.url), 'utf8');
@@ -16,14 +16,11 @@ test('root is the one canonical public entry and renders Diagnostyka', () => {
   assert.doesNotMatch(nextConfig, /source:\s*['"]\/['"][\s\S]*destination:\s*['"]\/diagnoza['"]/);
 });
 
-test('public entry stays diagnostic while hot lane remains available by explicit query mode', () => {
-  assert.match(page, /m === 'fast_fit'/);
-  assert.match(page, /mode === 'fast_fit'/);
+test('explicit fast-fit mode goes to nabor and allows returning to diagnostic', () => {
+  assert.match(page, /search.get\('mode'\) === 'fast_fit'/);
   assert.match(page, /fast_fit_to_nabor/);
-  assert.match(page, /route: 'diagnostic'/);
-  assert.doesNotMatch(page, /Wiem, że chcę działać\. Sprawdźmy, czy zakres pasuje/);
-  assert.match(page, /Sprawdź, czy Twój obecny poziom to naprawdę Twój sufit\./);
-  assert.doesNotMatch(page, /michal-portrait\.jpg/);
+  assert.match(page, /fast_fit_to_diagnostic/);
+  assert.match(page, /W którym momencie tygodnia najtrudniej Ci zadbać o formę/);
 });
 
 test('release telemetry is versioned separately', () => {
