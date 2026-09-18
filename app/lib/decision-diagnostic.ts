@@ -209,8 +209,9 @@ export function buildDecisionResult(input: Answers): DecisionResult {
 
 export const FIT_OPTIONS = options([['self', 'Na razie chcę sprawdzić ten krok sam.'], ['coaching', 'Chcę, żeby ktoś sprawdzał wykonanie i pomagał mi korygować plan.'], ['plan', 'Szukam głównie gotowego planu.'], ['medical', 'Szukam diagnozy lub leczenia dolegliwości.']]);
 export const OBJECTION_OPTIONS = options([['process', 'Chcę zobaczyć, co konkretnie dzieje się w prowadzeniu.'], ['repeat', 'Boję się, że zapłacę i znowu odpuszczę.'], ['time', 'Nie wiem, czy znajdę na to czas.'], ['price', 'Potrzebuję znać pełny koszt.'], ['none', 'Na ten moment nic. Chcę zobaczyć szczegóły.']]);
-export function invitation(fit: string, objection: string, why: string): { text: string; cta: string; showNabor: boolean } {
+export function invitation(fit: string, objection: string, why: string, reaction = ''): { text: string; cta: string; showNabor: boolean } {
   if (fit === 'medical') return { text: 'Prowadzenie dotyczy treningu, jedzenia i organizacji tygodnia. Diagnostykę oraz leczenie dolegliwości ustal z lekarzem. Ten formularz ich nie rozstrzyga.', cta: '', showNabor: false };
+  if (['off', 'obvious'].includes(reaction) && (!fit || fit === 'self')) return { text: 'Najpierw wróć do odpowiedzi, która wymaga doprecyzowania. Nie musisz wykonywać zadania, które nie pasuje albo już sprawdzałeś. Jeśli chcesz zobaczyć, jak wygląda wspólna praca nad takim przypadkiem, możesz zajrzeć do opisu prowadzenia.', cta: 'Zobacz, jak wygląda prowadzenie', showNabor: true };
   if (fit === 'self') return { text: 'Masz pierwszy krok. Sprawdź go przy najbliższej okazji i zapisz, co wyszło. Gdy będziesz chciał dołożyć regularne korekty, niżej możesz zobaczyć prowadzenie.', cta: 'Zobacz, jak wygląda prowadzenie', showNabor: true };
   if (fit === 'plan') return { text: 'U mnie plan jest częścią prowadzenia z regularnymi podsumowaniami i korektami. Jeśli szukasz samej rozpiski, sprawdź zakres przed zgłoszeniem.', cta: 'Zobacz zakres prowadzenia', showNabor: true };
   const copy: Record<string, string> = {
