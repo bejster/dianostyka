@@ -20,7 +20,7 @@ test('explicit fast-fit mode goes to nabor and allows returning to diagnostic', 
   assert.match(page, /search.get\('mode'\) === 'fast_fit'/);
   assert.match(page, /fast_fit_to_nabor/);
   assert.match(page, /fast_fit_to_diagnostic/);
-  assert.match(page, /W którym momencie tygodnia najtrudniej Ci zadbać o formę/);
+  assert.match(page, /Co ustawia Twój tydzień, zanim zaczniesz myśleć o diecie i treningu/);
 });
 
 test('release telemetry is versioned separately', () => {
