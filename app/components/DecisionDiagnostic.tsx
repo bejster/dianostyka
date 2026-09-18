@@ -86,7 +86,7 @@ export default function DecisionDiagnostic() {
   const questions = getQuestions(answers);
   const current = questions[Math.min(index, questions.length - 1)];
   const result = buildDecisionResult(answers);
-  const invite = invitation(fit, objection, String(answers.why || ''));
+  const invite = invitation(fit, objection, String(answers.why || ''), reaction);
   const routeResolved = !!answers.scene && !!answers.previous && (['none', 'unknown'].includes(String(answers.previous)) || !!answers.attempt) && (!questions.some(q => q.id === 'before') || !!answers.before) && (!questions.some(q => q.id === 'planned') || answers.planned !== undefined);
   const answeredCount = questions.filter(q => answers[q.id] !== undefined).length;
   useEffect(() => {
