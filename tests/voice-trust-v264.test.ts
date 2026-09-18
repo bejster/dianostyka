@@ -2,20 +2,17 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 
-const page = fs.readFileSync('app/diagnoza/page.tsx', 'utf8');
+const page = fs.readFileSync('app/components/DecisionDiagnostic.tsx', 'utf8');
 const result = fs.readFileSync('app/components/ResultExperience.tsx', 'utf8');
 const questions = fs.readFileSync('app/lib/assessment-config.ts', 'utf8');
 const packs = fs.readFileSync('app/lib/result-content.ts', 'utf8');
 const flow = fs.readFileSync('app/components/SingleQuestionFlow.tsx', 'utf8');
 
-test('v2.8.1 moves the human trust anchor out of the cold entry and into the result', () => {
-  assert.match(questions, /ASSESSMENT_VERSION = '2\.9\.0'/);
-  assert.doesNotMatch(page, /src="\/michal-portrait\.jpg"/);
-  assert.match(result, /src="\/michal-portrait\.jpg"/);
-  assert.match(page, /Sprawdź, czy Twój obecny poziom to naprawdę Twój sufit\./);
-  assert.match(result, /Z tego wyniku da się już ustawić pierwszy ruch\./);
-  assert.match(page + result, /Michał · Metoda 168|MICHAŁ · METODA 168/);
-  assert.doesNotMatch(page + result, /Human Performance Coach/i);
+test('v3 names Michal and demonstrates a concrete first step without invented credentials', () => {
+  assert.match(page, /Michał · Hantle i Talerz · Diagnostyka 168/);
+  assert.match(page, /TAKI WYNIK DOSTANIESZ · PRZYKŁAD/);
+  assert.match(page, /Wynik powstaje automatycznie/);
+  assert.doesNotMatch(page, /Human Performance Coach|Twój sufit/);
 });
 
 test('public copy removes known AI contrast fingerprints', () => {
