@@ -3,11 +3,11 @@ import './globals.css';
 
 export const metadata: Metadata = {
   title: 'Diagnostyka 168: sprawdź swój tydzień | Hantle i Talerz',
-  description: 'Jedna sytuacja z Twojego tygodnia, wcześniejszy moment i pierwszy krok do sprawdzenia. Do 10 krótkich odpowiedzi. Bezpłatny wynik od razu, kontakt opcjonalny.',
+  description: 'Co ustawia Twój tydzień, zanim pomyślisz o diecie i treningu? Konkretna scena, wcześniejszy moment i próba dobrana do odpowiedzi. Bezpłatny wynik od razu, kontakt opcjonalny.',
   alternates: { canonical: 'https://diagnostyka.talerzihantle.com/' },
   openGraph: {
     title: 'Diagnostyka 168: sprawdź swój tydzień | Hantle i Talerz',
-    description: 'Jedna sytuacja z Twojego tygodnia, wcześniejszy moment i pierwszy krok do sprawdzenia. Do 10 krótkich odpowiedzi. Bezpłatny wynik od razu, kontakt opcjonalny.',
+    description: 'Co ustawia Twój tydzień, zanim pomyślisz o diecie i treningu? Konkretna scena, wcześniejszy moment i próba dobrana do odpowiedzi. Bezpłatny wynik od razu, kontakt opcjonalny.',
     url: 'https://diagnostyka.talerzihantle.com',
     siteName: 'Diagnostyka | Hantle i Talerz',
     images: [
@@ -23,7 +23,7 @@ export const metadata: Metadata = {
   twitter: {
     card: 'summary_large_image',
     title: 'Diagnostyka 168: sprawdź swój tydzień | Hantle i Talerz',
-    description: 'Jedna sytuacja z Twojego tygodnia, wcześniejszy moment i pierwszy krok do sprawdzenia. Do 10 krótkich odpowiedzi. Bezpłatny wynik od razu, kontakt opcjonalny.',
+    description: 'Co ustawia Twój tydzień, zanim pomyślisz o diecie i treningu? Konkretna scena, wcześniejszy moment i próba dobrana do odpowiedzi. Bezpłatny wynik od razu, kontakt opcjonalny.',
     images: ['https://diagnostyka.talerzihantle.com/og.png'],
   },
   icons: {
