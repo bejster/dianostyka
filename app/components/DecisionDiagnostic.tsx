@@ -131,7 +131,7 @@ export default function DecisionDiagnostic() {
     event('diag_start');
   }
   const section = phase === 'intro' ? 'Twój tydzień' : phase === 'questions' ? 'Jedna odpowiedź, jeden krok' : 'Twój pierwszy krok';
-  return <main className={`dd dd-${phase}`}>
+  return <main className={`dd dd-phase-${phase}`}>
     <Atmosphere />
     <header className="dd-header"><Link href="/" aria-label="Diagnostyka 168, początek">168<span>DIAGNOSTYKA</span></Link><span>{section}</span></header>
     {!loaded ? <div className="dd-shell" role="status">Otwieram diagnostykę…</div> : fastFit ? <section className="dd-shell dd-intro">
