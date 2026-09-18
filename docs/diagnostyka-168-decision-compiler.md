@@ -1,133 +1,105 @@
-# Diagnostyka 168: audyt i finalny flow
+# Diagnostyka 168 · 3.1.0 · Communication Decision Compiler
 
-Wersja robocza 3.0.0, 18.09.2026. Baza kodu: release/diag-v2.8-20260915.
+## Decyzja projektowa
 
-## Decyzja
+Wejście również dla odbiorcy, który nie deklaruje problemu. Powód wejścia może być samą ciekawością. Najpierw zdarzenie, potem wcześniejszy moment i ewentualnie jedno pytanie rozróżniające konkurencyjne wyjaśnienia. Wynik daje odbiorcy przesłanki i sposób sprawdzenia; nie nakazuje uznania diagnozy ani zakupu.
 
-Diagnostyka pomaga wybrać jedną rzecz do sprawdzenia w zwykłym tygodniu. Wynik powstaje przed pytaniami o prowadzenie. Nie ocenia gotowości do zakupu, zdrowia ani niewykorzystanego potencjału.
-
-Wykorzystane źródła języka i zasad: Communication Decision Compiler, Question Engine, kanoniczny głos Michała, przykłady z banku głosu, Genericity Kill Gate oraz skill landing pages Michała. Przegląd języka był ręczny, na tych źródłach. Nie jest to deklaracja uruchomienia całego systemu Voice Runtime.
-
-## Co poprawiliśmy w faktach
-
-| W starej wersji | W nowej wersji |
-|---|---|
-| Samoocena energii mogła zostać „skorygowana” obliczonym wynikiem | Brak arbitralnej korekty i punktacji 0–100 |
-| Powrót do rytmu we wtorek sugerował utratę wszystkich dni od soboty | Nie przeliczamy powrotu na stracone dni |
-| Odpowiedź o weekendzie stawała się liczbą weekendów w miesiącu | Pytamy wprost o ostatnie cztery weekendy; można nie pamiętać |
-| Brak zaznaczenia objawu w wyborze maksymalnie trzech stawał się uspokajającym wnioskiem | Nie ma wnioskowania o zdrowiu z nieklikniętej odpowiedzi |
-| Kolejność zdarzeń bywała przedstawiana jako rozpoznana przyczyna | Osobno pokazujemy odpowiedź, hipotezę i sposób sprawdzenia |
-| Można było podać więcej opuszczonych treningów niż zaplanowanych | Zakres drugiego pytania zależy od pierwszego; zero jest pełnoprawne |
-| Rada nie zawsze dotyczyła wskazanego wcześniejszego momentu | Eksperyment dobierany z pary scena + wcześniejsza sytuacja |
-| Gotowość/fit mogły być wyliczane z pośrednich sygnałów | Potrzebę i obiekcję określa człowiek, opcjonalnie po wyniku |
+Poprzednia wersja zakładała potrzebę poprawy już w nagłówku i zbyt szybko przechodziła od sceny do oczywistej rady. Usunięto przykładowy wynik „praca się przeciąga → krótszy trening”. Nowy przykład pokazuje trzy różne kolejności i motywy użycia telefonu, które prowadzą do różnych kolejnych ruchów.
 
 ## Finalny flow
 
-Start → cel → scena z ostatniego tygodnia → wcześniejszy moment i częstotliwość, jeśli są potrzebne → ostatnia próba → wynik próby, jeśli była → co zachować → realny koszt, jeśli była trudność → dlaczego teraz → wynik i jedno zadanie → opcjonalny powrót po próbie → zaproszenie do prowadzenia.
+1. Ciekawość: konkretne codzienne sceny oraz przykład trzech różnych wyjaśnień podobnego zachowania.
+2. Powód wejścia → ważny dla odbiorcy obszar → scena z ostatniego tygodnia.
+3. Poprzednia próba → jej wynik, tylko jeśli taka próba była.
+4. Jeśli próba działa: pomijamy przyczyny i liczenie niepowodzeń. Zachowujemy warunek działania.
+5. Jeśli wykonanie było, ale brak zauważonego efektu: pomijamy szukanie kolejnej rady; odtwarzamy wykonanie, czas i porównanie rezultatu.
+6. W pozostałych konkretnych scenach: co było wcześniej → dodatkowe rozróżnienie, gdy potrzebne → rzeczywista częstotliwość lub planowane/niewykonane treningi.
+7. Przy udanym tygodniu: konkretny warunek, który pomógł. Przy nieznanej scenie: celowana obserwacja wybranego obszaru.
+8. Co zachować w tygodniu → zaobserwowany koszt (pomijany przy udanym tygodniu).
+9. Wynik: interpretacja oparta na odpowiedziach → cytowane przesłanki → dlaczego pierwsza rada może chybić → jedna próba → co obserwować → co dalej przy potwierdzeniu i przy braku potwierdzenia.
+10. Opcjonalna reakcja na trafność: nowe / znane bez sposobu działania / już próbowałem / nie pasuje. Każda daje inny następny ruch. Dwie ostatnie prowadzą wprost do właściwego pytania do poprawy.
+11. Opcjonalny powrót po próbie: poprawa / brak zmiany / niewykonanie / brak okazji.
+12. Zaproszenie do prowadzenia. Opcjonalny fit i prawdziwa obiekcja dopasowują zaproszenie. Kontakt i udostępnienie kategorii do contentu są osobnymi dobrowolnymi decyzjami po wyniku.
 
-**5–10 pytań przed wynikiem.** Pięć przy dobrym tygodniu i braku wcześniejszej próby. Dziesięć przy scenie treningowej, dodatniej liczbie planowanych treningów i wcześniejszej próbie. Pytania o fit i obiekcję są osobno, opcjonalnie po wyniku.
+Rdzeń: 6–11 odpowiedzi. Dokładna liczba pojawia się po rozstrzygnięciu warunków zmieniających długość ścieżki. Fit, obiekcja i feedback nie blokują wyniku.
 
-## JOB każdego pytania
+## Każde pytanie ma JOB
 
-| Pytanie | JOB | Co zmienia |
-|---|---|---|
-| Co chcesz poprawić w pierwszej kolejności? | Wybrać ważny dla człowieka efekt | Kryterium obserwacji: wykonanie, energia po pracy, sen lub odłożenie spraw z pracy |
-| Przypomnij sobie ostatni tydzień. Która sytuacja najbardziej Ci przeszkodziła? | Ustalić konkretną scenę, dopuścić dobry tydzień i brak przykładu | Rodzina pytań oraz zadanie albo zachowanie działającego tygodnia |
-| Co działo się wcześniej? | Szukać wcześniejszego ogniwa bez uznawania go za przyczynę | Konkretny eksperyment z pary scena/odpowiedź; brak wiedzy daje obserwację |
-| Ile treningów zaplanowałeś na ten tydzień? | Ustalić mianownik | Limit opuszczonych treningów; zero pomija następne pytanie i usuwa tezę o niewykonaniu |
-| Ile z tych treningów się nie odbyło? | Ustalić wykonanie | Zero daje obserwację; jeden przypadek nie staje się każdym tygodniem |
-| W ilu dniach ostatniego tygodnia było podobnie? / Po ilu z ostatnich czterech weekendów było podobnie? | Rozróżnić epizod, powtarzalność i brak danych | Zero/brak pamięci daje obserwację. Jeden przypadek dostaje ograniczenie wniosku. Pozostałe liczby są pokazywane w swoim okresie |
-| Co ostatnio próbowałeś zmienić, żeby było lepiej? | Poznać konkretną previous attempt | Wybiera odniesienie do poprzedniego planu, kalendarza, małego kroku lub pomocy. Brak próby pomija następne pytanie |
-| Co się stało z tą próbą? | Zachować działające rozwiązanie lub uniknąć powtarzania błędu | Działa → zachowaj. Zmiana godzin → wariant po przesunięciu dnia. Za dużo → jeden element. Brak efektu → przegląd wykonania i miary. Brak feedbacku → zapisz przeszkodę do korekty |
-| Na co ma zostać miejsce, kiedy zaczniesz to poprawiać? | Ustalić konflikt celu i tego, co człowiek chce zachować | Sposób wykonania zadania uwzględnia bliskich, spotkania, elastyczność albo odpoczynek |
-| Co przez to faktycznie ucierpiało w ostatnim tygodniu? | Poznać realny koszt, także jego brak | Wybiera dodatkowy sygnał obserwacji. Brak kosztu dopuszcza decyzję, że zmiana nie jest potrzebna |
-| Co sprawiło, że sprawdzasz to właśnie teraz? | Poznać WHY NOW bez wymuszania pilności | Instrukcja momentu próby i ton zaproszenia. Ciekawość nie staje się gotowością zakupu |
-| Czego teraz potrzebujesz? (opcjonalne, po wyniku) | Sprawdzić dopasowanie rodzaju pomocy | Samodzielnie / korekty w prowadzeniu / sama rozpiska / pomoc medyczna |
-| Co chcesz wiedzieć, zanim rozważysz prowadzenie? (tylko po wyborze korekt) | Ujawnić prawdziwą obiekcję | Zaproszenie wskazuje proces, czas, koszt lub pracę po słabszym tygodniu |
+| ID | Pytanie | JOB | Wpływ na decyzję |
+| --- | --- | --- | --- |
+| why | Z czym tu wpadasz? | Odróżnić realne WHY NOW od ciekawości. | Zmienia moment uruchomienia zadania i ton zaproszenia; nie wnioskuje chęci zakupu. |
+| goal | Na czym najbardziej Ci zależy w zwykłym tygodniu? | Ustalić wynik, na którym zależy odbiorcy. | Wybiera kryterium obserwacji i kierunek przy braku sceny. |
+| scene | Która scena wydarzyła się w Twoim ostatnim tygodniu? | Zakotwiczyć wynik w zaobserwowanej scenie. | Wybiera pytanie o wcześniejsze ogniwo i rodzinę eksperymentu; dopuszcza brak problemu. |
+| previous | Co już robiłeś w tym temacie? | Poznać previous attempts bez liczenia porażek. | Uruchamia pytanie o wynik próby; chroni przed powtórzeniem niedopasowanej rady. |
+| attempt | Co się stało z tą próbą? | Ustalić, co zachować lub zmienić po poprzedniej próbie. | Działającą próbę zachowuje; brak efektu kieruje do obserwacji; brak korekty do przeglądu wykonania. |
+| before | Co działo się wcześniej? | Znaleźć wcześniejsze ogniwo. | Wybiera konkretną hipotezę i eksperyment lub uczciwą obserwację, gdy brak danych. |
+| context | Jak praca weszła w czas treningu? | Rozróżnić konkurencyjne wyjaśnienia tej samej sceny. | Zmienia miejsce interwencji: dostępność, granica, zakres lub obserwacja; nie tylko podpis wyniku. |
+| planned | Ile treningów zaplanowałeś na ten tydzień? | Ustalić mianownik wykonania. | Ustala górny limit opuszczonych treningów i dokładny fakt w wyniku. |
+| missed | Ile z tych treningów się nie odbyło? | Ustalić rzeczywiste wykonanie. | Rozróżnia trudny moment od opuszczonego treningu; zero nie staje się porażką. |
+| protect | Czego nie chcesz poświęcać na zmianę? | Rozpoznać konflikt między celem a tym, co odbiorca chce zachować. | Zmienia wykonanie zadania: czas rodzinny, spotkania, elastyczność lub odpoczynek. |
+| impact | Co ta sytuacja zmieniła w dalszej części dnia? | Ustalić zaobserwowany koszt bez produkowania strat. | Wybiera dodatkowy sygnał obserwacji; mały koszt usuwa presję i obietnicę wielkiej naprawy. |
+| frequency | Po ilu z ostatnich czterech weekendów było podobnie? | Odróżnić pojedynczy epizod od powtarzalnej sytuacji. | Zero lub brak pamięci daje obserwację bez rozpoznania wzorca; liczby pozostają w swoim okresie. |
+| anchor | Co najbardziej pomogło Ci utrzymać ten tydzień? | Ustalić warunek udanego tygodnia. | Wybiera konkretny warunek do ochrony zamiast wymyślać problem. |
 
-Pytania mają JOB i downstream również w kodzie. Pełne warianty odpowiedzi są w `app/lib/decision-diagnostic.ts`. Wynik nie dobiera medycznej diagnozy.
+## Branching o wysokiej wartości informacyjnej
 
-## Branching: priorytety
+| Scena | Rozróżnienie | Następny ruch |
+| --- | --- | --- |
+| Praca zajmuje trening | Nagłe pilne zadanie | Wariant i moment przełączenia; gdy okno znika całkowicie, termin |
+| Praca zajmuje trening | Niepilne „jeszcze tylko” | Granica końca pracy i odkładanie następnego zadania |
+| Praca zajmuje trening | Już rano wszystko się nie mieściło | Zwolnienie rzeczywistego okna razem z dojazdem i obowiązkami |
+| Wcześniejszy posiłek wypada | Brak jedzenia | Dostępność konkretnego posiłku |
+| Wcześniejszy posiłek wypada | Jedzenie jest, nie ma przerwy | Moment zakończenia bloku pracy i przerwa |
+| Wcześniejszy posiłek wypada | Celowe ograniczenie | Obserwacja wieczoru po zwykłym posiłku, bez nadrabiania |
+| Telefon przed późnym snem | Pierwsza chwila dla siebie | Dostępny czas bez obowiązków wcześniej |
+| Telefon przed późnym snem | Niezauważony upływ czasu | Wyraźny moment końca oglądania |
+| Telefon przy trudnościach ze snem | Sięgnięcie po ekran dopiero po trudności | Obserwacja kolejności, bez uznawania ekranu za początek problemu |
+| Zmęczenie przed treningiem | Od rana | Obserwacja początku dnia, również poza dniami treningu |
+| Zmęczenie przed treningiem | Dopiero po obowiązkach | Sprawdzenie dostępnej wcześniejszej pory bez zmiany zakresu |
+| Zmęczenie przed treningiem | Głównie start, potem zwykle lepiej | Oddzielne sprawdzenie znanego początku rozgrzewki |
+| Dowolna niepewna scena | Nie wiem / brak pamięci / zero zdarzeń | Konkretna obserwacja, bez rozpoznawania wzorca |
+| Udany tydzień | Czas / przygotowanie / elastyczność / pomoc | Zachowanie wskazanego warunku, pięć osobnych wariantów |
+| Wynik nie trafił | „Nie pasuje” | Powrót do sceny; zgoda na brak trafnej odpowiedzi |
+| Rada już wypróbowana | „To już wiem i próbowałem” | Powrót do poprzedniej próby; bez powtarzania tej samej rady |
+| Fit: samodzielnie | Chcę sprawdzić sam | Własna próba, spokojna opcja zobaczenia prowadzenia |
+| Fit: prowadzenie | Proces / powtórna porażka / czas / cena | Zaproszenie odnoszące się do wybranej obiekcji |
+| Fit: medyczny | Szukam diagnozy lub leczenia | Brak CTA do naboru |
 
-1. Poprzednia próba działa → zachowaj ją, nawet jeśli w tygodniu pojawiła się trudność.
-2. Dobry tydzień → zachowaj to, co działa. Wyjątek: zgłoszony brak efektu poprzedniej próby kieruje do przeglądu danych.
-3. Poprzednia próba bez widocznego efektu → zapisz czas trwania, wykonanie i sposób mierzenia. Nie dokładamy kolejnego wymagania.
-4. Brak sceny, nieznane wcześniejsze ogniwo, zero wystąpień, brak pamięci, zero planu treningowego lub zero opuszczonych treningów → obserwacja, bez rozpoznania problemu.
-5. Konkretna scena i znane wcześniejsze ogniwo z banku → jedna hipoteza i eksperyment.
-6. Konkretne ogniwo bez dostatecznych danych do bezpiecznej rady, np. zmęczenie lub opieka nad dzieckiem przed snem → zapis sytuacji, bez automatycznej recepty.
+W bibliotece jest 28 rozróżnionych ścieżek scen i wcześniejszych momentów. Każda ma własną interpretację, pułapkę pierwszej rady, czynność, obserwację i dalszy ruch. Pozostałe odpowiedzi modyfikują warunki wykonania, kryterium oceny, zastosowanie poprzedniej próby i moment działania. Nie jest to swobodnie generowana diagnoza.
 
-Zmiana sceny usuwa stare odpowiedzi zależne od niej. Zmiana poprzedniej próby usuwa jej wynik. Zmniejszenie planu treningowego unieważnia niemożliwą liczbę opuszczonych treningów. Odtworzenie lokalnego zapisu też przechodzi walidację.
+## Jak zasila to content
 
-## Przykładowe przejścia od sceny do zadania
+Rutynowe zdarzenia lejka: początek, widok pytania, numer pytania, czas odpowiedzi, ukończenie, zapisanie wyniku, przyjęcie próby, otwarcie naboru. Bez wartości odpowiedzi.
 
-| Scena + wcześniejszy moment | Pierwsza próba |
-|---|---|
-| Wypada trening + przeciąga się praca | Przygotuj krótszy wariant przed rozpoczęciem pracy |
-| Wieczorne jedzenie + wypadł wcześniejszy posiłek | Zadbaj o dostępność tego wcześniejszego posiłku |
-| Późne położenie się + dokańczanie pracy | Ustal zadanie kończące pracę i zapisz dalszy krok na jutro |
-| Skupienie + ciągłe przeskakiwanie między zadaniami | Sprawdź jeden blok nad jednym zadaniem, zanotuj przerwania |
-| Trudny powrót po weekendzie + brak decyzji o powrocie | Ustal pierwszy zwykły posiłek i jego dostępność |
-| Nie wiadomo, co było wcześniej | Zapisz scenę przed zmianą planu |
+Osobny event `diag_content_insight_shared`, schema `diagnostic-content-v1`, wymaga zaznaczenia zgody i kliknięcia przycisku po wyniku. Zawiera zamknięte kategorie: why, scene, before, context, previous, attempt, protect, impact; opcjonalnie reaction, fit oraz objection tylko przy fit=coaching. Brak kontaktu, liczb treningowych, otwartych wypowiedzi, raportu, wyniku medycznego i syntetycznej oceny leada. Kategorie mogą być powiązane z identyfikatorem przeglądarki; interfejs nie obiecuje anonimowości.
 
-To hipotezy organizacyjne do sprawdzenia. Dobry wynik pojedynczej próby nie potwierdza przyczyny.
+| Pytanie Michała do danych | Grupowanie po zgodzie | Zastosowanie |
+| --- | --- | --- |
+| Co wraca w codzienności? | scene × before × context | Konkretne sceny na otwarcia materiałów |
+| Czego odbiorcy już próbowali? | previous × attempt | Materiały wyjaśniające, czemu kolejna podobna rada może nie wystarczyć |
+| Czego nie chcą oddać? | protect × scene | Przykłady uwzględniające rodzinę, wyjścia i odpoczynek |
+| Co było odkryciem? | reaction=new × context | Trop do rozwinięcia w materiale, bez twierdzenia, że wyjaśnia wszystkich |
+| Gdzie automat jest zbyt oczywisty? | reaction=obvious lub off × context | Kolejka do poprawy logiki i nowych rozróżnień |
+| Co zatrzymuje rozważenie prowadzenia? | fit=coaching × objection | Materiały odpowiadające na faktycznie wskazane pytania |
 
-## Wynik na ekranie
+To dane od osób, które ukończyły flow i zgodziły się je przekazać. Nie reprezentują całej widowni. Event nie jest kontaktem sprzedażowym. Potwierdzenie zapisu w docelowym PostHog wymaga pierwszego rzeczywistego, dobrowolnego zdarzenia; nie wysłano sztucznych kategorii do produkcyjnej analityki.
 
-1. Konkretny pierwszy krok i status wniosku, opisany słowami.
-2. Dwie odpowiedzi, na których opiera się trop, plus podana liczba w swoim okresie.
-3. Jedno zadanie: co zrobić, kiedy, co zapisać i co uwzględnić.
-4. Pobranie wyniku. Wyjaśnienie i wszystkie odpowiedzi pod rozwinięciem.
-5. Po przyjęciu próby: opcjonalny check-in „zrobiłem/pomogło”, „zrobiłem/bez różnicy”, „nie wykonałem”, „nie było okazji”. Każda odpowiedź ma inną dalszą wskazówkę.
-6. Zaproszenie do poznania prowadzenia.
+## Kontrola faktów i ograniczenia
 
-Wizualnie zachowane czerń, złoto i serif. Wynik dostał jedną główną kartę działania, większy kontrast tekstu oraz szczegóły pod rozwinięciem. Przyciski odpowiedzi są duże; liczby wybiera się bez przeciągania suwaka.
+- Dowód to dokładnie wybrana odpowiedź, z zachowaniem okresu i mianownika. Pojedyncze zdarzenie nie staje się tygodniowym wzorcem.
+- Brak kosztu jest poprawną odpowiedzią. Dobry tydzień nie otrzymuje wymyślonej awarii.
+- Hipoteza nie oznacza wykazanej przyczyny. Wynik ma ścieżkę, gdy próba nie potwierdzi tropu.
+- To automatyczny przegląd zachowań i organizacji tygodnia. Nie zastępuje diagnozy zdrowotnej.
+- Nie obiecujemy odkrycia każdemu. Jeśli dostępne odpowiedzi nie wystarczą, produkt mówi to i wskazuje konkretną niewiadomą.
+- Nie potwierdzono wzrostu konwersji. Jakość należy oceniać przez ukończenie, trafność wyniku, powrót po próbie i dobrowolne przejścia do naboru.
+- Nie powstał jeszcze osobny panel analityczny. Event nadaje się do zestawień w istniejącym PostHog.
 
-## Naturalne zaproszenie
+## Backup i publikacja
 
-> Masz jedną rzecz do sprawdzenia. W prowadzeniu wracam do tego, co wydarzyło się w tygodniu: czy zmiana weszła, co ją zatrzymało i co poprawić dalej.
->
-> Masz punkt wyjścia. W prowadzeniu sprawdzam, co z niego wyszło i na tej podstawie koryguję następny tydzień. Jeśli chcesz pracować w ten sposób ze mną, zapraszam do szczegółów.
->
-> **Zobacz, jak wygląda prowadzenie**
+Przed zmianą: `backup/decision-v3_2026-09-18_17-16-46_UTC` → `edc0b6f807c25b4094b1b90d99779e3926291f56`. Dodatkowe lokalne wersje robocze zabezpieczono gałęziami backup z rzeczywistym czasem UTC.
 
-CTA prowadzi do `https://nabor.talerzihantle.com/` z oznaczeniem źródła diagnostyki. Bez odpowiedzi, danych kontaktowych i domniemanej gotowości w URL. Bez automatycznego przekierowania.
-
-Samodzielna próba → zostaje zadanie i spokojny link. Sama rozpiska → wyjaśnienie, że plan stanowi część prowadzenia. Poszukiwanie diagnozy lub leczenia → znika zaproszenie do naboru; informacja o zakresie i lekarzu.
-
-Obiekcje: proces → co robisz Ty/co sprawdzam ja; powtórne odpuszczenie → przebieg pracy po słabszym tygodniu; czas → wymagania po stronie podopiecznego; cena → zakresy i pełny koszt sześciu miesięcy. Szczegóły oferty sprawdzone na obecnej stronie naboru; ich aktualizacja wymaga też przejrzenia tych komunikatów.
-
-## Co usunęliśmy albo przenieśliśmy
-
-- Samoocena ogólnego poziomu oraz osie energii/libido/stresu: nie służą tu do policzenia prawdziwego pomiaru.
-- Ogólne godziny „na pół mocy”, postęp roczny i lista objawów: nie są potrzebne do jednego eksperymentu, a zachęcały do nadinterpretacji.
-- Liczba wcześniejszych prób: zastąpiona ostatnią konkretną próbą i tym, co z nią się stało.
-- Ogólny trigger odpuszczenia: zastąpiony wcześniejszym momentem w jednej scenie.
-- Intencja zakupowa i termin startu przed wynikiem: zastąpione opcjonalnym wyborem pomocy po otrzymaniu wyniku.
-- Kontakt: po wyniku, opcjonalny także dla osoby zainteresowanej prowadzeniem.
-
-## Kontakt i pomiar
-
-Odpowiedzi zapisują się lokalnie. Użytkownik może pobrać wynik. Nowy endpoint wysyła odpowiedzi dopiero po osobnym wyborze wysłania wyniku i prośbie o kontakt na Instagramie. Nie wysyłamy testowych zgłoszeń do realnego CRM ani Telegrama.
-
-Zdarzenia v3: start, widok/odpowiedź pytania (ID, pozycja, czas, bez wartości odpowiedzi), ukończenie, wyświetlenie wyniku, przyjęcie zadania, zapis, powrót po próbie, opcjonalny fit/obiekcja bez treści, kliknięcie naboru i jawne wysłanie kontaktu. W analizach trzeba filtrować `version = 3.0.0`.
-
-Mierzyć: start→wynik, porzucenia na pytaniach, wynik→przyjęcie/pobranie kroku, wynik→nabór, nabór→zgłoszenie. Wzrost liczby kliknięć nie jest jeszcze dowodem wzrostu jakości zgłoszeń.
-
-Nowy payload webhooka ma nową wersję i schemat. Zachowuje kanały dostarczenia, ale nie wysyła dawnych syntetycznych ocen. Mapowanie automatyzacji n8n/Notion wymaga sprawdzenia na jej rzeczywistym schemacie przed publikacją. Nie deklarujemy potwierdzenia zapisu w CRM na podstawie samego HTTP 2xx.
+Zmiana dotyczy gałęzi podglądowej `fix/diagnostyka-decision-compiler-20260918`. Produkcyjna domena pozostaje na dotychczasowym wydaniu. Poprzedni deployment produkcyjny: `dpl_2h3n2zpNCRpeDVPrafBXDwRqcnsY`, SHA `e926e2297b169478b0e2a30966d56ce353b1be90`.
 
 ## Weryfikacja
 
-- 160 testów: zaliczone, w tym macierz ponad 2000 kombinacji gałęzi nowego silnika.
-- Build produkcyjny Next.js: zaliczony.
-- Endpoint kontaktowy: testy rzeczywistego kodu z odizolowaną konfiguracją i atrapą wysyłki. Brak zgody, niepełny formularz, zbyt duży payload i brak dostarczenia nie zgłaszają sukcesu. Test poprawnego zgłoszenia potwierdza, że brief liczy serwer i odrzuca dopisane oceny. Rzeczywiste kanały kontaktu nie zostały uruchomione.
-- Osobne kontrole: czyszczenie ukrytych odpowiedzi, liczby graniczne, zero, nie wiem, działająca próba, brak efektu, medyczny brak fit, prywatność zdarzeń i brak automatycznego przekierowania.
-- Testy starego silnika nadal sprawdzają zachowane moduły historyczne. Kontrakty publicznego wejścia zaktualizowano do v3.
-- Użytkownik zatwierdził publikację gałęzi i przygotowanie podglądu. Weryfikacja przeglądarkowa i adres podglądu będą zapisane w PR.
-- Ta wersja nie została opublikowana na głównej domenie.
-
-## Kopie wersji
-
-- Produkcja sprzed zmian: `backup/production_2026-09-18_11-34-07_CEST`, commit `e926e2297b169478b0e2a30966d56ce353b1be90`; gałąź w GitHub.
-- Deployment produkcyjny do ewentualnego powrotu: `dpl_2h3n2zpNCRpeDVPrafBXDwRqcnsY`.
-- Pierwsza kompletna wersja robocza: lokalny tag `backup/decision-v3_2026-09-18_11-34-07_CEST`, commit `991d5a581ae695009c4de16789e368d6e77b8c78`.
-- Obowiązek kopii przed nadpisaniem zapisany w `AGENTS.md`.
+169 testów przechodzi, w tym macierz ponad 2000 kombinacji bazowych i osobne przypadki wszystkich 28 ścieżek. Testy obejmują różne zalecenia przy podobnej scenie, kolejność zdarzeń, niepewność, dobre tygodnie, czyszczenie nieważnych odpowiedzi, dane contentowe oraz kontakt tylko po wyrażonej prośbie. Testy kontaktu używają atrap dostarczenia, nie Telegrama ani CRM.
