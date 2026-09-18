@@ -9,12 +9,13 @@ import {
   answerLabel, buildDecisionResult, cleanAnswers, getQuestions, invitation, isComplete,
   resultAsText, updateAnswer, type Answers,
 } from '../lib/decision-diagnostic';
+import { INSIGHT_REACTIONS, reactionNext, contentSignal } from '../lib/decision-insights';
 import './decision-diagnostic.css';
 
 type Phase = 'intro' | 'questions' | 'result';
-type Stored = { version: string; answers: Answers; phase: Phase; index: number; fit: string; objection: string; accepted: boolean; checkin: string };
+type Stored = { version: string; answers: Answers; phase: Phase; index: number; fit: string; objection: string; accepted: boolean; checkin: string; reaction?: string; shared?: boolean };
 function event(name: string, props: Record<string, unknown> = {}) {
-  // Never send answer values, report text, health signals or contact details to product analytics.
+  // Routine funnel events never send answers or contact. Content topics have a separate explicit opt-in below.
   track(name, { analytics_schema: 'site-analytics-v1', surface: 'diagnostyka', version: DECISION_VERSION, ...props });
 }
 const CHECKIN: Record<string, string> = {
@@ -39,6 +40,10 @@ export default function DecisionDiagnostic() {
   const [consent, setConsent] = useState(false);
   const [sending, setSending] = useState(false);
   const [sent, setSent] = useState(false);
+  const [reaction, setReaction] = useState('');
+  const [contentConsent, setContentConsent] = useState(false);
+  const [shared, setShared] = useState(false);
+  const [shareError, setShareError] = useState('');
   const sendingRef = useRef(false);
   const heading = useRef<HTMLHeadingElement>(null);
   const startedAt = useRef(0);
@@ -61,6 +66,8 @@ export default function DecisionDiagnostic() {
           setFit(FIT_OPTIONS.some(o => o.id === saved.fit) ? saved.fit : '');
           setObjection(OBJECTION_OPTIONS.some(o => o.id === saved.objection) ? saved.objection : '');
           setAccepted(saved.accepted === true);
+          setReaction(INSIGHT_REACTIONS.some(r => r.id === saved.reaction) ? saved.reaction! : '');
+          setShared(saved.shared === true);
           setCheckin(CHECKIN[saved.checkin] ? saved.checkin : '');
         }
       }
@@ -72,14 +79,15 @@ export default function DecisionDiagnostic() {
   useEffect(() => {
     if (!loaded) return;
     try {
-      localStorage.setItem(DECISION_STORAGE_KEY, JSON.stringify({ version: DECISION_VERSION, phase, answers, index, fit, objection, accepted, checkin } satisfies Stored));
+      localStorage.setItem(DECISION_STORAGE_KEY, JSON.stringify({ version: DECISION_VERSION, phase, answers, index, fit, objection, accepted, checkin, reaction, shared } satisfies Stored));
     } catch { setStorageAvailable(false); }
-  }, [loaded, phase, answers, index, fit, objection, accepted, checkin]);
+  }, [loaded, phase, answers, index, fit, objection, accepted, checkin, reaction, shared]);
 
   const questions = getQuestions(answers);
   const current = questions[Math.min(index, questions.length - 1)];
   const result = buildDecisionResult(answers);
   const invite = invitation(fit, objection, String(answers.why || ''));
+  const routeResolved = !!answers.scene && !!answers.previous && (['none', 'unknown'].includes(String(answers.previous)) || !!answers.attempt) && (!questions.some(q => q.id === 'before') || !!answers.before) && (!questions.some(q => q.id === 'planned') || answers.planned !== undefined);
   const answeredCount = questions.filter(q => answers[q.id] !== undefined).length;
   useEffect(() => {
     if (!loaded || phase !== 'questions') return;
@@ -92,7 +100,7 @@ export default function DecisionDiagnostic() {
   function commit(value: string | number) {
     const next = updateAnswer(answers, current.id, value);
     setAnswers(next);
-    setAccepted(false); setCheckin(''); setFit(''); setObjection(''); setStatus(''); setSent(false);
+    setAccepted(false); setCheckin(''); setReaction(''); setShared(false); setContentConsent(false); setFit(''); setObjection(''); setStatus(''); setSent(false);
     event('question_answer', { question_id: current.id, pos: index + 1, elapsed_ms: Math.max(0, Date.now() - startedAt.current) });
     const nextQuestions = getQuestions(next);
     const nextIndex = nextQuestions.findIndex(q => q.id === current.id) + 1;
@@ -126,7 +134,17 @@ export default function DecisionDiagnostic() {
     } catch { setStatus('Nie udało się wysłać wyniku. Możesz go pobrać i przejść na stronę prowadzenia.'); }
     finally { setSending(false); sendingRef.current = false; }
   }
+  function shareTopics() {
+    if (!contentConsent || shared) return;
+    const ph = (window as unknown as { posthog?: { capture?: (name: string, props: Record<string, unknown>) => unknown } }).posthog;
+    if (!ph?.capture) { setShareError('Nie udało się przekazać kategorii. Twój wynik nadal jest dostępny.'); return; }
+    try {
+      ph.capture('diag_content_insight_shared', { analytics_schema: 'diagnostic-content-v1', version: DECISION_VERSION, consent: 'content_topics', ...contentSignal(cleanAnswers(answers), reaction, fit, objection) });
+      setShared(true); setShareError('');
+    } catch { setShareError('Nie udało się przekazać kategorii. Twój wynik nadal jest dostępny.'); }
+  }
   function restart() {
+    setReaction(''); setShared(false); setContentConsent(false); setShareError('');
     setAnswers({}); setIndex(0); setFit(''); setObjection(''); setAccepted(false); setCheckin(''); setStatus(''); setSent(false); setConsent(false); setInstagram(''); setPhase('questions');
     event('diag_start');
   }
@@ -141,21 +159,25 @@ export default function DecisionDiagnostic() {
       <a className="dd-primary" href={NABOR_URL} onClick={() => event('fast_fit_to_nabor')}>Zobacz prowadzenie <span>↗</span></a>
       <button className="dd-link" onClick={() => { setFastFit(false); setPhase('intro'); registerContext({ mode: 'diagnostic' }); event('fast_fit_to_diagnostic'); }}>Chcę najpierw sprawdzić swój tydzień</button>
     </section> : phase === 'intro' ? <section className="dd-shell dd-intro">
-      <p className="dd-eyebrow">DIAGNOSTYKA 168 · DO 10 KRÓTKICH ODPOWIEDZI</p>
-      <h1>W którym momencie tygodnia najtrudniej Ci zadbać o formę?</h1>
-      <p className="dd-lead">Przejdziemy przez jedną sytuację z ostatniego tygodnia. Zobaczysz, co warto sprawdzić wcześniej i dostaniesz pierwszy krok do wykonania.</p>
-      <button className="dd-primary" onClick={() => { setPhase('questions'); event('diag_start'); }}>Sprawdzam swój tydzień <span>→</span></button>
+      <p className="dd-eyebrow">DIAGNOSTYKA 168 · KILKA SCEN Z TWOJEGO TYGODNIA</p>
+      <h1>Co ustawia Twój tydzień, zanim zaczniesz myśleć o diecie i treningu?</h1>
+      <p className="dd-lead">Wieczór przy telefonie. Trening przełożony na jutro. Jedzenie po całym dniu pracy. Przyjrzymy się jednej Twojej sytuacji i temu, co działo się wcześniej. Możesz wejść z samą ciekawością.</p>
+      <button className="dd-primary" onClick={() => { setPhase('questions'); event('diag_start'); }}>Sprawdzam, co z czego wynika <span>→</span></button>
       <p className="dd-micro">Bezpłatnie · wynik od razu · kontakt opcjonalny</p>
-      <aside className="dd-preview" aria-label="Przykład wyniku">
-        <span className="dd-eyebrow">TAKI WYNIK DOSTANIESZ · PRZYKŁAD</span>
-        <p className="dd-preview-title">Trening wypada, kiedy praca się przeciąga.</p>
-        <p>Przed kolejnym dniem ustal krótszą wersję. Sprawdź, czy dzięki niej trening się odbędzie.</p>
-        <span className="dd-preview-foot">Twoje odpowiedzi wybiorą Twój krok.</span>
+      <aside className="dd-preview" aria-label="Przykład różnicy między podobnymi sytuacjami">
+        <span className="dd-eyebrow">TA SAMA SCENA. INNY PUNKT DO SPRAWDZENIA.</span>
+        <p className="dd-preview-title">„Znowu siedziałem z telefonem do późna”.</p>
+        <div className="dd-forks">
+          <p><span>To była pierwsza chwila dla siebie.</span>Sprawdzamy, gdzie wcześniej zmieścić czas bez obowiązków.</p>
+          <p><span>Nie zauważyłeś, kiedy minęła godzina.</span>Sprawdzamy moment kończenia oglądania.</p>
+          <p><span>Nie mogłeś zasnąć. Dopiero wtedy wziąłeś telefon.</span>Najpierw przyglądamy się temu, co było przed ekranem.</p>
+        </div>
+        <span className="dd-preview-foot">A jak było u Ciebie? Od tego zależy następny krok.</span>
       </aside>
-      <p className="dd-privacy">Wynik powstaje automatycznie. Odpowiedzi zostają w tej przeglądarce, dopóki sam nie wybierzesz wysłania ich do Michała.</p>
+      <p className="dd-privacy">Wynik powstaje automatycznie. Odpowiedzi zostają w tej przeglądarce, dopóki sam nie wybierzesz wysłania wyniku albo udostępnienia kategorii odpowiedzi do tematów contentu.</p>
     </section> : phase === 'questions' ? <section className="dd-shell dd-question" aria-label="Pytania diagnostyki">
-      <div className="dd-progress-row"><button className="dd-back" onClick={() => index === 0 ? setPhase('intro') : setIndex(index - 1)}>← Wstecz</button><span>Pytanie {index + 1} {answers.scene && answers.previous ? `z ${questions.length}` : '· maks. 10'}</span></div>
-      <div className="dd-progress" role="progressbar" aria-label="Postęp diagnostyki" aria-valuemin={0} aria-valuemax={answers.scene && answers.previous ? questions.length : 10} aria-valuenow={Math.min(index + 1, questions.length)}><span style={{ width: `${(index + 1) / (answers.scene && answers.previous ? questions.length : 10) * 100}%` }} /></div>
+      <div className="dd-progress-row"><button className="dd-back" onClick={() => index === 0 ? setPhase('intro') : setIndex(index - 1)}>← Wstecz</button><span>Pytanie {index + 1} {routeResolved ? `z ${questions.length}` : '· do 11 odpowiedzi'}</span></div>
+      <div className="dd-progress" role="progressbar" aria-label="Postęp diagnostyki" aria-valuemin={0} aria-valuemax={routeResolved ? questions.length : 11} aria-valuenow={Math.min(index + 1, questions.length)}><span style={{ width: `${(index + 1) / (routeResolved ? questions.length : 11) * 100}%` }} /></div>
       <h1 ref={heading} tabIndex={-1}>{current.title}</h1>
       <p className="dd-hint">{current.hint}</p>
       <div className={`dd-options ${current.type === 'number' || current.id === 'frequency' ? 'dd-numbers' : ''}`}>
@@ -168,16 +190,20 @@ export default function DecisionDiagnostic() {
       <h1>{result.title}</h1>
       <p className="dd-lead">{result.hypothesis}</p>
       <div className="dd-receipts">
-        {result.evidence.filter(e => ['scene', 'before'].includes(e.id)).map(e => <div key={e.id}><span>{e.id === 'scene' ? 'Ostatnia sytuacja' : 'Co było wcześniej'}</span><p>{e.value}</p></div>)}
+        {result.evidence.filter(e => ['scene', 'before', 'context', 'anchor'].includes(e.id)).map(e => <div key={e.id}><span>{e.id === 'scene' ? 'Twoja scena' : e.id === 'context' ? 'Szczegół, który zmienia następny krok' : e.id === 'anchor' ? 'Co pomogło' : 'Co było wcześniej'}</span><p>{e.value}</p></div>)}
         {answers.scene === 'training' && typeof answers.planned === 'number' && <div><span>Twój zapis treningów</span><p>{answers.planned === 0 ? 'Nie zaplanowałeś treningu na ten tydzień.' : `Zaplanowane: ${answers.planned}. Niewykonane: ${answers.missed}.`}</p></div>}
         {answers.frequency !== undefined && <div><span>{answers.scene === 'weekend' ? 'Ostatnie cztery weekendy' : 'Ostatnie siedem dni'}</span><p>{answers.frequency === 'unknown' ? 'Nie pamiętasz, ile razy było podobnie.' : `Podobna sytuacja: ${answers.frequency} z ${answers.scene === 'weekend' ? 4 : 7}.`}</p></div>}
       </div>
+      <aside className="dd-insight"><p className="dd-eyebrow">DLACZEGO NIE KOŃCZYMY NA PIERWSZEJ RADZIE</p><p>{result.insight.trap}</p></aside>
       <section className="dd-action" aria-label="Pierwszy krok">
         <p className="dd-eyebrow">PIERWSZA PRÓBA</p><h2>{result.experiment.title}</h2>
         <p>{result.experiment.action}</p>
         <div className="dd-action-detail"><span>Kiedy</span><p>{result.experiment.when}</p></div>
         <div className="dd-action-detail"><span>Co zapisać</span><p>{result.experiment.observe}</p></div>
         <p className="dd-constraint">{result.constraint}</p>
+        {answers.previous !== 'none' && answers.previous !== 'unknown' && <div className="dd-action-detail"><span>Po Twojej poprzedniej próbie</span><p>{result.previous}</p></div>}
+        {answers.impact === 'none' && <p className="dd-notice">Nie wskazałeś wyraźnego kosztu. Ta próba jest opcją, jeśli chcesz się temu przyjrzeć. Nie musisz niczego zmieniać.</p>}
+        <details className="dd-outcomes"><summary>Po czym poznam, co robić dalej?</summary><p>{result.insight.yes}</p><p>{result.insight.no}</p></details>
         <button className="dd-primary" onClick={() => { setAccepted(true); event('experiment_accepted'); }}>{accepted ? 'Wracam po tej próbie ✓' : 'Sprawdzę ten krok'}<span>→</span></button>
         {accepted && <p role="status" className="dd-micro">{storageAvailable ? 'Możesz wrócić do wyniku w tej samej przeglądarce. Pobierz go też na później.' : 'Pobierz wynik, żeby mieć go po zamknięciu strony.'}</p>}
       </section>
@@ -192,12 +218,19 @@ export default function DecisionDiagnostic() {
       {accepted && <details className="dd-details"><summary>Wracasz po próbie? Zapisz, co wyszło.</summary>
         <p>Oceń wykonanie przy podobnej sytuacji. Po kilku dniach nie rozstrzygamy jeszcze efektu na sylwetkę ani przyczyny dolegliwości.</p>
         <div className="dd-options">{[['helped', 'Zrobiłem zadanie i zauważyłem poprawę.'], ['unchanged', 'Zrobiłem zadanie. Nie widzę różnicy.'], ['blocked', 'Nie udało mi się wykonać zadania.'], ['no_chance', 'Nie było jeszcze podobnej okazji.']].map(([id, label]) => <button key={id} aria-pressed={checkin === id} onClick={() => { setCheckin(id); event('experiment_reviewed'); }}>{label}</button>)}</div>
-        {checkin && <p className="dd-notice" role="status">{CHECKIN[checkin]}</p>}
+        {checkin && <p className="dd-notice" role="status">{checkin === 'helped' ? result.insight.yes : checkin === 'unchanged' ? result.insight.no : CHECKIN[checkin]}</p>}
       </details>}
+      <section className="dd-feedback" aria-label="Dopasowanie wyniku">
+        <h2>Co z tego było dla Ciebie nowe?</h2>
+        <p>Możesz też powiedzieć, że wynik nie trafił.</p>
+        <div className="dd-options">{INSIGHT_REACTIONS.map(o => <button key={o.id} aria-pressed={reaction === o.id} onClick={() => { setReaction(o.id); event('result_reaction_selected'); }}>{o.label}</button>)}</div>
+        {reaction && <p className="dd-notice" role="status">{reactionNext(reaction)}</p>}
+        {['obvious', 'off'].includes(reaction) && <button className="dd-secondary" onClick={() => { setIndex(questions.findIndex(q => q.id === (reaction === 'off' ? 'scene' : 'previous'))); setPhase('questions'); }}>Wróć do tej odpowiedzi <span>←</span></button>}
+      </section>
       <section className="dd-invitation" aria-label="Zaproszenie do prowadzenia">
         <p className="dd-eyebrow">DALEJ MOŻESZ DZIAŁAĆ SAM ALBO ZE MNĄ</p>
         <h2>Co dalej z tym wynikiem?</h2>
-        <p>Masz jedną rzecz do sprawdzenia. W prowadzeniu wracam do tego, co wydarzyło się w tygodniu: czy zmiana weszła, co ją zatrzymało i co poprawić dalej.</p>
+        <p>{['off', 'obvious'].includes(reaction) ? 'Automat nie rozstrzygnął jeszcze Twojej sytuacji.' : result.certainty === 'maintain' ? 'Masz warunek, który warto zachować.' : 'Masz jedną rzecz do sprawdzenia.'} W prowadzeniu wracam do tego, co wydarzyło się w tygodniu: czy zmiana weszła, co ją zatrzymało i co poprawić dalej.</p>
         <details className="dd-details dd-fit"><summary>Sprawdź, czy takiej pomocy szukasz</summary>
           <p>Czego teraz potrzebujesz?</p><div className="dd-options">{FIT_OPTIONS.map(o => <button key={o.id} aria-pressed={fit === o.id} onClick={() => { setFit(o.id); setObjection(''); setStatus(''); event('next_step_selected'); }}>{o.label}</button>)}</div>
           {fit === 'coaching' && <><h3>Co chcesz wiedzieć, zanim rozważysz prowadzenie?</h3><div className="dd-options">{OBJECTION_OPTIONS.map(o => <button key={o.id} aria-pressed={objection === o.id} onClick={() => { setObjection(o.id); event('decision_question_answered'); }}>{o.label}</button>)}</div></>}
@@ -212,6 +245,13 @@ export default function DecisionDiagnostic() {
           {status && <p role="status" className="dd-notice">{status}</p>}
         </details>}
       </section>
+      <details className="dd-details dd-content"><summary>Pomóż mi wybrać kolejne tematy</summary>
+        <p>Które codzienne sytuacje warto rozłożyć na czynniki pierwsze w moich materiałach? Jeśli chcesz, przekaż kategorie swoich odpowiedzi i ocenę tego wyniku.</p>
+        <p>Do analityki PostHog trafią: powód wejścia, wybrana scena, wcześniejszy moment, poprzednie próby, ograniczenie i koszt. Jeśli je wybierzesz, także potrzeba pomocy, obiekcja i ocena wyniku. Bez nicku, kontaktu, liczb i treści raportu. Kategorie mogą być powiązane z identyfikatorem tej przeglądarki.</p>
+        <label className="dd-consent"><input type="checkbox" checked={contentConsent} disabled={shared} onChange={e => setContentConsent(e.target.checked)} /><span>Zgadzam się przekazać te kategorie Michałowi do planowania materiałów. Nie proszę w ten sposób o kontakt.</span></label>
+        <button className="dd-secondary" disabled={!contentConsent || shared} onClick={shareTopics}>{shared ? 'Dziękuję za pomoc w wyborze tematów ✓' : 'Przekaż kategorie do tematów'}</button>
+        {shareError && <p role="status">{shareError}</p>}
+      </details>
       <p className="dd-privacy">To automatyczne podsumowanie Twoich odpowiedzi. Hipotezy wymagają sprawdzenia. Dolegliwości zdrowotne omów z lekarzem.</p>
       <button className="dd-link" onClick={restart}>Zacznij od nowa</button>
     </article>}
