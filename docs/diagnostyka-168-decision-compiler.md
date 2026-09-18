@@ -102,4 +102,8 @@ Zmiana dotyczy gałęzi podglądowej `fix/diagnostyka-decision-compiler-20260918
 
 ## Weryfikacja
 
-169 testów przechodzi, w tym macierz ponad 2000 kombinacji bazowych i osobne przypadki wszystkich 28 ścieżek. Testy obejmują różne zalecenia przy podobnej scenie, kolejność zdarzeń, niepewność, dobre tygodnie, czyszczenie nieważnych odpowiedzi, dane contentowe oraz kontakt tylko po wyrażonej prośbie. Testy kontaktu używają atrap dostarczenia, nie Telegrama ani CRM.
+170 testów przechodzi, w tym macierz ponad 2000 kombinacji bazowych i osobne przypadki wszystkich 28 ścieżek. Testy obejmują różne zalecenia przy podobnej scenie, kolejność zdarzeń, niepewność, dobre tygodnie, czyszczenie nieważnych odpowiedzi, dane contentowe oraz kontakt tylko po wyrażonej prośbie. Testy kontaktu używają atrap dostarczenia, nie Telegrama ani CRM.
+
+Sprawdzono w przeglądarce na podglądzie: pełną ścieżkę ciekawości → sen → ekran → pierwsza chwila dla siebie (9 odpowiedzi), odrzucenie wyniku i powrót do właściwej sceny, udany tydzień z przygotowaniem (6 odpowiedzi) oraz domyślnie niezaznaczoną zgodę i zablokowany przycisk przekazania kategorii. Poprawiono zaproszenie po odrzuceniu wyniku, aby nie sugerowało wykonania odrzuconego zadania.
+
+Backup przed tą korektą: `backup/decision-v31_2026-09-18_17-35-22_UTC` → `397115ab8154ed9250e102091ec52ebd9f56d536`.
