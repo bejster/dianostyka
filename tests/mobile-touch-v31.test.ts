@@ -4,7 +4,7 @@ import fs from 'node:fs';
 
 const flow = fs.readFileSync('app/components/SingleQuestionFlow.tsx', 'utf8');
 const result = fs.readFileSync('app/components/ResultExperience.tsx', 'utf8');
-const page = fs.readFileSync('app/diagnoza/page.tsx', 'utf8');
+const page = fs.readFileSync('app/components/DecisionDiagnostic.tsx', 'utf8');
 
 test('mobile quiz keeps vertical page scrolling available', () => {
   assert.match(flow, /overflowX: 'hidden'/);
@@ -27,8 +27,10 @@ test('result hero can never remain invisible after completion', () => {
   assert.match(result, /\.rx-hero\{[^}]*opacity:1;transform:none/);
 });
 
-test('completion is guarded against duplicate Telegram submits', () => {
-  assert.match(flow, /completionRef\.current/);
-  assert.match(flow, /isCompleting/);
-  assert.match(page, /completionHandledRef\.current/);
+test('completion is local and explicit contact has a synchronous duplicate guard', () => {
+  const commit = page.slice(page.indexOf('function commit('), page.indexOf('function save('));
+  assert.doesNotMatch(commit, /fetch|lead-notify|sendContact/);
+  assert.match(page, /sendingRef.current \|\| sent/);
+  assert.match(page, /sendingRef.current = true/);
+  assert.match(page, /sending \|\| sent \|\| !consent/);
 });
