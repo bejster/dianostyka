@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 
 const result = fs.readFileSync('app/components/ResultExperience.tsx','utf8');
-const page = fs.readFileSync('app/diagnoza/page.tsx','utf8');
+const page = fs.readFileSync('app/components/DecisionDiagnostic.tsx','utf8');
 
 test('result scroll cue is large lower and safe-area aware', () => {
   assert.match(result, /<span>ZOBACZ CAŁĄ MAPĘ<\/span>/);
@@ -15,6 +15,5 @@ test('result scroll cue is large lower and safe-area aware', () => {
 });
 
 test('fast fit return resets analytics context before diagnostic event', () => {
-  const i = page.indexOf("registerContext({ mode: 'diagnostic' }); trackDiag('fast_fit_to_diagnostic')");
-  assert.ok(i >= 0);
+  assert.match(page, /registerContext\(\{ mode: 'diagnostic' \}\); event\('fast_fit_to_diagnostic'\)/);
 });
