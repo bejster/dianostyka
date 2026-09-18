@@ -23,7 +23,7 @@ function handler(env: Record<string, string> = {}, delivery = true) {
 }
 const complete = {
   version: engine.DECISION_VERSION, consent: true, fit: 'coaching', objection: 'price', instagram: '@tester',
-  answers: { goal: 'form', scene: 'steady', previous: 'none', protect: 'rest', why: 'curious' },
+  answers: { goal: 'form', scene: 'steady', anchor: 'prepared', previous: 'none', protect: 'rest', why: 'curious' },
 };
 
 test('contact endpoint rejects lack of consent, non-fit and incomplete answers without delivery', async () => {
@@ -41,9 +41,9 @@ test('explicit contact sends a server-built factual brief and no inferred sales 
   assert.equal(h.calls.length, 1);
   const body = h.calls[0].body;
   assert.equal(body.instagram, '@tester');
-  assert.equal(body.assessment_version, '3.0.0');
+  assert.equal(body.assessment_version, engine.DECISION_VERSION);
   assert.equal(body.objection, 'price');
-  assert.match(String(body.diagnostyka_brief), /Zachowaj to, co już Ci działa/);
+  assert.match(String(body.diagnostyka_brief), /Pomogło to, co było ustalone/);
   assert.doesNotMatch(JSON.stringify(body), /untrusted client text|premium_fit|severity|"score"/);
   assert.equal((body.consent as { granted: boolean }).granted, true);
 });
