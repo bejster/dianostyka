@@ -5,7 +5,7 @@ import {
   FIT_OPTIONS, OBJECTION_OPTIONS, resultAsText, type Answers,
 } from '../app/lib/decision-diagnostic.ts';
 
-const base: Answers = { goal: 'form', scene: 'training', before: 'work', planned: 3, missed: 1, previous: 'plan', attempt: 'schedule', protect: 'family', impact: 'training', why: 'repeat' };
+const base: Answers = { goal: 'form', scene: 'training', before: 'work', context: 'extra', planned: 3, missed: 1, previous: 'plan', attempt: 'schedule', protect: 'family', impact: 'training', why: 'repeat' };
 function finish(seed: Answers): Answers {
   let a = cleanAnswers(seed);
   for (let i = 0; i < 15; i++) {
@@ -16,7 +16,7 @@ function finish(seed: Answers): Answers {
   throw new Error('Unfinished path');
 }
 
-test('every scene, upstream answer and previous-attempt branch completes in 5 to 10 answers', () => {
+test('every scene, upstream answer and previous-attempt branch completes in 6 to 11 answers', () => {
   const scenes = getQuestions({}).find(q => q.id === 'scene')!.options!;
   const counts = new Set<number>();
   let paths = 0;
@@ -29,7 +29,7 @@ test('every scene, upstream answer and previous-attempt branch completes in 5 to
             const a = finish({ ...base, scene: scene.id, before: b.id, previous, attempt, planned: count, missed: count, frequency: String(count) });
             assert.ok(isComplete(a));
             const q = getQuestions(a);
-            assert.ok(q.length >= 5 && q.length <= 10);
+            assert.ok(q.length >= 6 && q.length <= 11);
             assert.equal(new Set(q.map(x => x.id)).size, q.length);
             for (const item of q) {
               assert.ok(item.job.length > 10 && item.downstream.length > 20);
@@ -46,7 +46,7 @@ test('every scene, upstream answer and previous-attempt branch completes in 5 to
     }
   }
   assert.ok(paths > 2000);
-  assert.ok(counts.has(5) && counts.has(10));
+  assert.ok(counts.has(6) && counts.has(11));
 });
 
 test('changing scene discards reused and hidden answers, retaining independent decisions', () => {
