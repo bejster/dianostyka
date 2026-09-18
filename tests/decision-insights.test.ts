@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { buildDecisionResult, cleanAnswers, getQuestions, updateAnswer, type Answers } from '../app/lib/decision-diagnostic.ts';
+import { buildDecisionResult, cleanAnswers, invitation, getQuestions, updateAnswer, type Answers } from '../app/lib/decision-diagnostic.ts';
 import { contentSignal, getContextQuestion, INSIGHT_REACTIONS, reactionNext } from '../app/lib/decision-insights.ts';
 const base: Answers = { why: 'curious', goal: 'form', scene: 'training', previous: 'none', before: 'work', context: 'extra', planned: 3, missed: 1, protect: 'rest', impact: 'training' };
 
@@ -79,4 +79,13 @@ test('each result reaction routes to a distinct useful next action', () => {
   assert.equal(new Set(INSIGHT_REACTIONS.map(r => reactionNext(r.id))).size, 4);
   assert.match(reactionNext('off'), /Nie wiem albo było inaczej/);
   assert.match(reactionNext('obvious'), /Nie powtarzaj/);
+});
+
+ test('rejected interpretations never invite visitors to try the rejected task', () => {
+  for (const reaction of ['off', 'obvious']) for (const fit of ['', 'self']) {
+    const r = invitation(fit, '', 'curious', reaction);
+    assert.match(r.text, /Najpierw wróć do odpowiedzi/);
+    assert.doesNotMatch(r.text, /Sprawdź go|najpierw sprawdzić ten krok sam/);
+  }
+  assert.equal(invitation('medical', '', 'curious', 'off').showNabor, false);
 });
