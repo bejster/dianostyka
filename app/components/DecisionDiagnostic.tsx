@@ -13,6 +13,8 @@ import { INSIGHT_REACTIONS, reactionNext, contentSignal } from '../lib/decision-
 import { actionHeading, resultStatus, RESULT_UI_VERSION, analyticsEnvironment } from '../lib/decision-presentation';
 import './decision-diagnostic.css';
 import './decision-result.css';
+import { JOURNEY_STAGES, journeyStage, questionContext, journeyCue, createChoiceGate } from '../lib/question-journey';
+import './question-interactions.css';
 
 type Phase = 'intro' | 'questions' | 'result';
 type Stored = { version: string; answers: Answers; phase: Phase; index: number; fit: string; objection: string; accepted: boolean; checkin: string; reaction?: string; shared?: boolean };
@@ -51,6 +53,15 @@ export default function DecisionDiagnostic() {
   const startedAt = useRef(0);
   const invitationSection = useRef<HTMLElement>(null);
   const entryTracked = useRef(false);
+  const [selectedChoice, setSelectedChoice] = useState<string | null>(null);
+  const choiceGate = useRef(createChoiceGate((finish, delay) => {
+    const timer = setTimeout(finish, delay);
+    return () => clearTimeout(timer);
+  }));
+  useEffect(() => {
+    const gate = choiceGate.current;
+    return () => gate.cancel();
+  }, []);
 
   useEffect(() => {
     const search = new URLSearchParams(window.location.search);
@@ -99,6 +110,9 @@ export default function DecisionDiagnostic() {
   const result = buildDecisionResult(answers);
   const invite = invitation(fit, objection, String(answers.why || ''), reaction);
   const routeResolved = !!answers.scene && !!answers.previous && (['none', 'unknown'].includes(String(answers.previous)) || !!answers.attempt) && (!questions.some(q => q.id === 'before') || !!answers.before) && (!questions.some(q => q.id === 'planned') || answers.planned !== undefined);
+  const stage = journeyStage(current.id);
+  const context = questionContext(answers, current.id);
+  const cue = journeyCue(current.id, routeResolved ? questions.length - index : undefined);
   const answeredCount = questions.filter(q => answers[q.id] !== undefined).length;
   useEffect(() => {
     if (!loaded || phase !== 'questions') return;
@@ -121,11 +135,19 @@ export default function DecisionDiagnostic() {
     return () => observer.disconnect();
   }, [loaded, phase, fastFit]);
 
-  function commit(value: string | number) {
+  function choose(value: string | number) {
+    const elapsed = Math.max(0, Date.now() - startedAt.current);
+    const delay = window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 180;
+    if (choiceGate.current.choose(() => {
+      commit(value, elapsed);
+      setSelectedChoice(null);
+    }, delay)) setSelectedChoice(String(value));
+  }
+  function commit(value: string | number, elapsed: number) {
     const next = updateAnswer(answers, current.id, value);
     setAnswers(next);
     setAccepted(false); setCheckin(''); setReaction(''); setShared(false); setContentConsent(false); setFit(''); setObjection(''); setStatus(''); setSent(false);
-    event('question_answer', { question_id: current.id, pos: index + 1, elapsed_ms: Math.max(0, Date.now() - startedAt.current) });
+    event('question_answer', { question_id: current.id, pos: index + 1, elapsed_ms: elapsed });
     const nextQuestions = getQuestions(next);
     const nextIndex = nextQuestions.findIndex(q => q.id === current.id) + 1;
     if (nextIndex < nextQuestions.length) setIndex(nextIndex);
@@ -200,14 +222,19 @@ export default function DecisionDiagnostic() {
       </aside>
       <p className="dd-privacy">Wynik powstaje automatycznie. Odpowiedzi zostają w tej przeglądarce, dopóki sam nie wybierzesz wysłania wyniku albo udostępnienia kategorii odpowiedzi do tematów contentu.</p>
     </section> : phase === 'questions' ? <section className="dd-shell dd-question" aria-label="Pytania diagnostyki">
-      <div className="dd-progress-row"><button className="dd-back" onClick={() => index === 0 ? setPhase('intro') : setIndex(index - 1)}>← Wstecz</button><span>Pytanie {index + 1} {routeResolved ? `z ${questions.length}` : '· do 11 odpowiedzi'}</span></div>
-      <div className="dd-progress" role="progressbar" aria-label="Postęp diagnostyki" aria-valuemin={0} aria-valuemax={routeResolved ? questions.length : 11} aria-valuenow={Math.min(index + 1, questions.length)}><span style={{ width: `${(index + 1) / (routeResolved ? questions.length : 11) * 100}%` }} /></div>
+      <ol className="dd-journey" aria-label="Etapy diagnostyki">{JOURNEY_STAGES.map((name, n) => <li key={name} aria-current={n === stage ? 'step' : undefined} data-done={n < stage}><span aria-hidden="true">{n < stage ? '✓' : n + 1}</span>{name}</li>)}</ol>
+      <div className="dd-progress-row"><button disabled={selectedChoice !== null} className="dd-back" onClick={() => index === 0 ? setPhase('intro') : setIndex(index - 1)}>← Wstecz</button><span>Pytanie {index + 1} {routeResolved ? `z ${questions.length}` : '· do 11 odpowiedzi'}</span></div>
+      <div className="dd-progress" role="progressbar" aria-label="Postęp diagnostyki" aria-valuemin={0} aria-valuemax={routeResolved ? questions.length : 11} aria-valuenow={index} aria-valuetext={`${index} wcześniejszych odpowiedzi; teraz pytanie ${index + 1}`}><span style={{ width: `${index / (routeResolved ? questions.length : 11) * 100}%` }} /></div>
+      <div key={current.id} className="dd-question-enter">
+      {context && <aside className="dd-question-context"><span>{context.label}</span><p>„{context.quote}”</p></aside>}
       <h1 ref={heading} tabIndex={-1}>{current.title}</h1>
       <p className="dd-hint">{current.hint}</p>
+      {cue && <p className="dd-journey-cue">{cue}</p>}
       <div className={`dd-options ${current.type === 'number' || current.id === 'frequency' ? 'dd-numbers' : ''}`}>
-        {(current.type === 'number' ? Array.from({ length: (current.max ?? 7) + 1 }, (_, n) => ({ id: String(n), label: String(n) })) : current.options || []).map(o => <button key={o.id} aria-pressed={String(answers[current.id]) === o.id} onClick={() => commit(current.type === 'number' ? Number(o.id) : o.id)}>{o.label}<span aria-hidden="true">→</span></button>)}
+        {(current.type === 'number' ? Array.from({ length: (current.max ?? 7) + 1 }, (_, n) => ({ id: String(n), label: String(n) })) : current.options || []).map(o => <button key={o.id} disabled={selectedChoice !== null} data-selected={selectedChoice === o.id} aria-pressed={selectedChoice === o.id || (selectedChoice === null && String(answers[current.id]) === o.id)} onClick={e => { if (e.detail < 2) choose(current.type === 'number' ? Number(o.id) : o.id); }}>{o.label}<span aria-hidden="true">{selectedChoice === o.id ? '✓' : '→'}</span></button>)}
       </div>
-      <p className="dd-micro">Kliknięcie zapisuje odpowiedź. Możesz cofnąć się i ją zmienić.</p>
+      <p className="dd-micro" role="status">{selectedChoice !== null ? 'Wybrano ✓' : 'Kliknięcie zapisuje odpowiedź. Możesz cofnąć się i ją zmienić.'}</p>
+      </div>
       {!storageAvailable && <p className="dd-notice">Ta przeglądarka nie pozwala zapisać postępu. Przed zamknięciem pobierz wynik.</p>}
     </section> : <article className="dd-shell dd-result">
       <div className="dd-result-heading">
