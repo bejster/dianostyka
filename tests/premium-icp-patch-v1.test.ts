@@ -174,14 +174,14 @@ test('pusty lead nie dostaje zadnej etykiety na wyrost', () => {
 
 // ── payload: prywatny kanal, nigdy PostHog ─────────────────────────────────
 
-const PAGE = readFileSync(new URL('../app/diagnoza/page.tsx', import.meta.url), 'utf8');
+const PAGE = readFileSync(new URL('../app/components/DecisionDiagnostic.tsx', import.meta.url), 'utf8');
 const ROUTE = readFileSync(new URL('../app/api/lead-notify/route.ts', import.meta.url), 'utf8');
 
-test('lead-notify dostaje surowe odpowiedzi i wyliczony fit', () => {
-  for (const field of ['work_load:', 'spillover:', 'agency_mode:', 'premium_fit:', 'premium_signals:']) {
-    assert.ok(PAGE.includes(field), `brak pola ${field} w payloadzie`);
-  }
-  assert.ok(PAGE.includes('classifyPremiumFit'));
+test('v3 wysyla tylko jawne zgloszenie bez wyliczonego premium fit', () => {
+  assert.ok(PAGE.includes("fetch('/api/decision-lead'"));
+  assert.ok(PAGE.includes('consent: true'));
+  assert.ok(!PAGE.includes('classifyPremiumFit'));
+  assert.ok(!PAGE.includes('premium_fit'));
 });
 
 test('fit nigdy nie wychodzi do PostHoga', () => {

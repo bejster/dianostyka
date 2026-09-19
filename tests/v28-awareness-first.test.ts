@@ -4,14 +4,14 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 const root = process.cwd();
-const page = fs.readFileSync(path.join(root, 'app/diagnoza/page.tsx'), 'utf8');
+const page = fs.readFileSync(path.join(root, 'app/components/DecisionDiagnostic.tsx'), 'utf8');
 const result = fs.readFileSync(path.join(root, 'app/components/ResultExperience.tsx'), 'utf8');
 const flow = fs.readFileSync(path.join(root, 'app/components/SingleQuestionFlow.tsx'), 'utf8');
 const cfg = fs.readFileSync(path.join(root, 'app/lib/assessment-config.ts'), 'utf8');
 
 // Cold entry = blok JSX fazy 'intro'. Zawezamy zakres, zeby kontrakt dotyczyl realnego ekranu,
 // a nie silnika scoringu nizej w pliku (tam slowo "Weekend" jest legalna etykieta osi).
-const coldEntry = page.match(/if \(phase === 'intro'\) \{([\s\S]*?)\n  \}/)?.[1] ?? '';
+const coldEntry = page.slice(page.indexOf("phase === 'intro' ? <section"), page.indexOf("phase === 'questions' ? <section"));
 
 test('release jest zawersjonowany 2.9.0', () => {
   // 2.9.0 = ten sam release awareness-first plus beat Lustro oraz zmieniony bank pytan.
@@ -20,20 +20,17 @@ test('release jest zawersjonowany 2.9.0', () => {
   assert.match(cfg, /ASSESSMENT_VERSION = '2\.9\.0'/);
 });
 
-test('cold entry sells an awareness gap, not a weekend audit', () => {
-  assert.ok(coldEntry, "cold entry block (phase === 'intro') not found");
-  assert.match(coldEntry, /Sprawdź, czy Twój obecny poziom to naprawdę Twój sufit\./);
-  assert.match(coldEntry, /Sprawdź mój poziom/);
-  // weekend przestal byc obietnica ekranu wejsciowego
-  assert.doesNotMatch(coldEntry, /weekend/i, 'weekend framing leaked back into the cold entry');
-  // rownie zakazane: obiecywanie diagnozy hormonalnej albo wellness-owego jezyka na wejsciu
-  assert.doesNotMatch(coldEntry, /hormon|testosteron|kortyzol|wellness|dobrostan/i);
+test('entry sets an observable scope without an invented awareness gap', () => {
+  assert.ok(coldEntry);
+  assert.match(coldEntry, /Sprawdzam, co z czego wynika/);
+  assert.match(coldEntry, /jednej Twojej sytuacji/);
+  assert.doesNotMatch(coldEntry, /hormon|testosteron|kortyzol|wellness|Twój sufit/i);
 });
 
-test('Punkt Pęknięcia is a payoff, never a precondition of starting', () => {
-  assert.ok(coldEntry, 'cold entry block not found');
-  assert.doesNotMatch(coldEntry, /Pęknięci|Pęknięcia/i, 'cold entry demands belief in IP before any evidence');
-  assert.match(result, /<div className="rx-kick">Punkt Pęknięcia<\/div>/);
+test('the entry does not require belief in a proprietary mechanism', () => {
+  assert.ok(coldEntry);
+  assert.doesNotMatch(coldEntry, /Pęknięci|Pęknięcia/i);
+  assert.match(coldEntry, /Od tego zależy następny krok/);
 });
 
 test('weekend is demoted to Q1/Q2 but is still asked first in the flow', () => {
@@ -88,31 +85,18 @@ test('reserve headline is grammatical Polish for both the singular and plural ca
   assert.doesNotMatch(result, /\$\{statuses\.length\} ma jeszcze/, 'plural subject with a singular verb');
 });
 
-test('numbers shown to the user are written in Polish, not raw JS floats', () => {
-  // suwak godzin ma krok 0.5, wiec kazde surowe wstawienie hp/D.lost daje "0.5 h" w polskim zdaniu
-  const fe = fs.readFileSync(path.join(root, 'app/lib/fracture-engine.ts'), 'utf8');
-  assert.match(fe, /function hoursPl\(h: number\): string \{\s*return String\(h\)\.replace\('\.', ','\);/);
-  assert.match(page, /const hoursPl = \(h: number\) => String\(h\)\.replace\('\.', ','\)/);
-  for (const [name, src] of [['fracture-engine', fe], ['page', page]] as const) {
-    assert.doesNotMatch(src, /\$\{(hp|D\.lost)( as number)?\} h /, `raw float interpolated into Polish prose (${name})`);
-  }
+test('v3 asks for integers and never fabricates fractional lost hours', () => {
+  const engine = fs.readFileSync(path.join(root, 'app/lib/decision-diagnostic.ts'), 'utf8');
+  assert.match(engine, /Number.isInteger\(v\)/);
+  assert.doesNotMatch(page, /D\.lost|hoursPl|lostHours|D\.hp/);
 });
 
-test('the training numbers in the copy are the same clamped numbers the scoring uses', () => {
-  // suwak "ile wypada" nie zna wartosci suwaka "ile planuje" — bez clampu copy pokazywalo "5 z 3 treningow"
-  const fe = fs.readFileSync(path.join(root, 'app/lib/fracture-engine.ts'), 'utf8');
-  assert.match(fe, /function trainingPair\(answers: RawAnswers\)/);
-  assert.match(fe, /missed: Math\.max\(0, Math\.min\(missedRaw, planned\)\)/);
-  // surowa odpowiedz "ile wypada" ma byc czytana WYLACZNIE przez clampujacy helper
-  const reads = [...fe.matchAll(/answers\.missed_trainings/g)].length;
-  assert.equal(reads, 1, 'missed_trainings is read outside trainingPair, so a copy line can bypass the clamp');
-  assert.match(fe, /function trainingPair[\s\S]*?answers\.missed_trainings/, 'the single read is not the one inside trainingPair');
-  // "1 z 1 treningow" czyta sie jak blad danych, wiec komplet ma wlasne zdanie
-  assert.match(fe, /function missedPhrase\(planned: number, missed: number\)/);
-  assert.match(fe, /missed >= planned/);
-  assert.match(page, /D\.miss >= D\.plan \?/, 'axis caption still renders the "N z N" shape');
-  // zero wypadajacych treningow nie jest kosztem
-  assert.doesNotMatch(fe, /push\(typeof missed === 'number' && typeof planned === 'number' && planned >= 1,/);
+test('v3 validates training counts before rendering facts', () => {
+  const engine = fs.readFileSync(path.join(root, 'app/lib/decision-diagnostic.ts'), 'utf8');
+  assert.match(engine, /max: Number\(a.planned\)/);
+  assert.match(engine, /v >= 0 && v <= \(q.max/);
+  assert.match(page, /const clean = cleanAnswers\(saved.answers\)/);
+  assert.match(page, /updateAnswer\(answers, current.id, value\)/);
 });
 
 test('every displayed axis number carries the answer that moved it', () => {
@@ -163,15 +147,10 @@ test('commercial action stays ahead of calibration and no DM lane is reintroduce
   assert.doesNotMatch(page + result, /dmHref|ig\.me\/m|cta_dm_clicked|napisz do mnie/i);
 });
 
-test('routing destination still depends on intent and start_when only', () => {
-  const router = fs.readFileSync(path.join(root, 'app/lib/result-router-v3.ts'), 'utf8');
-  assert.match(router, /export function routeDecision\(intentRaw: string, startWhenRaw: string\)/);
-  // cialo funkcji bez komentarzy: zadna zmienna wyniku nie ma prawa dotknac destination
-  const body = (router.match(/export function routeDecision\([^)]*\): RouteDecision \{([\s\S]*?)\n\}/)?.[1] ?? '')
-    .split('\n').filter((l) => !l.trim().startsWith('//')).join('\n');
-  assert.ok(body, 'routeDecision body not found');
-  assert.doesNotMatch(body, /\bscore\b|\bseverity\b|\barchetype\b|\barchKey\b|\btier\b/i, 'routing must not read severity/score/archetype');
-  assert.match(page, /const route = routeDecision\(intentStr, startWhenStr\)/);
+test('nabor remains an explicit link after receiving the result', () => {
+  assert.match(page, /invite.showNabor &&/);
+  assert.match(page, /href=\{NABOR_URL\}/);
+  assert.doesNotMatch(page, /window\.location\s*=|window\.location\.href\s*=|router\.push|location\.replace/);
 });
 
 test('no em dash or en dash in public prose', () => {
@@ -197,17 +176,10 @@ test('every commercial headline ends as a finished sentence', () => {
   }
 });
 
-test('axis evidence never explains one axis with another axis signal', () => {
-  // "Napęd i libido" z najwyzszym wynikiem dostawal jako dowod godziny na pol mocy, czyli fakt negatywny
-  // pochodzacy z osi glowy i stresu. Dowod ma pochodzic z pytan tej samej osi albo powiedziec wprost, ze go nie ma.
-  const drive = page.match(/const driveReason = .*/)?.[0] ?? '';
-  assert.ok(drive, 'driveReason not found');
-  assert.doesNotMatch(drive, /D\.lost/, 'drive axis borrows the stress-axis half-power number as its evidence');
-  assert.match(drive, /nie zaznaczyłeś tu żadnego z czterech sygnałów/);
-  // v2.8.4: sam objaw jako dowod ("zaznaczyles: motywacja") przeczyl etykiecie pasma, kiedy os wypadla
-  // najlepiej z pieciu. Dowod ma niesc proporcje, bo ta sama liczba tlumaczy wysoki wynik rownie dobrze jak niski.
-  assert.match(drive, /z czterech sygnałów/, 'drive evidence states a bare symptom instead of its proportion');
-  assert.doesNotMatch(drive, /`zaznaczyłeś: /, 'bare symptom label can contradict the band rendered above it');
+test('no unselected symptoms are translated into reassuring medical claims', () => {
+  assert.doesNotMatch(page, /driveReason|symptoms_chips|libido|testosteron|driveAxis/);
+  assert.match(page, /result.evidence.filter/);
+  assert.match(page, /Dolegliwości zdrowotne omów z lekarzem/);
 });
 
 test('the first two cold-flow screens are not labelled as a weekend section', () => {
