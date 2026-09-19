@@ -110,6 +110,7 @@ export default function DecisionDiagnostic() {
 
   useEffect(() => {
     if (!loaded || phase !== 'result' || fastFit || !invitationSection.current) return;
+    heading.current?.focus({ preventScroll: true });
     const observer = new IntersectionObserver(entries => {
       if (entries.some(entry => entry.isIntersecting)) {
         event('diag_invitation_viewed');
@@ -265,7 +266,7 @@ export default function DecisionDiagnostic() {
       </section>
       <section ref={invitationSection} className="dd-invitation" aria-label="Zaproszenie do prowadzenia">
         <p className="dd-eyebrow">DALEJ MOŻESZ DZIAŁAĆ SAM ALBO ZE MNĄ</p>
-        <h2>Chcesz, żebym pomógł Ci sprawdzić, co z tego wyjdzie?</h2>
+        <h2>{fit === 'medical' ? 'Ta potrzeba wykracza poza prowadzenie.' : ['off', 'obvious'].includes(reaction) ? 'Chcesz przyjrzeć się tej sytuacji ze mną?' : 'Chcesz, żebym pomógł Ci sprawdzić, co z tego wyjdzie?'}</h2>
         <details className="dd-details dd-fit"><summary>Sprawdź, czy takiej pomocy szukasz</summary>
           <p>Czego teraz potrzebujesz?</p><div className="dd-options">{FIT_OPTIONS.map(o => <button key={o.id} aria-pressed={fit === o.id} onClick={() => { setFit(o.id); setObjection(''); setStatus(''); event('next_step_selected'); }}>{o.label}</button>)}</div>
           {fit === 'coaching' && <><h3>Co chcesz wiedzieć, zanim rozważysz prowadzenie?</h3><div className="dd-options">{OBJECTION_OPTIONS.map(o => <button key={o.id} aria-pressed={objection === o.id} onClick={() => { setObjection(o.id); event('decision_question_answered'); }}>{o.label}</button>)}</div></>}
