@@ -13,7 +13,8 @@ test('visually similar screen scenes retain different, evidence-bound next actio
 });
 
 test('unknown context or zero frequency never gets a confident intervention heading', () => {
-  for (const patch of [{ context: 'unknown' }, { frequency: '0' }, { frequency: 'unknown' }]) {
+  const patches: Answers[] = [{ context: 'unknown' }, { frequency: '0' }, { frequency: 'unknown' }];
+  for (const patch of patches) {
     const result = buildDecisionResult({ ...base, ...patch });
     assert.equal(resultStatus(result), 'Najpierw obserwacja');
     assert.equal(actionHeading(result), result.experiment.title);
