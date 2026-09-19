@@ -5,6 +5,8 @@ import vm from 'node:vm';
 import { createRequire } from 'node:module';
 import ts from 'typescript';
 import * as engine from '../app/lib/decision-diagnostic.ts';
+import * as refinement from '../app/lib/result-refinement.ts';
+import * as insights from '../app/lib/decision-insights.ts';
 
 // Execute the actual route with isolated env/fetch: no CRM or Telegram traffic in tests.
 const require = createRequire(import.meta.url);
@@ -16,7 +18,7 @@ function handler(env: Record<string, string> = {}, delivery = true) {
   const exports: { POST?: (req: { text(): Promise<string> }) => Promise<Response> } = {};
   vm.runInNewContext(source, {
     exports, process: { env }, AbortSignal,
-    require: (name: string) => name === 'next/server' ? require('next/server') : engine,
+    require: (name: string) => name === 'next/server' ? require('next/server') : name.endsWith('result-refinement') ? refinement : name.endsWith('decision-insights') ? insights : engine,
     fetch: async (url: string, init: { body: string }) => { calls.push({ url, body: JSON.parse(init.body) }); return { ok: delivery }; },
   });
   return { calls, post: (body: unknown) => exports.POST!({ text: async () => JSON.stringify(body) }) };
@@ -60,4 +62,22 @@ test('contact endpoint rejects an oversized body before any delivery', async () 
   const h = handler({ N8N_DIAGNOSTYKA_WEBHOOK: 'https://example.invalid/webhook' });
   assert.equal((await h.post({ ...complete, excess: 'x'.repeat(12000) })).status, 413);
   assert.equal(h.calls.length, 0);
+});
+
+// Delivery is a stub; these cases never send a lead or message.
+test('a rejected result travels with the brief and arbitrary refinement text is ignored', async () => {
+  const h = handler({ N8N_DIAGNOSTYKA_WEBHOOK: 'https://example.invalid/webhook' });
+  const response = await h.post({ ...complete, reaction: 'obvious', refinement: 'tried_unchanged', action: 'INJECTED' });
+  assert.equal(response.status, 200);
+  const payload = h.calls[0].body;
+  assert.equal(payload.refinement_id, 'tried_unchanged');
+  assert.match(String(payload.diagnostyka_brief), /^DOPRECYZOWANIE/);
+  assert.match(String(payload.diagnostyka_brief), /nie zostało zaakceptowane/);
+  assert.doesNotMatch(JSON.stringify(payload), /INJECTED/);
+});
+
+test('incompatible refinement IDs are not accepted by the contact endpoint', async () => {
+  const h = handler({ N8N_DIAGNOSTYKA_WEBHOOK: 'https://example.invalid/webhook' });
+  await h.post({ ...complete, refinement: 'food_break' });
+  assert.equal(h.calls[0].body.refinement_id, '');
 });
