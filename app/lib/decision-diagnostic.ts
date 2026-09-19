@@ -47,7 +47,7 @@ const ATTEMPT: Question = {
 const CONSTRAINT: Question = {
   id: 'protect', title: 'Czego nie chcesz poświęcać na zmianę?', hint: 'Co chcesz zachować w swoim tygodniu?',
   job: 'Rozpoznać konflikt między celem a tym, co odbiorca chce zachować.', downstream: 'Zmienia wykonanie zadania: czas rodzinny, spotkania, elastyczność lub odpoczynek.',
-  options: options([['family', 'Na czas z bliskimi.'], ['social', 'Na spotkania i wyjścia.'], ['flexible', 'Na elastyczność. Nie ustawię każdego dnia co do godziny.'], ['rest', 'Na odpoczynek. Już mam dużo na głowie.'], ['none', 'Nie mam jednego takiego warunku.']]),
+  options: options([['family', 'Czasu z bliskimi.'], ['social', 'Spotkań i wyjść.'], ['flexible', 'Elastyczności. Nie ustawię każdego dnia co do godziny.'], ['rest', 'Odpoczynku. Już mam dużo na głowie.'], ['none', 'Nie mam jednego takiego warunku.']]),
 };
 const IMPACT: Question = {
   id: 'impact', title: 'Co ta sytuacja zmieniła w dalszej części dnia?', hint: 'Tylko to, co faktycznie zauważyłeś. „Nic wyraźnego” też się liczy.',
