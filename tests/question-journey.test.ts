@@ -9,7 +9,7 @@ test('rapid repeated taps commit only the first choice', () => {
   const choices: string[] = [];
   assert.equal(gate.choose(() => choices.push('first'), 180), true);
   assert.equal(gate.choose(() => choices.push('second'), 180), false);
-  assert.deepEqual(choices, []);
+  assert.equal(choices.length, 0);
   queue[0]();
   assert.deepEqual(choices, ['first']);
   assert.equal(gate.choose(() => choices.push('next question'), 180), true);
