@@ -276,7 +276,7 @@ export default function DecisionDiagnostic() {
             <p className="dd-task" aria-live="polite">{refined ? refined.action : result.experiment.action}</p>
             {refined && <p className="dd-micro">Po wyniku wybrałeś: „{refined.label}”. Pierwotne odpowiedzi pozostają bez zmian.</p>}
             <div className="dd-action-detail"><span>{refined && !refined.canTry ? 'Do sprawdzenia' : 'Po próbie sprawdź'}</span><p>{refined ? refined.observe : result.experiment.observe}</p></div>
-            <p className="dd-constraint">{result.constraint}</p>
+            <p className="dd-constraint">{refined ? `Chcesz zachować: ${answerLabel(answers, 'protect')}` : result.constraint}</p>
             {answers.impact === 'none' && <p className="dd-notice">Nie wskazałeś wyraźnego kosztu. Możesz sprawdzić ten trop z ciekawości. Nie musisz niczego zmieniać.</p>}
             {!refined && <details className="dd-outcomes"><summary>{answers.previous !== 'none' && answers.previous !== 'unknown' ? 'Uwzględnij poprzednią próbę i sprawdź dalszy krok' : 'Kiedy spróbować i co zrobić z wynikiem?'}</summary>
               <h3>Kiedy</h3><p>{result.experiment.when}</p>
