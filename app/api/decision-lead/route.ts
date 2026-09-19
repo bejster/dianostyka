@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { buildDecisionResult, cleanAnswers, DECISION_VERSION, FIT_OPTIONS, isComplete, OBJECTION_OPTIONS, resultAsText } from '../../lib/decision-diagnostic';
 
+import { refinementAsText, selectedRefinement } from '../../lib/result-refinement';
+import { INSIGHT_REACTIONS } from '../../lib/decision-insights';
+
 // Explicit contact request only. The public result is local and never depends on delivery.
 // No synthetic score, severity, budget proxy, inferred libido or automatic sales script.
 export async function POST(req: NextRequest) {
@@ -16,13 +19,15 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ ok: false, reason: 'invalid_request' }, { status: 400 });
     }
     const result = buildDecisionResult(answers);
-    const brief = resultAsText(answers);
+    const reaction = typeof body.reaction === 'string' && INSIGHT_REACTIONS.some(o => o.id === body.reaction) ? body.reaction : '';
+    const refinement = selectedRefinement(answers, result, reaction, body.refinement);
+    const brief = [refinementAsText(answers, result, reaction, refinement?.id), resultAsText(answers)].filter(Boolean).join('\n\n');
     const payload = {
       event: 'diagnostyka_complete', assessment_version: DECISION_VERSION,
       instagram: `@${ig}`, raw_answers: answers, diagnostyka_brief: brief,
       primary_goal: answers.goal, intencja: 'in_zobacz', wants_help: true,
       followup_priority: false, priority_lead: false,
-      fit, objection, experiment_id: result.experiment.id,
+      fit, objection, reaction, refinement_id: refinement?.id || '', experiment_id: result.experiment.id,
       consent: { purpose: 'instagram_contact_about_coaching', granted: true, at: new Date().toISOString() },
       derived_signals: { certainty: result.certainty, experiment_id: result.experiment.id },
     };
