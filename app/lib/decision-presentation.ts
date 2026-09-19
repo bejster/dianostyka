@@ -41,7 +41,7 @@ export function resultStatus(result: DecisionResult): string {
     : result.certainty === 'observation' ? 'Najpierw obserwacja' : 'Trop do sprawdzenia';
 }
 
-export const RESULT_UI_VERSION = '3.2.0';
+export const RESULT_UI_VERSION = '3.3.0';
 export function analyticsEnvironment(hostname: string): 'production' | 'preview' {
   return hostname === 'diagnostyka.talerzihantle.com' ? 'production' : 'preview';
 }
