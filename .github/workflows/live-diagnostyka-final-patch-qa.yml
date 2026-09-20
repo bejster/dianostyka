@@ -1,0 +1,31 @@
+name: Live Diagnostyka Final Patch QA
+
+on:
+  push:
+    branches:
+      - work/live-diagnostyka-final-patch-20260920
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  qa:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install
+        run: npm ci
+      - name: Tests
+        run: npm test
+      - name: Lint changed surface
+        run: npx eslint app/components/ResultExperience.tsx tests/live-result-correction-paths.test.ts
+      - name: Build
+        run: npm run build
