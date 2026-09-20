@@ -18,12 +18,12 @@ export interface Question {
 }
 const options = (rows: [string, string][]): Option[] => rows.map(([id, label]) => ({ id, label }));
 const GOAL: Question = {
-  id: 'goal', title: 'Co najbardziej chciałbyś mieć ogarnięte?', hint: 'Wybierz to, co jest teraz dla Ciebie ważne.',
+  id: 'goal', title: 'Co najbardziej chcesz ogarnąć w swoim tygodniu?', hint: 'Wybierz jedną rzecz, na której teraz najbardziej Ci zależy.',
   job: 'Ustalić wynik, na którym zależy odbiorcy.', downstream: 'Wybiera kryterium obserwacji i kierunek przy braku sceny.',
   options: options([['form', 'Sylwetkę i trening.'], ['energy', 'Siłę na coś jeszcze po pracy.'], ['sleep', 'Wstawanie bez ciągłego zmęczenia.'], ['head', 'Wolną głowę po pracy.'], ['other', 'Jeszcze nie umiem wybrać jednej rzeczy.']]),
 };
 const SCENE: Question = {
-  id: 'scene', title: 'Co z tego zdarzyło Ci się w ostatnim tygodniu?', hint: 'Wybierz jedną sytuację, której chcesz się przyjrzeć.',
+  id: 'scene', title: 'Która z tych sytuacji wydarzyła się u Ciebie w ostatnim tygodniu?', hint: 'Wybierz jeden konkretny przykład.',
   job: 'Zakotwiczyć wynik w zaobserwowanej scenie.', downstream: 'Wybiera pytanie o wcześniejsze ogniwo i rodzinę eksperymentu; dopuszcza brak problemu.',
   options: options([['training', 'Miał być trening, ale trudno było mi go zrobić.'], ['food', 'Wieczorem zjadłem więcej, niż chciałem.'], ['sleep', 'Zasnąłem później, niż chciałem.'], ['energy', 'Trudno mi było skupić się na pracy.'], ['weekend', 'Po weekendzie długo wracałem do swojego rytmu.'], ['steady', 'Tydzień poszedł w porządku.'], ['unknown', 'Nie przypominam sobie konkretnej sytuacji.']]),
 };
@@ -35,27 +35,27 @@ const BEFORE: Record<string, [string, string][]> = {
   weekend: [['late', 'Przesunęły mi się godziny snu i pobudki.'], ['no_return', 'Nie miałem ustalone, od czego wracam do swojego rytmu.'], ['compensate', 'Jadłem mniej albo trenowałem więcej, żeby nadrobić.'], ['work', 'Jeszcze w weekend nadrabiałem pracę.'], ['unknown', 'Nie wiem albo było to coś innego.']],
 };
 const PREVIOUS: Question = {
-  id: 'previous', title: 'Próbowałeś już coś z tym zrobić?', hint: 'Wybierz ostatnią próbę dotyczącą tej sytuacji.',
+  id: 'previous', title: 'Co już próbowałeś z tym zrobić?', hint: 'Wybierz ostatnią rzecz, którą faktycznie sprawdzałeś.',
   job: 'Poznać previous attempts bez liczenia porażek.', downstream: 'Uruchamia pytanie o wynik próby; chroni przed powtórzeniem niedopasowanej rady.',
   options: options([['plan', 'Zacząłem nowy plan treningu albo jedzenia.'], ['calendar', 'Rozpisałem godziny i próbowałem się ich trzymać.'], ['small', 'Wybrałem jedną mniejszą zmianę.'], ['support', 'Korzystałem z czyjejś pomocy.'], ['none', 'Jeszcze nic konkretnego.'], ['unknown', 'Nie pamiętam jednej konkretnej próby.']]),
 };
 const ATTEMPT: Question = {
-  id: 'attempt', title: 'Jak Ci z tym poszło?', hint: 'Pomyśl o tej konkretnej próbie.',
+  id: 'attempt', title: 'I co się stało po tej próbie?', hint: 'Pomyśl o tej jednej próbie, nie o całej historii.',
   job: 'Ustalić, co zachować lub zmienić po poprzedniej próbie.', downstream: 'Działającą próbę zachowuje; brak efektu kieruje do obserwacji; brak korekty do przeglądu wykonania.',
   options: options([['works', 'Działa do dziś.'], ['schedule', 'Po zmianie godzin pracy albo planów trudno było to utrzymać.'], ['too_much', 'Było za dużo do pilnowania naraz.'], ['no_change', 'Robiłem to, ale nie widziałem efektu.'], ['no_feedback', 'Nie wiedziałem, co poprawić, kiedy coś nie szło.'], ['unknown', 'Trudno mi powiedzieć.']]),
 };
 const CONSTRAINT: Question = {
-  id: 'protect', title: 'Na co nadal chcesz mieć miejsce?', hint: 'Uwzględnię to przy proponowanym kroku.',
+  id: 'protect', title: 'Czego nie chcesz poświęcić, żeby to ogarnąć?', hint: 'Ten wybór zmieni krok, który dostaniesz.',
   job: 'Rozpoznać konflikt między celem a tym, co odbiorca chce zachować.', downstream: 'Zmienia wykonanie zadania: czas rodzinny, spotkania, elastyczność lub odpoczynek.',
   options: options([['family', 'Na czas z bliskimi.'], ['social', 'Na spotkania i wyjścia.'], ['flexible', 'Na swobodę. Każdy dzień wygląda u mnie inaczej.'], ['rest', 'Na odpoczynek. Już mam dużo na głowie.'], ['none', 'Nie mam jednego takiego warunku.']]),
 };
 const IMPACT: Question = {
-  id: 'impact', title: 'Co odczułeś później?', hint: 'Zaznacz to, co zauważyłeś po tej sytuacji.',
+  id: 'impact', title: 'Co ta sytuacja zabrała Ci później?', hint: 'Zaznacz tylko to, co faktycznie zauważyłeś.',
   job: 'Ustalić zaobserwowany koszt bez produkowania strat.', downstream: 'Wybiera dodatkowy sygnał obserwacji; mały koszt usuwa presję i obietnicę wielkiej naprawy.',
   options: options([['training', 'Wypadł trening albo ruch, który chciałem zrobić.'], ['food', 'Jadłem bardziej przypadkowo, niż chciałem.'], ['work', 'Przeciągałem pracę, bo trudno było się skupić.'], ['home', 'Miałem mniej cierpliwości albo siły dla bliskich.'], ['rest', 'Miałem mniej czasu na odpoczynek.'], ['none', 'Nic wyraźnego.']]),
 };
 const WHY: Question = {
-  id: 'why', title: 'Z czym tu wpadasz?', hint: 'Co sprawiło, że sprawdzasz to właśnie teraz?',
+  id: 'why', title: 'Dlaczego sprawdzasz to akurat teraz?', hint: 'Wybierz powód najbliższy temu, co dzieje się u Ciebie.',
   job: 'Odróżnić realne WHY NOW od ciekawości.', downstream: 'Zmienia moment uruchomienia zadania i ton zaproszenia; nie wnioskuje chęci zakupu.',
   options: options([['repeat', 'Znowu powtórzyła się ta sama sytuacja.'], ['change', 'Zmieniła się praca albo rytm dnia.'], ['event', 'Mam przed sobą konkretny termin albo wydarzenie.'], ['ready', 'Mam teraz czas, żeby się tym zająć.'], ['curious', 'Na razie z ciekawości.']]),
 };
@@ -67,7 +67,7 @@ export function getQuestions(a: Answers): Question[] {
   if (a.previous && !['none', 'unknown'].includes(String(a.previous))) q.push(ATTEMPT);
   const scene = String(a.scene || '');
   if (BEFORE[scene] && !['works', 'no_change'].includes(String(a.attempt))) {
-    q.push(question('before', 'Co działo się przed tą sytuacją?', 'Pomyśl o ostatnim takim dniu.', 'Znaleźć wcześniejsze ogniwo.', 'Wybiera konkretną hipotezę i eksperyment lub uczciwą obserwację, gdy brak danych.', { options: options(BEFORE[scene]) }));
+    q.push(question('before', 'Co wydarzyło się wcześniej tego dnia?', 'Wróć do ostatniej takiej sytuacji.', 'Znaleźć wcześniejsze ogniwo.', 'Wybiera konkretną hipotezę i eksperyment lub uczciwą obserwację, gdy brak danych.', { options: options(BEFORE[scene]) }));
     const context = getContextQuestion(scene, String(a.before || ''));
     if (context) q.push(context);
     if (scene === 'training') {
@@ -77,7 +77,7 @@ export function getQuestions(a: Answers): Question[] {
       q.push(question('frequency', scene === 'weekend' ? 'Po ilu z ostatnich czterech weekendów było podobnie?' : 'W ilu dniach ostatniego tygodnia było podobnie?', 'Nie musisz zgadywać.', 'Odróżnić pojedynczy epizod od powtarzalnej sytuacji.', 'Zero lub brak pamięci daje obserwację bez rozpoznania wzorca; liczby pozostają w swoim okresie.', { options: options([...(scene === 'weekend' ? [0, 1, 2, 3, 4] : [0, 1, 2, 3, 4, 5, 6, 7]).map(n => [String(n), String(n)] as [string, string]), ['unknown', 'Nie pamiętam']]) }));
     }
   }
-  if (scene === 'steady') q.push(question('anchor', 'Co pomogło, że ten tydzień poszedł dobrze?', 'Co z tego miało miejsce?', 'Ustalić warunek udanego tygodnia.', 'Wybiera konkretny warunek do ochrony zamiast wymyślać problem.', { options: options([['space', 'Miałem mniej pracy albo więcej wolnego czasu.'], ['prepared', 'Jedzenie i trening były ustalone wcześniej.'], ['flex', 'Dopasowywałem plan, kiedy dzień się zmieniał.'], ['help', 'Ktoś pomógł mi ogarnąć obowiązki.'], ['unknown', 'Nie wiem. Po prostu poszło dobrze.']]) }));
+  if (scene === 'steady') q.push(question('anchor', 'Co było inne w tygodniu, który poszedł dobrze?', 'Wybierz rzecz, która faktycznie miała miejsce.', 'Ustalić warunek udanego tygodnia.', 'Wybiera konkretny warunek do ochrony zamiast wymyślać problem.', { options: options([['space', 'Miałem mniej pracy albo więcej wolnego czasu.'], ['prepared', 'Jedzenie i trening były ustalone wcześniej.'], ['flex', 'Dopasowywałem plan, kiedy dzień się zmieniał.'], ['help', 'Ktoś pomógł mi ogarnąć obowiązki.'], ['unknown', 'Nie wiem. Po prostu poszło dobrze.']]) }));
   q.push(CONSTRAINT);
   if (!['steady', ''].includes(scene)) q.push(IMPACT);
   return q;
@@ -122,38 +122,38 @@ export function answerLabel(a: Answers, id: string): string {
 }
 export interface Experiment { id: string; title: string; action: string; observe: string; when: string }
 const GOAL_METRIC: Record<string, string> = {
-  form: 'Sprawdzasz teraz, czy udało się zrobić to, co zaplanowałeś. Kilka dni nie wystarczy do oceny zmiany sylwetki.',
-  energy: 'Zauważ, ile siły zostało Ci po pracy. Porównaj podobne dni.',
-  sleep: 'Zapisz, kiedy się położyłeś i jak czułeś się rano.',
-  head: 'Sprawdź, czy po pracy nadal wracałeś myślami do zadań.',
-  other: 'Zapisz jedną zmianę, którą zauważyłeś po próbie.',
+  form: 'Po tej próbie patrz najpierw na wykonanie planu. Kilka dni nie mówi jeszcze nic pewnego o zmianie sylwetki.',
+  energy: 'Porównaj podobne dni i zobacz, ile siły zostaje Ci po pracy.',
+  sleep: 'Zapisz porę położenia się oraz to, jak czułeś się rano.',
+  head: 'Po pracy sprawdź, czy te same sprawy nadal wracają Ci do głowy.',
+  other: 'Zapisz jedną rzecz, która po próbie wyglądała inaczej.',
 };
 const CONSTRAINT_ACTION: Record<string, string> = {
-  family: 'Zostaw czas z bliskimi. Jeśli ten krok się z nim zderza, wybierz inną okazję.',
-  social: 'Zachowaj zaplanowane spotkania. Sprawdź ten krok przy najbliższej okazji poza nimi.',
-  flexible: 'Wybierz moment w przebiegu dnia, na przykład po pracy, jeśli pasuje do tego kroku.',
-  rest: 'Zostaw czas na odpoczynek. Jeśli ten krok go zabiera, poszukaj innej okazji.',
-  none: 'Wybierz najbliższą okazję, przy której możesz to sprawdzić.',
+  family: 'Czas z bliskimi zostaje. Sprawdź ten krok przy okazji, która się z nim nie zderza.',
+  social: 'Nie ruszaj zaplanowanych spotkań. Sprawdź ten krok w zwykłym dniu poza nimi.',
+  flexible: 'Nie przywiązuj kroku do sztywnej godziny. Podepnij go pod moment dnia, który faktycznie się powtarza.',
+  rest: 'Nie zabieraj na tę próbę czasu na odpoczynek. Jeśli się z nim zderza, wybierz inną okazję.',
+  none: 'Wybierz najbliższą okazję, przy której da się to sprawdzić.',
 };
 const IMPACT_METRIC: Record<string, string> = {
-  training: 'Sprawdź też, czy odbył się zaplanowany trening lub ruch.', food: 'Sprawdź też, czy jadłeś tak, jak zamierzałeś.',
-  work: 'Sprawdź też, czy udało się skończyć pracę o planowanej porze.', home: 'Zauważ też, ile siły zostało Ci dla bliskich.',
-  rest: 'Zobacz też, czy został czas na odpoczynek.', none: 'Nie zauważyłeś wyraźnego kosztu. Sam oceń, czy chcesz coś zmieniać.',
+  training: 'Po próbie zobacz też, czy odbył się zaplanowany trening albo ruch.', food: 'Zobacz też, czy wieczorne jedzenie wyglądało tak, jak chciałeś.',
+  work: 'Sprawdź też, czy praca skończyła się bliżej planowanej pory.', home: 'Zauważ też, ile siły i cierpliwości zostało Ci dla bliskich.',
+  rest: 'Sprawdź też, czy został Ci czas na odpoczynek.', none: 'Nie zauważyłeś wyraźnego kosztu. Jeśli nic Ci to nie zabiera, nie ma sensu na siłę szukać problemu.',
 };
 const ATTEMPT_LESSON: Record<string, string> = {
-  works: 'Skoro to działa, zapisz, co pomaga Ci to utrzymać.',
-  schedule: 'Poprzednio przeszkodziła zmiana planów. Sprawdź też, co zrobisz z tym krokiem, jeśli dzień się przesunie.',
-  too_much: 'Poprzednio było za dużo do pilnowania. Tym razem zostań przy jednej zmianie.',
-  no_change: 'Nie widziałeś efektu. Do oceny przyda się czas trwania próby i zapis tego, co robiłeś.',
-  no_feedback: 'Poprzednio brakowało Ci pomysłu, co poprawić. Po próbie zajrzyj do dalszych kroków pod wynikiem.',
-  unknown: 'Tym razem zapisz, co pomogło zrobić ten krok albo go zatrzymało.',
+  works: 'Skoro działa, nie dokładaj kolejnej zmiany. Zapisz, co pozwala Ci ten sposób utrzymać.',
+  schedule: 'Poprzednia próba rozsypała się po zmianie planu. Sprawdź, co zrobisz z tym krokiem, gdy dzień znowu się przesunie.',
+  too_much: 'Ostatnio było za dużo do pilnowania. Tym razem testujesz jedną rzecz.',
+  no_change: 'Robiłeś to bez widocznego efektu. Do oceny brakuje jeszcze czasu trwania próby i zapisu tego, co robiłeś.',
+  no_feedback: 'Gdy coś nie szło, nie wiedziałeś, co poprawić. Po tej próbie wróć do wyniku i oceń dokładnie ten jeden krok.',
+  unknown: 'Tym razem zapisz, co pomogło zrobić krok albo co go zatrzymało.',
 };
 const WHY_COPY: Record<string, string> = {
-  repeat: 'Sprawdź ten krok, gdy znów pojawi się sytuacja, przez którą tu wróciłeś.',
+  repeat: 'Sprawdź krok przy następnej sytuacji, która wygląda podobnie.',
   change: 'Wybierz okazję pasującą do obecnych godzin pracy i obowiązków.',
-  event: 'Masz konkretny termin. Ta próba pokaże, co możesz wykonać. Nie przewiduje efektu na ten dzień.',
-  ready: 'Wybierz pierwszą okazję w najbliższych trzech dniach.',
-  curious: 'Możesz zachować wynik i wrócić, gdy zechcesz to sprawdzić.',
+  event: 'Masz konkretny termin. Ta próba pokaże, co da się wykonać do tego czasu, ale nie przewidzi efektu.',
+  ready: 'Wybierz pierwszą pasującą okazję w najbliższych 3 dniach.',
+  curious: 'Zachowaj wynik. Możesz wrócić, kiedy pojawi się sytuacja, którą chcesz sprawdzić.',
 };
 const PREVIOUS_ADAPTATION: Record<string, string> = {
   plan: 'Wykorzystaj znane elementy poprzedniego planu, żeby móc porównać wykonanie.',
@@ -180,9 +180,9 @@ export function buildDecisionResult(input: Answers): DecisionResult {
   let insight: Insight = candidate || getObservation(a);
   if (maintain) insight = getMaintenance(a);
   else if (review) insight = {
-    title: 'Robiłeś to, ale nie widziałeś efektu.',
-    explanation: `Wskazałeś: „${answerLabel(a, 'previous')}”. Do oceny braku efektu potrzebny jest jeszcze czas trwania próby i sposób porównania wyników.`,
-    trap: 'Przed kolejną zmianą warto wiedzieć, co dokładnie sprawdziłeś.',
+    title: 'Próbowałeś, ale nie zobaczyłeś różnicy.',
+    explanation: `Wybrałeś: „${answerLabel(a, 'previous')}”. Zanim zmienisz kolejną rzecz, trzeba wiedzieć, jak długo trwała próba i po czym oceniałeś efekt.`,
+    trap: 'Bez tego łatwo odrzucić sposób, którego nie da się jeszcze uczciwie ocenić.',
     action: `Zapisz, jak długo próbowałeś, co robiłeś i po czym oceniałeś efekt. Uwzględnij też opisaną sytuację: „${answerLabel(a, 'scene')}”.`,
     observe: 'Czy oceniałeś ten sam efekt, w porównywalnych warunkach? Czy plan dało się wykonać także w dniu z opisanej sceny?',
     yes: 'Jeśli masz porównywalny zapis, można oceniać samą próbę i dobrać korektę do celu.',
@@ -207,21 +207,21 @@ export function buildDecisionResult(input: Answers): DecisionResult {
   };
 }
 
-export const FIT_OPTIONS = options([['self', 'Na razie sprawdzę to sam.'], ['coaching', 'Chcę pomocy w tym, co robić i co później poprawiać.'], ['plan', 'Szukam głównie gotowego planu.'], ['medical', 'Szukam diagnozy lub leczenia dolegliwości.']]);
-export const OBJECTION_OPTIONS = options([['process', 'Jak konkretnie wygląda prowadzenie?'], ['repeat', 'Boję się, że zapłacę i znowu odpuszczę.'], ['time', 'Nie wiem, czy znajdę na to czas.'], ['price', 'Ile kosztuje całość?'], ['none', 'Chcę już zobaczyć szczegóły.']]);
+export const FIT_OPTIONS = options([['self', 'Na razie sprawdzę ten krok sam.'], ['coaching', 'Chcę pomocy w wyborze kolejnych kroków i korekt po drodze.'], ['plan', 'Szukam głównie gotowej rozpiski.'], ['medical', 'Szukam diagnozy lub leczenia dolegliwości.']]);
+export const OBJECTION_OPTIONS = options([['process', 'Jak wygląda praca tydzień po tygodniu?'], ['repeat', 'Boję się, że zapłacę i znowu odpuszczę.'], ['time', 'Nie wiem, ile czasu wymaga to ode mnie.'], ['price', 'Chcę znać pełny koszt.'], ['none', 'Chcę zobaczyć szczegóły.']]);
 export function invitation(fit: string, objection: string, why: string, reaction = ''): { text: string; cta: string; showNabor: boolean } {
   if (fit === 'medical') return { text: 'Diagnozę i leczenie dolegliwości omów z lekarzem. Ten quiz pomaga przyjrzeć się codziennym sytuacjom, ale nie zastępuje konsultacji.', cta: '', showNabor: false };
-  if (['off', 'obvious'].includes(reaction) && (!fit || fit === 'self')) return { text: 'Najpierw wróć do odpowiedzi, która wymaga doprecyzowania. Jeśli chcesz przyjrzeć się temu ze mną, możesz sprawdzić, jak wygląda prowadzenie.', cta: fit === 'self' ? '' : 'Zobacz prowadzenie', showNabor: fit !== 'self' };
-  if (fit === 'self') return { text: 'Zachowaj wynik. Możesz tu wrócić po próbie i zapisać, co wyszło.', cta: '', showNabor: false };
-  if (fit === 'plan') return { text: 'Plan jest częścią mojego prowadzenia. Wracamy do tego, co zrobiłeś i co wymaga zmiany. Sprawdź zakres, jeśli zależy Ci głównie na samej rozpisce.', cta: 'Sprawdź zakres', showNabor: true };
+  if (['off', 'obvious'].includes(reaction) && (!fit || fit === 'self')) return { text: 'Najpierw doprecyzuj wynik. Nie ma sensu iść dalej na podstawie opisu, który nie pasuje do Twojej sytuacji.', cta: '', showNabor: false };
+  if (fit === 'self') return { text: 'Zachowaj wynik i sprawdź krok. Po próbie wróć tu z tym, co faktycznie się wydarzyło.', cta: '', showNabor: false };
+  if (fit === 'plan') return { text: 'Jeśli szukasz samej rozpiski, najpierw zobacz zakres. Prowadzenie obejmuje plan oraz pracę na tym, co właśnie wyszło z Twojego tygodnia.', cta: 'Sprawdź zakres', showNabor: true };
   const copy: Record<string, string> = {
-    process: 'Zobacz, co robisz Ty, co sprawdzam ja i jak ustalamy dalsze kroki.',
-    repeat: 'Sprawdź, jak wygląda prowadzenie również wtedy, gdy coś Ci nie wyjdzie. Warto wiedzieć to przed decyzją.',
-    time: 'Przyjrzyj się temu, co trzeba robić po Twojej stronie. Oceń, czy zmieści się to w Twoim tygodniu.',
-    price: 'Sprawdź pełny koszt i zakres prowadzenia przed zgłoszeniem.',
-    none: 'Zobacz, jak pracujemy i co obejmuje prowadzenie.',
+    process: 'Na stronie zobaczysz, co ustalamy na starcie, jak wygląda kontakt i co robimy, kiedy tydzień idzie inaczej niż plan.',
+    repeat: 'Sprawdź przede wszystkim, co dzieje się po słabszym tygodniu. To powie Ci więcej niż opis tygodnia, w którym wszystko poszło zgodnie z planem.',
+    time: 'Zobacz, co jest po Twojej stronie w zwykłym tygodniu i sam oceń, czy ten zakres Ci pasuje.',
+    price: 'Pełny koszt i zakres są na stronie przed zgłoszeniem.',
+    none: 'Zobacz, jak wygląda prowadzenie od pierwszego tygodnia po korekty po drodze.',
   };
-  return { text: copy[objection] || (why === 'curious' ? 'Możesz sprawdzić ten krok sam. Jeśli chcesz zobaczyć, jak pracuję z podopiecznymi, tutaj znajdziesz szczegóły.' : 'W prowadzeniu wracamy do tego, co wyszło z próby i wybieramy dalszy krok. Jeśli chcesz tak pracować ze mną, zobacz szczegóły.'), cta: objection === 'price' ? 'Sprawdź zakres i koszt' : 'Zobacz prowadzenie', showNabor: true };
+  return { text: copy[objection] || (why === 'curious' ? 'Możesz najpierw sprawdzić ten krok sam. Jeśli chcesz zobaczyć, jak wygląda praca ze mną, szczegóły są tutaj.' : 'To, co zrobiłeś tutaj raz, w prowadzeniu robimy dalej po każdej próbie: patrzymy, co zadziałało, gdzie tydzień się rozjechał i wybieramy następną korektę.'), cta: objection === 'price' ? 'Sprawdź zakres i koszt' : 'Zobacz prowadzenie', showNabor: true };
 }
 export function resultAsText(a: Answers): string {
   const r = buildDecisionResult(a);
