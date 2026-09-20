@@ -6,7 +6,7 @@ import { Atmosphere } from '../diagnoza/atmosphere';
 import { track, registerContext } from '../lib/analytics';
 import {
   DECISION_VERSION, DECISION_STORAGE_KEY, NABOR_URL, FIT_OPTIONS, OBJECTION_OPTIONS,
-  answerLabel, buildDecisionResult, cleanAnswers, getQuestions, invitation, isComplete,
+  buildDecisionResult, cleanAnswers, getQuestions, invitation, isComplete,
   resultAsText, updateAnswer, type Answers,
 } from '../lib/decision-diagnostic';
 import { INSIGHT_REACTIONS, reactionNext, contentSignal } from '../lib/decision-insights';
@@ -25,9 +25,9 @@ function event(name: string, props: Record<string, unknown> = {}) {
 }
 const CHECKIN: Record<string, string> = {
   helped: 'Zauważyłeś poprawę po wykonaniu zadania. Powtórz je przy podobnej okazji. Jeden lepszy dzień jeszcze nie rozstrzyga, co zadziałało.',
-  unchanged: 'Wykonałeś zadanie i nie widzisz różnicy. To powód do ponownego sprawdzenia hipotezy. Zachowaj zapis sytuacji oraz tego, co faktycznie zrobiłeś.',
-  blocked: 'Zadanie nie weszło. Zapisz, co je zatrzymało. Następna korekta powinna uwzględnić tę przeszkodę i wymagać mniej przygotowania.',
-  no_chance: 'Podobna sytuacja jeszcze się nie wydarzyła. Nie ma wyniku do ocenienia. Wróć po najbliższej realnej okazji.',
+  unchanged: 'Zachowaj zapis tego, co zrobiłeś. Brak różnicy też pomaga ocenić, czy ten trop pasuje.',
+  blocked: 'Zapisz, co Ci przeszkodziło. Od tej rzeczy trzeba zacząć przy następnej próbie.',
+  no_chance: 'Wróć, kiedy będzie okazja to sprawdzić.',
 };
 export default function DecisionDiagnostic() {
   const [phase, setPhase] = useState<Phase>('intro');
@@ -113,11 +113,11 @@ export default function DecisionDiagnostic() {
   const questions = getQuestions(answers);
   const current = questions[Math.min(index, questions.length - 1)];
   const result = buildDecisionResult(answers);
-  const baseInvite = invitation(fit, objection, String(answers.why || ''), reaction);
-  const invite = ['off', 'obvious'].includes(reaction) && (!fit || fit === 'self') ? { ...baseInvite, text: 'Nie musisz wykonywać odrzuconego zadania. Możesz zachować zapis do dalszego sprawdzenia. Jeśli chcesz zobaczyć, jak pracuję nad takimi sytuacjami z podopiecznymi, zapraszam do opisu prowadzenia.' } : baseInvite;
+  const invite = invitation(fit, objection, String(answers.why || ''), reaction);
   const refinements = refinementOptions(answers, result, reaction);
   const refined = selectedRefinement(answers, result, reaction, refinement);
-  const canAccept = !['off', 'obvious'].includes(reaction) && (!refined || refined.canTry);
+  const rejected = ['off', 'obvious'].includes(reaction);
+  const canAccept = !rejected && (!refined || refined.canTry);
   const refinementText = refinementAsText(answers, result, reaction, refinement);
   function chooseRefinement(id: string) {
     setRefinement(id); setAccepted(false); setCheckin(''); setSent(false); setStatus('');
@@ -189,7 +189,7 @@ export default function DecisionDiagnostic() {
       const response = await fetch('/api/decision-lead', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ version: DECISION_VERSION, answers, fit, objection, reaction, refinement, instagram: handle, consent: true }) });
       const data = await response.json();
       if (!response.ok || !data.ok) throw new Error('delivery_failed');
-      setStatus('Wynik wysłany. Możesz teraz spokojnie zobaczyć szczegóły prowadzenia.');
+      setStatus('Wynik wysłany. Mam go razem z Twoim kontaktem.');
       setSent(true);
       event('contact_provided');
     } catch { setStatus('Nie udało się wysłać wyniku. Możesz go pobrać i przejść na stronę prowadzenia.'); event('contact_delivery_failed'); }
@@ -210,33 +210,27 @@ export default function DecisionDiagnostic() {
     setAnswers({}); setIndex(0); setFit(''); setObjection(''); setAccepted(false); setCheckin(''); setStatus(''); setSent(false); setConsent(false); setInstagram(''); setPhase('questions');
     event('diag_start');
   }
-  const section = phase === 'intro' ? 'Twój tydzień' : phase === 'questions' ? 'Jedna odpowiedź, jeden krok' : 'Twój pierwszy krok';
+  const section = phase === 'intro' ? 'Twój tydzień' : phase === 'questions' ? 'Twój tydzień' : 'Twój pierwszy krok';
   return <main className={`dd dd-phase-${phase}`}>
     <Atmosphere />
     <header className="dd-header"><Link href="/" aria-label="Diagnostyka 168, początek">168<span>DIAGNOSTYKA</span></Link><nav aria-label="Na skróty"><span>{section}</span>{phase !== 'result' && <a href={NABOR_URL} onClick={() => event('nabor_bypass_clicked', { placement: 'header' })}>Zobacz prowadzenie <span aria-hidden="true">↗</span></a>}</nav></header>
     {!loaded ? <div className="dd-shell" role="status">Otwieram diagnostykę…</div> : fastFit ? <section className="dd-shell dd-intro">
       <p className="dd-eyebrow">Prowadzenie 1:1</p>
-      <h1>Chcesz zobaczyć, jak pracuję? Zapraszam do szczegółów.</h1>
-      <p className="dd-lead">Na stronie znajdziesz przebieg prowadzenia, zakresy i koszt. Możesz od razu sprawdzić, czy to pasuje do Twojej sytuacji.</p>
+      <h1>Zobacz, jak wygląda prowadzenie.</h1>
+      <p className="dd-lead">Sprawdź zakres i koszt, zanim zdecydujesz, czy chcesz się zgłosić.</p>
       <a className="dd-primary" href={NABOR_URL} onClick={() => event('fast_fit_to_nabor')}>Zobacz prowadzenie <span>↗</span></a>
       <button className="dd-link" onClick={() => { setFastFit(false); setPhase('intro'); registerContext({ mode: 'diagnostic' }); event('fast_fit_to_diagnostic'); }}>Chcę najpierw sprawdzić swój tydzień</button>
     </section> : phase === 'intro' ? <section className="dd-shell dd-intro">
-      <p className="dd-eyebrow">DIAGNOSTYKA 168 · KILKA SCEN Z TWOJEGO TYGODNIA</p>
-      <h1>Co ustawia Twój tydzień, zanim zaczniesz myśleć o diecie i treningu?</h1>
-      <p className="dd-lead">Wieczór przy telefonie. Trening przełożony na jutro. Jedzenie po całym dniu pracy. Przyjrzymy się jednej Twojej sytuacji i temu, co działo się wcześniej. Możesz wejść z samą ciekawością.</p>
-      <button className="dd-primary" onClick={() => { setPhase('questions'); event('diag_start'); }}>Sprawdzam, co z czego wynika <span>→</span></button>
-      <p className="dd-micro">Bezpłatnie · wynik od razu · kontakt opcjonalny</p>
-      <aside className="dd-preview" aria-label="Przykład różnicy między podobnymi sytuacjami">
-        <span className="dd-eyebrow">TA SAMA SCENA. INNY PUNKT DO SPRAWDZENIA.</span>
-        <p className="dd-preview-title">„Znowu siedziałem z telefonem do późna”.</p>
-        <div className="dd-forks">
-          <p><span>To była pierwsza chwila dla siebie.</span>Sprawdzamy, gdzie wcześniej zmieścić czas bez obowiązków.</p>
-          <p><span>Nie zauważyłeś, kiedy minęła godzina.</span>Sprawdzamy moment kończenia oglądania.</p>
-          <p><span>Nie mogłeś zasnąć. Dopiero wtedy wziąłeś telefon.</span>Najpierw przyglądamy się temu, co było przed ekranem.</p>
-        </div>
-        <span className="dd-preview-foot">A jak było u Ciebie? Od tego zależy następny krok.</span>
-      </aside>
-      <p className="dd-privacy">Wynik powstaje automatycznie. Odpowiedzi zostają w tej przeglądarce, dopóki sam nie wybierzesz wysłania wyniku albo udostępnienia kategorii odpowiedzi do tematów contentu.</p>
+      <p className="dd-eyebrow">DIAGNOSTYKA 168 · TWÓJ TYDZIEŃ</p>
+      <h1>Co z Twojego dnia odbija się później na formie?</h1>
+      <p className="dd-lead">Wybierz sytuację z ostatniego tygodnia. Sprawdzimy, co ją poprzedziło i od czego warto zacząć u Ciebie.</p>
+      <button className="dd-primary" onClick={() => { setPhase('questions'); event('diag_start'); }}>Sprawdzam swój tydzień <span>→</span></button>
+      <p className="dd-micro">Od 6 do 11 odpowiedzi · bezpłatnie · wynik bez podawania kontaktu</p>
+      <details className="dd-preview dd-example">
+        <summary>Dlaczego pytam o to, co było wcześniej?</summary>
+        <p>Przykład: siedzisz z telefonem do późna. Możesz stracić poczucie czasu albo sięgnąć po niego, bo już wcześniej nie mogłeś zasnąć. W każdej z tych sytuacji warto sprawdzić coś innego.</p>
+      </details>
+      <p className="dd-privacy">Wynik powstaje automatycznie. Odpowiedzi zostają w tej przeglądarce. Ty decydujesz, czy je później udostępnisz.</p>
     </section> : phase === 'questions' ? <section className="dd-shell dd-question" aria-label="Pytania diagnostyki">
       {!repairing && <ol className="dd-journey" aria-label="Etapy diagnostyki">{JOURNEY_STAGES.map((name, n) => <li key={name} aria-current={n === stage ? 'step' : undefined} data-done={n < stage}><span aria-hidden="true">{n < stage ? '✓' : n + 1}</span>{name}</li>)}</ol>}
       <div className="dd-progress-row"><button disabled={selectedChoice !== null} className="dd-back" onClick={() => index === 0 ? setPhase('intro') : setIndex(index - 1)}>← Wstecz</button><span>{repairing ? 'Doprecyzowanie wyniku' : <>Pytanie {index + 1} {routeResolved ? `z ${questions.length}` : '· do 11 odpowiedzi'}</>}</span></div>
@@ -244,89 +238,71 @@ export default function DecisionDiagnostic() {
       <div key={current.id} className="dd-question-enter">
       {context && <aside className="dd-question-context"><span>{context.label}</span><p>„{context.quote}”</p></aside>}
       <h1 ref={heading} tabIndex={-1}>{current.title}</h1>
-      <p className="dd-hint">{current.hint}</p>
+      {current.hint && <p className="dd-hint">{current.hint}</p>}
       {!repairing && cue && <p className="dd-journey-cue">{cue}</p>}
       <div className={`dd-options ${current.type === 'number' || current.id === 'frequency' ? 'dd-numbers' : ''}`}>
         {(current.type === 'number' ? Array.from({ length: (current.max ?? 7) + 1 }, (_, n) => ({ id: String(n), label: String(n) })) : current.options || []).map(o => <button key={o.id} disabled={selectedChoice !== null} data-selected={selectedChoice === o.id} aria-pressed={selectedChoice === o.id || (selectedChoice === null && String(answers[current.id]) === o.id)} onClick={e => { if (e.detail < 2) choose(current.type === 'number' ? Number(o.id) : o.id); }}>{o.label}<span aria-hidden="true">{selectedChoice === o.id ? '✓' : '→'}</span></button>)}
       </div>
-      <p className="dd-micro" role="status">{selectedChoice !== null ? 'Wybrano ✓' : 'Kliknięcie zapisuje odpowiedź. Możesz cofnąć się i ją zmienić.'}</p>
+      <p className="dd-micro" role="status">{selectedChoice !== null ? 'Wybrano ✓' : 'Możesz wrócić i zmienić odpowiedź.'}</p>
       </div>
       {!storageAvailable && <p className="dd-notice">Ta przeglądarka nie pozwala zapisać postępu. Przed zamknięciem pobierz wynik.</p>}
     </section> : <article className="dd-shell dd-result">
       <div className="dd-result-heading">
         <div className="dd-result-meta"><p className="dd-eyebrow">TWÓJ WYNIK · {answeredCount} ODPOWIEDZI</p><span className="dd-result-status">{resultStatus(result)}</span></div>
-        <h1 ref={heading} tabIndex={-1}>{result.title}</h1>
+        <h1 ref={heading} tabIndex={-1}>{reaction === 'off' ? 'Wróćmy do tego, jak jest u Ciebie.' : result.title}</h1>
+        <p className="dd-result-lead">{reaction === 'off' ? 'Zaznaczyłeś, że opis nie pasuje. Niżej możesz poprawić konkretną odpowiedź.' : result.hypothesis}</p>
       </div>
-      <div className="dd-result-grid">
-        <section className="dd-reading" aria-label="Co wynika z Twoich odpowiedzi">
-          <p className="dd-eyebrow">Z TWOICH ODPOWIEDZI</p>
-          <div className="dd-receipts">
-            {result.evidence.filter(e => ['scene', 'before', 'context', 'anchor'].includes(e.id)).map(e => <div key={e.id} className={e.id === 'context' || e.id === 'anchor' ? 'dd-receipt-key' : ''}><span>{e.id === 'scene' ? 'Twoja scena' : e.id === 'context' ? 'Szczegół, który zmienia następny krok' : e.id === 'anchor' ? 'Co pomogło' : 'Co działo się przy tej sytuacji'}</span><p>„{e.value}”</p></div>)}
-          </div>
-          <div className="dd-period">
-            {answers.scene === 'training' && typeof answers.planned === 'number' && <p><span>Ostatnie siedem dni</span>{answers.planned === 0 ? 'Nie zaplanowałeś treningu na ten tydzień.' : `Zaplanowane: ${answers.planned}. Niewykonane: ${answers.missed}.`}</p>}
-            {answers.frequency !== undefined && <p><span>{answers.scene === 'weekend' ? 'Ostatnie cztery weekendy' : 'Ostatnie siedem dni'}</span>{answers.frequency === 'unknown' ? 'Nie pamiętasz, ile razy było podobnie.' : `Podobna sytuacja: ${answers.frequency} z ${answers.scene === 'weekend' ? 4 : 7}.`}</p>}
-          </div>
-          <aside className="dd-insight"><p className="dd-eyebrow">TU ŁATWO PÓJŚĆ NA SKRÓTY</p><p>{result.insight.trap}</p></aside>
-          <details className="dd-details dd-explanation"><summary>Co wiemy, a co dopiero sprawdzamy?</summary><p>{result.hypothesis}</p></details>
-        </section>
-        <div className="dd-action-column">
-          <section className="dd-action" aria-label="Pierwszy krok">
-            <p className="dd-eyebrow">{result.certainty === 'maintain' ? 'DO ZACHOWANIA' : 'JEDNA PRÓBA DLA CIEBIE'}</p><h2>{refined ? refined.title : actionHeading(result)}</h2>
-            <p className="dd-task" aria-live="polite">{refined ? refined.action : result.experiment.action}</p>
-            {refined && <p className="dd-micro">Po wyniku wybrałeś: „{refined.label}”. Pierwotne odpowiedzi pozostają bez zmian.</p>}
-            <div className="dd-action-detail"><span>{refined && !refined.canTry ? 'Do sprawdzenia' : 'Po próbie sprawdź'}</span><p>{refined ? refined.observe : result.experiment.observe}</p></div>
-            <p className="dd-constraint">{refined ? `Chcesz zachować: ${answerLabel(answers, 'protect')}` : result.constraint}</p>
-            {answers.impact === 'none' && <p className="dd-notice">Nie wskazałeś wyraźnego kosztu. Możesz sprawdzić ten trop z ciekawości. Nie musisz niczego zmieniać.</p>}
-            {!refined && <details className="dd-outcomes"><summary>{answers.previous !== 'none' && answers.previous !== 'unknown' ? 'Uwzględnij poprzednią próbę i sprawdź dalszy krok' : 'Kiedy spróbować i co zrobić z wynikiem?'}</summary>
-              <h3>Kiedy</h3><p>{result.experiment.when}</p>
-              {answers.previous !== 'none' && answers.previous !== 'unknown' && <><h3>Po Twojej poprzedniej próbie</h3><p>{result.previous}</p></>}
-              <h3>Co dalej</h3><p>{result.insight.yes}</p><p>{result.insight.no}</p>
-            </details>}
-            {!canAccept ? <p className="dd-notice">Pierwotne zadanie pozostaje niezaakceptowane. Możesz pobrać zapis wraz z doprecyzowaniem.</p> : <button className="dd-primary" onClick={() => { setAccepted(true); event('experiment_accepted'); }}>{accepted ? 'Wracam po tej próbie ✓' : 'Sprawdzę ten krok'}<span>→</span></button>}
-            {accepted && <p role="status" className="dd-micro">{storageAvailable ? 'Wynik czeka w tej przeglądarce. Możesz go też pobrać.' : 'Pobierz wynik, żeby mieć go po zamknięciu strony.'}</p>}
-          </section>
-          <button className="dd-secondary dd-save" onClick={save}>Pobierz cały wynik ↓</button>
-        </div>
-      </div>
-      <details className="dd-details"><summary>Dlaczego taki krok i z czego wynika?</summary>
-        <h3>Poprzednia próba</h3><p>{answerLabel(answers, 'previous')}</p><p>{result.previous}</p>
-        <h3>Po czym ocenić tę próbę</h3><p>{result.goalMetric}</p>{result.impact && <p>{result.impact}</p>}
-        <h3>Dlaczego teraz</h3><p>{result.timing}</p>
-        <h3>Wszystkie Twoje odpowiedzi</h3><dl>{result.evidence.map(e => <div key={e.id}><dt>{e.label}</dt><dd>{e.value}</dd></div>)}</dl>
+      {(!rejected || refined) && <section className="dd-action" id="twoj-krok" aria-label="Pierwszy krok">
+        <p className="dd-eyebrow">{refined && !refined.canTry ? 'WRÓĆ DO POPRZEDNIEJ PRÓBY' : result.certainty === 'maintain' ? 'CO WARTO ZACHOWAĆ' : 'SPRAWDŹ PRZY NASTĘPNEJ OKAZJI'}</p>
+        <h2>{refined ? refined.title : actionHeading(result)}</h2>
+        <p className="dd-task" aria-live="polite">{refined ? refined.action : result.experiment.action}</p>
+        <div className="dd-action-detail"><span>{refined && !refined.canTry ? 'Do sprawdzenia' : 'Po czym poznasz'}</span><p>{refined ? refined.observe : result.experiment.observe}</p></div>
+        <details className="dd-outcomes"><summary>Jak to dopasować i co zrobić potem?</summary>
+          <p>{refined ? `Wybrałeś: „${refined.label}”` : result.constraint}</p>
+          <p>{result.timing}</p>
+          {!refined && <><p>{result.experiment.when}</p><h3>Po próbie</h3><p>{result.insight.yes}</p><p>{result.insight.no}</p></>}
+          {answers.previous !== 'none' && answers.previous !== 'unknown' && <><h3>Twoja poprzednia próba</h3><p>{result.previous}</p></>}
+          <h3>To, na czym Ci zależy</h3><p>{result.goalMetric}</p>{result.impact && <p>{result.impact}</p>}
+        </details>
+        {canAccept && <button className="dd-primary" onClick={() => { setAccepted(true); event('experiment_accepted'); }}>{accepted ? 'Zapisane. Wróć po próbie ✓' : 'Sprawdzę to'}<span>→</span></button>}
+        {accepted && canAccept && <p role="status" className="dd-micro">{storageAvailable ? 'Wynik zostaje w tej przeglądarce.' : 'Pobierz wynik przed zamknięciem strony.'}</p>}
+      </section>}
+      <div className="dd-result-tools"><button className="dd-link" onClick={save}>Pobierz wynik ↓</button><details className="dd-details dd-evidence"><summary>Skąd ten wniosek?</summary>
+        <p>{result.insight.trap}</p>
+        {answers.scene === 'training' && typeof answers.planned === 'number' && <p>Ostatnie siedem dni: {answers.planned} zaplanowanych treningów{typeof answers.missed === 'number' ? `, ${answers.missed} niewykonanych` : ''}.</p>}
+        {answers.frequency !== undefined && <p>{answers.frequency === 'unknown' ? 'Nie pamiętasz, jak często było podobnie.' : `Podobna sytuacja: ${answers.frequency} z ${answers.scene === 'weekend' ? 'ostatnich 4 weekendów' : 'ostatnich 7 dni'}.`}</p>}
+        <dl>{result.evidence.map(e => <div key={e.id}><dt>{e.label}</dt><dd>{e.value}</dd></div>)}</dl>
         <button className="dd-link" onClick={() => { setIndex(0); setPhase('questions'); }}>Popraw odpowiedzi</button>
-      </details>
-      {accepted && canAccept && <details className="dd-details"><summary>Wracasz po próbie? Zapisz, co wyszło.</summary>
-        <p>Oceń wykonanie przy podobnej sytuacji. Po kilku dniach nie rozstrzygamy jeszcze efektu na sylwetkę ani przyczyny dolegliwości.</p>
-        <div className="dd-options">{[['helped', 'Zrobiłem zadanie i zauważyłem poprawę.'], ['unchanged', 'Zrobiłem zadanie. Nie widzę różnicy.'], ['blocked', 'Nie udało mi się wykonać zadania.'], ['no_chance', 'Nie było jeszcze podobnej okazji.']].map(([id, label]) => <button key={id} aria-pressed={checkin === id} onClick={() => { setCheckin(id); event('experiment_reviewed'); }}>{label}</button>)}</div>
-        {checkin && <p className="dd-notice" role="status">{refined ? CHECKIN[checkin] : checkin === 'helped' ? result.insight.yes : checkin === 'unchanged' ? result.insight.no : CHECKIN[checkin]}</p>}
-      </details>}
+      </details></div>
       <section className="dd-feedback" aria-label="Dopasowanie wyniku">
-        <h2>Co z tego było dla Ciebie nowe?</h2>
-        <p>Możesz też powiedzieć, że wynik nie trafił.</p>
+        <h2>Jak to pasuje do Ciebie?</h2>
         <div className="dd-options">{INSIGHT_REACTIONS.map(o => <button key={o.id} aria-pressed={reaction === o.id} onClick={() => { setReaction(o.id); setRefinement(''); setAccepted(false); setCheckin(''); setSent(false); setStatus(''); event('result_reaction_selected'); }}>{o.label}</button>)}</div>
         {reaction && reaction !== 'obvious' && <p className="dd-notice" role="status">{reactionNext(reaction)}</p>}
-        {reaction === 'off' && <details className="dd-details"><summary>Którą część opisu chcesz sprawdzić?</summary><div className="dd-options">{questions.filter(q => ['scene', 'before', 'context', 'previous'].includes(q.id)).map(q => <button key={q.id} onClick={() => { setRepairing(true); setIndex(questions.findIndex(item => item.id === q.id)); setPhase('questions'); }}>{q.title}<span>→</span></button>)}</div><p>Wrócisz do wybranego pytania. Potem zapytam tylko o brakujące szczegóły, od których zależy nowy wynik.</p></details>}
+        {reaction === 'off' && <details open className="dd-details"><summary>Co w opisie się nie zgadza?</summary><div className="dd-options">{questions.filter(q => ['scene', 'before', 'context', 'previous'].includes(q.id)).map(q => <button key={q.id} onClick={() => { setRepairing(true); setIndex(questions.findIndex(item => item.id === q.id)); setPhase('questions'); }}>{q.title}<span>→</span></button>)}</div><p>Po zmianie wrócisz do wyniku. Dopytam tylko o brakujące szczegóły.</p></details>}
       </section>
-      {refinements.length > 0 && <section className="dd-feedback" aria-label="Doprecyzowanie kroku">
+      {refinements.length > 0 && <section className="dd-feedback dd-refinement" aria-label="Doprecyzowanie kroku">
         <details open={reaction === 'obvious' || !!refined}>
-          <summary>{reaction === 'obvious' ? 'Skoro już próbowałeś — co z tego wyszło?' : 'Czy ten krok zmieści się w Twoim następnym dniu?'}</summary>
-          <p>{reaction === 'obvious' ? 'Chodzi o zadanie z tego wyniku. Nie musisz zmieniać wcześniejszych odpowiedzi.' : 'Opcjonalnie: wybierz, co może zatrzymać wykonanie. Od tego zależy dopasowanie kroku.'}</p>
+          <summary>{reaction === 'obvious' ? 'Co wyszło, kiedy tego próbowałeś?' : 'Co może Ci przeszkodzić w tej próbie?'}</summary>
           <div className="dd-options">{refinements.map(o => <button key={o.id} aria-pressed={refinement === o.id} onClick={() => chooseRefinement(o.id)}>{o.label}</button>)}</div>
-          {refined && <div className="dd-notice" role="status"><strong>{refined.title}</strong><p>{refined.action}</p><p>{refined.observe}</p><p>Ten zapis jest też na karcie kroku powyżej i w pobieranym wyniku.</p></div>}
+          {refined && <p className="dd-notice" role="status">Zmieniłem krok na podstawie tej odpowiedzi. <a href="#twoj-krok">Zobacz go ↑</a></p>}
         </details>
       </section>}
+      {accepted && canAccept && <details className="dd-details"><summary>Wracasz po próbie? Zapisz, co wyszło.</summary>
+        <p>Oceń tę sytuację. Na zmianę sylwetki potrzeba osobnego porównania.</p>
+        <div className="dd-options">{[['helped', 'Zrobiłem to i zauważyłem poprawę.'], ['unchanged', 'Zrobiłem to, ale bez różnicy.'], ['blocked', 'Nie udało mi się tego zrobić.'], ['no_chance', 'Jeszcze nie było okazji.']].map(([id, label]) => <button key={id} aria-pressed={checkin === id} onClick={() => { setCheckin(id); event('experiment_reviewed'); }}>{label}</button>)}</div>
+        {checkin && <p className="dd-notice" role="status">{refined ? CHECKIN[checkin] : checkin === 'helped' ? result.insight.yes : checkin === 'unchanged' ? result.insight.no : CHECKIN[checkin]}</p>}
+      </details>}
       <section ref={invitationSection} className="dd-invitation" aria-label="Zaproszenie do prowadzenia">
-        <p className="dd-eyebrow">DALEJ MOŻESZ DZIAŁAĆ SAM ALBO ZE MNĄ</p>
-        <h2>{fit === 'medical' ? 'Ta potrzeba wykracza poza prowadzenie.' : ['off', 'obvious'].includes(reaction) ? 'Chcesz przyjrzeć się tej sytuacji ze mną?' : 'Chcesz, żebym pomógł Ci sprawdzić, co z tego wyjdzie?'}</h2>
-        <details className="dd-details dd-fit"><summary>Sprawdź, czy takiej pomocy szukasz</summary>
-          <p>Czego teraz potrzebujesz?</p><div className="dd-options">{FIT_OPTIONS.map(o => <button key={o.id} aria-pressed={fit === o.id} onClick={() => { setFit(o.id); setObjection(''); setStatus(''); event('next_step_selected'); }}>{o.label}</button>)}</div>
-          {fit === 'coaching' && <><h3>Co chcesz wiedzieć, zanim rozważysz prowadzenie?</h3><div className="dd-options">{OBJECTION_OPTIONS.map(o => <button key={o.id} aria-pressed={objection === o.id} onClick={() => { setObjection(o.id); event('decision_question_answered'); }}>{o.label}</button>)}</div></>}
+        <p className="dd-eyebrow">CO DALEJ</p>
+        <h2>{fit === 'medical' ? 'Z tym zwróć się do lekarza.' : fit === 'self' ? 'Wróć z tym, co wyszło.' : ['off', 'obvious'].includes(reaction) ? 'Chcesz przyjrzeć się temu ze mną?' : 'Chcesz, żebym pomógł Ci to poukładać?'}</h2>
+        <details className="dd-details dd-fit"><summary>Wybierz, czego teraz potrzebujesz</summary>
+          <div className="dd-options">{FIT_OPTIONS.map(o => <button key={o.id} aria-pressed={fit === o.id} onClick={() => { setFit(o.id); setObjection(''); setStatus(''); event('next_step_selected'); }}>{o.label}</button>)}</div>
+          {fit === 'coaching' && <><h3>Co chcesz wiedzieć przed decyzją?</h3><div className="dd-options">{OBJECTION_OPTIONS.map(o => <button key={o.id} aria-pressed={objection === o.id} onClick={() => { setObjection(o.id); event('decision_question_answered'); }}>{o.label}</button>)}</div></>}
         </details>
         <p className="dd-invite-copy" aria-live="polite">{invite.text}</p>
-        {invite.showNabor && <><a className="dd-primary" href={NABOR_URL} onClick={() => event('nabor_clicked', { placement: 'result' })}>{invite.cta} <span>↗</span></a><p className="dd-micro">Przebieg prowadzenia, zakresy i koszt. Sprawdź spokojnie.</p></>}
-        {fit === 'coaching' && <details className="dd-details"><summary>Chcę wysłać Michałowi ten wynik</summary>
-          <p>Wyślesz swoje odpowiedzi, ocenę wyniku, wybrane doprecyzowanie i @Instagram do Michała, żeby mógł wrócić do Ciebie w sprawie prowadzenia. To opcjonalne.</p>
+        {invite.showNabor && <><a className="dd-primary" href={NABOR_URL} onClick={() => event('nabor_clicked', { placement: 'result' })}>{invite.cta} <span>↗</span></a><p className="dd-micro">Zakres, sposób pracy i koszt.</p></>}
+        {fit === 'coaching' && <details className="dd-details"><summary>Wyślij mi wynik do rozmowy o prowadzeniu</summary>
+          <p>Jeśli chcesz porozmawiać o prowadzeniu, możesz wysłać mi wynik razem ze swoim @Instagram.</p>
           <label className="dd-input-label" htmlFor="dd-ig">Twój Instagram</label><input id="dd-ig" value={instagram} autoComplete="off" placeholder="@twoj_nick" onChange={e => setInstagram(e.target.value)} maxLength={31} />
           <label className="dd-consent"><input type="checkbox" checked={consent} onChange={e => setConsent(e.target.checked)} /><span>Chcę wysłać Michałowi odpowiedzi z diagnostyki, ocenę wyniku i wybrane doprecyzowanie. Proszę o kontakt na Instagramie w sprawie prowadzenia.</span></label>
           <button className="dd-secondary" disabled={sending || sent || !consent || !/^[A-Za-z0-9._]{2,30}$/.test(instagram.trim().replace(/^@/, ''))} onClick={sendContact}>{sent ? 'Wynik wysłany ✓' : sending ? 'Wysyłam…' : 'Wyślij mój wynik'}</button>
@@ -334,13 +310,13 @@ export default function DecisionDiagnostic() {
         </details>}
       </section>
       <details className="dd-details dd-content"><summary>Pomóż mi wybrać kolejne tematy</summary>
-        <p>Które codzienne sytuacje warto rozłożyć na czynniki pierwsze w moich materiałach? Jeśli chcesz, przekaż kategorie swoich odpowiedzi i ocenę tego wyniku.</p>
+        <p>Twoje odpowiedzi mogą pomóc mi wybrać tematy kolejnych materiałów. Udostępnienie ich jest opcjonalne.</p>
         <p>Do analityki PostHog trafią: powód wejścia, wybrana scena, wcześniejszy moment, poprzednie próby, ograniczenie i koszt. Jeśli je wybierzesz, także potrzeba pomocy, obiekcja i ocena wyniku. Bez nicku, kontaktu, liczb i treści raportu. Kategorie mogą być powiązane z identyfikatorem tej przeglądarki.</p>
         <label className="dd-consent"><input type="checkbox" checked={contentConsent} disabled={shared} onChange={e => setContentConsent(e.target.checked)} /><span>Zgadzam się przekazać te kategorie Michałowi do planowania materiałów. Nie proszę w ten sposób o kontakt.</span></label>
-        <button className="dd-secondary" disabled={!contentConsent || shared} onClick={shareTopics}>{shared ? 'Dziękuję za pomoc w wyborze tematów ✓' : 'Przekaż kategorie do tematów'}</button>
+        <button className="dd-secondary" disabled={!contentConsent || shared} onClick={shareTopics}>{shared ? 'Dzięki, przekazane ✓' : 'Udostępnij odpowiedzi do wyboru tematów'}</button>
         {shareError && <p role="status">{shareError}</p>}
       </details>
-      <p className="dd-privacy">To automatyczne podsumowanie Twoich odpowiedzi. Hipotezy wymagają sprawdzenia. Dolegliwości zdrowotne omów z lekarzem.</p>
+      <p className="dd-privacy">To automatyczne podsumowanie odpowiedzi. Proponuje próbę do sprawdzenia. Dolegliwości zdrowotne omów z lekarzem.</p>
       <button className="dd-link" onClick={restart}>Zacznij od nowa</button>
     </article>}
     <footer className="dd-footer">Michał · Hantle i Talerz · Diagnostyka 168</footer>

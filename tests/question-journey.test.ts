@@ -56,5 +56,5 @@ test('countdown appears only when the caller knows the remaining route', () => {
   assert.equal(journeyCue('protect'), '');
   assert.doesNotMatch(journeyCue('context'), /Ostatnia|Zostały/);
   assert.match(journeyCue('protect', 1), /^Ostatnia odpowiedź/);
-  assert.match(journeyCue('protect', 2), /^Zostały dwie odpowiedzi/);
+  assert.match(journeyCue('protect', 2), /^Jeszcze dwie odpowiedzi/);
 });

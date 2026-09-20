@@ -15,9 +15,9 @@ test('contact is required only after explicit help/coaching intent', () => {
 });
 
 test('entry promises a bounded diagnostic task and an immediate optional-contact result', () => {
-  assert.match(page, /KILKA SCEN Z TWOJEGO TYGODNIA/);
-  assert.match(page, /Co ustawia Twój tydzień, zanim zaczniesz myśleć o diecie i treningu/);
-  assert.match(page, /wynik od razu · kontakt opcjonalny/);
+  assert.match(page, /Od 6 do 11 odpowiedzi/);
+  assert.match(page, /Co z Twojego dnia odbija się później na formie/);
+  assert.match(page, /wynik bez podawania kontaktu/);
   assert.doesNotMatch(page, /Twój sufit|Sprawdź mój poziom|michal-portrait/);
 });
 

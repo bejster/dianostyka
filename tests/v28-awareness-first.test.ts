@@ -22,15 +22,15 @@ test('release jest zawersjonowany 2.9.0', () => {
 
 test('entry sets an observable scope without an invented awareness gap', () => {
   assert.ok(coldEntry);
-  assert.match(coldEntry, /Sprawdzam, co z czego wynika/);
-  assert.match(coldEntry, /jednej Twojej sytuacji/);
+  assert.match(coldEntry, /Sprawdzam swój tydzień/);
+  assert.match(coldEntry, /Wybierz sytuację z ostatniego tygodnia/);
   assert.doesNotMatch(coldEntry, /hormon|testosteron|kortyzol|wellness|Twój sufit/i);
 });
 
 test('the entry does not require belief in a proprietary mechanism', () => {
   assert.ok(coldEntry);
   assert.doesNotMatch(coldEntry, /Pęknięci|Pęknięcia/i);
-  assert.match(coldEntry, /Od tego zależy następny krok/);
+  assert.match(coldEntry, /W każdej z tych sytuacji warto sprawdzić coś innego/);
 });
 
 test('weekend is demoted to Q1/Q2 but is still asked first in the flow', () => {
@@ -178,7 +178,7 @@ test('every commercial headline ends as a finished sentence', () => {
 
 test('no unselected symptoms are translated into reassuring medical claims', () => {
   assert.doesNotMatch(page, /driveReason|symptoms_chips|libido|testosteron|driveAxis/);
-  assert.match(page, /result.evidence.filter/);
+  assert.match(page, /result.evidence.map/);
   assert.match(page, /Dolegliwości zdrowotne omów z lekarzem/);
 });
 

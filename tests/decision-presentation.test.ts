@@ -8,7 +8,7 @@ const base: Answers = { why: 'curious', goal: 'sleep', scene: 'sleep', previous:
 test('visually similar screen scenes retain different, evidence-bound next actions', () => {
   const results = ['own', 'auto', 'awake'].map(context => buildDecisionResult({ ...base, context }));
   assert.equal(new Set(results.map(actionHeading)).size, 3);
-  assert.match(actionHeading(results[2]), /między łóżkiem a telefonem/);
+  assert.match(actionHeading(results[2]), /przed telefonem/);
   assert.match(results[2].title, /Telefon pojawił się po/);
 });
 
@@ -16,7 +16,7 @@ test('unknown context or zero frequency never gets a confident intervention head
   const patches: Answers[] = [{ context: 'unknown' }, { frequency: '0' }, { frequency: 'unknown' }];
   for (const patch of patches) {
     const result = buildDecisionResult({ ...base, ...patch });
-    assert.equal(resultStatus(result), 'Najpierw obserwacja');
+    assert.equal(resultStatus(result), 'Brakuje szczegółu');
     assert.equal(actionHeading(result), result.experiment.title);
   }
 });

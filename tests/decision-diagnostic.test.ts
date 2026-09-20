@@ -110,7 +110,7 @@ test('upstream answers change the actual experiment, not just a report label', (
 test('single occurrences stay single and weekend observation uses the next weekend', () => {
   assert.match(buildDecisionResult(base).hypothesis, /pojedynczy przypadek/);
   const r = buildDecisionResult(finish({ ...base, scene: 'weekend', before: 'unknown', frequency: '1' }));
-  assert.match(r.experiment.action, /najbliższym weekendzie/);
+  assert.match(r.experiment.action, /po weekendzie/);
   assert.doesNotMatch(r.experiment.action, /trzy dni/);
   assert.equal(r.evidence.find(e => e.id === 'frequency')!.value, '1');
 });
@@ -143,14 +143,15 @@ test('untrusted saved answers cannot inject prose, synthetic scores or impossibl
 
 test('medical fit does not invite to coaching, while a self-directed choice remains autonomous', () => {
   assert.equal(invitation('medical', '', 'ready').showNabor, false);
-  assert.match(invitation('self', '', 'repeat').text, /Masz pierwszy krok/);
-  assert.match(invitation('', '', 'curious').text, /najpierw sprawdzić ten krok sam/);
+  assert.equal(invitation('self', '', 'repeat').showNabor, false);
+  assert.match(invitation('self', '', 'repeat').text, /wrócić po próbie/);
+  assert.match(invitation('', '', 'curious').text, /sprawdzić ten krok sam/);
 });
 
 test('every stated objection produces a distinct relevant invitation without scores or readiness claims', () => {
   const messages = new Set(OBJECTION_OPTIONS.map(o => invitation('coaching', o.id, 'repeat').text));
   assert.equal(messages.size, OBJECTION_OPTIONS.length);
-  assert.match(invitation('coaching', 'price', 'ready').cta, /pełny koszt/);
+  assert.match(invitation('coaching', 'price', 'ready').cta, /zakres i koszt/);
   for (const f of FIT_OPTIONS) for (const o of OBJECTION_OPTIONS) {
     const invite = invitation(f.id, o.id, 'curious');
     assert.doesNotMatch(invite.text, /jesteś gotowy|kwalifikujesz|gwarantuję|, i |[—–]/i);

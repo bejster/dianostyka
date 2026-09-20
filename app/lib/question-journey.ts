@@ -1,6 +1,6 @@
 import { answerLabel, type Answers } from './decision-diagnostic.ts';
 
-export const JOURNEY_STAGES = ['Scena', 'Szczegóły', 'Twój krok'];
+export const JOURNEY_STAGES = ['Twój tydzień', 'Co było wcześniej', 'Twój krok'];
 
 export function journeyStage(questionId: string): number {
   if (['why', 'goal', 'scene'].includes(questionId)) return 0;
@@ -14,15 +14,15 @@ export function questionContext(answers: Answers, questionId: string): { label: 
   if (!id || answers[id] === undefined || answers[id] === 'unknown') return;
   const quote = answerLabel(answers, id);
   if (quote === 'Brak odpowiedzi') return;
-  return { label: id === 'previous' ? 'Twoja poprzednia próba' : id === 'before' ? 'Doprecyzujmy ten moment' : 'Wracamy do Twojej sceny', quote };
+  return { label: id === 'previous' ? 'Twoja poprzednia próba' : id === 'before' ? 'Chodzi o ten moment' : 'Wybrałeś tę sytuację', quote };
 }
 
 export function journeyCue(questionId: string, remaining?: number): string {
   if (remaining === 1) return 'Ostatnia odpowiedź. Potem zobaczysz swój wynik.';
-  if (remaining === 2) return 'Zostały dwie odpowiedzi. Dopasujemy do nich wykonanie próby.';
-  if (questionId === 'scene') return 'Ta scena zdecyduje, o co zapytam dalej.';
-  if (questionId === 'context') return 'Podobne sytuacje mogą wymagać różnych ruchów. Ten szczegół je rozdziela.';
-  if (questionId === 'attempt') return 'Jeśli coś już działa, uwzględnimy to w wyniku.';
+  if (remaining === 2) return 'Jeszcze dwie odpowiedzi.';
+  if (questionId === 'scene') return ''; 
+  if (questionId === 'context') return ''; 
+  if (questionId === 'attempt') return ''; 
   return '';
 }
 

@@ -7,7 +7,7 @@ const bank = fs.readFileSync('app/lib/experiment-bank.ts', 'utf8');
 const page = fs.readFileSync('app/components/DecisionDiagnostic.tsx', 'utf8');
 
 test('v3 replaces calculated axes with answer receipts and one action', () => {
-  assert.match(page, /className="dd-receipts"/);
+  assert.match(page, /className="dd-details dd-evidence"/);
   assert.match(page, /className="dd-action"/);
   assert.doesNotMatch(page, /\bstatuses\b|\bredCount\b|rx-radar|awarenessGap/);
 });
@@ -20,10 +20,12 @@ test('72h module is visual and public experiment names are Polish', () => {
 });
 
 test('v3 displays period-bounded facts and supports unknown frequency', () => {
-  assert.match(page, /Ostatnie cztery weekendy/);
+  assert.match(page, /ostatnich 4 weekendów/);
   assert.match(page, /Ostatnie siedem dni/);
   assert.match(page, /answers.frequency === 'unknown'/);
-  assert.match(page, /Zaplanowane: \$\{answers.planned\}. Niewykonane: \$\{answers.missed\}/);
+  assert.match(page, /answers.planned/);
+  assert.match(page, /typeof answers.missed === 'number'/);
+  assert.match(page, /niewykonanych/);
 });
 
 test('1:1 bridge is personalized from the actual result rather than generic coaching copy', () => {
@@ -38,7 +40,7 @@ test('1:1 bridge is personalized from the actual result rather than generic coac
 
 test('v3 presents no synthetic severity as a measured truth', () => {
   assert.doesNotMatch(page, /\bredCount\b|catScores|\bstatuses\b|severity|scoreBucket/);
-  assert.match(page, /Hipotezy wymagają sprawdzenia/);
+  assert.match(page, /Proponuje próbę/);
 });
 
 test('dead reframe LLM path is not fired from the live diagnostic flow', () => {

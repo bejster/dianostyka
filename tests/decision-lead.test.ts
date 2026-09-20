@@ -45,7 +45,7 @@ test('explicit contact sends a server-built factual brief and no inferred sales 
   assert.equal(body.instagram, '@tester');
   assert.equal(body.assessment_version, engine.DECISION_VERSION);
   assert.equal(body.objection, 'price');
-  assert.match(String(body.diagnostyka_brief), /Pomogło to, co było ustalone/);
+  assert.match(String(body.diagnostyka_brief), /Pomogło wcześniejsze przygotowanie/);
   assert.doesNotMatch(JSON.stringify(body), /untrusted client text|premium_fit|severity|"score"/);
   assert.equal((body.consent as { granted: boolean }).granted, true);
 });
