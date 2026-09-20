@@ -34,7 +34,7 @@ test('all 28 intervention headings resolve to an actual route without changing t
 
 test('a working previous attempt stays a maintenance result', () => {
   const result = buildDecisionResult({ ...base, previous: 'plan', attempt: 'works' });
-  assert.equal(resultStatus(result), 'Co warto zachować');
+  assert.equal(resultStatus(result), 'To już działa');
   assert.equal(actionHeading(result), result.experiment.title);
 });
 
