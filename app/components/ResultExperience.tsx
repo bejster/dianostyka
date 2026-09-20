@@ -495,7 +495,27 @@ export default function ResultExperience({
             <span className="rx-r">{GOOGLE_AGG.rating} <span style={{ color: C.gold }}>★★★★★</span><span style={{ color: C.mute, fontWeight: 400 }}> · {GOOGLE_AGG.count} opinii w Google</span></span>
           </a>
 
-          <div className="rx-final-action rx-final-action-short">
+          <details className="rx-more rx-more-before">
+            <summary>Zanim zamkniesz wynik: dlaczego ten kierunek?</summary>
+            <div className="rx-more-body">
+              <div className="rx-ceiling">
+                <p className="rx-ceiling-lead">{ceilingLead}</p>
+                <p>{ceilingBody}</p>
+                <p className="rx-ceiling-hit">{ceilingHit}</p>
+              </div>
+              {gaps.length > 0 && (
+                <div className="rx-gaps">
+                  <p className="rx-gaps-lead">{gapsLead}</p>
+                  <ul>{gaps.map((g) => (<li key={g.label}><strong>{g.label}:</strong> {g.cost}</li>))}</ul>
+                </div>
+              )}
+              <p className="rx-know">{knowledgeLine}</p>
+              <p className="rx-invite">{naborInvite}</p>
+              {route.secondaryNabor && <p className="rx-invite rx-invite-soft">{naborInviteSoft}</p>}
+            </div>
+          </details>
+
+          <div className="rx-final-action" data-compact="true">
             <h3>{route.primaryKicker}</h3>
             <p>{route.primaryNote}</p>
             {route.primary === 'nabor' ? (
@@ -522,9 +542,12 @@ export default function ResultExperience({
                 <li><span className="rx-demo-n">1</span><div><strong>Pierwszy punkt: {breakPos.label}</strong><p>Ustawiamy wersję minimum właśnie tutaj. Ma zadziałać też w dniu, w którym nic nie idzie po planie.</p></div></li>
                 <li><span className="rx-demo-n">2</span><div><strong>Sprawdzamy: {weakestStatus?.label}</strong><p>Na start dostajesz jedno zadanie na 72 godziny: {experiment.action} Obserwujemy: {experiment.observe.toLowerCase()}.</p></div></li>
                 <li><span className="rx-demo-n">3</span><div><strong>Tego na start nie ruszam: {strongestStatus?.label}</strong><p>Zostawiam to bez zmian, żeby był punkt odniesienia.</p></div></li>
-                <li><span className="rx-demo-n">4</span><div><strong>Dokładam dopiero po dowodzie</strong><p>Jeśli pierwszy ruch nie przeżyje gorszego tygodnia, zmieniam ruch zamiast dokładać kolejne zasady.</p></div></li>
+                <li><span className="rx-demo-n">4</span><div><strong>Dokładam dopiero po dowodzie</strong><p>Kolejny element wchodzi wtedy, gdy pierwszy przeżyje gorszy tydzień. Jeśli nie przeżyje, zmieniam ruch zamiast dokładać kolejne zasady.</p></div></li>
               </ol>
-              <div className="rx-expectation"><p>Nie każę Ci opisywać od nowa tego, co przed chwilą wypełniłeś. Ta diagnostyka jest już punktem wyjścia.</p></div>
+              <div className="rx-expectation">
+                <p>Jeśli myślisz o prowadzeniu, niżej masz następny krok.</p>
+                <p>Nie każę Ci opisywać od nowa tego, co przed chwilą wypełniłeś. Ta diagnostyka jest już punktem wyjścia.</p>
+              </div>
               <div className="rx-gcards">
                 {GOOGLE_CARDS.slice(0, 1).map((r, i) => (
                   <div key={i} className="rx-gcard">
@@ -534,20 +557,6 @@ export default function ResultExperience({
                 ))}
               </div>
               {instagram && <p className="rx-fine">Mam ten wynik przypisany do @{instagram}. Nie musisz niczego wypełniać drugi raz.</p>}
-              <div className="rx-ceiling rx-ceiling-optional">
-                <p className="rx-ceiling-lead">{ceilingLead}</p>
-                <p>{ceilingBody}</p>
-                <p className="rx-ceiling-hit">{ceilingHit}</p>
-              </div>
-              {gaps.length > 0 && (
-                <div className="rx-gaps">
-                  <p className="rx-gaps-lead">{gapsLead}</p>
-                  <ul>{gaps.map((g) => (<li key={g.label}><strong>{g.label}:</strong> {g.cost}</li>))}</ul>
-                </div>
-              )}
-              <p className="rx-know">{knowledgeLine}</p>
-              <p className="rx-invite">{naborInvite}</p>
-              {route.secondaryNabor && <p className="rx-invite rx-invite-soft">{naborInviteSoft}</p>}
             </div>
           </details>
         </section>
@@ -646,7 +655,7 @@ const css = `
 .rx-gaps{margin:0 0 18px}.rx-gaps .rx-gaps-lead{font-family:${C.mono};font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:${C.faint};margin:0 0 10px}.rx-gaps ul{list-style:none;margin:0;padding:0}.rx-gaps li{font-family:${C.sans};font-size:14.5px;line-height:1.55;color:${C.mute};padding:9px 0 9px 14px;border-left:1px solid ${C.goldD};margin-bottom:7px}.rx-gaps li:last-child{margin-bottom:0}.rx-gaps li strong{color:${C.paper};font-weight:600}
 .rx-know{font-family:${C.sans};font-size:14px;line-height:1.7;color:${C.faint};margin:0 0 22px;padding:14px 16px;background:rgba(255,255,255,.028);border-radius:4px}
 .rx-invite{font-family:${C.sans};font-size:15.5px;line-height:1.68;color:${C.paper};margin:0 0 16px}.rx-invite.rx-invite-soft{font-size:14.5px;color:${C.mute};margin-top:18px}
-.rx-final-action{margin-top:34px;padding:22px;border:1px solid ${C.goldD};border-radius:18px;background:linear-gradient(160deg,rgba(200,168,78,.10),${C.pan2} 48%,${C.pan});box-shadow:0 24px 70px -42px rgba(200,168,78,.7)}.rx-final-action-short{margin-top:18px}.rx-more{margin-top:16px;border-top:1px solid ${C.line};padding-top:8px}.rx-more>summary{cursor:pointer;color:${C.mute};font-size:13.5px;padding:14px 0}.rx-more[open]>summary{color:${C.goldB}}.rx-more-body{padding:16px 0 6px}.rx-ceiling-optional{margin-top:24px}.rx-calibration-section{padding:24px 0 40px!important}.rx-calibration-details>summary{cursor:pointer;color:${C.mute};font-size:13.5px;padding:12px 0}.rx-calibration-details[open]>summary{color:${C.paper}}.rx-calibration-body{padding:10px 0 8px}.rx-save-compact{margin-top:8px}
+.rx-final-action{margin-top:34px;padding:22px;border:1px solid ${C.goldD};border-radius:18px;background:linear-gradient(160deg,rgba(200,168,78,.10),${C.pan2} 48%,${C.pan});box-shadow:0 24px 70px -42px rgba(200,168,78,.7)}.rx-final-action[data-compact="true"]{margin-top:18px}.rx-more{margin-top:16px;border-top:1px solid ${C.line};padding-top:8px}.rx-more>summary{cursor:pointer;color:${C.mute};font-size:13.5px;padding:14px 0}.rx-more[open]>summary{color:${C.goldB}}.rx-more-body{padding:16px 0 6px}.rx-calibration-section{padding:24px 0 40px!important}.rx-calibration-details>summary{cursor:pointer;color:${C.mute};font-size:13.5px;padding:12px 0}.rx-calibration-details[open]>summary{color:${C.paper}}.rx-calibration-body{padding:10px 0 8px}.rx-save-compact{margin-top:8px}
 .rx-final-action h3{font-family:${C.serif};font-size:clamp(25px,5vw,36px);line-height:1.05;font-weight:400;color:${C.paper};margin:8px 0 10px}.rx-final-action>p{color:${C.mute};font-size:14.5px;line-height:1.55;margin:0 0 18px}.rx-action-confirm{text-align:center;padding:16px;border:1px solid ${C.goldD};border-radius:13px;color:${C.goldB};font-weight:800;background:rgba(200,168,78,.06);margin-bottom:10px}.rx-action-done{text-align:center;color:${C.mute};font-size:13px;line-height:1.5;padding:6px 8px 2px}
 .rx-route-card{margin-top:30px;padding:24px;border-radius:20px;border:1px solid rgba(200,168,78,.34);background:radial-gradient(420px 180px at 50% 0%,rgba(200,168,78,.12),transparent 70%),${C.pan};box-shadow:0 28px 80px -52px rgba(200,168,78,.65)}.rx-route-eyebrow{font-family:${C.mono};font-size:10px;letter-spacing:2.4px;text-transform:uppercase;color:${C.gold};font-weight:800;margin-bottom:10px}.rx-route-card h3{font-family:${C.serif};font-weight:400;font-size:clamp(25px,4.8vw,34px);line-height:1.08;margin:0 0 12px;color:${C.paper}}.rx-route-card>p{font-size:14.5px;line-height:1.58;color:${C.mute};margin:0 0 20px}.rx-route-alt{display:block;width:100%;text-align:center;text-decoration:none;background:transparent;border:0;color:${C.mute};font-size:13px;font-weight:650;padding:9px 8px;cursor:pointer}.rx-route-alt:hover{color:${C.goldB}}
 .rx-quote{font-family:${C.serif};font-style:italic;font-size:clamp(19px,4vw,24px);color:${C.paper};line-height:1.34;border-left:2px solid ${C.goldD};padding-left:18px;margin:14px 0 0}
