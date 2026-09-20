@@ -228,7 +228,7 @@ export default function DecisionDiagnostic() {
       <p className="dd-micro">Od 6 do 11 odpowiedzi · bezpłatnie · wynik bez podawania kontaktu</p>
       <details className="dd-preview dd-example">
         <summary>Po co cofamy się o krok?</summary>
-        <p>Przykład: zostajesz z telefonem do późna. Jeśli wcześniej nie mogłeś zasnąć, ekran pojawił się już po problemie ze snem. Jeśli po prostu straciłeś poczucie czasu, sprawdzamy inny moment.</p>
+        <p>Przykład: zostajesz z telefonem do późna. Jeśli wcześniej nie mogłeś zasnąć, ekran pojawił się już po trudności z zaśnięciem. Jeśli po prostu straciłeś poczucie czasu, sprawdzamy inny moment.</p>
       </details>
       <p className="dd-privacy">Wynik powstaje automatycznie. Odpowiedzi zostają w tej przeglądarce. Ty decydujesz, czy je później udostępnisz.</p>
     </section> : phase === 'questions' ? <section className="dd-shell dd-question" aria-label="Pytania diagnostyki">
