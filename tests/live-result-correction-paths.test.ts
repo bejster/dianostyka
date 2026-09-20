@@ -6,7 +6,7 @@ const result = fs.readFileSync('app/components/ResultExperience.tsx', 'utf8');
 
 test('a rejected or already-tried 72h test cannot silently become an accepted experiment', () => {
   assert.match(result, /const \[experimentReaction, setExperimentReaction\]/);
-  assert.match(result, /experiment_reaction/);
+  assert.doesNotMatch(result, /trackDiag\('experiment_reaction'/);
   assert.match(result, /!committed && !experimentReaction/);
   assert.match(result, /Robiłem coś podobnego i pomagało\./);
   assert.match(result, /Robiłem, ale bez różnicy\./);
