@@ -40,7 +40,7 @@ test('1:1 bridge is personalized from the actual result rather than generic coac
 
 test('v3 presents no synthetic severity as a measured truth', () => {
   assert.doesNotMatch(page, /\bredCount\b|catScores|\bstatuses\b|severity|scoreBucket/);
-  assert.match(page, /Proponuje próbę/);
+  assert.match(page, /Daje krok do sprawdzenia/);
 });
 
 test('dead reframe LLM path is not fired from the live diagnostic flow', () => {
