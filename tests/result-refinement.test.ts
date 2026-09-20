@@ -12,7 +12,7 @@ test('feasibility changes the task without rewriting the original scene', () => 
   const pause = selectedRefinement(food, r, '', 'food_break')!;
   assert.notEqual(access.action, pause.action);
   assert.match(access.action, /zabrać/);
-  assert.match(pause.action, /ustalenia z kimś/);
+  assert.match(pause.action, /zależy od innych osób/);
   assert.deepEqual(food, original);
   assert.equal(selectedRefinement(food, r, '', 'food_ready')!.action, r.experiment.action);
 });
@@ -34,7 +34,7 @@ test('rejected advice cannot be turned into a new trial by a stale choice', () =
 test('unknown barriers remain unresolved instead of receiving a fabricated prescription', () => {
   const o = selectedRefinement(food, buildDecisionResult(food), '', 'food_other')!;
   assert.equal(o.canTry, false);
-  assert.match(o.observe, /nie ma dość informacji/);
+  assert.match(o.observe, /brakuje informacji/);
 });
 
 test('export retains rejection even with no further answer and rejects unknown IDs', () => {
