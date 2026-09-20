@@ -37,11 +37,11 @@ export function actionHeading(result: DecisionResult): string {
 }
 
 export function resultStatus(result: DecisionResult): string {
-  return result.certainty === 'maintain' ? 'Co warto zachować'
-    : result.certainty === 'observation' ? 'Brakuje szczegółu' : 'Trop do sprawdzenia';
+  return result.certainty === 'maintain' ? 'To już działa'
+    : result.certainty === 'observation' ? 'Najpierw sprawdź' : 'Tu bym zaczął';
 }
 
-export const RESULT_UI_VERSION = '3.5.0';
+export const RESULT_UI_VERSION = '3.6.0';
 export function analyticsEnvironment(hostname: string): 'production' | 'preview' {
   return hostname === 'diagnostyka.talerzihantle.com' ? 'production' : 'preview';
 }
