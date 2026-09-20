@@ -174,6 +174,8 @@ export default function ResultExperience({
   // ── V2.8.1 SUFIT: domknięcie ma trafiać w przekonanie "u mnie jest w porządku, ogarnę sam",
   //    a nie w tożsamość użytkownika. Liczba bierze się z tych samych pasm zapasu co reszta strony,
   //    więc nigdzie nie pada wymyślony procent potencjału ani żadna teza o hormonach.
+  const ceilingCount = bigReserve >= 1 ? bigReserve : anyReserve;
+  void ceilingCount;
   const ceilingLead = hasCeilingRoom
     ? 'Ten wynik nie mówi, że jest u Ciebie źle.'
     : 'Ten wynik nie daje Ci dziś nic do gaszenia.';
