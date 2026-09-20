@@ -5,7 +5,7 @@
 // Mail wycięty (backend Faza 4 niepodłączony, nie kłamiemy). Stare "/" (v1) nietknięte.
 
 import { useState, useEffect, useRef } from 'react';
-import { track, trackDiag, registerContext } from '../lib/analytics';
+import { trackDiag, registerContext } from '../lib/analytics';
 import SingleQuestionFlow from '../components/SingleQuestionFlow';
 import { type RawAnswers } from '../lib/scoring-engine';
 import { answersToFD } from '../lib/answers-to-fd';
@@ -126,8 +126,10 @@ export default function DiagnozaPage() {
       leadRef.current = rid;
     } catch { /* brak URL/storage API = zostajemy w diagnostic bez atrybucji */ }
     // Tryb rozstrzygniety -> render wlasciwego ekranu; pierwsze eventy lejka PO registerContext (P1-1).
-    if (m === 'fast_fit') setMode('fast_fit');
-    setModeResolved(true);
+    queueMicrotask(() => {
+      if (m === 'fast_fit') setMode('fast_fit');
+      setModeResolved(true);
+    });
     trackDiag('diag_intro_viewed');
     if (m === 'fast_fit') trackDiag('fast_fit_intro_viewed');
   }, []);
@@ -330,8 +332,6 @@ export default function DiagnozaPage() {
   if (phase === 'teaser' && answers) {
     // ── Wynik przed mailem: bogata Karta Tygodnia z istniejacego silnika (FD -> score/costs/archetyp) ──
     const D = answersToFD(answers);
-    const SC = score(D);
-    const C = costs(D);
     // najslabsza kategoria (worstCat) liczona z FD tak samo jak w page.tsx (v1), zeby dobrac archetyp i szablon tygodnia
     const catScores = [
       { label: 'Sen', pct: Math.max(100 - Math.round(((D.sleepQ + D.screenBed) / 6 + (7.5 - Math.min(D.sleep, 7.5)) / 1.5) * 55), 5) },
@@ -345,9 +345,6 @@ export default function DiagnozaPage() {
     const DOMAIN_TIE = ['Sen', 'Stres', 'Żywienie', 'Weekend', 'Trening', 'Głowa'];
     const sortedDom = [...catScores].sort((a, b) => (a.pct - b.pct) || (DOMAIN_TIE.indexOf(a.label) - DOMAIN_TIE.indexOf(b.label)));
     const worstW = sortedDom[0]?.label || 'Sen';
-    // truth gate stanu: gap>=6 = jedna domena realnie wybija sie; inaczej remis (tied) / wszystko zdrowe (neutral)
-    const worstGap = (sortedDom[1]?.pct ?? 100) - (sortedDom[0]?.pct ?? 0);
-    const worstState: 'clear' | 'tied' | 'neutral' = worstGap >= 6 ? 'clear' : ((sortedDom[0]?.pct ?? 0) >= 62 ? 'neutral' : 'tied');
     const arch = pickArchetype(D, worstW);
 
     // ── MAPA STATUSU: 5 osi, KAZDA liczona TYLKO z realnie zbieranych odpowiedzi (zero domyslnych
@@ -394,9 +391,6 @@ export default function DiagnozaPage() {
     ];
     const rawImie = answers.imie ?? answers.name;
     const imie = typeof rawImie === 'string' ? rawImie : '';
-    const q = qualify(answers);
-    // wantsHelp = TYLKO jawna intencja (bridge/CTA Beat 8). NIE podnosi tieru diagnozy ani żadnego elementu Beat 1-5 (P1-4 rename).
-    const wantsHelp = q.wantsHelp;
     // #1 handoff: niesie kontekst diagnozy do nabora w URL (nabor personalizuje sie po ?from=diagnoza).
     // Same-tab (#2) + parametry = ciaglosc lejka, zero przepisywania danych przez usera.
     const igClean = typeof answers.instagram === 'string' ? answers.instagram.replace(/^@?/, '') : '';
