@@ -10,7 +10,7 @@ const flow = fs.readFileSync('app/components/SingleQuestionFlow.tsx', 'utf8');
 
 test('v3 names Michal and demonstrates a concrete first step without invented credentials', () => {
   assert.match(page, /Michał · Hantle i Talerz · Diagnostyka 168/);
-  assert.match(page, /Dlaczego pytam o to, co było wcześniej/);
+  assert.match(page, /Po co cofamy się o krok/);
   assert.match(page, /Wynik powstaje automatycznie/);
   assert.doesNotMatch(page, /Human Performance Coach|Twój sufit/);
 });
