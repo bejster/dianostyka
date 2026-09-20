@@ -87,7 +87,6 @@ export default function ResultExperience({
   const reactToExperiment = (id: string) => {
     setExperimentReaction(id);
     setCommitted(false);
-    trackDiag('experiment_reaction', { experiment_id: experiment.id, reaction: id, arch: archKey });
   };
 
   useEffect(() => {
