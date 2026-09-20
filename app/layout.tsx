@@ -2,17 +2,17 @@ import type { Metadata } from 'next';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'Diagnostyka 168: sprawdź, czy Twój obecny poziom to Twój sufit | Hantle i Talerz',
-  description: 'Kilkanaście pytań o to, jak funkcjonujesz w zwykłym tygodniu. Na końcu widzisz, gdzie masz największy zapas, co ruszyć najpierw i jeden test na 72 godziny.',
+  title: 'Diagnostyka 168: sprawdź swój tydzień | Hantle i Talerz',
+  description: 'Co z Twojego dnia odbija się później na formie? Wybierz sytuację z ostatniego tygodnia i sprawdź, co ją poprzedziło. Bezpłatny wynik bez podawania kontaktu.',
   alternates: { canonical: 'https://diagnostyka.talerzihantle.com/' },
   openGraph: {
-    title: 'Diagnostyka 168: sprawdź, czy Twój obecny poziom to Twój sufit | Hantle i Talerz',
-    description: 'Kilkanaście pytań o to, jak funkcjonujesz w zwykłym tygodniu. Na końcu widzisz, gdzie masz największy zapas, co ruszyć najpierw i jeden test na 72 godziny.',
+    title: 'Diagnostyka 168: sprawdź swój tydzień | Hantle i Talerz',
+    description: 'Co z Twojego dnia odbija się później na formie? Wybierz sytuację z ostatniego tygodnia i sprawdź, co ją poprzedziło. Bezpłatny wynik bez podawania kontaktu.',
     url: 'https://diagnostyka.talerzihantle.com',
     siteName: 'Diagnostyka | Hantle i Talerz',
     images: [
       {
-        url: 'https://diagnostyka.talerzihantle.com/og.png',
+        url: 'https://diagnostyka.talerzihantle.com/api/og',
         width: 1200,
         height: 630,
       },
@@ -22,9 +22,9 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Diagnostyka 168: sprawdź, czy Twój obecny poziom to Twój sufit | Hantle i Talerz',
-    description: 'Kilkanaście pytań o to, jak funkcjonujesz w zwykłym tygodniu. Na końcu widzisz, gdzie masz największy zapas, co ruszyć najpierw i jeden test na 72 godziny.',
-    images: ['https://diagnostyka.talerzihantle.com/og.png'],
+    title: 'Diagnostyka 168: sprawdź swój tydzień | Hantle i Talerz',
+    description: 'Co z Twojego dnia odbija się później na formie? Wybierz sytuację z ostatniego tygodnia i sprawdź, co ją poprzedziło. Bezpłatny wynik bez podawania kontaktu.',
+    images: ['https://diagnostyka.talerzihantle.com/api/og'],
   },
   icons: {
     icon: '/icon.png',
