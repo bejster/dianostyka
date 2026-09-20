@@ -78,13 +78,13 @@ test('content opt-in payload strips contacts, numbers, free text and report text
 test('each result reaction routes to a distinct useful next action', () => {
   assert.equal(new Set(INSIGHT_REACTIONS.map(r => reactionNext(r.id))).size, 4);
   assert.match(reactionNext('off'), /Nie wiem albo było inaczej/);
-  assert.match(reactionNext('obvious'), /Nie powtarzaj/);
+  assert.match(reactionNext('obvious'), /Nie rób tego jeszcze raz/);
 });
 
  test('rejected interpretations never invite visitors to try the rejected task', () => {
   for (const reaction of ['off', 'obvious']) for (const fit of ['', 'self']) {
     const r = invitation(fit, '', 'curious', reaction);
-    assert.match(r.text, /Najpierw wróć do odpowiedzi/);
+    assert.match(r.text, /Najpierw doprecyzuj wynik/);
     assert.doesNotMatch(r.text, /Sprawdź go|najpierw sprawdzić ten krok sam/);
   }
   assert.equal(invitation('medical', '', 'curious', 'off').showNabor, false);
