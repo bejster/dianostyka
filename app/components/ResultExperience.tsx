@@ -49,21 +49,33 @@ export default function ResultExperience({
   const [calib, setCalib] = useState<string>('');
   const [committed, setCommitted] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [experimentReaction, setExperimentReaction] = useState<string>('');
   const CALIB = [
     { id: 'sen', label: 'Sen' }, { id: 'energia', label: 'Energia i głowa' }, { id: 'jedzenie', label: 'Jedzenie' },
     { id: 'ruch', label: 'Ruch' }, { id: 'weekend', label: 'Weekend' }, { id: 'naped', label: 'Napęd i libido' }, { id: 'ok', label: 'Wszystko pasuje' },
   ];
-  // Kalibracja nie moze konczyc sie podziekowaniem. Klikniecie oznacza, ze czlowiek wlasnie wykluczyl
-  // jeden obszar, a to jest informacja diagnostyczna: skoro nie tam, to gdzie indziej. Kazdy chip
-  // dostaje wiec konkretna reakcje z nastepnym miejscem do sprawdzenia. Wartosci wyniku sie nie zmieniaja.
+  const EXPERIMENT_REACTIONS = [
+    { id: 'helped', label: 'Robiłem coś podobnego i pomagało.' },
+    { id: 'unchanged', label: 'Robiłem, ale bez różnicy.' },
+    { id: 'blocked', label: 'Próbowałem, ale nie dało się tego utrzymać.' },
+    { id: 'off', label: 'Ten test nie pasuje do mojej sytuacji.' },
+  ];
+  const EXPERIMENT_REPLY: Record<string, string> = {
+    helped: 'Skoro podobny sposób już pomagał, nie zaczynaj od zera. Zapisz, co było wtedy możliwe i co dziś wygląda inaczej. Ta różnica jest teraz ważniejsza niż kolejna rada.',
+    unchanged: 'Nie powtarzaj testu w ciemno. Zapisz, jak długo robiłeś podobną rzecz i po czym oceniałeś efekt. Dopiero wtedy da się sprawdzić, czy ten test faktycznie był już zrobiony.',
+    blocked: 'Wróć do ostatniego momentu, w którym poprzednia próba była jeszcze wykonalna. Zapisz, co wydarzyło się potem. Od tego miejsca zacząłbym następną korektę.',
+    off: 'Nie wciskam Ci tego testu na siłę. Potraktuj go jako hipotezę. Na końcu wyniku możesz zaznaczyć, która część opisu najmniej do Ciebie pasuje.',
+  };
+  // Kalibracja ma pokazać, gdzie wynik może być nietrafiony. Nie wolno z jednego kliknięcia
+  // dopisywać nowej przyczyny, nowej sceny ani kolejnego "prawdziwego" punktu pęknięcia.
   const CALIB_REPLY: Record<string, string> = {
-    sen: 'Czyli tydzień rozjeżdża Ci się przy w miarę zebranym śnie. Wtedy patrzę najpierw na obciążenie w pracy oraz na to, co dzieje się między osiemnastą a dwudziestą drugą.',
-    energia: 'Czyli energię masz, a i tak coś wypada. Wtedy zwykle rozjeżdża się kolejność dnia: wszystko przesuwa się o godzinę i wieczorem nie zostaje miejsca na to, co miało być. Sprawdziłbym, o której faktycznie kończysz robotę.',
-    jedzenie: 'Czyli punkt pęknięcia nie siedzi w jedzeniu. Jedzenie najczęściej tylko odbija to, co wydarzyło się wcześniej, więc następne pytanie brzmi: co robisz w godzinie przed pierwszą przekąską.',
-    ruch: 'Czyli treningi dowozisz. Wtedy różnicę robi reszta tygodnia, te godziny, w których nie ma siłowni.',
-    weekend: 'Czyli pęknięcie jest wcześniej niż sobota. Sprawdziłbym czwartek wieczorem, bo tam zwykle zapada decyzja o tym, jak będzie wyglądał piątek.',
-    naped: 'Czyli ten obszar trzyma. To dobry znak, bo zwykle schodzi jako jeden z ostatnich. Reszta wyniku zostaje w mocy.',
-    ok: 'To znaczy, że pracujemy na tym wyniku bez korekty. Test 72h ma teraz sprawdzić, czy pierwszy moment naprawdę trzyma.',
+    sen: 'Okej. Część o śnie traktujemy jako miejsce do ponownego sprawdzenia. Ta oś powstała z odpowiedzi o porankach i o najwcześniejszym momencie, kiedy dzień zaczyna iść gorzej.',
+    energia: 'Okej. Energia i głowa nie pasują do Twojego odczucia. Ta część wyniku opiera się na odpowiedziach o pracy na pół mocy i o tym, czy robota wraca do głowy wieczorem. Nie dopisuję po tym kliknięciu nowej przyczyny.',
+    jedzenie: 'Okej. Ta oś powstała z tego, co zaznaczyłeś przy jedzeniu pod koniec dnia. Jeśli opis nie oddaje Twojej sytuacji, zostawiamy ten obszar jako rzecz do ponownego sprawdzenia.',
+    ruch: 'Okej. Ta część wyniku bierze się z planowanej liczby treningów i z tego, ile wypada w gorszym tygodniu. Nie będę z jednego kliknięcia robił nowej diagnozy.',
+    weekend: 'Okej. Ta część wyniku bierze się z różnicy między weekendem a tygodniem oraz z tempa powrotu po weekendzie. Jeśli to nie pasuje, zostawiam ten obszar jako niepewny.',
+    naped: 'Okej. Napęd i libido traktujemy jako niepewną część wyniku. Quiz nie rozstrzyga przyczyny takiej odpowiedzi. Jeśli coś zmieniło się na dłużej, omów to z lekarzem.',
+    ok: 'Dobra. W takim razie niczego nie poprawiam na siłę. Test 72h zostaje sposobem sprawdzenia, czy Punkt Pęknięcia faktycznie wraca w zwykłym tygodniu.',
   };
   const sendCalib = (id: string) => {
     setCalib(id);
@@ -71,6 +83,11 @@ export default function ResultExperience({
       fetch('/api/diag-event', { method: 'POST', headers: { 'content-type': 'application/json' }, keepalive: true, body: JSON.stringify({ submission_id: submissionId, q_id: 'calibration', value: id, ts: Date.now() }) }).catch(() => {});
     } catch (_e) { /* analityka nigdy nie wywraca flow */ }
     trackDiag('calibration_answer', { id });
+  };
+  const reactToExperiment = (id: string) => {
+    setExperimentReaction(id);
+    setCommitted(false);
+    trackDiag('experiment_reaction', { experiment_id: experiment.id, reaction: id, arch: archKey });
   };
 
   useEffect(() => {
@@ -414,14 +431,25 @@ export default function ResultExperience({
             <div className="rx-exp-row rx-exp-meta"><span className="rx-exp-k">Obserwuj</span><p>{experiment.observe}</p></div>
             <div className="rx-exp-row rx-exp-meta"><span className="rx-exp-k">Przez te 3 dni nie ruszaj</span><p>{experiment.doNotChange}</p></div>
           </div>
-          {!committed ? (
+          <details className="rx-exp-check">
+            <summary>Już robiłeś coś podobnego albo ten test nie pasuje?</summary>
+            <div className="rx-exp-reactions">
+              {EXPERIMENT_REACTIONS.map((r) => (
+                <button key={r.id} type="button" className={experimentReaction === r.id ? 'on' : ''} onClick={() => reactToExperiment(r.id)}>{r.label}</button>
+              ))}
+            </div>
+            {experimentReaction && <p className="rx-exp-reply">{EXPERIMENT_REPLY[experimentReaction]}</p>}
+          </details>
+          {!committed && !experimentReaction ? (
             <button className="rx-cta" onClick={commitExperiment} type="button">Robię ten test</button>
-          ) : (
+          ) : committed ? (
             <div className="rx-donemsg show">
               Dobra. Teraz patrz na jeden moment: {experiment.observe.toLowerCase()}.
               {' '}Jeżeli po trzech dniach ten sygnał się powtórzy, mamy lepszy argument, że właśnie tam warto grzebać dalej.
               Nie oceniaj testu po tym, czy cały tydzień był idealny.
             </div>
+          ) : (
+            <button className="rx-route-alt" type="button" onClick={() => setExperimentReaction('')}>Jednak chcę sprawdzić ten test</button>
           )}
         </section>
 
@@ -641,6 +669,9 @@ const css = `
 .rx-exp-meta{background:transparent;border-color:rgba(255,255,255,.06);border-radius:12px;padding:11px 16px}
 .rx-exp-meta .rx-exp-k{color:${C.faint};font-weight:600;letter-spacing:1.4px;margin-bottom:4px}
 .rx-exp-meta p{font-size:14px;color:${C.mute}}
+.rx-exp-check{margin:-2px 0 18px;padding:0;border:0}.rx-exp-check summary{cursor:pointer;color:${C.mute};font-size:13px;line-height:1.5;padding:10px 0}.rx-exp-check[open] summary{color:${C.paper}}
+.rx-exp-reactions{display:grid;gap:8px;margin-top:6px}.rx-exp-reactions button{width:100%;text-align:left;font-family:${C.sans};font-size:13.5px;line-height:1.45;color:${C.mute};background:${C.pan2};border:1px solid ${C.line2};border-radius:11px;padding:12px 14px;cursor:pointer}.rx-exp-reactions button:hover{border-color:${C.goldD};color:${C.paper}}.rx-exp-reactions button.on{border-color:${C.goldD};background:rgba(200,168,78,.08);color:${C.goldB}}
+.rx-exp-reply{margin:12px 0 0;padding:12px 14px;border-left:2px solid ${C.goldD};background:rgba(200,168,78,.045);color:${C.mute};font-size:13.5px;line-height:1.58}
 .rx-donemsg{font-family:${C.serif};font-style:italic;font-size:18px;color:${C.gold};text-align:left;line-height:1.4;background:${C.pan2};border:1px solid ${C.goldD};border-radius:14px;padding:18px 20px}
 .rx-loop{display:grid;gap:0;margin:0 0 8px;position:relative;counter-reset:loop}.rx-loop::before{content:"";position:absolute;left:27px;top:22px;bottom:34px;width:1px;background:linear-gradient(${C.goldD},rgba(200,168,78,.12));z-index:0}
 .rx-loop-node{background:${C.pan2};border:1px solid ${C.line};border-radius:14px;padding:14px 16px 14px 56px;position:relative;margin-bottom:18px;counter-increment:loop;z-index:1}.rx-loop-node::before{content:counter(loop,decimal-leading-zero);position:absolute;left:13px;top:14px;width:29px;height:29px;border-radius:50%;display:grid;place-items:center;background:${C.ink};border:1px solid ${C.goldD};font-family:${C.mono};font-size:9px;color:${C.goldB};box-shadow:0 0 0 5px ${C.pan2}}
