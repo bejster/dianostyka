@@ -6,7 +6,7 @@ import { Atmosphere } from '../diagnoza/atmosphere';
 import { track, registerContext } from '../lib/analytics';
 import {
   DECISION_VERSION, DECISION_STORAGE_KEY, NABOR_URL, FIT_OPTIONS, OBJECTION_OPTIONS,
-  buildDecisionResult, cleanAnswers, getQuestions, invitation, isComplete,
+  answerLabel, buildDecisionResult, cleanAnswers, getQuestions, invitation, isComplete,
   resultAsText, updateAnswer, type Answers,
 } from '../lib/decision-diagnostic';
 import { INSIGHT_REACTIONS, reactionNext, contentSignal } from '../lib/decision-insights';
@@ -24,9 +24,9 @@ function event(name: string, props: Record<string, unknown> = {}) {
   track(name, { analytics_schema: 'site-analytics-v1', surface: 'diagnostyka', version: DECISION_VERSION, ui_version: RESULT_UI_VERSION, environment: analyticsEnvironment(typeof window === 'undefined' ? '' : window.location.hostname), ...props });
 }
 const CHECKIN: Record<string, string> = {
-  helped: 'Zauważyłeś poprawę po wykonaniu zadania. Powtórz je przy podobnej okazji. Jeden lepszy dzień jeszcze nie rozstrzyga, co zadziałało.',
-  unchanged: 'Zachowaj zapis tego, co zrobiłeś. Brak różnicy też pomaga ocenić, czy ten trop pasuje.',
-  blocked: 'Zapisz, co Ci przeszkodziło. Od tej rzeczy trzeba zacząć przy następnej próbie.',
+  helped: 'Było lepiej po wykonaniu kroku. Powtórz go przy podobnej okazji. Jeden lepszy dzień jeszcze nie mówi, co było przyczyną.',
+  unchanged: 'Zachowaj zapis. Brak różnicy też jest informacją, bo pokazuje, że ten trop może nie wystarczać.',
+  blocked: 'Zapisz dokładnie, co zatrzymało wykonanie. Przy następnej próbie zacznij od tego momentu.',
   no_chance: 'Wróć, kiedy będzie okazja to sprawdzić.',
 };
 export default function DecisionDiagnostic() {
@@ -223,12 +223,12 @@ export default function DecisionDiagnostic() {
     </section> : phase === 'intro' ? <section className="dd-shell dd-intro">
       <p className="dd-eyebrow">DIAGNOSTYKA 168 · TWÓJ TYDZIEŃ</p>
       <h1>Co z Twojego dnia odbija się później na formie?</h1>
-      <p className="dd-lead">Wybierz sytuację z ostatniego tygodnia. Sprawdzimy, co ją poprzedziło i od czego warto zacząć u Ciebie.</p>
+      <p className="dd-lead">Wybierz jedną sytuację z ostatniego tygodnia. Cofniemy się o krok wcześniej i sprawdzimy, co mogło ustawić to, co wydarzyło się później.</p>
       <button className="dd-primary" onClick={() => { setPhase('questions'); event('diag_start'); }}>Sprawdzam swój tydzień <span>→</span></button>
       <p className="dd-micro">Od 6 do 11 odpowiedzi · bezpłatnie · wynik bez podawania kontaktu</p>
       <details className="dd-preview dd-example">
-        <summary>Dlaczego pytam o to, co było wcześniej?</summary>
-        <p>Przykład: siedzisz z telefonem do późna. Możesz stracić poczucie czasu albo sięgnąć po niego, bo już wcześniej nie mogłeś zasnąć. W każdej z tych sytuacji warto sprawdzić coś innego.</p>
+        <summary>Po co cofamy się o krok?</summary>
+        <p>Przykład: zostajesz z telefonem do późna. Jeśli wcześniej nie mogłeś zasnąć, ekran pojawił się już po problemie ze snem. Jeśli po prostu straciłeś poczucie czasu, sprawdzamy inny moment.</p>
       </details>
       <p className="dd-privacy">Wynik powstaje automatycznie. Odpowiedzi zostają w tej przeglądarce. Ty decydujesz, czy je później udostępnisz.</p>
     </section> : phase === 'questions' ? <section className="dd-shell dd-question" aria-label="Pytania diagnostyki">
@@ -251,13 +251,14 @@ export default function DecisionDiagnostic() {
         <div className="dd-result-meta"><p className="dd-eyebrow">TWÓJ WYNIK · {answeredCount} ODPOWIEDZI</p><span className="dd-result-status">{resultStatus(result)}</span></div>
         <h1 ref={heading} tabIndex={-1}>{reaction === 'off' ? 'Wróćmy do tego, jak jest u Ciebie.' : result.title}</h1>
         <p className="dd-result-lead">{reaction === 'off' ? 'Zaznaczyłeś, że opis nie pasuje. Niżej możesz poprawić konkretną odpowiedź.' : result.hypothesis}</p>
+        {answers.impact && answers.impact !== 'none' && <p className="dd-result-cost"><span>To odbiło się później:</span> {answerLabel(answers, 'impact')}</p>}
       </div>
       {(!rejected || refined) && <section className="dd-action" id="twoj-krok" aria-label="Pierwszy krok">
-        <p className="dd-eyebrow">{refined && !refined.canTry ? 'WRÓĆ DO POPRZEDNIEJ PRÓBY' : result.certainty === 'maintain' ? 'CO WARTO ZACHOWAĆ' : 'SPRAWDŹ PRZY NASTĘPNEJ OKAZJI'}</p>
+        <p className="dd-eyebrow">{refined && !refined.canTry ? 'WRÓĆ DO POPRZEDNIEJ PRÓBY' : result.certainty === 'maintain' ? 'TO JUŻ DZIAŁA' : 'SPRAWDŹ PRZY NASTĘPNEJ OKAZJI'}</p>
         <h2>{refined ? refined.title : actionHeading(result)}</h2>
         <p className="dd-task" aria-live="polite">{refined ? refined.action : result.experiment.action}</p>
         <div className="dd-action-detail"><span>{refined && !refined.canTry ? 'Do sprawdzenia' : 'Po czym poznasz'}</span><p>{refined ? refined.observe : result.experiment.observe}</p></div>
-        <details className="dd-outcomes"><summary>Jak to dopasować i co zrobić potem?</summary>
+        <details className="dd-outcomes"><summary>Jak to dopasować do swojego tygodnia?</summary>
           <p>{refined ? `Wybrałeś: „${refined.label}”` : result.constraint}</p>
           <p>{result.timing}</p>
           {!refined && <><p>{result.experiment.when}</p><h3>Po próbie</h3><p>{result.insight.yes}</p><p>{result.insight.no}</p></>}
@@ -294,7 +295,7 @@ export default function DecisionDiagnostic() {
       </details>}
       <section ref={invitationSection} className="dd-invitation" aria-label="Zaproszenie do prowadzenia">
         <p className="dd-eyebrow">CO DALEJ</p>
-        <h2>{fit === 'medical' ? 'Z tym zwróć się do lekarza.' : fit === 'self' ? 'Wróć z tym, co wyszło.' : ['off', 'obvious'].includes(reaction) ? 'Chcesz przyjrzeć się temu ze mną?' : 'Chcesz, żebym pomógł Ci to poukładać?'}</h2>
+        <h2>{fit === 'medical' ? 'Z tym zwróć się do lekarza.' : fit === 'self' ? 'Wróć z tym, co wyszło.' : ['off', 'obvious'].includes(reaction) ? 'Najpierw doprecyzujmy wynik.' : 'Chcesz, żebym pomógł Ci robić kolejne korekty po drodze?'}</h2>
         <details className="dd-details dd-fit"><summary>Wybierz, czego teraz potrzebujesz</summary>
           <div className="dd-options">{FIT_OPTIONS.map(o => <button key={o.id} aria-pressed={fit === o.id} onClick={() => { setFit(o.id); setObjection(''); setStatus(''); event('next_step_selected'); }}>{o.label}</button>)}</div>
           {fit === 'coaching' && <><h3>Co chcesz wiedzieć przed decyzją?</h3><div className="dd-options">{OBJECTION_OPTIONS.map(o => <button key={o.id} aria-pressed={objection === o.id} onClick={() => { setObjection(o.id); event('decision_question_answered'); }}>{o.label}</button>)}</div></>}
@@ -302,7 +303,7 @@ export default function DecisionDiagnostic() {
         <p className="dd-invite-copy" aria-live="polite">{invite.text}</p>
         {invite.showNabor && <><a className="dd-primary" href={NABOR_URL} onClick={() => event('nabor_clicked', { placement: 'result' })}>{invite.cta} <span>↗</span></a><p className="dd-micro">Zakres, sposób pracy i koszt.</p></>}
         {fit === 'coaching' && <details className="dd-details"><summary>Wyślij mi wynik do rozmowy o prowadzeniu</summary>
-          <p>Jeśli chcesz porozmawiać o prowadzeniu, możesz wysłać mi wynik razem ze swoim @Instagram.</p>
+          <p>Jeśli chcesz porozmawiać o prowadzeniu, wyślij mi ten wynik razem ze swoim @Instagram. Zobaczę dokładnie tę samą ścieżkę, którą właśnie przeszedłeś.</p>
           <label className="dd-input-label" htmlFor="dd-ig">Twój Instagram</label><input id="dd-ig" value={instagram} autoComplete="off" placeholder="@twoj_nick" onChange={e => setInstagram(e.target.value)} maxLength={31} />
           <label className="dd-consent"><input type="checkbox" checked={consent} onChange={e => setConsent(e.target.checked)} /><span>Chcę wysłać Michałowi odpowiedzi z diagnostyki, ocenę wyniku i wybrane doprecyzowanie. Proszę o kontakt na Instagramie w sprawie prowadzenia.</span></label>
           <button className="dd-secondary" disabled={sending || sent || !consent || !/^[A-Za-z0-9._]{2,30}$/.test(instagram.trim().replace(/^@/, ''))} onClick={sendContact}>{sent ? 'Wynik wysłany ✓' : sending ? 'Wysyłam…' : 'Wyślij mój wynik'}</button>
@@ -316,7 +317,7 @@ export default function DecisionDiagnostic() {
         <button className="dd-secondary" disabled={!contentConsent || shared} onClick={shareTopics}>{shared ? 'Dzięki, przekazane ✓' : 'Udostępnij odpowiedzi do wyboru tematów'}</button>
         {shareError && <p role="status">{shareError}</p>}
       </details>
-      <p className="dd-privacy">To automatyczne podsumowanie odpowiedzi. Proponuje próbę do sprawdzenia. Dolegliwości zdrowotne omów z lekarzem.</p>
+      <p className="dd-privacy">To automatyczne podsumowanie Twoich odpowiedzi. Daje krok do sprawdzenia, nie diagnozę medyczną. Dolegliwości zdrowotne omów z lekarzem.</p>
       <button className="dd-link" onClick={restart}>Zacznij od nowa</button>
     </article>}
     <footer className="dd-footer">Michał · Hantle i Talerz · Diagnostyka 168</footer>
