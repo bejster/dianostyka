@@ -23,14 +23,15 @@ test('release jest zawersjonowany 2.9.0', () => {
 test('entry sets an observable scope without an invented awareness gap', () => {
   assert.ok(coldEntry);
   assert.match(coldEntry, /Sprawdzam swój tydzień/);
-  assert.match(coldEntry, /Wybierz sytuację z ostatniego tygodnia/);
+  assert.match(coldEntry, /Wybierz jedną sytuację z ostatniego tygodnia/);
   assert.doesNotMatch(coldEntry, /hormon|testosteron|kortyzol|wellness|Twój sufit/i);
 });
 
 test('the entry does not require belief in a proprietary mechanism', () => {
   assert.ok(coldEntry);
   assert.doesNotMatch(coldEntry, /Pęknięci|Pęknięcia/i);
-  assert.match(coldEntry, /W każdej z tych sytuacji warto sprawdzić coś innego/);
+  assert.match(coldEntry, /ekran pojawił się już po trudności z zaśnięciem/);
+  assert.match(coldEntry, /sprawdzamy inny moment/);
 });
 
 test('weekend is demoted to Q1/Q2 but is still asked first in the flow', () => {
