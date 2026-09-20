@@ -454,10 +454,11 @@ export default function ResultExperience({
 
         {/* HORYZONT (V2.8) — orientacja w czasie bez obietnic. Trzy okna: co sprawdzamy po 72h,
             co widać przez kolejne tygodnie, czego nie da się przyspieszyć. Zero dat, zero gwarancji. */}
-        <section className="rx-beat" data-beat="horizon">
-          <div className="rx-kick">Co i kiedy da się zobaczyć</div>
-          <h2 className="rx-h2" style={{ fontSize: 'clamp(24px,4.8vw,36px)' }}>Na każdym z tych odcinków widać co innego.</h2>
-          <div className="rx-horizon">
+        <details className="rx-beat rx-collapsed" data-beat="horizon">
+          <summary><span className="rx-collapsed-k">Co i kiedy da się zobaczyć</span><strong>Jak czytać te 72 godziny?</strong></summary>
+          <div className="rx-collapsed-body">
+            <h2 className="rx-h2" style={{ fontSize: 'clamp(24px,4.8vw,36px)' }}>Na każdym z tych odcinków widać co innego.</h2>
+            <div className="rx-horizon">
             <div className="rx-hz">
               <span className="rx-hz-k">72 godziny</span>
               {/* Trzecie powtorzenie experiment.observe na jednej stronie. Test wyzej mowi to doslownie,
@@ -472,10 +473,11 @@ export default function ResultExperience({
               <span className="rx-hz-k">Dłuższy horyzont</span>
               <p>Sylwetka, wyniki w treningu i rytm, który trzyma się sam, biorą się z wielu takich samych tygodni pod rząd. Ile ich potrzeba, zależy od tego, skąd startujesz i ile z tego dowieziesz. Daty tutaj nie podam, bo byłaby zmyślona.</p>
             </div>
+            </div>
           </div>
-        </section>
+        </details>
 
-        {/* BEAT 6 — DEMONSTRACJA METODY. Zero obietnicy darmowej analizy. Router: DM/NABOR/eksperyment wg intent x start_when. */}
+        {/* BEAT 6 — krótki most do 1:1. Długi opis jest opcjonalny. */}
         <section className="rx-beat" data-beat="6">
           <div className="rx-kick">Gdybym prowadził Cię 1:1</div>
           <div className="rx-human">
@@ -485,59 +487,19 @@ export default function ResultExperience({
               <strong>Z tego wyniku da się już ustawić pierwszy ruch. W 1:1 sprawdzam go na Twoim zwykłym tygodniu i poprawiam po tym, co wychodzi przez kolejne dni.</strong>
             </div>
           </div>
-          <h2 className="rx-h2" style={{ fontSize: 'clamp(23px,4.8vw,34px)' }}>Gdybym brał ten wynik do prowadzenia, zacząłbym tak.</h2>
+
           <p className="rx-method-lead">{repairLead}</p>
-          <ol className="rx-demo">
-            <li><span className="rx-demo-n">1</span><div><strong>Pierwszy punkt: {breakPos.label}</strong><p>Ustawiamy wersję minimum właśnie tutaj. Ma zadziałać też w dniu, w którym nic nie idzie po planie.</p></div></li>
-            {/* experiment.name to kryptonim testu (wersaliki, część nazw w trybie rozkazującym), a observe jest w mianowniku.
-                Oba wchodzą jako apozycja po "testu" / po dwukropku — "test to ODŁÓŻ NA JUTRO" i "patrzymy na liczba..."
-                łamią gramatykę w całym banku 20 eksperymentów. */}
-            <li><span className="rx-demo-n">2</span><div><strong>Sprawdzamy: {weakestStatus?.label}</strong><p>Na start dostajesz jedno zadanie na 72 godziny: {experiment.action} Obserwujemy: {experiment.observe.toLowerCase()}.</p></div></li>
-            <li><span className="rx-demo-n">3</span><div><strong>Tego na start nie ruszam: {strongestStatus?.label}</strong><p>Zostawiam to bez zmian, żeby był punkt odniesienia. Wtedy widać, czy tydzień poprawia pierwszy ruch, czy coś zupełnie innego.</p></div></li>
-            <li><span className="rx-demo-n">4</span><div><strong>Dokładam dopiero po dowodzie</strong><p>Kolejny element wchodzi wtedy, gdy pierwszy przeżyje gorszy tydzień. Jeśli nie przeżyje, zmieniam ruch, a nie dokładam Ci kolejnych zasad.</p></div></li>
-          </ol>
-          <div className="rx-expectation">
-            <p>Jeśli myślisz o prowadzeniu, niżej masz następny krok.</p>
-            <p>Nie każę Ci opisywać od nowa tego, co przed chwilą wypełniłeś. Ta diagnostyka jest już punktem wyjścia.</p>
-          </div>
 
           <a className="rx-badge" style={{ marginTop: 16 }} href={GOOGLE_AGG.url} target="_blank" rel="noopener noreferrer">
             <span className="rx-g">G</span>
             <span className="rx-r">{GOOGLE_AGG.rating} <span style={{ color: C.gold }}>★★★★★</span><span style={{ color: C.mute, fontWeight: 400 }}> · {GOOGLE_AGG.count} opinii w Google</span></span>
           </a>
-          <div className="rx-gcards">
-            {GOOGLE_CARDS.slice(0, 1).map((r, i) => (
-              <div key={i} className="rx-gcard">
-                <div className="rx-gtop"><span style={{ color: C.gold, letterSpacing: 1 }}>★★★★★</span><span style={{ fontFamily: C.mono, fontSize: 10, color: C.faint }}>{r.name}</span></div>
-                <p className="rx-gq">„{r.text}”</p>
-              </div>
-            ))}
-          </div>
-          {instagram && <p className="rx-fine">Mam ten wynik przypisany do @{instagram}. Nie musisz niczego wypełniać drugi raz.</p>}
 
-          <div className="rx-final-action">
-            <div className="rx-route-eyebrow">Zanim zamkniesz wynik</div>
-            <div className="rx-ceiling">
-              <p className="rx-ceiling-lead">{ceilingLead}</p>
-              <p>{ceilingBody}</p>
-              <p className="rx-ceiling-hit">{ceilingHit}</p>
-            </div>
-            {gaps.length > 0 && (
-              <div className="rx-gaps">
-                <p className="rx-gaps-lead">{gapsLead}</p>
-                <ul>
-                  {gaps.map((g) => (
-                    <li key={g.label}><strong>{g.label}:</strong> {g.cost}</li>
-                  ))}
-                </ul>
-              </div>
-            )}
-            <p className="rx-know">{knowledgeLine}</p>
+          <div className="rx-final-action rx-final-action-short">
             <h3>{route.primaryKicker}</h3>
             <p>{route.primaryNote}</p>
             {route.primary === 'nabor' ? (
               <>
-                <p className="rx-invite">{naborInvite}</p>
                 <a className="rx-next rx-next-strong" href={naborHref} target="_blank" rel="noopener noreferrer" onClick={onNaborClick}>{route.primaryLabel} →</a>
                 {!committed && <button className="rx-route-alt" type="button" onClick={commitExperiment}>Nie teraz. Biorę test 72h</button>}
                 {committed && <div className="rx-action-confirm">Test 72h zapisany ✓</div>}
@@ -547,27 +509,64 @@ export default function ResultExperience({
                 {!committed ? <button className="rx-next rx-next-strong" type="button" onClick={commitExperiment}>{route.primaryLabel}</button> : <div className="rx-action-confirm">Test 72h zapisany ✓</div>}
                 {committed && !saved && <button className="rx-next rx-next-medium" type="button" onClick={shareSafe}>Zapisz wynik na te 72 godziny</button>}
                 {committed && saved && <div className="rx-action-done">Wynik zapisany. Zostaje Ci jeden test.</div>}
-                {route.secondaryNabor && <p className="rx-invite rx-invite-soft">{naborInviteSoft}</p>}
                 {route.secondaryNabor && <a className="rx-route-alt" href={naborHref} target="_blank" rel="noopener noreferrer" onClick={onNaborClick}>{route.secondaryNabor.label} →</a>}
               </>
             )}
           </div>
+
+          <details className="rx-more">
+            <summary>Zobacz dokładnie, jak pracowałbym dalej</summary>
+            <div className="rx-more-body">
+              <h2 className="rx-h2" style={{ fontSize: 'clamp(23px,4.8vw,34px)' }}>Gdybym brał ten wynik do prowadzenia, zacząłbym tak.</h2>
+              <ol className="rx-demo">
+                <li><span className="rx-demo-n">1</span><div><strong>Pierwszy punkt: {breakPos.label}</strong><p>Ustawiamy wersję minimum właśnie tutaj. Ma zadziałać też w dniu, w którym nic nie idzie po planie.</p></div></li>
+                <li><span className="rx-demo-n">2</span><div><strong>Sprawdzamy: {weakestStatus?.label}</strong><p>Na start dostajesz jedno zadanie na 72 godziny: {experiment.action} Obserwujemy: {experiment.observe.toLowerCase()}.</p></div></li>
+                <li><span className="rx-demo-n">3</span><div><strong>Tego na start nie ruszam: {strongestStatus?.label}</strong><p>Zostawiam to bez zmian, żeby był punkt odniesienia.</p></div></li>
+                <li><span className="rx-demo-n">4</span><div><strong>Dokładam dopiero po dowodzie</strong><p>Jeśli pierwszy ruch nie przeżyje gorszego tygodnia, zmieniam ruch zamiast dokładać kolejne zasady.</p></div></li>
+              </ol>
+              <div className="rx-expectation"><p>Nie każę Ci opisywać od nowa tego, co przed chwilą wypełniłeś. Ta diagnostyka jest już punktem wyjścia.</p></div>
+              <div className="rx-gcards">
+                {GOOGLE_CARDS.slice(0, 1).map((r, i) => (
+                  <div key={i} className="rx-gcard">
+                    <div className="rx-gtop"><span style={{ color: C.gold, letterSpacing: 1 }}>★★★★★</span><span style={{ fontFamily: C.mono, fontSize: 10, color: C.faint }}>{r.name}</span></div>
+                    <p className="rx-gq">„{r.text}”</p>
+                  </div>
+                ))}
+              </div>
+              {instagram && <p className="rx-fine">Mam ten wynik przypisany do @{instagram}. Nie musisz niczego wypełniać drugi raz.</p>}
+              <div className="rx-ceiling rx-ceiling-optional">
+                <p className="rx-ceiling-lead">{ceilingLead}</p>
+                <p>{ceilingBody}</p>
+                <p className="rx-ceiling-hit">{ceilingHit}</p>
+              </div>
+              {gaps.length > 0 && (
+                <div className="rx-gaps">
+                  <p className="rx-gaps-lead">{gapsLead}</p>
+                  <ul>{gaps.map((g) => (<li key={g.label}><strong>{g.label}:</strong> {g.cost}</li>))}</ul>
+                </div>
+              )}
+              <p className="rx-know">{knowledgeLine}</p>
+              <p className="rx-invite">{naborInvite}</p>
+              {route.secondaryNabor && <p className="rx-invite rx-invite-soft">{naborInviteSoft}</p>}
+            </div>
+          </details>
         </section>
 
-        {/* BEAT 7 — KALIBRACJA (bez zmian wartości) + bezpieczny Zapisz/Udostepnij */}
-        <section className="rx-beat" data-beat="7">
-          <div className="rx-kick">Doprecyzuj wynik</div>
-          <h2 className="rx-h2" style={{ fontSize: 'clamp(22px,4.6vw,32px)', marginBottom: 12 }}>Co w tym wyniku najmniej do Ciebie pasuje?</h2>
-          <p className="rx-sub" style={{ marginBottom: 20 }}>Jedno kliknięcie. Chcę wiedzieć, gdzie przestrzeliłem.</p>
-          <div className="rx-calibwrap">
-            {CALIB.map((c) => (
-              <button key={c.id} className={'rx-cchip' + (calib === c.id ? ' on' : '')} onClick={() => sendCalib(c.id)}>{c.label}</button>
-            ))}
-          </div>
-          {calib && <p className="rx-calibreply">{CALIB_REPLY[calib] || 'Dzięki. To pokazuje mi, gdzie wynik przestrzelił.'}</p>}
-          <button className="rx-save" type="button" onClick={shareSafe}>{saved ? 'Zapisano ✓' : 'Zapisz / udostępnij wynik'}</button>
-
-
+        {/* BEAT 7 — opcjonalna kalibracja, domyślnie zwinięta. */}
+        <section className="rx-beat rx-calibration-section" data-beat="7">
+          <details className="rx-calibration-details">
+            <summary>Coś w wyniku nie pasuje? Doprecyzuj</summary>
+            <div className="rx-calibration-body">
+              <p className="rx-sub" style={{ marginBottom: 16 }}>Jedno kliknięcie. Chcę wiedzieć, gdzie przestrzeliłem.</p>
+              <div className="rx-calibwrap">
+                {CALIB.map((c) => (
+                  <button key={c.id} className={'rx-cchip' + (calib === c.id ? ' on' : '')} onClick={() => sendCalib(c.id)}>{c.label}</button>
+                ))}
+              </div>
+              {calib && <p className="rx-calibreply">{CALIB_REPLY[calib] || 'Dzięki. To pokazuje mi, gdzie wynik przestrzelił.'}</p>}
+            </div>
+          </details>
+          <button className="rx-save rx-save-compact" type="button" onClick={shareSafe}>{saved ? 'Zapisano ✓' : 'Zapisz / udostępnij wynik'}</button>
         </section>
 
       </div>
@@ -628,6 +627,7 @@ const css = `
 .rx-hz{padding:16px 18px;border:1px solid ${C.line};border-radius:14px;background:${C.pan2};position:relative}
 .rx-hz:first-child{border-color:${C.goldD};background:linear-gradient(150deg,rgba(200,168,78,.075),${C.pan2})}
 .rx-hz-k{display:block;font-family:${C.mono};font-size:10px;letter-spacing:2px;text-transform:uppercase;color:${C.gold};font-weight:700;margin-bottom:8px}
+.rx-collapsed{padding:22px 0!important}.rx-collapsed>summary{cursor:pointer;list-style:none;padding:18px 0;color:${C.paper};display:flex;flex-direction:column;gap:7px}.rx-collapsed>summary::-webkit-details-marker{display:none}.rx-collapsed-k{font-family:${C.mono};font-size:9px;letter-spacing:2px;text-transform:uppercase;color:${C.gold}}.rx-collapsed>summary strong{font-family:${C.serif};font-size:clamp(22px,4.6vw,30px);font-weight:400}.rx-collapsed-body{padding:8px 0 20px}
 .rx-hz p{margin:0;font-size:14.5px;line-height:1.55;color:${C.paper}}
 .rx-hz:not(:first-child) p{color:${C.mute}}
 .rx-receipts{margin-top:22px;display:grid;gap:10px;max-width:46ch;width:100%}
@@ -646,7 +646,8 @@ const css = `
 .rx-gaps{margin:0 0 18px}.rx-gaps .rx-gaps-lead{font-family:${C.mono};font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:${C.faint};margin:0 0 10px}.rx-gaps ul{list-style:none;margin:0;padding:0}.rx-gaps li{font-family:${C.sans};font-size:14.5px;line-height:1.55;color:${C.mute};padding:9px 0 9px 14px;border-left:1px solid ${C.goldD};margin-bottom:7px}.rx-gaps li:last-child{margin-bottom:0}.rx-gaps li strong{color:${C.paper};font-weight:600}
 .rx-know{font-family:${C.sans};font-size:14px;line-height:1.7;color:${C.faint};margin:0 0 22px;padding:14px 16px;background:rgba(255,255,255,.028);border-radius:4px}
 .rx-invite{font-family:${C.sans};font-size:15.5px;line-height:1.68;color:${C.paper};margin:0 0 16px}.rx-invite.rx-invite-soft{font-size:14.5px;color:${C.mute};margin-top:18px}
-.rx-final-action{margin-top:34px;padding:22px;border:1px solid ${C.goldD};border-radius:18px;background:linear-gradient(160deg,rgba(200,168,78,.10),${C.pan2} 48%,${C.pan});box-shadow:0 24px 70px -42px rgba(200,168,78,.7)}.rx-final-action h3{font-family:${C.serif};font-size:clamp(25px,5vw,36px);line-height:1.05;font-weight:400;color:${C.paper};margin:8px 0 10px}.rx-final-action>p{color:${C.mute};font-size:14.5px;line-height:1.55;margin:0 0 18px}.rx-action-confirm{text-align:center;padding:16px;border:1px solid ${C.goldD};border-radius:13px;color:${C.goldB};font-weight:800;background:rgba(200,168,78,.06);margin-bottom:10px}.rx-action-done{text-align:center;color:${C.mute};font-size:13px;line-height:1.5;padding:6px 8px 2px}
+.rx-final-action{margin-top:34px;padding:22px;border:1px solid ${C.goldD};border-radius:18px;background:linear-gradient(160deg,rgba(200,168,78,.10),${C.pan2} 48%,${C.pan});box-shadow:0 24px 70px -42px rgba(200,168,78,.7)}.rx-final-action-short{margin-top:18px}.rx-more{margin-top:16px;border-top:1px solid ${C.line};padding-top:8px}.rx-more>summary{cursor:pointer;color:${C.mute};font-size:13.5px;padding:14px 0}.rx-more[open]>summary{color:${C.goldB}}.rx-more-body{padding:16px 0 6px}.rx-ceiling-optional{margin-top:24px}.rx-calibration-section{padding:24px 0 40px!important}.rx-calibration-details>summary{cursor:pointer;color:${C.mute};font-size:13.5px;padding:12px 0}.rx-calibration-details[open]>summary{color:${C.paper}}.rx-calibration-body{padding:10px 0 8px}.rx-save-compact{margin-top:8px}
+.rx-final-action h3{font-family:${C.serif};font-size:clamp(25px,5vw,36px);line-height:1.05;font-weight:400;color:${C.paper};margin:8px 0 10px}.rx-final-action>p{color:${C.mute};font-size:14.5px;line-height:1.55;margin:0 0 18px}.rx-action-confirm{text-align:center;padding:16px;border:1px solid ${C.goldD};border-radius:13px;color:${C.goldB};font-weight:800;background:rgba(200,168,78,.06);margin-bottom:10px}.rx-action-done{text-align:center;color:${C.mute};font-size:13px;line-height:1.5;padding:6px 8px 2px}
 .rx-route-card{margin-top:30px;padding:24px;border-radius:20px;border:1px solid rgba(200,168,78,.34);background:radial-gradient(420px 180px at 50% 0%,rgba(200,168,78,.12),transparent 70%),${C.pan};box-shadow:0 28px 80px -52px rgba(200,168,78,.65)}.rx-route-eyebrow{font-family:${C.mono};font-size:10px;letter-spacing:2.4px;text-transform:uppercase;color:${C.gold};font-weight:800;margin-bottom:10px}.rx-route-card h3{font-family:${C.serif};font-weight:400;font-size:clamp(25px,4.8vw,34px);line-height:1.08;margin:0 0 12px;color:${C.paper}}.rx-route-card>p{font-size:14.5px;line-height:1.58;color:${C.mute};margin:0 0 20px}.rx-route-alt{display:block;width:100%;text-align:center;text-decoration:none;background:transparent;border:0;color:${C.mute};font-size:13px;font-weight:650;padding:9px 8px;cursor:pointer}.rx-route-alt:hover{color:${C.goldB}}
 .rx-quote{font-family:${C.serif};font-style:italic;font-size:clamp(19px,4vw,24px);color:${C.paper};line-height:1.34;border-left:2px solid ${C.goldD};padding-left:18px;margin:14px 0 0}
 .rx-cta{display:block;width:100%;text-align:center;text-decoration:none;font-weight:800;font-size:17px;color:${C.ink};background:linear-gradient(135deg,${C.gold},${C.goldB});padding:20px 26px;border-radius:16px;margin:0 0 12px;border:none;cursor:pointer;box-shadow:0 0 0 1px rgba(200,168,78,.35),0 22px 60px -18px rgba(200,168,78,.5);transition:transform .18s,box-shadow .18s}
