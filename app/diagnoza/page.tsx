@@ -23,57 +23,45 @@ import { Atmosphere } from './atmosphere';
 const GOLD = '#c8a84e';
 const BG = '#08080a';
 
-// ── ŻYWY INSTRUMENT (intro): rytm 7 dni, jeden dzień świeci na czerwono z pytajnikiem.
-// Ten sam sygnał, który user dostaje w wyniku (krzywa TU PĘKA). Deterministyczny, zero danych.
+// ── OPEN LOOP (intro): pokazujemy mechanizm, ale nie ujawniamy odpowiedzi użytkownika przed diagnozą.
+// Znak zapytania porusza się po wcześniejszych momentach dnia, a "OBJAW" stoi później.
+// To nie jest wynik ani sugestia godziny. To wizualne pytanie: gdzie u Ciebie zaczął się łańcuch?
 function WeekPulse() {
-  const ys = [62, 68, 58, 66, 60, 67, 61]; // neutralny puls — zaden dzien nie wyrozniony (nie sugeruj dnia przed odpowiedzia usera)
-  const xAt = (i: number) => 26 + (408 * i) / 6;
-  const pts = ys.map((y, i) => ({ x: xAt(i), y }));
-  let d = `M ${pts[0].x} ${pts[0].y}`;
-  for (let i = 0; i < pts.length - 1; i++) {
-    const p0 = pts[i - 1] || pts[i], p1 = pts[i], p2 = pts[i + 1], p3 = pts[i + 2] || p2;
-    const c1x = p1.x + (p2.x - p0.x) / 6, c1y = p1.y + (p2.y - p0.y) / 6;
-    const c2x = p2.x - (p3.x - p1.x) / 6, c2y = p2.y - (p3.y - p1.y) / 6;
-    d += ` C ${c1x.toFixed(1)} ${c1y.toFixed(1)}, ${c2x.toFixed(1)} ${c2y.toFixed(1)}, ${p2.x} ${p2.y}`;
-  }
-  const days = ['PON', 'WT', 'ŚR', 'CZW', 'PT', 'SOB', 'NDZ'];
+  const moments = ['RANO', 'PRACA', 'PO PRACY', 'WIECZÓR'];
   return (
-    <div className="wpulse" style={{ maxWidth: 440, margin: '0 auto 30px' }}>
+    <div className="wpu" role="img" aria-label="Przykład: objaw może pojawić się później niż moment, który uruchomił cały ciąg.">
       <style>{`
-        .wpu-line { stroke-dasharray: 1; stroke-dashoffset: 1; }
-        @keyframes wpuDraw { to { stroke-dashoffset: 0; } }
-        @keyframes wpuHot { 0%,100% { r: 5.5; opacity: 1; } 50% { r: 7; opacity: .72; } }
-        @keyframes wpuRing { 0% { r: 6; opacity: .55; } 70% { r: 18; opacity: 0; } 100% { opacity: 0; } }
-        @keyframes wpuQ { 0%,100% { opacity: .5; } 50% { opacity: 1; } }
-        @media (prefers-reduced-motion: no-preference) {
-          .wpu-line { animation: wpuDraw 1.8s .3s cubic-bezier(.4,0,.2,1) forwards; }
-          .wpu-hot { animation: wpuHot 2.2s 1.4s ease-in-out infinite; }
-          .wpu-ring { animation: wpuRing 2.2s 1.4s ease-out infinite; }
-          .wpu-q { animation: wpuQ 2.2s 1.4s ease-in-out infinite; }
-        }
+        .wpu{max-width:440px;margin:0 auto 22px;padding:14px 14px 12px;border:1px solid rgba(200,168,78,.18);border-radius:18px;background:linear-gradient(160deg,rgba(200,168,78,.055),rgba(255,255,255,.018));box-shadow:0 22px 60px -46px rgba(200,168,78,.55)}
+        .wpu-k{font-family:'JetBrains Mono',monospace;font-size:8.5px;letter-spacing:2.1px;text-transform:uppercase;color:#777169;margin-bottom:13px}
+        .wpu-track{position:relative;display:grid;grid-template-columns:repeat(4,1fr);align-items:start;padding-top:17px}
+        .wpu-line{position:absolute;left:8%;right:8%;top:22px;height:1px;background:linear-gradient(90deg,#3a3427,#8a7535 55%,rgba(224,85,46,.62))}
+        .wpu-node{position:relative;text-align:center;z-index:2}
+        .wpu-dot{width:10px;height:10px;margin:0 auto 10px;border-radius:50%;background:#08080a;border:1px solid #746f67;box-shadow:0 0 0 4px #0e0e10}
+        .wpu-node:last-child .wpu-dot{background:#e0552e;border-color:#e78b6c;box-shadow:0 0 0 4px #0e0e10,0 0 18px rgba(224,85,46,.42)}
+        .wpu-node span{display:block;font-family:'JetBrains Mono',monospace;font-size:8px;letter-spacing:.8px;color:#6f6b64;white-space:nowrap}
+        .wpu-node:last-child span{color:#d78970}
+        .wpu-q{position:absolute;z-index:3;top:4px;left:8%;width:28px;height:28px;border-radius:50%;display:grid;place-items:center;transform:translateX(-50%);font-family:'Instrument Serif',Georgia,serif;font-size:21px;color:#f2d98f;border:1px solid #9a8140;background:#15130e;box-shadow:0 0 0 4px rgba(200,168,78,.06),0 0 22px rgba(200,168,78,.28)}
+        .wpu-caption{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-top:14px;padding-top:12px;border-top:1px solid #242226}
+        .wpu-caption span{font-family:'JetBrains Mono',monospace;font-size:8px;letter-spacing:1.5px;text-transform:uppercase;color:#8f887c}
+        .wpu-caption strong{font-size:12.5px;line-height:1.35;color:#ece7db;text-align:right}
+        @keyframes wpuSeek{0%,12%{left:9%}32%,44%{left:34%}64%,76%{left:59%}100%{left:9%}}
+        @media (prefers-reduced-motion:no-preference){.wpu-q{animation:wpuSeek 7.2s cubic-bezier(.65,0,.35,1) infinite}}
+        @media(max-width:380px){.wpu{padding-left:10px;padding-right:10px}.wpu-node span{font-size:7.3px}.wpu-caption{gap:8px}.wpu-caption strong{font-size:11.5px}}
       `}</style>
-      <svg viewBox="0 0 460 120" width="100%" role="img" aria-label="rytm tygodnia" style={{ display: 'block' }}>
-        <defs>
-          <linearGradient id="wpuGrad" x1="0" y1="0" x2="1" y2="0">
-            <stop offset="0%" stopColor="#8a7535" />
-            <stop offset="50%" stopColor="#e8cc80" />
-            <stop offset="100%" stopColor="#8a7535" />
-          </linearGradient>
-          <filter id="wpuGlow" x="-40%" y="-80%" width="180%" height="260%">
-            <feGaussianBlur stdDeviation="4" result="b" /><feMerge><feMergeNode in="b" /><feMergeNode in="SourceGraphic" /></feMerge>
-          </filter>
-        </defs>
-        <line x1="26" x2="434" y1="98" y2="98" stroke="#26262b" strokeWidth="1" strokeDasharray="2 6" />
-        <path d={d} fill="none" stroke="url(#wpuGrad)" strokeWidth="2.5" strokeLinecap="round" filter="url(#wpuGlow)" pathLength={1} className="wpu-line" />
-        {pts.map((p, i) => (
-          <g key={i}>
-            <circle cx={p.x} cy={p.y} r={3} fill="#08080a" stroke="#8f887c" strokeWidth={1.5} />
-            <text x={p.x} y={116} textAnchor="middle" fontFamily="'JetBrains Mono', monospace" fontSize="10" fill="#5a5a60" fontWeight={500}>{days[i]}</text>
-          </g>
+      <div className="wpu-k">Przykład mechanizmu · nie Twój wynik</div>
+      <div className="wpu-track">
+        <div className="wpu-line" aria-hidden="true" />
+        <div className="wpu-q" aria-hidden="true">?</div>
+        {moments.map((m, i) => (
+          <div className="wpu-node" key={m}>
+            <div className="wpu-dot" />
+            <span>{i === moments.length - 1 ? 'OBJAW' : m}</span>
+          </div>
         ))}
-      </svg>
-      <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 10, letterSpacing: 2.5, textTransform: 'uppercase', color: '#8f887c', textAlign: 'center', marginTop: 8 }}>
-        TWÓJ ZWYKŁY TYDZIEŃ · 168 H
+      </div>
+      <div className="wpu-caption">
+        <span>Widzisz skutek</span>
+        <strong>ale gdzie zaczął się łańcuch?</strong>
       </div>
     </div>
   );
@@ -299,15 +287,22 @@ export default function DiagnozaPage() {
         <Atmosphere />
         <div style={{ maxWidth: 480, margin: '0 auto', width: '100%', position: 'relative', zIndex: 1 }}>
           <WeekPulse />
-          <div style={{ fontFamily: "'JetBrains Mono', ui-monospace, monospace", fontSize: 10.5, letterSpacing: 3, textTransform: 'uppercase', color: GOLD, fontWeight: 800, marginBottom: 18 }}>
-            Diagnostyka 168 · 5 min
+          <div style={{ fontFamily: "'JetBrains Mono', ui-monospace, monospace", fontSize: 10.2, letterSpacing: 2.6, textTransform: 'uppercase', color: GOLD, fontWeight: 800, marginBottom: 14 }}>
+            Diagnostyka 168 · 5 min · wynik od razu
           </div>
-          <h1 style={{ fontFamily: "'Instrument Serif', Georgia, serif", fontSize: 'clamp(38px, 9.4vw, 58px)', lineHeight: 0.99, fontWeight: 400, color: '#fff', margin: '0 0 18px', letterSpacing: '-0.018em', maxWidth: 445 }}>
-            Sprawdź, czy Twój obecny poziom to naprawdę Twój sufit.
+          <h1 style={{ fontFamily: "'Instrument Serif', Georgia, serif", fontSize: 'clamp(37px, 9vw, 56px)', lineHeight: 1.0, fontWeight: 400, color: '#fff', margin: '0 0 14px', letterSpacing: '-0.018em', maxWidth: 455 }}>
+            Wiesz, co robić. Więc czemu Twój tydzień i tak kończy się tak samo?
           </h1>
-          <p style={{ fontSize: 16, color: '#b9b2a7', lineHeight: 1.55, margin: '0 0 24px', maxWidth: 430 }}>
-            Kilkanaście krótkich pytań o to, jak wygląda Twój zwykły tydzień. Wynik pokaże, gdzie masz największy zapas, co ruszyć najpierw i po czym poznasz, że idziesz w dobrą stronę.
+          <p style={{ fontSize: 15.5, color: '#b9b2a7', lineHeight: 1.52, margin: '0 0 16px', maxWidth: 438 }}>
+            Wypadnięty trening, wieczorne jedzenie, zjazd po pracy albo ciężki powrót po weekendzie to momenty, które zauważasz. <strong style={{ color: '#ece7db', fontWeight: 700 }}>Nie zawsze momenty, w których wszystko się zaczęło.</strong>
           </p>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 7, margin: '0 0 17px' }}>
+            {['PIERWSZY MOMENT', 'CO DZIEJE SIĘ PÓŹNIEJ', 'TEST 72H'].map((label, i) => (
+              <div key={label} style={{ minWidth: 0, padding: '9px 7px', border: '1px solid #29272a', borderRadius: 10, background: 'rgba(255,255,255,.018)', textAlign: 'center' }}>
+                <span style={{ display: 'block', fontFamily: "'JetBrains Mono', ui-monospace, monospace", fontSize: 7.5, letterSpacing: .8, color: i === 0 ? GOLD : '#8f887c', lineHeight: 1.35 }}>{label}</span>
+              </div>
+            ))}
+          </div>
           <button
             onClick={() => {
               registerContext({ mode: 'diagnostic' });
@@ -316,12 +311,12 @@ export default function DiagnozaPage() {
               setPhase('intake');
               if (typeof window !== 'undefined') window.scrollTo({ top: 0 });
             }}
-            style={{ width: '100%', padding: '18px 17px', borderRadius: 14, border: 'none', cursor: 'pointer', background: `linear-gradient(135deg, ${GOLD}, #8a7535)`, color: BG, fontWeight: 850, fontSize: 16, letterSpacing: 0.35, boxShadow: '0 14px 34px rgba(200,168,78,.15)' }}
+            style={{ width: '100%', padding: '18px 17px', borderRadius: 14, border: 'none', cursor: 'pointer', background: `linear-gradient(135deg, ${GOLD}, #8a7535)`, color: BG, fontWeight: 850, fontSize: 16, letterSpacing: 0.25, boxShadow: '0 16px 38px rgba(200,168,78,.18)' }}
           >
-            Sprawdź mój poziom &rarr;
+            Znajdź mój pierwszy punkt &rarr;
           </button>
-          <p style={{ fontFamily: "'JetBrains Mono', ui-monospace, monospace", fontSize: 10.5, letterSpacing: 1.5, color: '#6f6b64', lineHeight: 1.45, margin: '13px 0 0', textAlign: 'center', textTransform: 'uppercase' }}>
-            wynik od razu
+          <p style={{ fontFamily: "'JetBrains Mono', ui-monospace, monospace", fontSize: 9.8, letterSpacing: 1.25, color: '#777169', lineHeight: 1.45, margin: '11px 0 0', textAlign: 'center', textTransform: 'uppercase' }}>
+            bez maila · wynik od razu · jeden konkretny ruch
           </p>
         </div>
       </div>
