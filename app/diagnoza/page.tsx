@@ -294,7 +294,7 @@ export default function DiagnozaPage() {
             Wiesz, co robić. Więc czemu Twój tydzień i tak kończy się tak samo?
           </h1>
           <p style={{ fontSize: 15.5, color: '#b9b2a7', lineHeight: 1.52, margin: '0 0 16px', maxWidth: 438 }}>
-            Wypadnięty trening, wieczorne jedzenie, zjazd po pracy albo ciężki powrót po weekendzie to momenty, które zauważasz. <strong style={{ color: '#ece7db', fontWeight: 700 }}>Nie zawsze momenty, w których wszystko się zaczęło.</strong>
+            Wypadnięty trening, wieczorne jedzenie, zjazd po pracy albo ciężki powrót do rytmu to momenty, które zauważasz. <strong style={{ color: '#ece7db', fontWeight: 700 }}>Nie zawsze momenty, w których wszystko się zaczęło.</strong>
           </p>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 7, margin: '0 0 17px' }}>
             {['PIERWSZY MOMENT', 'CO DZIEJE SIĘ PÓŹNIEJ', 'TEST 72H'].map((label, i) => (
