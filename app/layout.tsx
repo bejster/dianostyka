@@ -2,17 +2,17 @@ import type { Metadata } from 'next';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'Diagnostyka 168: sprawdź, czy Twój obecny poziom to Twój sufit | Hantle i Talerz',
-  description: 'Kilkanaście pytań o to, jak funkcjonujesz w zwykłym tygodniu. Na końcu widzisz, gdzie masz największy zapas, co ruszyć najpierw i jeden test na 72 godziny.',
+  title: 'Wiesz, co robić. Więc czemu Twój tydzień i tak kończy się tak samo? | Diagnostyka 168',
+  description: 'Znajdź pierwszy moment w swoim tygodniu, od którego zaczyna się łańcuch. Wynik dostajesz od razu, a na końcu jeden test na 72 godziny. Bez maila.',
   alternates: { canonical: 'https://diagnostyka.talerzihantle.com/' },
   openGraph: {
-    title: 'Diagnostyka 168: sprawdź, czy Twój obecny poziom to Twój sufit | Hantle i Talerz',
-    description: 'Kilkanaście pytań o to, jak funkcjonujesz w zwykłym tygodniu. Na końcu widzisz, gdzie masz największy zapas, co ruszyć najpierw i jeden test na 72 godziny.',
+    title: 'Wiesz, co robić. Więc czemu Twój tydzień i tak kończy się tak samo?',
+    description: 'Znajdź pierwszy moment, od którego zaczyna się łańcuch. Wynik od razu + jeden test na 72 godziny.',
     url: 'https://diagnostyka.talerzihantle.com',
-    siteName: 'Diagnostyka | Hantle i Talerz',
+    siteName: 'Diagnostyka 168 | Hantle i Talerz',
     images: [
       {
-        url: 'https://diagnostyka.talerzihantle.com/og.png',
+        url: 'https://diagnostyka.talerzihantle.com/api/og',
         width: 1200,
         height: 630,
       },
@@ -22,9 +22,9 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Diagnostyka 168: sprawdź, czy Twój obecny poziom to Twój sufit | Hantle i Talerz',
-    description: 'Kilkanaście pytań o to, jak funkcjonujesz w zwykłym tygodniu. Na końcu widzisz, gdzie masz największy zapas, co ruszyć najpierw i jeden test na 72 godziny.',
-    images: ['https://diagnostyka.talerzihantle.com/og.png'],
+    title: 'Wiesz, co robić. Więc czemu Twój tydzień i tak kończy się tak samo?',
+    description: 'Znajdź pierwszy moment, od którego zaczyna się łańcuch. Wynik od razu + jeden test na 72 godziny.',
+    images: ['https://diagnostyka.talerzihantle.com/api/og'],
   },
   icons: {
     icon: '/icon.png',
