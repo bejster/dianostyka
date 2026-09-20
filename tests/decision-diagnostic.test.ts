@@ -145,7 +145,7 @@ test('medical fit does not invite to coaching, while a self-directed choice rema
   assert.equal(invitation('medical', '', 'ready').showNabor, false);
   assert.equal(invitation('self', '', 'repeat').showNabor, false);
   for (const reaction of ['off', 'obvious']) assert.equal(invitation('self', '', 'repeat', reaction).showNabor, false);
-  assert.match(invitation('self', '', 'repeat').text, /wrócić po próbie/);
+  assert.match(invitation('self', '', 'repeat').text, /Po próbie wróć/);
   assert.match(invitation('', '', 'curious').text, /sprawdzić ten krok sam/);
 });
 
