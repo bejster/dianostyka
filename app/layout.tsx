@@ -94,6 +94,7 @@ posthog.init(${JSON.stringify(PH_KEY)},{api_host:${JSON.stringify(PH_HOST)},pers
         )}
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        {/* eslint-disable-next-line @next/next/no-page-custom-font -- global App Router layout loads the shared brand fonts */}
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;600;700;800&family=Instrument+Serif:ital@0;1&family=Playfair+Display:ital,wght@0,600;0,700;1,600&family=Cormorant+Garamond:ital,wght@0,600;0,700;1,600&display=swap" rel="stylesheet" />
         {/* Meta Pixel - tracking lead funnel */}
         <script dangerouslySetInnerHTML={{__html:`
