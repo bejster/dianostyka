@@ -1,4 +1,4 @@
-/* Result v3.5: one reading path; reasoning and full evidence on demand. */
+/* Result v3.6: one reading path; source-bound cost visible, reasoning on demand. */
 .dd-header nav{display:flex;align-items:center;gap:24px;font-size:12px;color:var(--muted)}
 .dd-header nav a{display:inline-flex;align-items:center;gap:10px;min-height:44px;text-decoration:none;border-bottom:1px solid #665332;color:var(--ink)}
 .dd-header nav a:hover{color:var(--gold)}
@@ -9,6 +9,8 @@
 .dd-result-status{font-size:11px;color:var(--muted);border:1px solid #48402f;border-radius:30px;padding:6px 11px}
 .dd-result h1{font-size:clamp(36px,4.5vw,54px);line-height:1.1;margin:0;text-wrap:balance}
 .dd-result-lead{color:var(--muted);font-size:16px;margin:18px 0 0;max-width:62ch}
+.dd-result-cost{margin:14px 0 0;padding:12px 14px;border-left:2px solid #8a7447;background:#1b1913;color:var(--ink);font-size:14px;line-height:1.55}
+.dd-result-cost span{color:var(--gold);font-size:11px;letter-spacing:.08em;text-transform:uppercase;margin-right:6px}
 .dd-action{padding:26px;border-radius:16px;border-color:#998151;background:linear-gradient(145deg,#282316,#14140f);box-shadow:0 12px 60px #0003;scroll-margin-top:24px}
 .dd-action .dd-eyebrow{margin-bottom:12px}
 .dd-action h2{font-size:29px;line-height:1.17;margin-bottom:14px}
