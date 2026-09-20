@@ -211,7 +211,7 @@ export const FIT_OPTIONS = options([['self', 'Na razie sprawdzę to sam.'], ['co
 export const OBJECTION_OPTIONS = options([['process', 'Jak konkretnie wygląda prowadzenie?'], ['repeat', 'Boję się, że zapłacę i znowu odpuszczę.'], ['time', 'Nie wiem, czy znajdę na to czas.'], ['price', 'Ile kosztuje całość?'], ['none', 'Chcę już zobaczyć szczegóły.']]);
 export function invitation(fit: string, objection: string, why: string, reaction = ''): { text: string; cta: string; showNabor: boolean } {
   if (fit === 'medical') return { text: 'Diagnozę i leczenie dolegliwości omów z lekarzem. Ten quiz pomaga przyjrzeć się codziennym sytuacjom, ale nie zastępuje konsultacji.', cta: '', showNabor: false };
-  if (['off', 'obvious'].includes(reaction) && (!fit || fit === 'self')) return { text: 'Najpierw wróć do odpowiedzi, która wymaga doprecyzowania. Jeśli chcesz przyjrzeć się temu ze mną, możesz sprawdzić, jak wygląda prowadzenie.', cta: 'Zobacz prowadzenie', showNabor: true };
+  if (['off', 'obvious'].includes(reaction) && (!fit || fit === 'self')) return { text: 'Najpierw wróć do odpowiedzi, która wymaga doprecyzowania. Jeśli chcesz przyjrzeć się temu ze mną, możesz sprawdzić, jak wygląda prowadzenie.', cta: fit === 'self' ? '' : 'Zobacz prowadzenie', showNabor: fit !== 'self' };
   if (fit === 'self') return { text: 'Zachowaj wynik. Możesz tu wrócić po próbie i zapisać, co wyszło.', cta: '', showNabor: false };
   if (fit === 'plan') return { text: 'Plan jest częścią mojego prowadzenia. Wracamy do tego, co zrobiłeś i co wymaga zmiany. Sprawdź zakres, jeśli zależy Ci głównie na samej rozpisce.', cta: 'Sprawdź zakres', showNabor: true };
   const copy: Record<string, string> = {

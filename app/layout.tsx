@@ -3,16 +3,16 @@ import './globals.css';
 
 export const metadata: Metadata = {
   title: 'Diagnostyka 168: sprawdź swój tydzień | Hantle i Talerz',
-  description: 'Co ustawia Twój tydzień, zanim pomyślisz o diecie i treningu? Konkretna scena, wcześniejszy moment i próba dobrana do odpowiedzi. Bezpłatny wynik od razu, kontakt opcjonalny.',
+  description: 'Co z Twojego dnia odbija się później na formie? Wybierz sytuację z ostatniego tygodnia i sprawdź, co ją poprzedziło. Bezpłatny wynik bez podawania kontaktu.',
   alternates: { canonical: 'https://diagnostyka.talerzihantle.com/' },
   openGraph: {
     title: 'Diagnostyka 168: sprawdź swój tydzień | Hantle i Talerz',
-    description: 'Co ustawia Twój tydzień, zanim pomyślisz o diecie i treningu? Konkretna scena, wcześniejszy moment i próba dobrana do odpowiedzi. Bezpłatny wynik od razu, kontakt opcjonalny.',
+    description: 'Co z Twojego dnia odbija się później na formie? Wybierz sytuację z ostatniego tygodnia i sprawdź, co ją poprzedziło. Bezpłatny wynik bez podawania kontaktu.',
     url: 'https://diagnostyka.talerzihantle.com',
     siteName: 'Diagnostyka | Hantle i Talerz',
     images: [
       {
-        url: 'https://diagnostyka.talerzihantle.com/og.png',
+        url: 'https://diagnostyka.talerzihantle.com/api/og',
         width: 1200,
         height: 630,
       },
@@ -23,8 +23,8 @@ export const metadata: Metadata = {
   twitter: {
     card: 'summary_large_image',
     title: 'Diagnostyka 168: sprawdź swój tydzień | Hantle i Talerz',
-    description: 'Co ustawia Twój tydzień, zanim pomyślisz o diecie i treningu? Konkretna scena, wcześniejszy moment i próba dobrana do odpowiedzi. Bezpłatny wynik od razu, kontakt opcjonalny.',
-    images: ['https://diagnostyka.talerzihantle.com/og.png'],
+    description: 'Co z Twojego dnia odbija się później na formie? Wybierz sytuację z ostatniego tygodnia i sprawdź, co ją poprzedziło. Bezpłatny wynik bez podawania kontaktu.',
+    images: ['https://diagnostyka.talerzihantle.com/api/og'],
   },
   icons: {
     icon: '/icon.png',
