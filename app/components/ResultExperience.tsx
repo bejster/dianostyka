@@ -37,6 +37,7 @@ export default function ResultExperience({
   contentSignals?: Record<string, string | boolean>;
   awareness?: AwarenessGap;
 }) {
+  void domainLabel;
   const progRef = useRef<HTMLDivElement>(null);
   const resultStartedAt = useRef<number>(Date.now());
   const maxScrollRef = useRef<number>(0);
@@ -81,7 +82,7 @@ export default function ResultExperience({
     setCalib(id);
     try {
       fetch('/api/diag-event', { method: 'POST', headers: { 'content-type': 'application/json' }, keepalive: true, body: JSON.stringify({ submission_id: submissionId, q_id: 'calibration', value: id, ts: Date.now() }) }).catch(() => {});
-    } catch (_e) { /* analityka nigdy nie wywraca flow */ }
+    } catch { /* analityka nigdy nie wywraca flow */ }
     trackDiag('calibration_answer', { id });
   };
   const reactToExperiment = (id: string) => {
@@ -173,7 +174,6 @@ export default function ResultExperience({
   // ── V2.8.1 SUFIT: domknięcie ma trafiać w przekonanie "u mnie jest w porządku, ogarnę sam",
   //    a nie w tożsamość użytkownika. Liczba bierze się z tych samych pasm zapasu co reszta strony,
   //    więc nigdzie nie pada wymyślony procent potencjału ani żadna teza o hormonach.
-  const ceilingCount = bigReserve >= 1 ? bigReserve : anyReserve;
   const ceilingLead = hasCeilingRoom
     ? 'Ten wynik nie mówi, że jest u Ciebie źle.'
     : 'Ten wynik nie daje Ci dziś nic do gaszenia.';
@@ -481,6 +481,7 @@ export default function ResultExperience({
         <section className="rx-beat" data-beat="6">
           <div className="rx-kick">Gdybym prowadził Cię 1:1</div>
           <div className="rx-human">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src="/michal-portrait.jpg" alt="Michał" width={86} height={86} />
             <div className="rx-human-head">
               <span>MICHAŁ · METODA 168</span>
