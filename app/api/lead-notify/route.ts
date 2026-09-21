@@ -102,6 +102,10 @@ export async function POST(req: NextRequest) {
       n8nOk = (await postJson(n8nUrl, n8nBody)).ok;
     }
 
+    if (qaSynthetic) {
+      return NextResponse.json({ ok: makeOk === true || n8nOk === true, qa: true, telegram: false, make: makeOk, makeStatus, n8n: n8nOk });
+    }
+
     // Osobny bot dla leadow (Nocna Zmiana, admin w HiT Leady). Fallback na wspolny, gdy nieustawiony.
     const token = process.env.TELEGRAM_LEADS_BOT_TOKEN || process.env.TELEGRAM_BOT_TOKEN;
     // Domyslnie kanal "HiT Leady" (chat_id z t.me/c/4328603395). Env moze nadpisac.
