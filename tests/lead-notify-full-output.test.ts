@@ -27,6 +27,8 @@ test('synthetic QA records are isolated from sales KPI and contact', () => {
   assert.match(route, /record_type_json: jsonLiteral\(qaSynthetic \? 'TEST' : 'REAL'\)/);
   assert.match(route, /exclude_kpi_json: qaSynthetic \? 'true' : 'false'/);
   assert.match(route, /do_not_contact_json: qaSynthetic \? 'true' : 'false'/);
+  assert.match(route, /if \(qaSynthetic\) \{/);
+  assert.match(route, /qa: true, telegram: false/);
 });
 
 test('CRM payload is not logged and product analytics contract stays separate', () => {
