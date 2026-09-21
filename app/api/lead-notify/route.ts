@@ -1,5 +1,32 @@
 import { NextRequest, NextResponse } from 'next/server';
 
+const NOTION_CHUNK = 1900;
+
+function chunkForNotion(value: unknown, parts: number): string[] {
+  const text = typeof value === 'string' ? value : JSON.stringify(value ?? {});
+  const limit = NOTION_CHUNK * parts;
+  const safe = text.length <= limit ? text : text.slice(0, limit);
+  return Array.from({ length: parts }, (_, i) => safe.slice(i * NOTION_CHUNK, (i + 1) * NOTION_CHUNK));
+}
+
+function jsonLiteral(value: unknown): string {
+  return JSON.stringify(String(value ?? ''));
+}
+
+async function postJson(url: string, body: unknown): Promise<{ ok: boolean; status: number | null }> {
+  try {
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify(body),
+      signal: AbortSignal.timeout(8_000),
+    });
+    return { ok: response.ok, status: response.status };
+  } catch {
+    return { ok: false, status: null };
+  }
+}
+
 // ── Powiadomienie o leadzie z diagnostyki -> dedykowany kanal Telegram (np. "HiT Leady") ──
 // Odpala sie ZAWSZE, gdy ktos skonczy quiz (nie wymaga maila). Kwalifikacja jest liczona po stronie
 // klienta (page.tsx qualify()) i przekazana tutaj tylko do sformatowania wiadomosci.
@@ -8,29 +35,71 @@ export async function POST(req: NextRequest) {
   try {
     const b = (await req.json().catch(() => ({}))) as Record<string, unknown>;
 
-    // ── Pelny lead -> n8n (diagnostyka-hit) -> Notion. Kazde ukonczone wypelnienie ląduje jako wiersz. ──
-    // Ten blok stoi PRZED bramka Telegrama swiadomie. Wczesniej siedzial nizej i brak tokenu Telegrama
-    // konczyl caly handler wczesnym returnem, wiec zgubiony sekret zabieral przy okazji wiersz w Notion.
-    // To sa dwa niezalezne kanaly i padniecie jednego nie moze kasowac drugiego.
-    // P0-3 (rc-004): private-boundary compat. Realny mapping n8n->Notion zyje w chmurze (nie w repo), wiec defensywnie
-    // dokladamy LEGACY NAZWY pol niosace NOWE, poprawne wartosci — zeby stary mapping po renamingu nie zgubil danych.
-    // To wylacznie alias NAZW, NIE przywrocenie zlej semantyki: zero budgetProxy, zero readiness, segment = neutralny
-    // severity_band (nie sales temperature). TODO(verify): potwierdzic realny mapping i po 1 release usunac aliasy.
+    // ── CRM PERSISTENCE: Make zapisuje pełny output, n8n jest tylko fallbackiem minimalnym. ──
+    // Make ma idempotentny router Lead Ref -> UPDATE/CREATE i aktywne canonical Notion credentials.
+    // Raw answers nigdy nie trafiają do PostHoga; ten payload idzie wyłącznie prywatną ścieżką CRM.
+    const makeUrl = (process.env.MAKE_DIAGNOSTYKA_WEBHOOK || '').trim();
+    const leadRef = String(b.lead_ref ?? '').trim();
+    const instagram = String(b.instagram ?? '').replace(/^@/, '').trim();
+    const imie = String(b.imie ?? '').trim();
+    const rawChunks = chunkForNotion(b.raw_answers ?? {}, 4);
+    const derivedChunks = chunkForNotion(b.derived_signals ?? {}, 2);
+    const briefChunks = chunkForNotion(b.diagnostyka_brief ?? '', 3);
+    const qaSynthetic = b.qa_synthetic === true;
+    const displayName = imie || instagram || (leadRef ? `Diagnostyka ${leadRef.slice(-8)}` : 'Diagnostyka lead');
+
+    let makeOk: boolean | null = null;
+    let makeStatus: number | null = null;
+    if (makeUrl) {
+      const makeBody = {
+        event: 'diagnostyka_complete',
+        lead_ref: leadRef,
+        instagram,
+        qa_synthetic: qaSynthetic,
+        score: Number(b.score) || 0,
+        severity_band: String(b.severity_band ?? ''),
+        archetyp: String(b.archetyp ?? ''),
+        archetypKey: String(b.archetypKey ?? ''),
+        followup_priority: b.followup_priority === true,
+        wants_help: b.wants_help === true,
+        intencja: String(b.intencja ?? ''),
+        kiedy_start: String(b.kiedy_start ?? ''),
+        lead_ref_json: jsonLiteral(leadRef),
+        instagram_json: jsonLiteral(instagram),
+        name_json: jsonLiteral(displayName),
+        raw_1_json: jsonLiteral(rawChunks[0]),
+        raw_2_json: jsonLiteral(rawChunks[1]),
+        raw_3_json: jsonLiteral(rawChunks[2]),
+        raw_4_json: jsonLiteral(rawChunks[3]),
+        derived_1_json: jsonLiteral(derivedChunks[0]),
+        derived_2_json: jsonLiteral(derivedChunks[1]),
+        brief_1_json: jsonLiteral(briefChunks[0]),
+        brief_2_json: jsonLiteral(briefChunks[1]),
+        brief_3_json: jsonLiteral(briefChunks[2]),
+        pain_json: jsonLiteral(String(b.pain ?? '')),
+        record_type_json: jsonLiteral(qaSynthetic ? 'TEST' : 'REAL'),
+        exclude_kpi_json: qaSynthetic ? 'true' : 'false',
+        do_not_contact_json: qaSynthetic ? 'true' : 'false',
+      };
+      const makeResult = await postJson(makeUrl, makeBody);
+      makeOk = makeResult.ok;
+      makeStatus = makeResult.status;
+    }
+
+    // n8n zostaje jako bezpieczny minimalny fallback, ale nie może ścigać się z udanym zapisem Make.
+    // 409 z Make oznacza konflikt tożsamości wymagający review, więc nie obchodzimy go innym writerem.
     const n8nUrl = (process.env.N8N_DIAGNOSTYKA_WEBHOOK || '').trim();
-    let n8nOk: boolean | null = null; // null = nie skonfigurowany, nie probowalismy
-    if (n8nUrl) {
+    let n8nOk: boolean | null = null;
+    const allowN8nFallback = makeOk !== true && makeStatus !== 409;
+    if (allowN8nFallback && n8nUrl) {
       const n8nBody = {
         event: 'diagnostyka_complete',
         ...b,
-        priority_lead: b.followup_priority, // legacy nazwa -> wartosc = nowy followup_priority (waska flaga kolejki kontaktu)
-        segment: b.severity_band,           // legacy nazwa -> wartosc = neutralny severity_band (NIE temperatura sprzedazowa)
+        priority_lead: b.followup_priority,
+        segment: b.severity_band,
         received_at: new Date().toISOString(),
       };
-      n8nOk = await fetch(n8nUrl, {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify(n8nBody),
-      }).then((r) => r.ok).catch(() => false);
+      n8nOk = (await postJson(n8nUrl, n8nBody)).ok;
     }
 
     // Osobny bot dla leadow (Nocna Zmiana, admin w HiT Leady). Fallback na wspolny, gdy nieustawiony.
@@ -39,7 +108,7 @@ export async function POST(req: NextRequest) {
     const chat = process.env.TELEGRAM_LEADS_CHAT_ID || '-1004328603395';
     if (!token || !chat) {
       // Notion juz dostal swoje wyzej. Lead nie ginie, brakuje tylko powiadomienia.
-      return NextResponse.json({ ok: false, reason: 'no_telegram_config', telegram: false, n8n: n8nOk });
+      return NextResponse.json({ ok: makeOk === true || n8nOk === true, reason: 'no_telegram_config', telegram: false, make: makeOk, makeStatus, n8n: n8nOk });
     }
 
     const s = (v: unknown, max = 200) => String(v ?? '').replace(/\s+/g, ' ').trim().slice(0, max);
@@ -186,7 +255,7 @@ export async function POST(req: NextRequest) {
     // Oba kanaly raportowane osobno, zeby dalo sie odroznic cichy brak wiersza w Notion
     // od braku powiadomienia na Telegramie. Wywolanie z page.tsx jest fire-and-forget,
     // wiec to widac dopiero w logach Vercela, ale tam widac dokladnie ktora rura padla.
-    return NextResponse.json({ ok: res.ok, telegram: res.ok, n8n: n8nOk });
+    return NextResponse.json({ ok: (makeOk === true || n8nOk === true) && res.ok, telegram: res.ok, make: makeOk, makeStatus, n8n: n8nOk });
   } catch {
     return NextResponse.json({ ok: false, reason: 'error' });
   }
