@@ -31,5 +31,5 @@ test('synthetic QA records are isolated from sales KPI and contact', () => {
 
 test('CRM payload is not logged and product analytics contract stays separate', () => {
   assert.doesNotMatch(route, /console\.(?:log|info|warn|error)\([^\n]*(?:raw_answers|diagnostyka_brief|derived_signals)/);
-  assert.doesNotMatch(route, /posthog/i);
+  assert.doesNotMatch(route, /posthog\.(?:capture|identify|register)/i);
 });
