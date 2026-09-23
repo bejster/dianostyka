@@ -288,23 +288,15 @@ export default function DiagnozaPage() {
       <div style={{ minHeight: '100svh', background: BG, color: '#ece7db', fontFamily: '"Inter", sans-serif', display: 'flex', flexDirection: 'column', justifyContent: 'center', padding: '28px 22px max(28px, env(safe-area-inset-bottom))', boxSizing: 'border-box', position: 'relative', overflow: 'hidden' }}>
         <Atmosphere />
         <div style={{ maxWidth: 480, margin: '0 auto', width: '100%', position: 'relative', zIndex: 1 }}>
-          <WeekPulse />
           <div style={{ fontFamily: "'JetBrains Mono', ui-monospace, monospace", fontSize: 10.2, letterSpacing: 2.6, textTransform: 'uppercase', color: GOLD, fontWeight: 800, marginBottom: 14 }}>
             Diagnostyka 168 · 5 min · wynik od razu
           </div>
-          <h1 style={{ fontFamily: "'Instrument Serif', Georgia, serif", fontSize: 'clamp(37px, 9vw, 56px)', lineHeight: 1.0, fontWeight: 400, color: '#fff', margin: '0 0 14px', letterSpacing: '-0.018em', maxWidth: 455 }}>
-            Wiesz, co robić. Więc czemu Twój tydzień i tak kończy się tak samo?
+          <h1 style={{ fontFamily: "'Instrument Serif', Georgia, serif", fontSize: 'clamp(39px, 9.4vw, 58px)', lineHeight: 1.0, fontWeight: 400, color: '#fff', margin: '0 0 16px', letterSpacing: '-0.02em', maxWidth: 455 }}>
+            W poniedziałek ogarniasz. W piątek patrzysz na tydzień i myślisz: <em style={{ color: '#e8cc80', fontStyle: 'italic' }}>„kurwa, znowu to samo”.</em>
           </h1>
-          <p style={{ fontSize: 15.5, color: '#b9b2a7', lineHeight: 1.52, margin: '0 0 16px', maxWidth: 438 }}>
-            Wypadnięty trening, wieczorne jedzenie, zjazd po pracy albo ciężki powrót do rytmu to momenty, które zauważasz. <strong style={{ color: '#ece7db', fontWeight: 700 }}>Nie zawsze momenty, w których wszystko się zaczęło.</strong>
+          <p style={{ fontSize: 15.8, color: '#c4bdb0', lineHeight: 1.55, margin: '0 0 20px', maxWidth: 438 }}>
+            W 5 minut przejdziesz przez robotę, jedzenie, sen, trening i weekend. Na końcu zobaczysz, gdzie najczęściej zaczyna się Twój rozjazd i dostaniesz jedną rzecz do sprawdzenia przez 72 h.
           </p>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 7, margin: '0 0 17px' }}>
-            {['PIERWSZY MOMENT', 'CO DZIEJE SIĘ PÓŹNIEJ', 'TEST 72H'].map((label, i) => (
-              <div key={label} style={{ minWidth: 0, padding: '9px 7px', border: '1px solid #29272a', borderRadius: 10, background: 'rgba(255,255,255,.018)', textAlign: 'center' }}>
-                <span style={{ display: 'block', fontFamily: "'JetBrains Mono', ui-monospace, monospace", fontSize: 7.5, letterSpacing: .8, color: i === 0 ? GOLD : '#8f887c', lineHeight: 1.35 }}>{label}</span>
-              </div>
-            ))}
-          </div>
           <button
             onClick={() => {
               registerContext({ mode: 'diagnostic' });
@@ -313,11 +305,11 @@ export default function DiagnozaPage() {
               setPhase('intake');
               if (typeof window !== 'undefined') window.scrollTo({ top: 0 });
             }}
-            style={{ width: '100%', padding: '18px 17px', borderRadius: 14, border: 'none', cursor: 'pointer', background: `linear-gradient(135deg, ${GOLD}, #8a7535)`, color: BG, fontWeight: 850, fontSize: 16, letterSpacing: 0.25, boxShadow: '0 16px 38px rgba(200,168,78,.18)' }}
+            style={{ width: '100%', padding: '18px 17px', borderRadius: 14, border: 'none', cursor: 'pointer', background: `linear-gradient(135deg, ${GOLD}, #8a7535)`, color: BG, fontWeight: 850, fontSize: 16, letterSpacing: 0.15, boxShadow: '0 16px 38px rgba(200,168,78,.18)' }}
           >
-            Znajdź mój pierwszy punkt &rarr;
+            Pokaż mi, co rozwala mój tydzień &rarr;
           </button>
-          <p style={{ fontFamily: "'JetBrains Mono', ui-monospace, monospace", fontSize: 9.8, letterSpacing: 1.25, color: '#777169', lineHeight: 1.45, margin: '11px 0 0', textAlign: 'center', textTransform: 'uppercase' }}>
+          <p style={{ fontFamily: "'JetBrains Mono', ui-monospace, monospace", fontSize: 9.8, letterSpacing: 1.15, color: '#777169', lineHeight: 1.45, margin: '11px 0 0', textAlign: 'center', textTransform: 'uppercase' }}>
             bez maila · wynik od razu · jeden konkretny ruch
           </p>
         </div>
