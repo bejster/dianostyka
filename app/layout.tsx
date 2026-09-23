@@ -2,12 +2,12 @@ import type { Metadata } from 'next';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'Wiesz, co robić. Więc czemu Twój tydzień i tak kończy się tak samo? | Diagnostyka 168',
-  description: 'Znajdź pierwszy moment w swoim tygodniu, od którego zaczyna się łańcuch. Wynik dostajesz od razu, a na końcu jeden test na 72 godziny. Bez maila.',
+  title: 'Dlaczego Twój tydzień ciągle się rozjeżdża? | Diagnostyka 168',
+  description: '5 minut. Przejdź przez robotę, jedzenie, sen, trening i weekend. Zobacz, gdzie najczęściej zaczyna się Twój rozjazd i dostaniesz jeden test na 72 godziny. Bez maila.',
   alternates: { canonical: 'https://diagnostyka.talerzihantle.com/' },
   openGraph: {
-    title: 'Wiesz, co robić. Więc czemu Twój tydzień i tak kończy się tak samo?',
-    description: 'Znajdź pierwszy moment, od którego zaczyna się łańcuch. Wynik od razu + jeden test na 72 godziny.',
+    title: 'W poniedziałek ogarniasz. W piątek znowu to samo.',
+    description: 'Sprawdź, co rozwala Ci tydzień. 5 min · wynik od razu · jeden test na 72 h.',
     url: 'https://diagnostyka.talerzihantle.com',
     siteName: 'Diagnostyka 168 | Hantle i Talerz',
     images: [
@@ -22,8 +22,8 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Wiesz, co robić. Więc czemu Twój tydzień i tak kończy się tak samo?',
-    description: 'Znajdź pierwszy moment, od którego zaczyna się łańcuch. Wynik od razu + jeden test na 72 godziny.',
+    title: 'W poniedziałek ogarniasz. W piątek znowu to samo.',
+    description: 'Sprawdź, co rozwala Ci tydzień. 5 min · wynik od razu · jeden test na 72 h.',
     images: ['https://diagnostyka.talerzihantle.com/api/og'],
   },
   icons: {
