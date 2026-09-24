@@ -51,8 +51,8 @@ test('result opens with current state and reserve, and names the fracture only a
   assert.ok(at('2') > at('fracture'), 'Pętla 168 must follow the fracture reveal');
   assert.ok(at('horizon') > at('5'), 'horizon must follow the 72h experiment');
   assert.ok(at('6') > at('horizon'), 'the 1:1 demonstration must follow the horizon');
-  // hero mowi o zapasie, a nie o czerwonej linii/deficycie
-  assert.match(result, /Poziom, na którym dziś jedziesz, nie jest jeszcze Twoim sufitem\./);
+  // hero wyniku mówi wprost, który obszar wyszedł najsłabiej i co ten wynik obniżyło.
+  assert.match(result, /Najsłabiej wypada dziś:/);
   assert.match(result, /Co obniżyło ten wynik/);
 });
 
