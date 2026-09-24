@@ -61,7 +61,7 @@ export default function DiagnozaPage() {
         const v = (sp.get(k) || '').toLowerCase();
         return allow.includes(v) ? v : undefined;
       };
-      const ctx: Record<string, string> = { mode: m === 'fast_fit' ? 'fast_fit' : 'diagnostic', entry_copy: 'human_v1' };
+      const ctx: Record<string, string> = { mode: m === 'fast_fit' ? 'fast_fit' : 'diagnostic', entry_copy: 'human_leverage_v2' };
       const src = pick('src', ['setter', 'organic', 'story', 'dm', 'other']);
       const lane = pick('lane', ['cold', 'warm', 'hot']); // ATRYBUCJA ONLY — nie miesza sie z diagnostycznym severity
       const campaignRaw = (sp.get('campaign') || '').toLowerCase().slice(0, 40);
