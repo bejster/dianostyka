@@ -259,19 +259,19 @@ export default function ResultExperience({
           <div className="rx-kick rx-kick-c">Twój wynik{imie?.trim() ? ` · ${imie.trim()}` : ''}</div>
           <div className="rx-hero-panel">
             <div className="rx-hero-signature" aria-hidden="true"><span/><span/><span/></div>
-            <h1 className="rx-arch">{hasCeilingRoom ? 'Poziom, na którym dziś jedziesz, nie jest jeszcze Twoim sufitem.' : 'Twój tydzień trzyma się dziś równo w pięciu obszarach.'}</h1>
+            <h1 className="rx-arch">{hasCeilingRoom ? `Najsłabiej wypada dziś: ${weakestStatus?.label}.` : 'Pięć obszarów wypada u Ciebie podobnie.'}</h1>
             <div className="rx-redline">{reserveLine}</div>
             {/* Podpis pod naglowkiem wycialem w calosci. Pierwsze zdanie ("Policzylem to wylacznie z Twoich
                 odpowiedzi") bylo pierwszym z pieciu wystapien tego samego dowodu, a drugie zapowiadalo
                 odczyt spod osi, ktory i tak stoi przy mapie. Handoff w dol robi strzalka ZOBACZ CALA MAPE. */}
             <div className="rx-reserve">
               <div className="rx-reserve-row rx-reserve-top">
-                <span>Największa dźwignia do sprawdzenia</span>
+                <span>Co obniżyło ten wynik</span>
                 <strong>{weakestStatus?.label}</strong>
                 <p>{weakestStatus?.reason}</p>
               </div>
               <div className="rx-reserve-row">
-                <span>Tego na razie nie ruszaj</span>
+                <span>Najlepiej trzyma się dziś</span>
                 <strong>{strongestStatus?.label}</strong>
                 <p>{strongestStatus?.reason}</p>
               </div>
@@ -322,7 +322,7 @@ export default function ResultExperience({
         <section className="rx-beat rx-map-section" data-beat="map">
           <div className="rx-kick">Mapa 168</div>
           <div className="rx-map-head">
-            <h2 className="rx-h2">Pięć obszarów ustawionych od największego zapasu do tego, co dziś trzyma najlepiej.</h2>
+            <h2 className="rx-h2">Tak wyglądają Twoje odpowiedzi w pięciu obszarach.</h2>
           </div>
           <div className="rx-map-visual">
             <div className="rx-radar-wrap" aria-hidden="true">
@@ -371,9 +371,9 @@ export default function ResultExperience({
 
         {/* PUNKT PĘKNIĘCIA — reveal PO dowodzie. Najpierw zjawisko, potem nazwa (V2.8). */}
         <section className="rx-beat" data-beat="fracture">
-          <div className="rx-kick">Pierwszy moment do sprawdzenia</div>
+          <div className="rx-kick">Gdzie zaczyna się rozjazd</div>
           <h2 className="rx-h2">{breakPhrase}</h2>
-          <p className="rx-sub" style={{ marginBottom: 22 }}>Te odpowiedzi układają się w jeden wzorzec, który wraca co tydzień. W Metodzie 168 ten pierwszy moment nazywam Punktem Pęknięcia. To nie jest etykieta dla samej etykiety. To miejsce, od którego sprawdzam, czy reszta tygodnia w ogóle zaczyna reagować.</p>
+          <p className="rx-sub" style={{ marginBottom: 22 }}>W odpowiedziach wraca ten sam wcześniejszy moment. W Metodzie 168 nazywam go Punktem Pęknięcia. Od tego miejsca sprawdzam, czy później łatwiej dowieźć jedzenie, trening albo powrót do rytmu.</p>
           <div className="rx-breakviz">
             <div className="rx-breakviz-now">Pierwszy sygnał w odpowiedziach: <strong>{breakPos.label}</strong></div>
             <div className="rx-breakviz-line"><span style={{ left: `${breakPos.pct}%` }} /></div>
@@ -487,7 +487,7 @@ export default function ResultExperience({
             <img src="/michal-portrait.jpg" alt="Michał" width={86} height={86} />
             <div className="rx-human-head">
               <span>MICHAŁ · METODA 168</span>
-              <strong>W 1:1 nie zaczynam od nowego planu. Biorę właśnie ten punkt, sprawdzamy go na Twoim zwykłym tygodniu, poprawiamy po danych i dopiero potem dokładamy kolejną rzecz.</strong>
+              <strong>W 1:1 zaczynam od tego, co właśnie wyszło. Sprawdzamy ten moment w Twoim tygodniu, patrzymy co wydarzyło się później i na tej podstawie poprawiam jedzenie, trening albo plan powrotu.</strong>
             </div>
           </div>
 
@@ -538,9 +538,9 @@ export default function ResultExperience({
           </div>
 
           <details className="rx-more">
-            <summary>Zobacz, co byłoby następnym krokiem</summary>
+            <summary>Zobacz, co zrobiłbym z tym wynikiem dalej</summary>
             <div className="rx-more-body">
-              <h2 className="rx-h2" style={{ fontSize: 'clamp(23px,4.8vw,34px)' }}>Ten wynik byłby punktem startu, nie formularzem do wyrzucenia.</h2>
+              <h2 className="rx-h2" style={{ fontSize: 'clamp(23px,4.8vw,34px)' }}>Od tego wyniku zacząłbym pracę.</h2>
               <ol className="rx-demo">
                 <li><span className="rx-demo-n">1</span><div><strong>Pierwszy punkt: {breakPos.label}</strong><p>Ustawiamy wersję minimum właśnie tutaj. Ma zadziałać też w dniu, w którym nic nie idzie po planie.</p></div></li>
                 <li><span className="rx-demo-n">2</span><div><strong>Sprawdzamy: {weakestStatus?.label}</strong><p>Na start dostajesz jedno zadanie na 72 godziny: {experiment.action} Obserwujemy: {experiment.observe.toLowerCase()}.</p></div></li>
