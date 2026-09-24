@@ -16,7 +16,8 @@ test('contact is required only after explicit help/coaching intent', () => {
 
 test('cold entry preserves curiosity and does not expose the hot sales branch', () => {
   assert.match(page, /Przykład mechanizmu · nie Twój wynik/);
-  assert.match(page, /Wiesz, co robić\. Więc czemu Twój tydzień i tak kończy się tak samo\?/);
+  assert.match(page, /W poniedziałek ogarniasz\. W piątek patrzysz na tydzień i myślisz/);
+  assert.match(page, /gdzie dziś tracisz najwięcej, co ma największy zapas i który jeden ruch warto sprawdzić najpierw/);
   // v2.8.3 pass jezykowy: "jak funkcjonujesz" to jezyk ankiety, nie Michala. Funkcja zdania zostaje
   // ta sama (uczciwe ustawienie oczekiwan przed startem), wiec kontrakt trzyma dalej ten sam poziom.
   assert.match(page, /ale gdzie zaczął się łańcuch\?/);
