@@ -23,50 +23,6 @@ import { Atmosphere } from './atmosphere';
 const GOLD = '#c8a84e';
 const BG = '#08080a';
 
-// ── OPEN LOOP (intro): pokazujemy mechanizm, ale nie ujawniamy odpowiedzi użytkownika przed diagnozą.
-// Znak zapytania porusza się po wcześniejszych momentach dnia, a "OBJAW" stoi później.
-// To nie jest wynik ani sugestia godziny. To wizualne pytanie: gdzie u Ciebie zaczął się łańcuch?
-function WeekPulse() {
-  const moments = ['RANO', 'PRACA', 'PO PRACY', 'WIECZÓR'];
-  return (
-    <div className="wpu" role="img" aria-label="Przykład: objaw może pojawić się później niż moment, który uruchomił cały ciąg.">
-      <style>{`
-        .wpu{max-width:440px;margin:0 auto 22px;padding:14px 14px 12px;border:1px solid rgba(200,168,78,.18);border-radius:18px;background:linear-gradient(160deg,rgba(200,168,78,.055),rgba(255,255,255,.018));box-shadow:0 22px 60px -46px rgba(200,168,78,.55)}
-        .wpu-k{font-family:'JetBrains Mono',monospace;font-size:8.5px;letter-spacing:2.1px;text-transform:uppercase;color:#777169;margin-bottom:13px}
-        .wpu-track{position:relative;display:grid;grid-template-columns:repeat(4,1fr);align-items:start;padding-top:17px}
-        .wpu-line{position:absolute;left:8%;right:8%;top:22px;height:1px;background:linear-gradient(90deg,#3a3427,#8a7535 55%,rgba(224,85,46,.62))}
-        .wpu-node{position:relative;text-align:center;z-index:2}
-        .wpu-dot{width:10px;height:10px;margin:0 auto 10px;border-radius:50%;background:#08080a;border:1px solid #746f67;box-shadow:0 0 0 4px #0e0e10}
-        .wpu-node:last-child .wpu-dot{background:#e0552e;border-color:#e78b6c;box-shadow:0 0 0 4px #0e0e10,0 0 18px rgba(224,85,46,.42)}
-        .wpu-node span{display:block;font-family:'JetBrains Mono',monospace;font-size:8px;letter-spacing:.8px;color:#6f6b64;white-space:nowrap}
-        .wpu-node:last-child span{color:#d78970}
-        .wpu-q{position:absolute;z-index:3;top:4px;left:8%;width:28px;height:28px;border-radius:50%;display:grid;place-items:center;transform:translateX(-50%);font-family:'Instrument Serif',Georgia,serif;font-size:21px;color:#f2d98f;border:1px solid #9a8140;background:#15130e;box-shadow:0 0 0 4px rgba(200,168,78,.06),0 0 22px rgba(200,168,78,.28)}
-        .wpu-caption{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-top:14px;padding-top:12px;border-top:1px solid #242226}
-        .wpu-caption span{font-family:'JetBrains Mono',monospace;font-size:8px;letter-spacing:1.5px;text-transform:uppercase;color:#8f887c}
-        .wpu-caption strong{font-size:12.5px;line-height:1.35;color:#ece7db;text-align:right}
-        @keyframes wpuSeek{0%,12%{left:9%}32%,44%{left:34%}64%,76%{left:59%}100%{left:9%}}
-        @media (prefers-reduced-motion:no-preference){.wpu-q{animation:wpuSeek 7.2s cubic-bezier(.65,0,.35,1) infinite}}
-        @media(max-width:380px){.wpu{padding-left:10px;padding-right:10px}.wpu-node span{font-size:7.3px}.wpu-caption{gap:8px}.wpu-caption strong{font-size:11.5px}}
-      `}</style>
-      <div className="wpu-k">Przykład mechanizmu · nie Twój wynik</div>
-      <div className="wpu-track">
-        <div className="wpu-line" aria-hidden="true" />
-        <div className="wpu-q" aria-hidden="true">?</div>
-        {moments.map((m, i) => (
-          <div className="wpu-node" key={m}>
-            <div className="wpu-dot" />
-            <span>{i === moments.length - 1 ? 'OBJAW' : m}</span>
-          </div>
-        ))}
-      </div>
-      <div className="wpu-caption">
-        <span>Widzisz skutek</span>
-        <strong>ale gdzie zaczął się łańcuch?</strong>
-      </div>
-    </div>
-  );
-}
-
 type Phase = 'intro' | 'intake' | 'teaser';
 
 // ── Sygnały leada dla operatora (niewidoczne dla usera) — WYŁĄCZNIE z jawnych sygnałów kupna/startu ──
