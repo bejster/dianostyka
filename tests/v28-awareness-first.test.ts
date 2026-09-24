@@ -22,10 +22,10 @@ test('release jest zawersjonowany 2.9.0', () => {
 
 test('cold entry sells an awareness gap, not a weekend audit', () => {
   assert.ok(coldEntry, "cold entry block (phase === 'intro') not found");
-  assert.match(coldEntry, /Wiesz, co robić\. Więc czemu Twój tydzień i tak kończy się tak samo\?/);
-  assert.match(coldEntry, /Znajdź mój pierwszy punkt/);
-  // weekend przestal byc obietnica ekranu wejsciowego
-  assert.doesNotMatch(coldEntry, /weekend/i, 'weekend framing leaked back into the cold entry');
+  assert.match(coldEntry, /W poniedziałek ogarniasz\. W piątek patrzysz na tydzień i myślisz/);
+  assert.match(coldEntry, /Pokaż mi, co ruszyć najpierw/);
+  assert.match(coldEntry, /robotę, jedzenie, sen, trening i weekend/);
+  assert.doesNotMatch(coldEntry, /audyt weekendu|tylko weekend|sam weekend/i, 'weekend-only framing leaked back into the cold entry');
   // rownie zakazane: obiecywanie diagnozy hormonalnej albo wellness-owego jezyka na wejsciu
   assert.doesNotMatch(coldEntry, /hormon|testosteron|kortyzol|wellness|dobrostan/i);
 });
@@ -33,7 +33,8 @@ test('cold entry sells an awareness gap, not a weekend audit', () => {
 test('Punkt Pęknięcia is a payoff, never a precondition of starting', () => {
   assert.ok(coldEntry, 'cold entry block not found');
   assert.doesNotMatch(coldEntry, /Pęknięci|Pęknięcia/i, 'cold entry demands belief in IP before any evidence');
-  assert.match(result, /<div className="rx-kick">Punkt Pęknięcia<\/div>/);
+  assert.match(result, /<div className="rx-kick">Pierwszy moment do sprawdzenia<\/div>/);
+  assert.match(result, /nazywam Punktem Pęknięcia/);
 });
 
 test('weekend is demoted to Q1/Q2 but is still asked first in the flow', () => {
@@ -52,7 +53,7 @@ test('result opens with current state and reserve, and names the fracture only a
   assert.ok(at('6') > at('horizon'), 'the 1:1 demonstration must follow the horizon');
   // hero mowi o zapasie, a nie o czerwonej linii/deficycie
   assert.match(result, /Poziom, na którym dziś jedziesz, nie jest jeszcze Twoim sufitem\./);
-  assert.match(result, /Największy zapas/);
+  assert.match(result, /Największa dźwignia do sprawdzenia/);
 });
 
 test('reserve language replaces fake potential precision', () => {
