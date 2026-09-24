@@ -15,8 +15,8 @@ test('contact is required only after explicit help/coaching intent', () => {
 });
 
 test('cold entry preserves curiosity and does not expose the hot sales branch', () => {
-  assert.match(page, /Wiesz, jak powinieneś jeść i trenować/);
-  assert.match(page, /ile śpisz, kiedy spada Ci energia, ile treningów wypada/);
+  assert.match(page, /Wiesz, co jeść i jak trenować/);
+  assert.match(page, /ile śpisz, o której siada Ci energia, ile treningów wypada w gorszym tygodniu/);
   assert.match(page, /NAJSŁABSZY OBSZAR/);
   assert.match(page, /PIERWSZY MOMENT/);
   assert.match(page, /TEST NA 72H/);
