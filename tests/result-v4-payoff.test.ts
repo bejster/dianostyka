@@ -36,8 +36,8 @@ test('Mapa 168 uses only answers still collected in the live flow', () => {
 });
 
 test('1:1 bridge is personalized from the actual result rather than generic coaching copy', () => {
-  assert.match(result, /Ten wynik byłby punktem startu, nie formularzem do wyrzucenia/);
-  assert.match(result, /W 1:1 nie zaczynam od nowego planu/);
+  assert.match(result, /Od tego wyniku zacząłbym pracę/);
+  assert.match(result, /W 1:1 zaczynam od tego, co właśnie wyszło/);
   assert.match(result, /breakPos\.label/);
   assert.match(result, /weakestStatus\?\.label/);
   assert.match(result, /strongestStatus\?\.label/);
