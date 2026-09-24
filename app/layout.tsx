@@ -2,12 +2,12 @@ import type { Metadata } from 'next';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'Gdzie w Twoim tygodniu tracisz najwięcej? | Diagnostyka 168',
-  description: '5 minut. Zobacz, który z pięciu obszarów ma największy zapas, gdzie zaczyna się rozjazd i co warto ruszyć najpierw. Wynik od razu, bez maila.',
+  title: 'Sprawdź, gdzie sypie Ci się tydzień | Diagnostyka 168',
+  description: '5 minut. Zaznacz sen, energię, trening, wieczorne jedzenie i weekend. Wynik pokaże najsłabszy obszar, pierwszy moment rozjazdu i test na 72 godziny. Bez maila.',
   alternates: { canonical: 'https://diagnostyka.talerzihantle.com/' },
   openGraph: {
-    title: 'W poniedziałek ogarniasz. W piątek znowu to samo.',
-    description: 'Zobacz, gdzie tracisz najwięcej, co ma największy zapas i co warto ruszyć najpierw. 5 min · wynik od razu.',
+    title: 'Wiesz, jak jeść i trenować. Sprawdź, gdzie sypie Ci się tydzień.',
+    description: 'Sen, energia, trening, jedzenie i weekend. Wynik od razu: najsłabszy obszar, pierwszy moment rozjazdu i test na 72 h.'
     url: 'https://diagnostyka.talerzihantle.com',
     siteName: 'Diagnostyka 168 | Hantle i Talerz',
     images: [
@@ -22,8 +22,8 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'W poniedziałek ogarniasz. W piątek znowu to samo.',
-    description: 'Zobacz, gdzie tracisz najwięcej, co ma największy zapas i co warto ruszyć najpierw. 5 min · wynik od razu.',
+    title: 'Wiesz, jak jeść i trenować. Sprawdź, gdzie sypie Ci się tydzień.',
+    description: 'Sen, energia, trening, jedzenie i weekend. Wynik od razu: najsłabszy obszar, pierwszy moment rozjazdu i test na 72 h.'
     images: ['https://diagnostyka.talerzihantle.com/api/og'],
   },
   icons: {
