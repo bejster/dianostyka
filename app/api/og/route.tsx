@@ -55,7 +55,7 @@ export async function GET(req: Request) {
 
           <div style={{ display: 'flex', marginTop: 34, justifyContent: 'space-between', alignItems: 'center', gap: 30 }}>
             <div style={{ display: 'flex', fontSize: 25, color: '#a49e92' }}>
-              Sprawdź, co rozwala Ci tydzień.
+              Zobacz, gdzie tracisz najwięcej i co ruszyć najpierw.
             </div>
             <div style={{ display: 'flex', fontSize: 20, color: '#c8a84e', fontWeight: 800 }}>
               5 MIN · WYNIK OD RAZU
