@@ -248,10 +248,10 @@ export default function DiagnozaPage() {
             Diagnostyka 168 · 5 min · wynik od razu
           </div>
           <h1 style={{ fontFamily: "'Instrument Serif', Georgia, serif", fontSize: 'clamp(35px, 9.1vw, 58px)', lineHeight: 1.0, fontWeight: 400, color: '#fff', margin: '0 0 16px', letterSpacing: '-0.02em', maxWidth: '100%', overflowWrap: 'break-word' }}>
-            Wiesz, jak powinieneś jeść i trenować. <em style={{ color: '#e8cc80', fontStyle: 'italic' }}>Sprawdź, gdzie dokładnie sypie Ci się tydzień.</em>
+            Wiesz, co jeść i jak trenować. <em style={{ color: '#e8cc80', fontStyle: 'italic' }}>Sprawdź, gdzie dokładnie sypie Ci się tydzień.</em>
           </h1>
           <p style={{ fontSize: 15.8, color: '#c4bdb0', lineHeight: 1.55, margin: '0 0 16px', maxWidth: 438 }}>
-            Zaznaczysz, <strong style={{ color: '#ece7db', fontWeight: 750 }}>ile śpisz, kiedy spada Ci energia, ile treningów wypada, co dzieje się z jedzeniem wieczorem i jak wygląda Twój weekend.</strong> Wynik pokaże, który obszar wypada najsłabiej, kiedy zaczyna się rozjazd i co sprawdzić przez następne 72 godziny.
+            Zaznaczysz, <strong style={{ color: '#ece7db', fontWeight: 750 }}>ile śpisz, o której siada Ci energia, ile treningów wypada w gorszym tygodniu, jak wygląda jedzenie wieczorem i kiedy wracasz do normalnego rytmu po weekendzie.</strong> Na końcu dostaniesz trzy rzeczy: najsłabszy obszar, pierwszy moment rozjazdu i jeden test na 72 godziny.
           </p>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,minmax(0,1fr))', gap: 7, margin: '0 0 17px', width: '100%' }}>
             {['NAJSŁABSZY OBSZAR', 'PIERWSZY MOMENT', 'TEST NA 72H'].map((label, i) => (
