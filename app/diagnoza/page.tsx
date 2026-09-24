@@ -294,9 +294,16 @@ export default function DiagnozaPage() {
           <h1 style={{ fontFamily: "'Instrument Serif', Georgia, serif", fontSize: 'clamp(39px, 9.4vw, 58px)', lineHeight: 1.0, fontWeight: 400, color: '#fff', margin: '0 0 16px', letterSpacing: '-0.02em', maxWidth: 455 }}>
             W poniedziałek ogarniasz. W piątek patrzysz na tydzień i myślisz: <em style={{ color: '#e8cc80', fontStyle: 'italic' }}>„kurwa, znowu to samo”.</em>
           </h1>
-          <p style={{ fontSize: 15.8, color: '#c4bdb0', lineHeight: 1.55, margin: '0 0 20px', maxWidth: 438 }}>
-            W 5 minut przejdziesz przez robotę, jedzenie, sen, trening i weekend. Na końcu zobaczysz, gdzie najczęściej zaczyna się Twój rozjazd i dostaniesz jedną rzecz do sprawdzenia przez 72 h.
+          <p style={{ fontSize: 15.8, color: '#c4bdb0', lineHeight: 1.55, margin: '0 0 16px', maxWidth: 438 }}>
+            Przejdziesz przez robotę, jedzenie, sen, trening i weekend. Na końcu zobaczysz <strong style={{ color: '#ece7db', fontWeight: 750 }}>gdzie dziś tracisz najwięcej, co ma największy zapas i który jeden ruch warto sprawdzić najpierw.</strong>
           </p>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 7, margin: '0 0 17px' }}>
+            {['GDZIE TRACISZ', 'NAJWIĘKSZY ZAPAS', 'PIERWSZY RUCH 72H'].map((label, i) => (
+              <div key={label} style={{ minWidth: 0, padding: '9px 6px', border: '1px solid #29272a', borderRadius: 10, background: 'rgba(255,255,255,.018)', textAlign: 'center' }}>
+                <span style={{ display: 'block', fontFamily: "'JetBrains Mono', ui-monospace, monospace", fontSize: 7.3, letterSpacing: .72, color: i === 1 ? GOLD : '#8f887c', lineHeight: 1.35 }}>{label}</span>
+              </div>
+            ))}
+          </div>
           <button
             onClick={() => {
               registerContext({ mode: 'diagnostic' });
@@ -307,10 +314,10 @@ export default function DiagnozaPage() {
             }}
             style={{ width: '100%', padding: '18px 17px', borderRadius: 14, border: 'none', cursor: 'pointer', background: `linear-gradient(135deg, ${GOLD}, #8a7535)`, color: BG, fontWeight: 850, fontSize: 16, letterSpacing: 0.15, boxShadow: '0 16px 38px rgba(200,168,78,.18)' }}
           >
-            Pokaż mi, co rozwala mój tydzień &rarr;
+            Pokaż mi, co ruszyć najpierw &rarr;
           </button>
           <p style={{ fontFamily: "'JetBrains Mono', ui-monospace, monospace", fontSize: 9.8, letterSpacing: 1.15, color: '#777169', lineHeight: 1.45, margin: '11px 0 0', textAlign: 'center', textTransform: 'uppercase' }}>
-            bez maila · wynik od razu · jeden konkretny ruch
+            5 min · bez maila · wynik od razu
           </p>
         </div>
       </div>
