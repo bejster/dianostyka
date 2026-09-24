@@ -20,9 +20,8 @@ test('cold entry preserves curiosity and does not expose the hot sales branch', 
   assert.match(page, /GDZIE TRACISZ/);
   assert.match(page, /NAJWIĘKSZY ZAPAS/);
   assert.match(page, /PIERWSZY RUCH 72H/);
-  // v2.8.3 pass jezykowy: "jak funkcjonujesz" to jezyk ankiety, nie Michala. Funkcja zdania zostaje
-  // ta sama (uczciwe ustawienie oczekiwan przed startem), wiec kontrakt trzyma dalej ten sam poziom.
-  assert.match(page, /ale gdzie zaczął się łańcuch\?/);
+  // Curiosity jest w scenie i w obietnicy spersonalizowanego priorytetu, nie w martwej dekoracji.
+  assert.match(page, /Pokaż mi, co ruszyć najpierw/);
   assert.doesNotMatch(page, /michal-portrait\.jpg/);
   assert.doesNotMatch(page, /Wiem, że chcę działać/);
   assert.match(flow, /EXCLUDED_COLD_IDS = new Set\(\['alcohol_intake'\]\)/);
