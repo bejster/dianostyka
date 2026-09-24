@@ -61,7 +61,7 @@ export default function DiagnozaPage() {
         const v = (sp.get(k) || '').toLowerCase();
         return allow.includes(v) ? v : undefined;
       };
-      const ctx: Record<string, string> = { mode: m === 'fast_fit' ? 'fast_fit' : 'diagnostic', entry_copy: 'human_leverage_v2' };
+      const ctx: Record<string, string> = { mode: m === 'fast_fit' ? 'fast_fit' : 'diagnostic', entry_copy: 'michal_common_sense_v3' };
       const src = pick('src', ['setter', 'organic', 'story', 'dm', 'other']);
       const lane = pick('lane', ['cold', 'warm', 'hot']); // ATRYBUCJA ONLY — nie miesza sie z diagnostycznym severity
       const campaignRaw = (sp.get('campaign') || '').toLowerCase().slice(0, 40);
@@ -248,15 +248,15 @@ export default function DiagnozaPage() {
             Diagnostyka 168 · 5 min · wynik od razu
           </div>
           <h1 style={{ fontFamily: "'Instrument Serif', Georgia, serif", fontSize: 'clamp(35px, 9.1vw, 58px)', lineHeight: 1.0, fontWeight: 400, color: '#fff', margin: '0 0 16px', letterSpacing: '-0.02em', maxWidth: '100%', overflowWrap: 'break-word' }}>
-            W poniedziałek ogarniasz. W piątek patrzysz na tydzień i myślisz: <em style={{ color: '#e8cc80', fontStyle: 'italic' }}>„kurwa, znowu to samo”.</em>
+            Wiesz, jak powinieneś jeść i trenować. <em style={{ color: '#e8cc80', fontStyle: 'italic' }}>Sprawdź, gdzie dokładnie sypie Ci się tydzień.</em>
           </h1>
           <p style={{ fontSize: 15.8, color: '#c4bdb0', lineHeight: 1.55, margin: '0 0 16px', maxWidth: 438 }}>
-            Przejdziesz przez robotę, jedzenie, sen, trening i weekend. Na końcu zobaczysz <strong style={{ color: '#ece7db', fontWeight: 750 }}>gdzie dziś tracisz najwięcej, co ma największy zapas i który jeden ruch warto sprawdzić najpierw.</strong>
+            Zaznaczysz, <strong style={{ color: '#ece7db', fontWeight: 750 }}>ile śpisz, kiedy spada Ci energia, ile treningów wypada, co dzieje się z jedzeniem wieczorem i jak wygląda Twój weekend.</strong> Wynik pokaże, który obszar wypada najsłabiej, kiedy zaczyna się rozjazd i co sprawdzić przez następne 72 godziny.
           </p>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,minmax(0,1fr))', gap: 7, margin: '0 0 17px', width: '100%' }}>
-            {['GDZIE TRACISZ', 'NAJWIĘKSZY ZAPAS', 'PIERWSZY RUCH 72H'].map((label, i) => (
+            {['NAJSŁABSZY OBSZAR', 'PIERWSZY MOMENT', 'TEST NA 72H'].map((label, i) => (
               <div key={label} style={{ minWidth: 0, padding: '9px 6px', border: '1px solid #29272a', borderRadius: 10, background: 'rgba(255,255,255,.018)', textAlign: 'center' }}>
-                <span style={{ display: 'block', fontFamily: "'JetBrains Mono', ui-monospace, monospace", fontSize: 7.1, letterSpacing: .62, color: i === 1 ? GOLD : '#8f887c', lineHeight: 1.35, overflowWrap: 'anywhere' }}>{label}</span>
+                <span style={{ display: 'block', fontFamily: "'JetBrains Mono', ui-monospace, monospace", fontSize: 7.1, letterSpacing: .62, color: i === 0 ? GOLD : '#8f887c', lineHeight: 1.35, overflowWrap: 'anywhere' }}>{label}</span>
               </div>
             ))}
           </div>
@@ -270,7 +270,7 @@ export default function DiagnozaPage() {
             }}
             style={{ width: '100%', padding: '18px 17px', borderRadius: 14, border: 'none', cursor: 'pointer', background: `linear-gradient(135deg, ${GOLD}, #8a7535)`, color: BG, fontWeight: 850, fontSize: 16, letterSpacing: 0.15, boxShadow: '0 16px 38px rgba(200,168,78,.18)' }}
           >
-            Pokaż mi, co ruszyć najpierw &rarr;
+            Sprawdź mój tydzień &rarr;
           </button>
           <p style={{ fontFamily: "'JetBrains Mono', ui-monospace, monospace", fontSize: 9.8, letterSpacing: 1.15, color: '#777169', lineHeight: 1.45, margin: '11px 0 0', textAlign: 'center', textTransform: 'uppercase' }}>
             5 min · bez maila · wynik od razu
