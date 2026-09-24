@@ -7,7 +7,7 @@ export const metadata: Metadata = {
   alternates: { canonical: 'https://diagnostyka.talerzihantle.com/' },
   openGraph: {
     title: 'Wiesz, jak jeść i trenować. Sprawdź, gdzie sypie Ci się tydzień.',
-    description: 'Sen, energia, trening, jedzenie i weekend. Wynik od razu: najsłabszy obszar, pierwszy moment rozjazdu i test na 72 h.'
+    description: 'Sen, energia, trening, jedzenie i weekend. Wynik od razu: najsłabszy obszar, pierwszy moment rozjazdu i test na 72 h.',
     url: 'https://diagnostyka.talerzihantle.com',
     siteName: 'Diagnostyka 168 | Hantle i Talerz',
     images: [
@@ -23,7 +23,7 @@ export const metadata: Metadata = {
   twitter: {
     card: 'summary_large_image',
     title: 'Wiesz, jak jeść i trenować. Sprawdź, gdzie sypie Ci się tydzień.',
-    description: 'Sen, energia, trening, jedzenie i weekend. Wynik od razu: najsłabszy obszar, pierwszy moment rozjazdu i test na 72 h.'
+    description: 'Sen, energia, trening, jedzenie i weekend. Wynik od razu: najsłabszy obszar, pierwszy moment rozjazdu i test na 72 h.',
     images: ['https://diagnostyka.talerzihantle.com/api/og'],
   },
   icons: {
