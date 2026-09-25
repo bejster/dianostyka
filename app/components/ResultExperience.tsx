@@ -23,6 +23,36 @@ const C = {
   mono: "'JetBrains Mono', ui-monospace, monospace", serif: "'Instrument Serif', Georgia, serif", sans: "'Inter', system-ui, sans-serif",
 };
 
+// Odczyt z miernika: liczba policzona z odpowiedzi rusza od wlasnej oceny i dojezdza do pomiaru,
+// raz, przy wejsciu w kadr. SSR i reduced motion od razu pokazuja wartosc koncowa.
+function SettlingReadout({ from, to }: { from?: number; to?: number }) {
+  const ref = useRef<HTMLElement>(null);
+  const fmt = (x?: number) => String(x).replace('.', ',');
+  const [shown, setShown] = useState(fmt(to));
+  useEffect(() => {
+    const el = ref.current;
+    if (!el || from === undefined || to === undefined || from === to) return;
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    const dec = /\./.test(String(from) + String(to)) ? 10 : 1;
+    let raf = 0;
+    setShown(fmt(from));
+    const io = new IntersectionObserver(([e]) => {
+      if (!e.isIntersecting) return;
+      io.disconnect();
+      const t0 = performance.now(), D = 1300;
+      const tick = (t: number) => {
+        const p = Math.min(1, (t - t0) / D), k = 1 - Math.pow(1 - p, 3);
+        setShown(p < 1 ? (from + (to - from) * k).toFixed(dec === 10 ? 1 : 0).replace('.', ',') : fmt(to));
+        if (p < 1) raf = requestAnimationFrame(tick);
+      };
+      raf = requestAnimationFrame(tick);
+    }, { threshold: 0.8 });
+    io.observe(el);
+    return () => { io.disconnect(); cancelAnimationFrame(raf); };
+  }, [from, to]);
+  return <strong ref={ref}>{shown}</strong>;
+}
+
 export default function ResultExperience({
   archLabel, archKey, redCount, breakId, domainLabel, statuses,
   evidenceReceipts, loop, whyRepeats, costFacts, userPain,
@@ -301,7 +331,7 @@ export default function ResultExperience({
               </div>
               <div className={`rx-mirror-cell ${awareness.verdict === 'ABOVE' ? 'rx-mirror-hot' : ''}`}>
                 <span>Tak wychodzi z odpowiedzi</span>
-                <strong>{String(awareness.measuredEnergy).replace('.', ',')}</strong>
+                <SettlingReadout from={awareness.selfEnergy} to={awareness.measuredEnergy} />
                 <em>Policzone z pięciu Twoich kliknięć</em>
               </div>
             </div>
