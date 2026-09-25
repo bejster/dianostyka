@@ -80,7 +80,17 @@
   fill: rgba(255, 255, 255, 0.34);
 }
 .wi-cell { transition: fill var(--dur) var(--ease), opacity var(--dur) var(--ease); }
-.wi-cell-active { animation: wi-ping 1.9s var(--ease) infinite; }
+/* Wejscie w sekcje: jeden przebieg skanu wiersz po wierszu, dopiero potem ping. */
+.wi-cell-active {
+  animation:
+    wi-scan 0.46s var(--ease) calc(var(--r, 0) * 38ms) both,
+    wi-ping 1.9s var(--ease) 1s infinite; /* wspolny start: fala tylko przy wejsciu */
+}
+@keyframes wi-scan {
+  0% { opacity: 0.12; }
+  45% { opacity: 1; }
+  100% { opacity: 0.45; }
+}
 @keyframes wi-ping {
   0%, 100% { opacity: 0.45; }
   50% { opacity: 1; }
