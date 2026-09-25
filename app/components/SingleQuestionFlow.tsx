@@ -412,19 +412,11 @@ export default function SingleQuestionFlow({ onComplete, initialAnswers }: Props
         @media (max-width:640px){.diag-slider-shell{padding-top:12px!important;padding-bottom:12px!important}}
       `}</style>
       {/* ── TOP BAR: PROGRESS BAR + SEKCJA ── */}
-      <div style={{
-        position: 'sticky', top: 0, zIndex: 50, background: 'rgba(14,14,14,0.95)',
-        backdropFilter: 'blur(10px)', borderBottom: '1px solid rgba(255,255,255,0.08)',
-      }}>
-        {/* Continuous progress line */}
-        <div style={{ width: '100%', height: 3, background: 'rgba(200,168,78,0.12)' }}>
-          <div style={{
-            height: '100%',
-            width: `${progressPct}%`,
-            background: 'linear-gradient(90deg, #c8a84e, #e8cc80)',
-            transition: 'width 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
-            boxShadow: '0 0 10px rgba(200,168,78,0.5)',
-          }} />
+      <div className="dx-topbar">
+        {/* Postep jako podzialka, tym samym jezykiem co suwak. Swiecacy pasek
+            3 px z pulsujacym glow byl drugim jezykiem wizualnym nad przyrzadem. */}
+        <div className="dx-progress" aria-hidden>
+          <div className="dx-progress-fill" style={{ width: `${progressPct}%` }} />
         </div>
 
         <div style={{
@@ -435,21 +427,17 @@ export default function SingleQuestionFlow({ onComplete, initialAnswers }: Props
           {currentIndex > 0 ? (
             <button
               onClick={goToPrev}
-              style={{
-                background: 'none', border: 'none', color: '#c8a84e',
-                fontFamily: 'monospace', fontSize: 13, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6,
-                padding: '6px 0',
-              }}
+              className="dx-back"
             >
               &larr; Wstecz
             </button>
           ) : <div />}
 
-          <div style={{ fontFamily: 'monospace', fontSize: 10, letterSpacing: 2, textTransform: 'uppercase', color: '#c8a84e', fontWeight: 700 }}>
+          <div className="dx-meta dx-topbar-section">
             {currentQ.section}
           </div>
 
-          <div style={{ fontFamily: 'monospace', fontSize: 11, color: '#888', fontVariantNumeric: 'tabular-nums' }}>
+          <div className="dx-meta">
             KROK {visiblePos}
           </div>
         </div>
@@ -462,7 +450,7 @@ export default function SingleQuestionFlow({ onComplete, initialAnswers }: Props
         flex: 1, width: '100%', padding: '24px 24px max(104px, calc(env(safe-area-inset-bottom) + 80px))',
         boxSizing: 'border-box', position: 'relative', zIndex: 1,
       }}>
-      <div className="dx-main" style={{
+      <div className="dx-main dx-stage" key={currentQ.id} style={{
         width: '100%',
         display: 'flex', flexDirection: 'column', justifyContent: 'center', boxSizing: 'border-box',
         opacity: transitionState === 'out' ? 0 : 1,
@@ -509,6 +497,7 @@ export default function SingleQuestionFlow({ onComplete, initialAnswers }: Props
                   key={opt.id}
                   className="mrow"
                   data-on={isSelected ? '1' : '0'}
+                  style={{ '--i': i } as React.CSSProperties}
                   onClick={() => handleSingleSelect(opt)}
                 >
                   <span className="mrow-tick" />
@@ -597,6 +586,7 @@ export default function SingleQuestionFlow({ onComplete, initialAnswers }: Props
                   key={opt.id}
                   className="mrow"
                   data-on={isSelected ? '1' : '0'}
+                  style={{ '--i': i } as React.CSSProperties}
                   disabled={blocked}
                   onClick={() => handleMultiChipToggle(opt.id)}
                 >

@@ -239,6 +239,74 @@
 .dx-go:hover:not(:disabled)::before { transform: scaleX(1); }
 .dx-go:disabled { opacity: 0.3; cursor: not-allowed; }
 .dx-go:focus-visible { outline: 1px solid var(--gold); outline-offset: 3px; }
+/* Nacisk: wypelnienie dojezdza szybciej niz na hover i przycisk siada o piksel.
+   Na telefonie hover nie istnieje, wiec bez tego tap nie dawal zadnej odpowiedzi. */
+.dx-go:active:not(:disabled) { color: #08080a; border-color: var(--gold); transform: translateY(1px); }
+.dx-go:active:not(:disabled)::before { transform: scaleX(1); transition-duration: 90ms; }
+@media (hover: none) {
+  /* Dotyk zostawia :hover przyklejony po tapnieciu. Stan zostaje tylko na :active. */
+  .dx-go:hover:not(:disabled):not(:active) { color: var(--gold); border-color: var(--measure-rule-strong); }
+  .dx-go:hover:not(:disabled):not(:active)::before { transform: scaleX(0); }
+  .mrow:hover { padding-left: 0; }
+  .mrow:hover:not([data-on='1']) .mrow-tick { height: 22px; background: var(--measure-rule-strong); }
+  .mrow:active .mrow-tick { height: 40px; background: var(--gold); }
+}
+
+/* ================================
+   WEJSCIE PYTANIA
+   ================================ */
+/* Scena jest montowana od nowa per pytanie (key), wiec wejscie gra za kazdym razem.
+   Kolejnosc: pytanie, dopowiedzenie, potem odczyty jeden po drugim. Wiersze wchodza
+   od lewej, bo tak czyta sie skala. */
+.dx-stage > * { animation: dx-in 620ms var(--ease) both; }
+.dx-stage > *:nth-child(2) { animation-delay: 70ms; }
+.dx-stage > *:nth-child(3) { animation-delay: 140ms; }
+.dx-stage .mrow { animation: dx-row 520ms var(--ease) both; animation-delay: calc(160ms + var(--i, 0) * 45ms); }
+@keyframes dx-in { from { opacity: 0; transform: translateY(10px); filter: blur(3px); } to { opacity: 1; transform: none; filter: none; } }
+@keyframes dx-row { from { opacity: 0; transform: translateX(-10px); } to { opacity: 1; transform: none; } }
+
+/* ================================
+   GÓRNY PASEK
+   ================================ */
+.dx-topbar {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  background: rgba(8, 8, 10, 0.82);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--measure-rule);
+}
+.dx-progress {
+  position: relative;
+  height: 6px;
+  background-image: repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.14) 0 1px, transparent 1px 9px);
+}
+.dx-progress-fill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  background-image: repeating-linear-gradient(90deg, var(--gold) 0 1px, transparent 1px 9px);
+  border-right: 1px solid var(--gold);
+  transition: width var(--dur) var(--ease);
+}
+.dx-back {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 0;
+  background: none;
+  border: none;
+  color: var(--gold);
+  font-family: var(--font-mono), monospace;
+  font-size: var(--t-mono);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  cursor: pointer;
+  opacity: 0.72;
+  transition: opacity var(--dur-fast) var(--ease);
+}
+.dx-back:hover, .dx-back:focus-visible { opacity: 1; }
+.dx-topbar .dx-topbar-section { color: var(--gold); text-transform: uppercase; letter-spacing: 0.22em; }
 .dx-skip {
   width: 100%;
   margin-top: var(--s-3);
@@ -366,7 +434,8 @@
 
 @media (prefers-reduced-motion: reduce) {
   .wi-cell-active { animation: none; }
-  .mrow, .mrow-tick, .wi-cell, .dx-go::before { transition: none; }
+  .mrow, .mrow-tick, .wi-cell, .dx-go::before, .dx-progress-fill { transition: none; }
+  .dx-stage > *, .dx-stage .mrow { animation: none; }
 }
 
 @theme inline {
