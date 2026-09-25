@@ -180,6 +180,8 @@ export function WeekInstrument({
   const PAD_T = 16;
   const w = PAD_L + 7 * (CW + GAP);
   const h = PAD_T + 24 * (CH + GAP);
+  // Kolejnosc wierszy wchodzacej sekcji: skan idzie z gory na dol raz, potem ping.
+  const activeRows = activeSection ? [...(SECTION_SLOTS[activeSection]?.hours ?? [])].sort((a, b) => a - b) : [];
 
   return (
     <div className="wi-panel" aria-hidden>
@@ -207,6 +209,7 @@ export function WeekInstrument({
               fill={cellFill(c, d, hr)}
               opacity={cellOpacity(c, d, hr)}
               className={c.active ? 'wi-cell wi-cell-active' : 'wi-cell'}
+              style={c.active ? ({ '--r': activeRows.indexOf(hr) } as React.CSSProperties) : undefined}
             />
           )),
         )}
