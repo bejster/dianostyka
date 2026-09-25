@@ -180,9 +180,191 @@
 .mrow[data-on='1'] .mrow-idx { color: var(--gold); }
 .mrow:focus-visible { outline: 1px solid var(--gold); outline-offset: 3px; }
 
+/* Wielokrotny wybór korzysta z tego samego wiersza, tylko z polem stanu po prawej.
+   Osobny komponent chipa dawał drugi język wizualny w środku tego samego quizu. */
+.mrow-box {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+  border: 1px solid var(--measure-rule-strong);
+  transition: background var(--dur-fast) var(--ease), border-color var(--dur-fast) var(--ease);
+}
+.mrow[data-on='1'] .mrow-box {
+  background: var(--gold);
+  border-color: var(--gold);
+  box-shadow: 0 0 12px rgba(200, 168, 78, 0.5);
+}
+.mrow:disabled { opacity: 0.34; cursor: not-allowed; }
+.mrow:disabled:hover { color: rgba(255, 255, 255, 0.82); padding-left: 0; }
+.mrow:disabled:hover .mrow-tick { height: 22px; background: var(--measure-rule-strong); }
+
+/* ================================
+   AKCJA
+   ================================ */
+/* Złoty gradientowy przycisk z zaokrągleniem 14 px to domyślny komponent
+   biblioteki. Tutaj akcja jest prostokątna, monospace i wypełnia się od lewej,
+   czyli zachowuje się jak przełącznik w aparaturze, nie jak guzik w sklepie. */
+.dx-go {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s-3);
+  width: 100%;
+  min-height: 58px;
+  margin-top: var(--s-5);
+  padding: 0 var(--s-4);
+  background: none;
+  border: 1px solid var(--measure-rule-strong);
+  color: var(--gold);
+  font-family: var(--font-mono), monospace;
+  font-size: 12px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  cursor: pointer;
+  overflow: hidden;
+  transition: color var(--dur-fast) var(--ease), border-color var(--dur-fast) var(--ease);
+}
+.dx-go::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: var(--gold);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform var(--dur) var(--ease);
+}
+.dx-go > span { position: relative; }
+.dx-go:hover:not(:disabled) { color: #08080a; border-color: var(--gold); }
+.dx-go:hover:not(:disabled)::before { transform: scaleX(1); }
+.dx-go:disabled { opacity: 0.3; cursor: not-allowed; }
+.dx-go:focus-visible { outline: 1px solid var(--gold); outline-offset: 3px; }
+.dx-skip {
+  width: 100%;
+  margin-top: var(--s-3);
+  padding: var(--s-3) 0;
+  background: none;
+  border: none;
+  color: rgba(255, 255, 255, 0.34);
+  font-family: var(--font-mono), monospace;
+  font-size: var(--t-mono);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: color var(--dur-fast) var(--ease);
+}
+.dx-skip:hover { color: rgba(255, 255, 255, 0.6); }
+
+/* ================================
+   POLA
+   ================================ */
+/* Podwojona klasa celowo. Nizej w pliku zyje stara biblioteka z regula
+   `input[type=text]`, ktora ma wyzsza specyficznosc niz pojedyncza klasa
+   i przywracala pudelko z promieniem 12 px w srodku jezyka przyrzadu. */
+.dx-field.dx-field {
+  width: 100%;
+  padding: var(--s-3) 0;
+  background: none;
+  border: none;
+  border-bottom: 1px solid var(--measure-rule-strong);
+  border-radius: 0;
+  color: #fff;
+  font-family: inherit;
+  font-size: var(--t-body);
+  outline: none;
+  box-sizing: border-box;
+  transition: border-color var(--dur-fast) var(--ease);
+}
+.dx-field.dx-field::placeholder { color: rgba(255, 255, 255, 0.24); }
+.dx-field.dx-field:focus { border-bottom-color: var(--gold); box-shadow: none; }
+.dx-field-mono.dx-field-mono {
+  font-family: var(--font-mono), monospace;
+  font-size: 30px;
+  font-variant-numeric: tabular-nums;
+  color: var(--gold);
+  letter-spacing: 0.02em;
+}
+.dx-area.dx-area { min-height: 128px; line-height: 1.6; resize: vertical; }
+.dx-meta {
+  font-family: var(--font-mono), monospace;
+  font-size: var(--t-mono);
+  letter-spacing: 0.14em;
+  color: rgba(255, 255, 255, 0.3);
+}
+.dx-prefix {
+  font-family: var(--font-mono), monospace;
+  font-size: 20px;
+  color: var(--gold);
+  padding-bottom: var(--s-1);
+  flex-shrink: 0;
+}
+.dx-note {
+  margin-top: var(--s-4);
+  padding-left: var(--s-3);
+  border-left: 2px solid var(--measure-rule-strong);
+  color: rgba(255, 255, 255, 0.62);
+  font-size: 14.5px;
+  line-height: 1.55;
+}
+
+/* ================================
+   SUWAK JAKO PODZIAŁKA
+   ================================ */
+/* Okrągła złota gałka na grubym torze to kontrolka z telefonu. Podziałka z
+   kreskami i igłą pokazuje, że człowiek ustawia wartość na skali pomiarowej. */
+.dx-gauge {
+  position: relative;
+  height: 60px;
+  margin-top: var(--s-4);
+  touch-action: pan-y;
+  user-select: none;
+  -webkit-user-select: none;
+  cursor: ew-resize;
+  outline: none;
+}
+.dx-gauge-ticks,
+.dx-gauge-fill {
+  position: absolute;
+  top: 24px;
+  height: 14px;
+  background-image: repeating-linear-gradient(90deg, currentColor 0 1px, transparent 1px 7px);
+}
+.dx-gauge-ticks { left: 0; right: 0; color: rgba(255, 255, 255, 0.2); }
+.dx-gauge-fill { left: 0; color: var(--gold); }
+.dx-gauge-rule { position: absolute; left: 0; right: 0; top: 38px; height: 1px; background: var(--measure-rule); }
+.dx-gauge-needle {
+  position: absolute;
+  top: 12px;
+  width: 2px;
+  height: 38px;
+  background: var(--gold);
+  transform: translateX(-50%);
+  box-shadow: 0 0 14px rgba(200, 168, 78, 0.85);
+  pointer-events: none;
+}
+.dx-gauge-needle::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: -6px;
+  width: 8px;
+  height: 8px;
+  background: var(--gold);
+  transform: translateX(-50%) rotate(45deg);
+}
+.dx-gauge:focus-visible .dx-gauge-needle { box-shadow: 0 0 0 3px rgba(200, 168, 78, 0.35), 0 0 14px rgba(200, 168, 78, 0.85); }
+.dx-readval {
+  font-family: var(--font-mono), monospace;
+  font-size: clamp(42px, 6.4vw, 62px);
+  line-height: 1;
+  color: var(--gold);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .wi-cell-active { animation: none; }
-  .mrow, .mrow-tick, .wi-cell { transition: none; }
+  .mrow, .mrow-tick, .wi-cell, .dx-go::before { transition: none; }
 }
 
 @theme inline {
