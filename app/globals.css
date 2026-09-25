@@ -7,6 +7,182 @@
   --orange: #f97316;
   --yellow: #eab308;
   --green: #22c55e;
+
+  /* ── JĘZYK PRZYRZĄDU ────────────────────────────────────────────────
+     Jeden system zamiast szerokości i promieni wymyślanych per komponent.
+     Zimny błękit to godziny jeszcze niezmierzone. Złoto to pomiar. */
+  --measure-cold: #1b2027;
+  --measure-rule: rgba(200, 168, 78, 0.16);
+  --measure-rule-strong: rgba(200, 168, 78, 0.42);
+  --surface-0: #0a0a0a;
+  --surface-1: #101216;
+  --surface-2: #161920;
+
+  /* Skala typograficzna, stosunek 1.25 */
+  --t-mono: 11px;
+  --t-body: 16px;
+  --t-lead: 20px;
+  --t-q: clamp(28px, 3.6vw, 46px);
+  --t-display: clamp(40px, 6vw, 76px);
+
+  /* Skala odstępów, krok 4 */
+  --s-1: 4px;
+  --s-2: 8px;
+  --s-3: 12px;
+  --s-4: 20px;
+  --s-5: 32px;
+  --s-6: 52px;
+  --s-7: 84px;
+
+  /* Kontenery. 520 było wpisane inline w dwóch miejscach i to trzymało
+     desktop na 37% ekranu. */
+  --w-read: 620px;
+  --w-shell: 1180px;
+  --rail: 300px;
+
+  /* Ruch. Jedna krzywa dla całego produktu. */
+  --ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --dur-fast: 180ms;
+  --dur: 420ms;
+  --dur-slow: 900ms;
+}
+
+/* ================================
+   PRZYRZĄD 168
+   ================================ */
+.wi-panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-3);
+  width: var(--rail);
+  flex-shrink: 0;
+  padding: var(--s-4);
+  border-left: 1px solid var(--measure-rule);
+  align-self: stretch;
+  justify-content: center;
+  /* Obudowa przyrządu: płyta odrobinę ciemniejsza niż kadr, żeby siatka nie
+     pływała w tle, tylko siedziała na czymś. */
+  background: linear-gradient(180deg, rgba(8, 10, 13, 0.55), rgba(8, 10, 13, 0.25));
+}
+.wi-label {
+  font-family: var(--font-mono), monospace;
+  font-size: var(--t-mono);
+  letter-spacing: 0.22em;
+  color: var(--gold);
+  opacity: 0.75;
+}
+.wi-svg { width: 100%; height: auto; display: block; overflow: visible; }
+.wi-daylabel,
+.wi-hourlabel {
+  font-family: var(--font-mono), monospace;
+  font-size: 7px;
+  letter-spacing: 0.1em;
+  fill: rgba(255, 255, 255, 0.34);
+}
+.wi-cell { transition: fill var(--dur) var(--ease), opacity var(--dur) var(--ease); }
+.wi-cell-active { animation: wi-ping 1.9s var(--ease) infinite; }
+@keyframes wi-ping {
+  0%, 100% { opacity: 0.45; }
+  50% { opacity: 1; }
+}
+.wi-readout {
+  font-family: var(--font-mono), monospace;
+  display: flex;
+  align-items: baseline;
+  gap: 1px;
+  color: rgba(255, 255, 255, 0.42);
+  font-size: 13px;
+  letter-spacing: 0.04em;
+  margin-top: var(--s-2);
+}
+.wi-num {
+  font-size: 30px;
+  color: var(--gold);
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+.wi-caption {
+  font-family: var(--font-mono), monospace;
+  font-size: 8px;
+  letter-spacing: 0.24em;
+  color: rgba(255, 255, 255, 0.3);
+  margin-top: 6px;
+}
+.wi-strip { display: none; }
+.wi-strip-svg { width: 100%; height: 12px; display: block; }
+.wi-readout-strip { justify-content: center; margin-top: var(--s-2); gap: 1px; }
+.wi-readout-strip .wi-num { font-size: 17px; }
+.wi-caption-strip { margin-top: 0; margin-left: var(--s-2); align-self: baseline; }
+
+/* ================================
+   POWŁOKA DWUKOLUMNOWA
+   ================================ */
+.dx-shell {
+  display: flex;
+  gap: var(--s-6);
+  align-items: stretch;
+  width: 100%;
+  max-width: var(--w-shell);
+  margin: 0 auto;
+}
+.dx-main { flex: 1; min-width: 0; max-width: var(--w-read); }
+
+@media (max-width: 899px) {
+  .wi-panel { display: none; }
+  .wi-strip { display: block; }
+  .dx-shell { gap: 0; }
+  .dx-main { max-width: none; }
+}
+
+/* ================================
+   WIERSZE POMIAROWE (odpowiedzi)
+   ================================ */
+.mrow {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  width: 100%;
+  min-height: 58px;
+  padding: var(--s-3) var(--s-4) var(--s-3) 0;
+  background: none;
+  border: none;
+  border-bottom: 1px solid var(--measure-rule);
+  color: rgba(255, 255, 255, 0.82);
+  font-size: var(--t-body);
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: color var(--dur-fast) var(--ease), padding-left var(--dur-fast) var(--ease);
+}
+.mrow:first-child { border-top: 1px solid var(--measure-rule); }
+.mrow-tick {
+  width: 2px;
+  height: 22px;
+  flex-shrink: 0;
+  background: var(--measure-rule-strong);
+  transition: height var(--dur) var(--ease), background var(--dur-fast) var(--ease);
+}
+.mrow-idx {
+  font-family: var(--font-mono), monospace;
+  font-size: var(--t-mono);
+  color: rgba(255, 255, 255, 0.28);
+  flex-shrink: 0;
+  font-variant-numeric: tabular-nums;
+  transition: color var(--dur-fast) var(--ease);
+}
+.mrow-label { flex: 1; line-height: 1.4; }
+.mrow:hover { color: #fff; padding-left: var(--s-2); }
+.mrow:hover .mrow-tick { height: 34px; background: var(--gold); }
+.mrow:hover .mrow-idx { color: var(--gold); }
+.mrow[data-on='1'] { color: #fff; }
+.mrow[data-on='1'] .mrow-tick { height: 40px; background: var(--gold); box-shadow: 0 0 14px rgba(200, 168, 78, 0.55); }
+.mrow[data-on='1'] .mrow-idx { color: var(--gold); }
+.mrow:focus-visible { outline: 1px solid var(--gold); outline-offset: 3px; }
+
+@media (prefers-reduced-motion: reduce) {
+  .wi-cell-active { animation: none; }
+  .mrow, .mrow-tick, .wi-cell { transition: none; }
 }
 
 @theme inline {

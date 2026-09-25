@@ -5,6 +5,7 @@ import { QUESTIONS as CONFIG_QUESTIONS, QuestionDef, QuestionOption } from '../l
 import { RawAnswers } from '../lib/scoring-engine';
 import { track, trackDiag } from '../lib/analytics';
 import { Atmosphere } from '../diagnoza/atmosphere';
+import { WeekInstrument, buildWeekState } from './WeekInstrument';
 
 interface Props {
   onComplete: (answers: RawAnswers) => void;
@@ -151,6 +152,11 @@ export default function SingleQuestionFlow({ onComplete, initialAnswers }: Props
   const visiblePos = Math.max(1, visibleQuestions.findIndex(q => q.id === currentQ.id) + 1);
   const visibleTotal = visibleQuestions.length;
   const progressPct = Math.round((visiblePos / visibleTotal) * 100);
+  // Stan przyrządu 168: które godziny tygodnia są już pokryte odpowiedziami.
+  const weekState = buildWeekState(
+    visibleQuestions as unknown as Parameters<typeof buildWeekState>[0],
+    answers as Record<string, unknown>,
+  );
 
   // Progresywny zapis: kazda odpowiedz leci osobno (event-per-row) -> /api/diag-event -> n8n -> Notion.
   // keepalive: przetrwa nawigacje/zamkniecie karty, wiec lapiemy tez ostatnia odpowiedz przed porzuceniem.
@@ -425,7 +431,7 @@ export default function SingleQuestionFlow({ onComplete, initialAnswers }: Props
         </div>
 
         <div style={{
-          maxWidth: 520, margin: '0 auto', padding: '12px 18px',
+          maxWidth: 'var(--w-shell)', margin: '0 auto', padding: '12px 24px',
           display: 'flex', justifyContent: 'space-between', alignItems: 'center',
         }}>
           {/* Przycisk wstecz */}
@@ -452,25 +458,30 @@ export default function SingleQuestionFlow({ onComplete, initialAnswers }: Props
         </div>
       </div>
 
-      {/* ── EKRAN PYTANIA (1 NA WIDOK) ── */}
-      <div style={{
-        flex: 1, maxWidth: 520, width: '100%', margin: '0 auto', padding: '24px 20px max(104px, calc(env(safe-area-inset-bottom) + 80px))',
+      {/* ── EKRAN PYTANIA (1 NA WIDOK) ──
+          Powłoka dwukolumnowa: treść po lewej, przyrząd 168 po prawej.
+          Poniżej 900 px przyrząd zwija się do paska (patrz globals.css). */}
+      <div className="dx-shell" style={{
+        flex: 1, width: '100%', padding: '24px 24px max(104px, calc(env(safe-area-inset-bottom) + 80px))',
+        boxSizing: 'border-box', position: 'relative', zIndex: 1,
+      }}>
+      <div className="dx-main" style={{
+        width: '100%',
         display: 'flex', flexDirection: 'column', justifyContent: 'center', boxSizing: 'border-box',
-        position: 'relative', zIndex: 1,
         opacity: transitionState === 'out' ? 0 : 1,
         transform: transitionState === 'out' ? 'translateY(-12px)' : transitionState === 'in' ? 'translateY(12px)' : 'none',
         transition: 'opacity 0.2s ease, transform 0.2s ease',
       }}>
         {/* Tytuł pytania. Kontakt zmienia copy po jawnej intencji, bez ukrytej kwalifikacji. */}
         <h2 style={{
-          fontFamily: 'Georgia, serif',
-          fontSize: 'clamp(24px, 5.8vw, 32px)',
+          fontFamily: "'Instrument Serif', Georgia, serif",
+          fontSize: 'var(--t-q)',
           fontWeight: 400,
-          lineHeight: 1.25,
+          lineHeight: 1.1,
           color: '#ffffff',
-
-          marginBottom: currentQ.subtitle ? 10 : 24,
-          letterSpacing: '-0.01em',
+          marginBottom: currentQ.subtitle ? 'var(--s-3)' : 'var(--s-5)',
+          letterSpacing: '-0.015em',
+          textWrap: 'balance',
         }}>
           {currentQ.type === 'contact' && contactRequired
             ? 'Zostaw @ z Instagrama, żebym mógł połączyć ten wynik z Tobą.'
@@ -490,33 +501,22 @@ export default function SingleQuestionFlow({ onComplete, initialAnswers }: Props
 
         {/* TYP 1: SINGLE CHOICE CARDS */}
         {currentQ.type === 'single' && currentQ.options && (
-          <div style={{ display: 'grid', gap: 12 }}>
-            {currentQ.options.map(opt => {
+          /* Wiersze pomiarowe zamiast kart. Karta z kółkiem radio to domyślny
+             komponent biblioteki i czyta się jak formularz. Wiersz z kreską
+             czyta się jak odczyt z przyrządu. */
+          <div style={{ display: 'flex', flexDirection: 'column' }}>
+            {currentQ.options.map((opt, i) => {
               const isSelected = answers[currentQ.id] === opt.id;
               return (
                 <button
                   key={opt.id}
+                  className="mrow"
+                  data-on={isSelected ? '1' : '0'}
                   onClick={() => handleSingleSelect(opt)}
-                  style={{
-                    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                    minHeight: 56, padding: '16px 20px', borderRadius: 14,
-                    background: isSelected ? 'rgba(200,168,78,0.12)' : 'rgba(255,255,255,0.03)',
-                    border: `1.5px solid ${isSelected ? '#c8a84e' : 'rgba(255,255,255,0.08)'}`,
-                    color: isSelected ? '#ffffff' : '#dddddd',
-                    fontSize: 15.5, fontWeight: isSelected ? 600 : 400,
-                    textAlign: 'left', cursor: 'pointer', transition: 'all 0.15s ease',
-                    boxShadow: isSelected ? '0 0 20px rgba(200,168,78,0.15)' : 'none',
-                  }}
                 >
-                  <span>{opt.label}</span>
-                  <span style={{
-                    width: 20, height: 20, borderRadius: '50%',
-                    border: `2px solid ${isSelected ? '#c8a84e' : '#555'}`,
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    background: isSelected ? '#c8a84e' : 'transparent', flexShrink: 0, marginLeft: 12,
-                  }}>
-                    {isSelected && <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#0e0e0e' }} />}
-                  </span>
+                  <span className="mrow-tick" />
+                  <span className="mrow-idx">{String(i + 1).padStart(2, '0')}</span>
+                  <span className="mrow-label">{opt.label}</span>
                 </button>
               );
             })}
@@ -778,6 +778,13 @@ export default function SingleQuestionFlow({ onComplete, initialAnswers }: Props
             </p>
           </div>
         )}
+
+        {/* Mobile: przyrząd jako pasek pod treścią. */}
+        <WeekInstrument state={weekState} activeSection={currentQ.section} variant="strip" />
+      </div>
+
+      {/* Desktop: pełny przyrząd 168 w prawej szynie. */}
+      <WeekInstrument state={weekState} activeSection={currentQ.section} variant="panel" />
       </div>
     </div>
   );
