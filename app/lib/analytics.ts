@@ -27,8 +27,12 @@ export function track(event: string, props?: Props): void {
 
 // Event diagnostyki: wstrzykuje `version` z JEDNEGO centralnego zrodla (ASSESSMENT_VERSION),
 // zeby moc porownac 2.5.0 vs 2.5.1 bez mieszania danych. Uzywaj do wszystkich eventow diagnostyki.
+// `ui` rozdziela warstwe wizualna od wersji logiki: ta sama 2.9.0 w starym i w nowym wygladzie
+// (przyrzad pomiarowy, 2026-09-25) bez tego tagu miesza sie w jednej kohorcie.
+export const UI_VARIANT = 'instrument-1';
+
 export function trackDiag(event: string, props?: Props): void {
-  track(event, { analytics_schema: 'site-analytics-v1', surface: 'diagnostyka', version: ASSESSMENT_VERSION, ...props });
+  track(event, { analytics_schema: 'site-analytics-v1', surface: 'diagnostyka', version: ASSESSMENT_VERSION, ui: UI_VARIANT, ...props });
 }
 
 // P1-1 (rc-003): rejestruje NIE-PII kontekst atrybucji settera (src/lane/campaign/mode) jako super-properties.
