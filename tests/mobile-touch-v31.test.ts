@@ -5,6 +5,7 @@ import fs from 'node:fs';
 const flow = fs.readFileSync('app/components/SingleQuestionFlow.tsx', 'utf8');
 const result = fs.readFileSync('app/components/ResultExperience.tsx', 'utf8');
 const page = fs.readFileSync('app/diagnoza/page.tsx', 'utf8');
+const css = fs.readFileSync('app/globals.css', 'utf8');
 
 test('mobile quiz keeps vertical page scrolling available', () => {
   assert.match(flow, /overflowX: 'hidden'/);
@@ -14,9 +15,11 @@ test('mobile quiz keeps vertical page scrolling available', () => {
 });
 
 test('gesture-aware slider has a real mobile touch target', () => {
-  assert.match(flow, /className="diag-slider"/);
-  assert.match(flow, /\.diag-slider\{[^}]*height:44px/);
-  assert.match(flow, /width:44px;height:44px/);
+  // Okragla galka 44x44 zniknela razem z jezykiem kontrolki z telefonu.
+  // Celem testu bylo realne pole dotyku, wiec pinujemy cala podzialke:
+  // 60 px wysokosci na pelnej szerokosci to wiekszy target niz stary thumb.
+  assert.match(flow, /className="dx-gauge"/);
+  assert.match(css, /\.dx-gauge \{[^}]*height: 60px/);
   assert.match(flow, /role="slider"/);
   assert.match(flow, /onPointerDown=\{onSliderPointerDown\}/);
   assert.match(flow, /mode:'pending'\|'horizontal'\|'vertical'/);

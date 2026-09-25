@@ -324,7 +324,9 @@ export default function SingleQuestionFlow({ onComplete, initialAnswers }: Props
     const el = sliderRef.current; if (!el) return;
     const min = Number(currentQ.min ?? 0), max = Number(currentQ.max ?? 100), step = Number(currentQ.step ?? 1);
     const rect = el.getBoundingClientRect();
-    const ratio = Math.max(0, Math.min(1, (clientX - (rect.left + 22)) / Math.max(1, rect.width - 44)));
+    // Igła ma 2 px, więc skala biegnie przez pełną szerokość. Wcześniejsze 22 px
+    // marginesu było wielkością okrągłej gałki, której już nie ma.
+    const ratio = Math.max(0, Math.min(1, (clientX - rect.left) / Math.max(1, rect.width)));
     const raw = min + ratio * (max - min);
     const value = Math.min(max, Math.max(min, Number((min + Math.round((raw - min) / step) * step).toFixed(4))));
     handleSliderChange(value);
@@ -407,11 +409,6 @@ export default function SingleQuestionFlow({ onComplete, initialAnswers }: Props
       <Atmosphere />
       <style>{`
         .diag-slider-shell{overscroll-behavior-y:contain}
-        .diag-slider{position:relative;height:44px;touch-action:pan-y;user-select:none;-webkit-user-select:none;cursor:ew-resize;outline:none}
-        .diag-slider-track{position:absolute;left:22px;right:22px;top:17px;height:10px;border-radius:999px;background:rgba(255,255,255,.12);box-shadow:inset 0 0 0 1px rgba(255,255,255,.03);overflow:hidden;pointer-events:none}
-        .diag-slider-fill{height:100%;background:linear-gradient(90deg,#8a7535,#c8a84e);border-radius:inherit}
-        .diag-slider-thumb{position:absolute;top:0;width:44px;height:44px;border-radius:50%;background:#c8a84e;border:3px solid #0e0e0e;box-shadow:0 0 0 2px rgba(200,168,78,.55),0 8px 22px rgba(200,168,78,.28);transform:translateX(-50%);pointer-events:none}
-        .diag-slider:focus-visible .diag-slider-thumb{box-shadow:0 0 0 4px rgba(200,168,78,.35),0 8px 22px rgba(200,168,78,.32)}
         @media (max-width:640px){.diag-slider-shell{padding-top:12px!important;padding-bottom:12px!important}}
       `}</style>
       {/* ── TOP BAR: PROGRESS BAR + SEKCJA ── */}
@@ -525,17 +522,14 @@ export default function SingleQuestionFlow({ onComplete, initialAnswers }: Props
 
         {/* TYP 2: SLIDER */}
         {currentQ.type === 'slider' && (
-          <div className="diag-slider-shell" style={{ padding: '20px 0', touchAction: 'pan-y' }}>
-            <div style={{
-              textAlign: 'center', fontFamily: 'monospace', fontSize: 48, fontWeight: 900,
-              color: '#c8a84e', marginBottom: 20, fontVariantNumeric: 'tabular-nums',
-            }}>
+          <div className="diag-slider-shell" style={{ padding: '4px 0', touchAction: 'pan-y' }}>
+            <div className="dx-readval">
               {fmtVal(Number(answers[currentQ.id] ?? currentQ.min ?? 7), currentQ.unit)}
             </div>
 
             <div
               ref={sliderRef}
-              className="diag-slider"
+              className="dx-gauge"
               role="slider"
               tabIndex={0}
               aria-label={currentQ.title}
@@ -549,112 +543,77 @@ export default function SingleQuestionFlow({ onComplete, initialAnswers }: Props
               onPointerCancel={() => { sliderGesture.current = null; }}
               onKeyDown={onSliderKeyDown}
             >
-              <div className="diag-slider-track"><div className="diag-slider-fill" style={{ width: `${sliderPct}%` }} /></div>
-              <div className="diag-slider-thumb" style={{ left: `calc(22px + (100% - 44px) * ${sliderPct / 100})` }} />
+              <div className="dx-gauge-ticks" />
+              <div className="dx-gauge-fill" style={{ width: `${sliderPct}%` }} />
+              <div className="dx-gauge-rule" />
+              <div className="dx-gauge-needle" style={{ left: `${sliderPct}%` }} />
             </div>
 
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontFamily: 'monospace', fontSize: 11, color: '#666', marginTop: 12 }}>
+            <div className="dx-meta" style={{ display: 'flex', justifyContent: 'space-between', marginTop: 10 }}>
               <span>{fmtVal(currentQ.min ?? 0, currentQ.unit)}</span>
               <span>{fmtVal(currentQ.max ?? 0, currentQ.unit)}</span>
             </div>
 
-            <button
-              onClick={() => goToNext()}
-              disabled={!advanceOk}
-              style={{
-                marginTop: 36, width: '100%', padding: '16px', borderRadius: 14,
-                background: 'linear-gradient(135deg, #c8a84e, #8a7535)', color: '#0e0e0e',
-                fontWeight: 800, fontSize: 15, border: 'none', cursor: advanceOk ? 'pointer' : 'not-allowed',
-                opacity: advanceOk ? 1 : 0.4,
-                letterSpacing: 1, textTransform: 'uppercase',
-              }}
-            >
-              Dalej &rarr;
+            <button className="dx-go" onClick={() => goToNext()} disabled={!advanceOk}>
+              <span>Dalej</span><span>&rarr;</span>
             </button>
           </div>
         )}
 
         {/* TYP 3: NUMBER INPUT */}
         {currentQ.type === 'number' && (
-          <div style={{ padding: '20px 0' }}>
-            <div style={{ display: 'flex', gap: 10, alignItems: 'center', marginBottom: 28 }}>
+          <div style={{ paddingTop: 4 }}>
+            <div style={{ display: 'flex', gap: 'var(--s-3)', alignItems: 'flex-end' }}>
               <input
                 type="number"
+                className="dx-field dx-field-mono"
                 min={currentQ.min ?? 0}
                 max={currentQ.max ?? 10000}
                 value={Number(answers[currentQ.id] ?? 300)}
                 onChange={e => handleNumberChange(parseInt(e.target.value, 10) || 0)}
-                style={{
-                  flex: 1, padding: '16px', borderRadius: 14, background: 'rgba(255,255,255,0.04)',
-                  border: '1.5px solid rgba(200,168,78,0.4)', color: '#ffffff',
-                  fontFamily: 'monospace', fontSize: 24, fontWeight: 700, outline: 'none',
-                }}
               />
-              <span style={{ fontFamily: 'monospace', fontSize: 18, color: '#c8a84e', fontWeight: 700 }}>
+              <span className="dx-meta" style={{ paddingBottom: 'var(--s-4)', whiteSpace: 'nowrap' }}>
                 {currentQ.unit} / mies.
               </span>
             </div>
 
-            <button
-              onClick={() => goToNext()}
-              disabled={!advanceOk}
-              style={{
-                width: '100%', padding: '16px', borderRadius: 14,
-                background: 'linear-gradient(135deg, #c8a84e, #8a7535)', color: '#0e0e0e',
-                fontWeight: 800, fontSize: 15, border: 'none', cursor: advanceOk ? 'pointer' : 'not-allowed',
-                opacity: advanceOk ? 1 : 0.4,
-                letterSpacing: 1, textTransform: 'uppercase',
-              }}
-            >
-              Dalej &rarr;
+            <button className="dx-go" onClick={() => goToNext()} disabled={!advanceOk}>
+              <span>Dalej</span><span>&rarr;</span>
             </button>
           </div>
         )}
 
         {/* TYP 4: MULTI SELECT CHIPS */}
         {currentQ.type === 'multi' && currentQ.options && (
-          <div style={{ display: 'grid', gap: 10 }}>
-            {currentQ.options.map(opt => {
+          <div style={{ display: 'flex', flexDirection: 'column' }}>
+            {currentQ.options.map((opt, i) => {
               const selectedArr: string[] = Array.isArray(answers[currentQ.id]) ? (answers[currentQ.id] as string[]) : [];
               const isSelected = selectedArr.includes(opt.id);
+              // Limit był wcześniej niewidoczny: klik po prostu nic nie robił.
+              // Wygaszony wiersz mówi wprost, że pula jest wyczerpana.
+              const blocked = !isSelected && selectedArr.length >= (currentQ.maxSelect ?? 3);
               return (
                 <button
                   key={opt.id}
+                  className="mrow"
+                  data-on={isSelected ? '1' : '0'}
+                  disabled={blocked}
                   onClick={() => handleMultiChipToggle(opt.id)}
-                  style={{
-                    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                    minHeight: 52, padding: '14px 18px', borderRadius: 12,
-                    background: isSelected ? 'rgba(200,168,78,0.15)' : 'rgba(255,255,255,0.03)',
-                    border: `1.5px solid ${isSelected ? '#c8a84e' : 'rgba(255,255,255,0.08)'}`,
-                    color: isSelected ? '#ffffff' : '#cccccc', fontSize: 15, fontWeight: isSelected ? 600 : 400,
-                    cursor: 'pointer', textAlign: 'left', transition: 'all 0.15s ease',
-                  }}
                 >
-                  <span>{opt.label}</span>
-                  <span style={{
-                    width: 22, height: 22, borderRadius: 6,
-                    border: `2px solid ${isSelected ? '#c8a84e' : '#555'}`,
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    background: isSelected ? '#c8a84e' : 'transparent', color: '#0e0e0e', fontWeight: 900, fontSize: 12,
-                  }}>
-                    {isSelected ? '✓' : ''}
-                  </span>
+                  <span className="mrow-tick" />
+                  <span className="mrow-idx">{String(i + 1).padStart(2, '0')}</span>
+                  <span className="mrow-label">{opt.label}</span>
+                  <span className="mrow-box" />
                 </button>
               );
             })}
 
-            <button
-              onClick={() => goToNext()}
-              disabled={!advanceOk}
-              style={{
-                marginTop: 20, width: '100%', padding: '16px', borderRadius: 14,
-                background: 'linear-gradient(135deg, #c8a84e, #8a7535)', color: '#0e0e0e',
-                fontWeight: 800, fontSize: 15, border: 'none', cursor: advanceOk ? 'pointer' : 'not-allowed',
-                opacity: advanceOk ? 1 : 0.4,
-                letterSpacing: 1, textTransform: 'uppercase',
-              }}
-            >
-              Dalej ({chipsCount}) &rarr;
+            <div className="dx-meta" style={{ marginTop: 'var(--s-3)' }}>
+              ZAZNACZONO {chipsCount} / {currentQ.maxSelect ?? 3}
+            </div>
+
+            <button className="dx-go" onClick={() => goToNext()} disabled={!advanceOk}>
+              <span>Dalej</span><span>&rarr;</span>
             </button>
           </div>
         )}
@@ -663,56 +622,35 @@ export default function SingleQuestionFlow({ onComplete, initialAnswers }: Props
         {currentQ.type === 'text' && (
           <div>
             <textarea
+              className="dx-field dx-area"
               rows={4}
               placeholder={currentQ.placeholder || 'np. Trenuję regularnie, trzymam miskę w dzień, ale po 21:00 zjadam pół lodówki i w poniedziałki w ogóle nie mam siły...'}
               value={String(answers[currentQ.id] || '')}
               onChange={e => handleTextChange(e.target.value)}
-              style={{
-                width: '100%', padding: '16px', borderRadius: 14, background: 'rgba(255,255,255,0.04)',
-                border: '1.5px solid rgba(200,168,78,0.4)', color: '#ffffff',
-                fontSize: 15, lineHeight: 1.6, fontFamily: 'inherit', outline: 'none', boxSizing: 'border-box',
-              }}
             />
-            <div style={{ textAlign: 'right', fontFamily: 'monospace', fontSize: 11, color: '#666', marginTop: 6 }}>
-              {String(answers[currentQ.id] || '').length} / 500 znaków
+            <div className="dx-meta" style={{ textAlign: 'right', marginTop: 'var(--s-2)' }}>
+              {String(answers[currentQ.id] || '').length} / 500 ZNAKÓW
             </div>
 
             {/* Antybełkot: ktoś naklepał byle co -> neutralny recovery (P1-4: bez shamingu cold leada) */}
             {isGibberish(String(answers[currentQ.id] || '')) && (
-              <div style={{
-                marginTop: 14, padding: '14px 16px', borderRadius: 12,
-                background: 'rgba(200,168,78,0.08)', border: '1.5px solid rgba(200,168,78,0.35)',
-                color: '#c9c1af', fontSize: 14.5, lineHeight: 1.55, fontWeight: 500,
-              }}>
+              <div className="dx-note">
                 Wygląda, jakby to było wpisane na szybko. Możesz pominąć to pytanie. Jeśli chcesz, żebym wykorzystał odpowiedź w wyniku, napisz jedno prawdziwe zdanie własnymi słowami.
               </div>
             )}
             {/* Za mało treści (ale nie bełkot): miękka podpowiedź, bez krzyku */}
             {!isGibberish(String(answers[currentQ.id] || '')) && String(answers[currentQ.id] || '').trim().length > 0 && !enoughContent(String(answers[currentQ.id] || '')) && (
-              <div style={{ marginTop: 12, fontSize: 13.5, color: '#999', lineHeight: 1.5 }}>
+              <div className="dx-note">
                 Napisz jedno pełne zdanie własnymi słowami.
               </div>
             )}
 
-            <button
-              onClick={() => goToNext()}
-              disabled={!advanceOk}
-              style={{
-                marginTop: 20, width: '100%', padding: '16px', borderRadius: 14,
-                background: 'linear-gradient(135deg, #c8a84e, #8a7535)', color: '#0e0e0e',
-                fontWeight: 800, fontSize: 15, border: 'none', cursor: advanceOk ? 'pointer' : 'not-allowed',
-                opacity: advanceOk ? 1 : 0.4,
-                letterSpacing: 1, textTransform: 'uppercase',
-              }}
-            >
-              Dalej &rarr;
+            <button className="dx-go" onClick={() => goToNext()} disabled={!advanceOk}>
+              <span>Dalej</span><span>&rarr;</span>
             </button>
             {/* Skip POD polem (secondary/muted) — tylko dla realnie opcjonalnych pytan (np. user_trigger VOC) */}
             {currentQ.optional && (
-              <button
-                onClick={() => goToNext({ skipped: true })}
-                style={{ marginTop: 12, width: '100%', padding: '10px', background: 'transparent', color: '#6a6a6a', fontSize: 13, border: 'none', cursor: 'pointer', textDecoration: 'underline', letterSpacing: 0.3 }}
-              >
+              <button className="dx-skip" onClick={() => goToNext({ skipped: true })}>
                 Pomiń to pytanie
               </button>
             )}
@@ -722,15 +660,11 @@ export default function SingleQuestionFlow({ onComplete, initialAnswers }: Props
         {/* TYP 6: KONTAKT — wymagany tylko po jawnej intencji pomocy/prowadzenia. */}
         {currentQ.type === 'contact' && (
           <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 0, marginBottom: 12 }}>
-              <span style={{
-                padding: '16px 10px 16px 16px', borderRadius: '14px 0 0 14px', background: 'rgba(255,255,255,0.04)',
-                borderTop: '1.5px solid rgba(200,168,78,0.4)', borderBottom: '1.5px solid rgba(200,168,78,0.4)',
-                borderLeft: '1.5px solid rgba(200,168,78,0.4)', color: '#c8a84e',
-                fontFamily: 'monospace', fontSize: 20, fontWeight: 800,
-              }}>@</span>
+            <div style={{ display: 'flex', alignItems: 'flex-end', gap: 'var(--s-2)' }}>
+              <span className="dx-prefix">@</span>
               <input
                 type="text"
+                className="dx-field"
                 inputMode="text"
                 autoCapitalize="none"
                 autoCorrect="off"
@@ -738,40 +672,27 @@ export default function SingleQuestionFlow({ onComplete, initialAnswers }: Props
                 placeholder="twoj_nick"
                 value={String(answers.instagram || '').replace(/^@/, '')}
                 onChange={e => setAnswers(prev => ({ ...prev, instagram: e.target.value.replace(/[@\s]/g, '').slice(0, 40) }))}
-                style={{
-                  flex: 1, padding: '16px', borderRadius: '0 14px 14px 0', background: 'rgba(255,255,255,0.04)',
-                  border: '1.5px solid rgba(200,168,78,0.4)', borderLeft: 'none', color: '#ffffff',
-                  fontSize: 17, fontWeight: 600, outline: 'none', boxSizing: 'border-box',
-                }}
+                style={{ fontSize: 18 }}
               />
             </div>
 
             <input
               type="text"
+              className="dx-field"
               placeholder="Imię (opcjonalnie)"
               value={String(answers.imie || '')}
               onChange={e => setAnswers(prev => ({ ...prev, imie: e.target.value.slice(0, 40) }))}
-              style={{
-                width: '100%', padding: '14px 16px', borderRadius: 14, background: 'rgba(255,255,255,0.03)',
-                border: '1.5px solid rgba(255,255,255,0.08)', color: '#ffffff',
-                fontSize: 15, outline: 'none', boxSizing: 'border-box', marginBottom: 8,
-              }}
+              style={{ marginTop: 'var(--s-4)' }}
             />
 
             <button
+              className="dx-go"
               onClick={() => { if (!isCompleting) goToNext(); }}
               disabled={!advanceOk || isCompleting}
-              style={{
-                marginTop: 20, width: '100%', padding: '16px', borderRadius: 14,
-                background: 'linear-gradient(135deg, #c8a84e, #8a7535)', color: '#0e0e0e',
-                fontWeight: 800, fontSize: 15, border: 'none', cursor: advanceOk ? 'pointer' : 'not-allowed',
-                opacity: advanceOk ? 1 : 0.4,
-                letterSpacing: 1, textTransform: 'uppercase',
-              }}
             >
-              {isCompleting ? 'Ładuję wynik…' : <>Pokaż mój wynik &rarr;</>}
+              <span>{isCompleting ? 'Ładuję wynik' : 'Pokaż mój wynik'}</span><span>&rarr;</span>
             </button>
-            <p style={{ marginTop: 12, fontSize: 12.5, color: '#6a6a6a', lineHeight: 1.5, textAlign: 'center' }}>
+            <p style={{ marginTop: 'var(--s-3)', fontSize: 12.5, color: '#6a6a6a', lineHeight: 1.5 }}>
               {contactRequired
                 ? '@ użyję tylko po to, żeby połączyć wynik z właściwą rozmową.'
                 : '@Instagram jest opcjonalny. Zostaw go, jeśli chcesz, żebym połączył wynik z Twoją późniejszą wiadomością.'}
