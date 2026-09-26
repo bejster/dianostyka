@@ -120,7 +120,7 @@ export const EXPERIMENT_BANK: Record<ExperimentId, ExperimentDef> = {
   W1: {
     id: 'W1', name: 'POWRÓT NASTĘPNEGO DNIA',
     action: 'Po pierwszym gorszym dniu pierwsza decyzja następnego dnia wraca do normalnego układu.',
-    moment: 'pierwsza realna decyzja następnego ranka/dnia',
+    moment: 'pierwsza decyzja następnego ranka albo dnia',
     observe: 'czy jeden gorszy dzień zamienia się w dwa albo trzy',
     doNotChange: 'reszty planu na weekend',
     purpose: 'sprawdzić czas trwania rozjazdu',
