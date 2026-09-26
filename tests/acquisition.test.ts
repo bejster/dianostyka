@@ -65,6 +65,6 @@ test('current Diagnostyka 3.0 carries acquisition through both Nabor exits only'
   const source = fs.readFileSync(path.join(process.cwd(), 'app/diagnoza/page.tsx'), 'utf8');
   assert.match(source, /captureAcquisition\(window\.location\.search\)/);
   assert.match(source, /withAcquisition\(\s*'https:\/\/nabor\.talerzihantle\.com\/\?from=diag&mode=fast_fit#prowadzenie'/);
-  assert.match(source, /const naborUrl = withAcquisition\(naborBaseUrl, acquisitionRef\.current\)/);
+  assert.match(source, /const naborUrl = withAcquisition\(naborBaseUrl, acquisition\)/);
   assert.doesNotMatch(source, /score\([^\n]*acquisition|routeDecision\([^\n]*acquisition|classifyPremiumFit\([^\n]*acquisition/);
 });
