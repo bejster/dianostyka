@@ -93,7 +93,7 @@ test('nowe pytania stoja we wlasciwym miejscu i nie wchodza do score', () => {
 
 test('wynik: odczyt decyzji w pierwszym kadrze, petla powrotu zapisuje tylko kategorie', () => {
   const r = readFileSync('app/components/ResultExperience.tsx', 'utf8');
-  for (const dt of ['Chciałeś poprawić', 'Obstawiłeś', 'Najmocniejszy trop', 'Wcześniejszy moment warty sprawdzenia', 'Test 72h', 'Obserwuj', 'Pewność']) assert.ok(r.includes('<dt>' + dt + '</dt>'), dt);
+  for (const dt of ['Chciałeś poprawić', 'Obstawiłeś', 'Najmocniejszy trop', 'Wcześniejszy moment', 'Test 72h', 'Obserwuj', 'Pewność']) assert.ok(r.includes('<dt>' + dt + '</dt>'), dt);
   assert.ok(r.indexOf('rx-readout') < r.indexOf('data-beat="mirror"'), 'odczyt stoi w hero, przed lustrem');
   const rec = r.slice(r.indexOf('const rec: ReturnRecord'), r.indexOf('localStorage.setItem(RETURN_KEY'));
   assert.doesNotMatch(rec, /imie|instagram|user_pain|raw/);

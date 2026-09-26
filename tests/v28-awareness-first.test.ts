@@ -55,7 +55,7 @@ test('result opens with current state and reserve, and names the fracture only a
   assert.match(result, /Poziom, na którym dziś jedziesz, nie jest jeszcze Twoim sufitem\./);
   // 3.0: pierwszy kadr = odczyt decyzji (os najslabsza jako najmocniejszy trop, ogniwo 168 jako wczesniejszy moment)
   assert.match(result, /<dt>Najmocniejszy trop<\/dt>/);
-  assert.match(result, /<dt>Wcześniejszy moment warty sprawdzenia<\/dt>/);
+  assert.match(result, /<dt>Wcześniejszy moment<\/dt>/);
   assert.match(result, /<dt>Pewność<\/dt>/);
 });
 

@@ -96,7 +96,7 @@ export default function DiagnozaPage() {
       try {
         const raw = localStorage.getItem(RETURN_KEY);
         const rec = raw ? (JSON.parse(raw) as ReturnRecord) : null;
-        if (rec && rec.upstream && typeof rec.at === 'number' && (daysSince(rec.at, Date.now()) >= 3 || sp.get('return') === '1')) {
+        if (rec && typeof rec.upstream === 'string' && rec.upstream in LEVER_LABEL && typeof rec.at === 'number' && (daysSince(rec.at, Date.now()) >= 3 || sp.get('return') === '1')) {
           queueMicrotask(() => setReturning(rec));
         }
       } catch { /* uszkodzony rekord = brak petli */ }

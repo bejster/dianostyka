@@ -185,7 +185,7 @@ export function buildDecision({ answers, experiment, confidence, routePrimary }:
 
   const state = confidenceState(confidence, effect);
   const gap = predictionGap(predLever, upstream);
-  const predLabel = predLever ? LEVER_LABEL[predLever] : 'nic, zostawiłeś to odpowiedziom';
+  const predLabel = predLever ? LEVER_LABEL[predLever] : 'nic konkretnego';
   const tb = str(answers.tried_before);
   const signals = [breakId, str(answers.give_up_point), str(answers.evening_eating), str(answers.stress_level), str(answers.weekend_pattern), str(answers.monday_recovery)].filter(Boolean);
 
