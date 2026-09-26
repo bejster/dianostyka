@@ -7,7 +7,7 @@ import {
   acquisitionFromSearch,
   mergeAcquisitionFirstTouch,
   withAcquisition,
-} from '../app/lib/acquisition';
+} from '../app/lib/acquisition.ts';
 
 test('acquisition reads all 9 safe fields', () => {
   const value = acquisitionFromSearch(
