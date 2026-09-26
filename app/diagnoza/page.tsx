@@ -14,7 +14,7 @@ import ResultExperience from '../components/ResultExperience';
 import { computeEvidenceReceipts, computeLoop, computeWhyRepeats, computeCostFacts, BREAK_PHRASE } from '../lib/fracture-engine';
 import { selectExperiment, type SelectorInput } from '../lib/experiment-bank';
 import { routeDecision } from '../lib/result-router-v3';
-import { buildDecision, hypothesisFrom, daysSince, LEVER_LABEL, RETURN_KEY, type ReturnRecord, type ReturnOutcome, type HypothesisState } from '../lib/decision-engine';
+import { buildDecision, hypothesisFrom, daysSince, parseReturnRecord, LEVER_LABEL, RETURN_KEY, type ReturnRecord, type ReturnOutcome, type HypothesisState } from '../lib/decision-engine';
 import { ASSESSMENT_VERSION } from '../lib/assessment-config';
 import { buildLeadBrief } from '../lib/lead-brief';
 import { computeAwarenessGap } from '../lib/awareness-gap';
@@ -94,9 +94,8 @@ export default function DiagnozaPage() {
       queueMicrotask(() => { setDoor(d); if (tp) setTopic(tp); });
       // 7-dniowa petla: rekord z poprzedniego wyniku, pokazany najwczesniej po 3 dniach albo z ?return=1.
       try {
-        const raw = localStorage.getItem(RETURN_KEY);
-        const rec = raw ? (JSON.parse(raw) as ReturnRecord) : null;
-        if (rec && typeof rec.upstream === 'string' && rec.upstream in LEVER_LABEL && typeof rec.at === 'number' && (daysSince(rec.at, Date.now()) >= 3 || sp.get('return') === '1')) {
+        const rec = parseReturnRecord(localStorage.getItem(RETURN_KEY));
+        if (rec && (daysSince(rec.at, Date.now()) >= 3 || sp.get('return') === '1')) {
           queueMicrotask(() => setReturning(rec));
         }
       } catch { /* uszkodzony rekord = brak petli */ }

@@ -3,7 +3,7 @@
 // pelny iloczyn odpowiedzi selektora + obstawienie x najlepszy dzien x cel x trasa, plus smieci na wejsciu.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { buildDecision, predictionGap, confidenceState, routeCategory, hypothesisFrom, daysSince, PREDICTION_LEVER, GOOD_DAY_LEVER, MEDICAL_BOUNDARY, type DecisionResult, type Lever } from '../app/lib/decision-engine.ts';
+import { buildDecision, predictionGap, confidenceState, routeCategory, hypothesisFrom, daysSince, parseReturnRecord, LEVER_LABEL, PREDICTION_LEVER, GOOD_DAY_LEVER, MEDICAL_BOUNDARY, type DecisionResult, type Lever } from '../app/lib/decision-engine.ts';
 import { selectExperiment, EXPERIMENT_BANK, type SelectorInput } from '../app/lib/experiment-bank.ts';
 import { routeDecision } from '../app/lib/result-router-v3.ts';
 
@@ -181,4 +181,22 @@ test('I20 petla powrotu: trzy wyniki na trzy stany, dni liczone w dol, bez ujemn
   assert.equal(daysSince(now - 7 * 864e5, now), 7);
   assert.equal(daysSince(now - 8 * 864e5, now), 8);
   assert.ok(daysSince(now + 864e5, now) < 0);
+});
+
+test('I21 regresja 2026-09-27: rekord powrotu z localStorage jest niezaufany (prototyp, typy, smieci)', () => {
+  const at = Date.now() - 8 * 864e5;
+  const ok = parseReturnRecord(JSON.stringify({ v: '3.0.0', at, upstream: 'wieczor', experimentId: 'W1', prediction: 'sen' }));
+  assert.deepEqual(ok, { v: '3.0.0', at, upstream: 'wieczor', experimentId: 'W1', prediction: 'sen' });
+  for (const up of ['__proto__', 'constructor', 'toString', 'hasOwnProperty', 'valueOf', 'x', '']) {
+    assert.equal(parseReturnRecord(JSON.stringify({ v: '3.0.0', at, upstream: up })), null, up);
+  }
+  for (const raw of [null, '', '{bad json', 'null', '42', '"sen"', '[]', JSON.stringify({ at: String(at), upstream: 'sen' }), JSON.stringify({ at: null, upstream: 'sen' }), JSON.stringify({ upstream: 'sen' }), JSON.stringify({ at, upstream: {} })]) {
+    assert.equal(parseReturnRecord(raw), null, String(raw));
+  }
+  const junk = parseReturnRecord(JSON.stringify({ at, upstream: 'sen', experimentId: {}, prediction: 'x'.repeat(5000), v: 7 }));
+  assert.ok(junk);
+  assert.equal(junk.experimentId, '');
+  assert.equal(junk.prediction.length, 32);
+  assert.equal(junk.v, '');
+  for (const lever of Object.keys(LEVER_LABEL)) assert.ok(parseReturnRecord(JSON.stringify({ at, upstream: lever })), lever);
 });
