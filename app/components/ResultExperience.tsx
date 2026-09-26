@@ -691,7 +691,7 @@ const css = `
 /* To zdanie niesie caly wniosek otwarcia. W wersji mono 12px bylo najslabszym elementem bloku,
    czyli dowod czytal sie jak systemowa etykieta pod naglowkiem. Ma wage zdania, nie labelki. */
 .rx-redline{font-family:${C.sans};font-size:clamp(15px,4.1vw,17px);line-height:1.5;color:${C.paper};margin:0 auto 22px;max-width:34ch}
-.rx-hero-panel{position:relative;width:100%;max-width:560px;padding:30px 24px 26px;border:1px solid ${C.rule};background:linear-gradient(180deg,rgba(200,168,78,.04),rgba(8,8,10,.55) 60%)}
+.rx-hero-panel{position:relative;width:100%;max-width:560px;padding:30px 24px 26px;border:1px solid ${C.rule};background:linear-gradient(90deg,transparent 12%,rgba(232,204,128,.40) 50%,transparent 88%) top/100% 1px no-repeat,linear-gradient(180deg,rgba(200,168,78,.04),rgba(8,8,10,.55) 60%);box-shadow:inset 0 1px 0 rgba(232,204,128,.10),0 40px 90px -50px rgba(0,0,0,.9),0 0 0 1px rgba(0,0,0,.35)}
 .rx-hero-panel::before,.rx-hero-panel::after{content:"";position:absolute;width:14px;height:14px;pointer-events:none;border-color:${C.gold};border-style:solid}.rx-hero-panel::before{left:-1px;top:-1px;border-width:1px 0 0 1px}
 .rx-hero-panel::after{right:-1px;bottom:-1px;border-width:0 1px 1px 0}
 .rx-hero-panel>*{position:relative;z-index:1}
