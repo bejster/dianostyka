@@ -6,6 +6,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { trackDiag, registerContext } from '../lib/analytics';
+import { captureAcquisition, withAcquisition, type AcquisitionAttribution } from '../lib/acquisition';
 import SingleQuestionFlow from '../components/SingleQuestionFlow';
 import { type RawAnswers } from '../lib/scoring-engine';
 import { answersToFD } from '../lib/answers-to-fd';
@@ -63,6 +64,7 @@ export default function DiagnozaPage() {
   const [modeResolved, setModeResolved] = useState(false);
   // P0-1/P1-3: opaque lead_ref settera. TYLKO do prywatnego payloadu leada (Telegram/CRM). NIGDY do PostHog ani copy wyniku.
   const leadRef = useRef<string>('');
+  const acquisitionRef = useRef<AcquisitionAttribution>({});
   const completionHandledRef = useRef(false);
   const [door, setDoor] = useState<string>('general');
   const [topic, setTopic] = useState<string>('');
@@ -74,6 +76,8 @@ export default function DiagnozaPage() {
     let m: string | null = null;
     try {
       const sp = new URLSearchParams(window.location.search);
+      const acquisition = captureAcquisition(window.location.search);
+      acquisitionRef.current = acquisition;
       m = sp.get('mode');
       // P1-1: atrybucja settera — whitelist + walidacja, WYŁĄCZNIE do analytics (nigdy do scoringu/wyniku/fast-fit).
       const pick = (k: string, allow: string[]): string | undefined => {
@@ -100,7 +104,7 @@ export default function DiagnozaPage() {
           queueMicrotask(() => setReturning(rec));
         }
       } catch { /* uszkodzony rekord = brak petli */ }
-      registerContext(ctx); // PRZED pierwszymi eventami lejka
+      registerContext({ ...ctx, ...acquisition }); // PRZED pierwszymi eventami lejka
       // P0-1: lead_ref czytany z sessionStorage (bootstrap w layout.tsx zdjal go z #fragmentu PRZED trackerami). Zero query-string.
       let rid = (typeof sessionStorage !== 'undefined' ? sessionStorage.getItem('diag_lead_ref') : '') || '';
       if (!/^[A-Za-z0-9_-]{6,64}$/.test(rid)) {
@@ -237,7 +241,10 @@ export default function DiagnozaPage() {
   // Ready-to-buy dostaje jasna sciezke do prowadzenia; kto woli, przechodzi do pelnej diagnostyki (never downgrade intent).
   if (phase === 'intro' && mode === 'fast_fit') {
     // V4: ready-to-buy nie musi pisać pierwszy. Główna akcja prowadzi do zakresu/prowadzenia.
-    const fastLaneNabor = 'https://nabor.talerzihantle.com/?from=diag&mode=fast_fit#prowadzenie';
+    const fastLaneNabor = withAcquisition(
+      'https://nabor.talerzihantle.com/?from=diag&mode=fast_fit#prowadzenie',
+      acquisitionRef.current,
+    );
     return (
       <div style={{ minHeight: '100vh', background: BG, color: '#ece7db', fontFamily: '"Inter", sans-serif', display: 'flex', flexDirection: 'column', justifyContent: 'center', padding: '32px 22px', boxSizing: 'border-box', position: 'relative', overflow: 'hidden' }}>
         <Atmosphere />
@@ -412,7 +419,8 @@ export default function DiagnozaPage() {
     // PII i niczego o czlowieku nie zdradza, a pozwala Michalowi zlaczyc zgloszenie z formularza naboru
     // z konkretna diagnoza zamiast zgadywac po dacie.
     const submissionRef = typeof window !== 'undefined' ? (localStorage.getItem('diagnostyka_v2_submission_id') || '') : '';
-    const naborUrl = `https://nabor.talerzihantle.com/?${new URLSearchParams({ from: 'diag', arch: arch.key, intent: typeof answers.intent === 'string' ? answers.intent : '', v: ASSESSMENT_VERSION, ...(submissionRef ? { sub: submissionRef } : {}) }).toString()}`;
+    const naborBaseUrl = `https://nabor.talerzihantle.com/?${new URLSearchParams({ from: 'diag', arch: arch.key, intent: typeof answers.intent === 'string' ? answers.intent : '', v: ASSESSMENT_VERSION, ...(submissionRef ? { sub: submissionRef } : {}) }).toString()}`;
+    const naborUrl = withAcquisition(naborBaseUrl, acquisitionRef.current);
     // Werdykt 3-tier (nieuzywany bezposrednio w V3 result-router, zostawiony dla kompatybilnosci z redCount): WYLACZNIE ciezkosc/potrzeba z liczby domen "na czerwono".
     const redCount = statuses.filter((st) => st.score < 45).length;
     const LEAK_LABEL: Record<string, string> = { Sen: 'sen', Stres: 'głowa wieczorem', 'Żywienie': 'wieczory', Weekend: 'weekend', Trening: 'wykonanie', 'Głowa': 'głowa wieczorem' };
