@@ -31,3 +31,16 @@ test('result exit analytics never carries contact or raw answer fields', () => {
   assert.ok(m, 'result_exit_snapshot event not found');
   assert.doesNotMatch(m![0], /instagram|imie|userPain|answers|contentSignals|symptoms_chips/i);
 });
+
+// 2026-09-26: localhost, preview i testy headless pisaly do kohorty prawdziwego ruchu.
+test('PostHog laduje sie tylko na produkcji (albo przez swiadomy FORCE)', () => {
+  const layout = fs.readFileSync(path.join(process.cwd(), 'app/layout.tsx'), 'utf8');
+  assert.match(layout, /const PH_ON = process\.env\.VERCEL_ENV === 'production'/);
+  assert.match(layout, /\{PH_ON && PH_KEY && \(/);
+  assert.equal((layout.match(/posthog\.init\(/g) || []).length, 1);
+});
+
+test('eventy diagnostyki niosa tag warstwy wizualnej', () => {
+  const a = fs.readFileSync(path.join(process.cwd(), 'app/lib/analytics.ts'), 'utf8');
+  assert.match(a, /ui: UI_VARIANT/);
+});
