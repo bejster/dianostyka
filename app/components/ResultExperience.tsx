@@ -14,6 +14,7 @@ import type { ExperimentDef, Confidence } from '../lib/experiment-bank';
 import type { RouteDecision } from '../lib/result-router-v3';
 import { BREAK_PHRASE, type LoopNode } from '../lib/fracture-engine';
 import type { AwarenessGap } from '../lib/awareness-gap';
+import { RETURN_KEY, type DecisionResult, type ReturnRecord } from '../lib/decision-engine';
 
 const C = {
   ink: '#08080a', pan: '#141416', pan2: '#1a1a1d', line: '#26262b', line2: '#33333a',
@@ -57,7 +58,7 @@ export default function ResultExperience({
   archLabel, archKey, redCount, breakId, domainLabel, statuses,
   evidenceReceipts, loop, whyRepeats, costFacts, userPain,
   experiment, experimentConfidence, route,
-  imie, instagram, naborHref, submissionId, contentSignals, awareness,
+  imie, instagram, naborHref, submissionId, contentSignals, awareness, decision,
 }: {
   archLabel: string; archKey: string; redCount?: number; breakId: string; domainLabel: string;
   statuses: { label: string; score: number; reason: string }[];
@@ -67,6 +68,7 @@ export default function ResultExperience({
   imie?: string; instagram?: string; naborHref: string; submissionId?: string;
   contentSignals?: Record<string, string | boolean>;
   awareness?: AwarenessGap;
+  decision?: DecisionResult;
 }) {
   void domainLabel;
   const progRef = useRef<HTMLDivElement>(null);
@@ -127,6 +129,24 @@ export default function ResultExperience({
     trackDiag('result_viewed', { arch: archKey });
     // Jedna anonimowa paczka content intelligence. Wyłącznie bezpieczne kategorie, zero PII/free text/health data.
     if (contentSignals) trackDiag('content_signal', contentSignals);
+    if (decision) {
+      trackDiag('desire_selected', { desired: decision.desired_outcome.id });
+      trackDiag('prediction_locked', { prediction: decision.prediction.id });
+      trackDiag('contrast_completed', { good_day: decision.contrast_evidence.id, effect: decision.contrast_evidence.effect });
+      trackDiag('failed_solution', { tried_before: decision.failed_solution.id });
+      trackDiag('constraint_selected', { constraint: decision.constraint });
+      trackDiag('prediction_gap_type', { gap: decision.prediction_gap.type, upstream: decision.upstream_candidate.lever });
+      trackDiag('confidence_state', { state: decision.confidence.state });
+      trackDiag('experiment_shown', { experiment_id: experiment.id, upstream: decision.upstream_candidate.lever });
+      if (decision.route === 'help') trackDiag('help_route', { route_primary: route.primary });
+      else if (decision.route === 'data_needed') trackDiag('data_needed_route', { route_primary: route.primary });
+      else trackDiag('self_serve_route', { route_primary: route.primary });
+      // 7-dniowa petla powrotu: localStorage, tylko kategorie. Nadpisuje wylacznie starszy rekord.
+      try {
+        const rec: ReturnRecord = { v: '3.0.0', at: Date.now(), upstream: decision.upstream_candidate.lever, experimentId: experiment.id, prediction: decision.prediction.id };
+        localStorage.setItem(RETURN_KEY, JSON.stringify(rec));
+      } catch { /* brak storage nie wywraca wyniku */ }
+    }
     const io = new IntersectionObserver((es) => es.forEach((e) => {
       if (!e.isIntersecting) return;
       (e.target as HTMLElement).classList.add('in');
@@ -252,6 +272,7 @@ export default function ResultExperience({
   const commitExperiment = () => {
     setCommitted(true);
     trackDiag('experiment_committed', { experiment_id: experiment.id, confidence: experimentConfidence, arch: archKey });
+    trackDiag('experiment_accepted', { experiment_id: experiment.id, confidence_state: decision?.confidence.state || 'unknown' });
   };
 
   // Zapisz/Udostepnij: WYLACZNIE bezpieczne pola (etykieta archetypu, experiment id, anonimowy submission ref).
@@ -291,22 +312,51 @@ export default function ResultExperience({
           <div className="rx-hero-panel">
             <div className="rx-hero-signature" aria-hidden="true"><span/><span/><span/></div>
             <h1 className="rx-arch">{hasCeilingRoom ? 'Poziom, na którym dziś jedziesz, nie jest jeszcze Twoim sufitem.' : 'Twój tydzień trzyma się dziś równo w pięciu obszarach.'}</h1>
-            <div className="rx-redline">{reserveLine}</div>
-            {/* Podpis pod naglowkiem wycialem w calosci. Pierwsze zdanie ("Policzylem to wylacznie z Twoich
-                odpowiedzi") bylo pierwszym z pieciu wystapien tego samego dowodu, a drugie zapowiadalo
-                odczyt spod osi, ktory i tak stoi przy mapie. Handoff w dol robi strzalka ZOBACZ CALA MAPE. */}
-            <div className="rx-reserve">
-              <div className="rx-reserve-row rx-reserve-top">
-                <span>Największa dźwignia do sprawdzenia</span>
-                <strong>{weakestStatus?.label}</strong>
-                <p>{weakestStatus?.reason}</p>
+            {/* Linia zapasu (reserveLine) zeszla z hero w 3.0: pierwszy kadr niesie odczyt decyzji,
+                a liczba obszarow z zapasem stoi i tak przy mapie ponizej. */}
+            {/* FLAGSHIP 3.0 ODCZYT DECYZJI: pierwszy kadr mowi, co chcial poprawic, co obstawil, gdzie jest
+                najmocniejszy trop, jakie wczesniejsze ogniwo warto sprawdzic, jaki test i na co patrzec.
+                Pewnosc slowami, bez procentow. Os najslabsza zostaje jako objaw, ogniwo 168 jako przyczyna do sprawdzenia. */}
+            <dl className="rx-readout">
+              {decision && (
+                <div className="rx-ro-row">
+                  <dt>Chciałeś poprawić</dt>
+                  <dd>{decision.desired_outcome.label}</dd>
+                </div>
+              )}
+              {decision && (
+                <div className="rx-ro-row">
+                  <dt>Obstawiłeś</dt>
+                  <dd>{decision.prediction.label}<small>{decision.prediction_gap.line}</small></dd>
+                </div>
+              )}
+              <div className="rx-ro-row">
+                <dt>Najmocniejszy trop</dt>
+                <dd>{weakestStatus?.label}<small>{weakestStatus?.reason}</small></dd>
               </div>
-              <div className="rx-reserve-row">
-                <span>Tego na razie nie ruszaj</span>
-                <strong>{strongestStatus?.label}</strong>
-                <p>{strongestStatus?.reason}</p>
+              {decision && (
+                <div className="rx-ro-row rx-ro-key">
+                  <dt>Wcześniejszy moment warty sprawdzenia</dt>
+                  <dd>{decision.upstream_candidate.label}<small>Pierwszy sygnał: {decision.early_signal}.</small></dd>
+                </div>
+              )}
+              <div className="rx-ro-row">
+                <dt>Test 72h</dt>
+                <dd>{experiment.name}</dd>
               </div>
-            </div>
+              <div className="rx-ro-row">
+                <dt>Obserwuj</dt>
+                <dd>{experiment.observe}</dd>
+              </div>
+              {decision && (
+                <div className={`rx-ro-row rx-ro-conf rx-conf-${decision.confidence.state}`}>
+                  <dt>Pewność</dt>
+                  <dd><i aria-hidden="true"><b/><b/><b/></i>{decision.confidence.label}</dd>
+                </div>
+              )}
+            </dl>
+            {decision?.counterevidence && <p className="rx-ro-note">{decision.counterevidence}</p>}
+            {decision?.medical_boundary && <p className="rx-ro-note rx-ro-med">{decision.medical_boundary}</p>}
           </div>
           <div className="rx-cue" aria-hidden="true">
             <span className="rx-cue-arrow">↓</span>
@@ -384,6 +434,8 @@ export default function ResultExperience({
           <div className="rx-map-proof">
             <span>Jak czytać te liczby</span>
             <p>Każda liczba powstaje wyłącznie z odpowiedzi, które podałeś w tej diagnostyce. <strong>{weakestStatus?.score}/100</strong> na osi {weakestStatus?.label} bierze się stąd: {weakestStatus?.reason}.</p>
+            <p>{reserveLine}</p>
+            <p>Tego na razie nie ruszaj: <strong>{strongestStatus?.label}</strong>. Trzyma się dziś najmocniej, bo {strongestStatus?.reason}.</p>
             <p>Ta liczba porównuje pięć obszarów wyłącznie między sobą. Nie jest procentem Twojej formy, procentem wykorzystanego potencjału ani wynikiem medycznym. Pod każdą osią masz odpowiedź, która najmocniej przesunęła liczbę.</p>
             {flagDriveCheck && <p className="rx-medical">Napęd i libido siedzą u Ciebie nisko. Jeśli trwa to dłużej niż kilka tygodni, warto zrobić badania i omówić wyniki z lekarzem. Ta diagnostyka opiera się na Twoich odpowiedziach i tego nie zastąpi.</p>}
           </div>
@@ -646,6 +698,7 @@ const css = `
 .rx-hero-signature{display:flex;justify-content:center;align-items:flex-end;gap:7px;height:14px;margin:0 auto 18px}.rx-hero-signature span{display:block;width:1px;height:8px;background:${C.ruleS}}.rx-hero-signature span:nth-child(2){height:14px;background:${C.gold}}
 .rx-breakviz{width:100%;margin:22px 0 0;padding:16px 0 4px;border-top:1px solid ${C.rule};text-align:left}.rx-breakviz-now{font-family:${C.mono};font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:${C.faint};margin-bottom:14px}.rx-breakviz-now strong{color:${C.goldB};font-weight:700}.rx-breakviz-line{position:relative;height:18px;background-image:repeating-linear-gradient(90deg,rgba(255,255,255,.16) 0 1px,transparent 1px 9px);background-size:100% 8px;background-repeat:no-repeat;background-position:0 100%;border-bottom:1px solid ${C.rule}}.rx-breakviz-line span{position:absolute;bottom:0;width:1px;height:26px;background:${C.gold};transform:translateX(-50%)}.rx-breakviz-line span::after{content:"";position:absolute;left:50%;top:-5px;width:7px;height:7px;background:${C.gold};transform:translateX(-50%) rotate(45deg)}.rx-breakviz-scale{display:flex;justify-content:space-between;margin-top:9px;font-family:${C.mono};font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:${C.faint}}
 .rx-map-readout{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}.rx-map-readout>div{padding:13px 15px;border:1px solid ${C.line};border-radius:12px;background:${C.pan2}}.rx-map-readout span{display:block;font-family:${C.mono};font-size:8px;letter-spacing:1.4px;text-transform:uppercase;color:${C.faint};margin-bottom:5px}.rx-map-readout strong{font-size:14px;color:${C.paper};line-height:1.3}
+.rx-readout{width:100%;margin:18px 0 0;padding:0;text-align:left;border-top:1px solid ${C.rule}}.rx-ro-row{display:grid;grid-template-columns:118px 1fr;gap:12px;align-items:baseline;padding:10px 0;border-bottom:1px solid ${C.rule};position:relative}.rx-ro-row dt{font-family:${C.mono};font-size:8.6px;letter-spacing:.16em;text-transform:uppercase;color:${C.faint};line-height:1.4}.rx-ro-row dd{margin:0;font-size:14.5px;line-height:1.3;color:${C.paper};font-weight:650;min-width:0;overflow-wrap:anywhere}.rx-ro-row dd small{display:block;margin-top:4px;font-size:12px;line-height:1.45;color:${C.mute};font-weight:400}.rx-ro-key::before{content:"";position:absolute;left:-12px;top:10px;bottom:10px;width:1px;background:${C.gold}}.rx-ro-key dt{color:${C.gold};font-weight:800}.rx-ro-key dd{color:${C.goldB}}.rx-ro-conf dd{display:flex;align-items:center;gap:9px;font-family:${C.mono};font-size:11px;letter-spacing:.08em;text-transform:uppercase}.rx-ro-conf i{display:inline-flex;gap:3px}.rx-ro-conf b{display:block;width:12px;height:3px;background:${C.line2}}.rx-conf-wzorzec b{background:${C.gold}}.rx-conf-trop b:nth-child(-n+2){background:${C.gold}}.rx-conf-za_malo b:first-child{background:${C.gold}}.rx-ro-note{margin:12px 0 0;text-align:left;font-size:12.5px;line-height:1.5;color:${C.mute};padding-left:12px;border-left:1px solid ${C.ruleS}}.rx-ro-med{border-left-color:${C.hot}}@media(max-width:400px){.rx-ro-row{grid-template-columns:96px 1fr;gap:10px}.rx-ro-row dt{font-size:8px;letter-spacing:.12em}.rx-ro-row dd{font-size:13.5px}}
 .rx-reserve{width:100%;margin:22px 0 0;display:grid;text-align:left;border-top:1px solid ${C.rule}}
 .rx-reserve-row{position:relative;padding:15px 0 15px 20px;border-bottom:1px solid ${C.rule}}.rx-reserve-row::before{content:"";position:absolute;left:0;top:17px;width:1px;height:22px;background:${C.ruleS}}
 .rx-reserve-row.rx-reserve-top::before{height:40px;background:${C.gold}}

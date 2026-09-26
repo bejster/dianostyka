@@ -117,7 +117,7 @@ const GAP_LINE: Record<PredictionGap, (pred: string, up: string) => string> = {
   match: (_p, up) => `Trafiłeś. Twoje odpowiedzi też wskazują na ${up}.`,
   upstream: (p, up) => `Obstawiłeś ${p}. Odpowiedzi wskazują wcześniejsze ogniwo: ${up}. ${cap(p)} często tylko pokazuje to, co zaczęło się wcześniej.`,
   miss: (p, up) => `Obstawiłeś ${p}. Odpowiedzi mocniej wskazują ${up}. Warto sprawdzić to, zanim dołożysz więcej pracy tam, gdzie celowałeś.`,
-  none: (_p, up) => `Nie obstawiałeś. Odpowiedzi najmocniej wskazują ${up}.`,
+  none: (_p, up) => `Odpowiedzi same wskazują ${up}. Sprawdź, czy to pasuje do tego, co widzisz u siebie.`,
   boundary: (_p, up) => `Obstawiłeś hormony. Tego z kliknięć nie ocenię. Z tygodnia widać za to ${up}.`,
 };
 
@@ -169,7 +169,7 @@ export function buildDecision({ answers, experiment, confidence, routePrimary }:
 
   const state = confidenceState(confidence, effect);
   const gap = predictionGap(predLever, upstream);
-  const predLabel = predLever ? LEVER_LABEL[predLever] : 'nie obstawiałeś';
+  const predLabel = predLever ? LEVER_LABEL[predLever] : 'nic, zostawiłeś to odpowiedziom';
   const tb = str(answers.tried_before);
   const signals = [breakId, str(answers.give_up_point), str(answers.evening_eating), str(answers.stress_level), str(answers.weekend_pattern), str(answers.monday_recovery)].filter(Boolean);
 

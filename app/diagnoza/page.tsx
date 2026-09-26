@@ -14,6 +14,7 @@ import ResultExperience from '../components/ResultExperience';
 import { computeEvidenceReceipts, computeLoop, computeWhyRepeats, computeCostFacts, BREAK_PHRASE } from '../lib/fracture-engine';
 import { selectExperiment, type SelectorInput } from '../lib/experiment-bank';
 import { routeDecision } from '../lib/result-router-v3';
+import { buildDecision, hypothesisFrom, daysSince, LEVER_LABEL, RETURN_KEY, type ReturnRecord, type ReturnOutcome, type HypothesisState } from '../lib/decision-engine';
 import { ASSESSMENT_VERSION } from '../lib/assessment-config';
 import { buildLeadBrief } from '../lib/lead-brief';
 import { computeAwarenessGap } from '../lib/awareness-gap';
@@ -24,6 +25,20 @@ const GOLD = '#c8a84e';
 const BG = '#08080a';
 
 type Phase = 'intro' | 'intake' | 'teaser';
+
+// FRONT DOORS 3.0: jedno wejscie, jeden silnik. Drzwi zmieniaja wylacznie kicker i etykiete analityki.
+// Naglowek, pytania i wynik sa te same, zeby porownanie drzwi mierzylo wejscie, a nie inny produkt.
+const DOOR_KICKER: Record<string, string> = {
+  general: 'Diagnostyka 168 · 5 min · wynik od razu',
+  hit: 'Diagnostyka 168 · praca, dom i forma · 5 min',
+  th2: 'Diagnostyka 168 · Talerz i Hantle · 5 min',
+};
+const TOPIC_LABEL: Record<string, string> = { sen: 'sen', energia: 'energia', glowa: 'głowa', jedzenie: 'jedzenie', trening: 'trening', weekend: 'weekend' };
+const RETURN_LINE: Record<HypothesisState, (l: string) => string> = {
+  wzmocniona: (l) => `To wzmacnia trop: ${l}. Zostań przy tym jednym ruchu jeszcze tydzień, zanim dołożysz cokolwiek nowego.`,
+  nierozstrzygnieta: (l) => `Trop „${l}” zostaje otwarty. Daj testowi jeszcze trzy dni i patrz na ten sam sygnał. Jedna zmienna naraz.`,
+  oslabiona: (l) => `To osłabia trop: ${l}. Dobrze to wiedzieć. Przejdź diagnostykę jeszcze raz i sprawdź, które ogniwo wyjdzie teraz.`,
+};
 
 // ── Sygnały leada dla operatora (niewidoczne dla usera) — WYŁĄCZNIE z jawnych sygnałów kupna/startu ──
 // diag-setter-rc-003 / P0-1: brak composite "readiness". triedBefore (chronologia porażek), severity, symptomy,
@@ -49,6 +64,10 @@ export default function DiagnozaPage() {
   // P0-1/P1-3: opaque lead_ref settera. TYLKO do prywatnego payloadu leada (Telegram/CRM). NIGDY do PostHog ani copy wyniku.
   const leadRef = useRef<string>('');
   const completionHandledRef = useRef(false);
+  const [door, setDoor] = useState<string>('general');
+  const [topic, setTopic] = useState<string>('');
+  const [returning, setReturning] = useState<ReturnRecord | null>(null);
+  const [returnState, setReturnState] = useState<HypothesisState | null>(null);
 
   // Wejscie na strone diagnostyki. Kolejnosc (P1-1): parsuj+zarejestruj atrybucje -> DOPIERO potem pierwsze eventy lejka.
   useEffect(() => {
@@ -69,6 +88,18 @@ export default function DiagnozaPage() {
       if (src) ctx.src = src;
       if (lane) ctx.lane = lane;
       if (campaign) ctx.campaign = campaign;
+      const d = pick('door', ['hit', 'th2']) || 'general';
+      const tp = pick('topic', Object.keys(TOPIC_LABEL));
+      ctx.entry_variant = tp ? `${d}_${tp}` : d;
+      queueMicrotask(() => { setDoor(d); if (tp) setTopic(tp); });
+      // 7-dniowa petla: rekord z poprzedniego wyniku, pokazany najwczesniej po 3 dniach albo z ?return=1.
+      try {
+        const raw = localStorage.getItem(RETURN_KEY);
+        const rec = raw ? (JSON.parse(raw) as ReturnRecord) : null;
+        if (rec && rec.upstream && typeof rec.at === 'number' && (daysSince(rec.at, Date.now()) >= 3 || sp.get('return') === '1')) {
+          queueMicrotask(() => setReturning(rec));
+        }
+      } catch { /* uszkodzony rekord = brak petli */ }
       registerContext(ctx); // PRZED pierwszymi eventami lejka
       // P0-1: lead_ref czytany z sessionStorage (bootstrap w layout.tsx zdjal go z #fragmentu PRZED trackerami). Zero query-string.
       let rid = (typeof sessionStorage !== 'undefined' ? sessionStorage.getItem('diag_lead_ref') : '') || '';
@@ -87,6 +118,7 @@ export default function DiagnozaPage() {
       setModeResolved(true);
     });
     trackDiag('diag_intro_viewed');
+    trackDiag('entry_variant', {});
     if (m === 'fast_fit') trackDiag('fast_fit_intro_viewed');
   }, []);
 
@@ -245,13 +277,37 @@ export default function DiagnozaPage() {
         <Atmosphere />
         <div style={{ maxWidth: 480, margin: '0 auto', alignSelf: 'stretch', position: 'relative', zIndex: 1 }}>
           <div style={{ fontFamily: "'JetBrains Mono', ui-monospace, monospace", fontSize: 10.2, letterSpacing: 2.6, textTransform: 'uppercase', color: GOLD, fontWeight: 800, marginBottom: 14 }}>
-            Diagnostyka 168 · 5 min · wynik od razu
+            {DOOR_KICKER[door] || DOOR_KICKER.general}
           </div>
+          {returning && (
+            <div className="dx-return" style={{ border: '1px solid rgba(200,168,78,.42)', padding: '14px 14px 12px', margin: '0 0 18px' }}>
+              <div style={{ fontFamily: "'JetBrains Mono', ui-monospace, monospace", fontSize: 9, letterSpacing: 2, textTransform: 'uppercase', color: GOLD, fontWeight: 800, marginBottom: 8 }}>Wracasz po teście</div>
+              {!returnState ? (
+                <>
+                  <p style={{ margin: '0 0 12px', fontSize: 15, lineHeight: 1.45, color: '#ece7db' }}>Ostatnio sprawdzałeś: <strong style={{ color: '#e8cc80' }}>{LEVER_LABEL[returning.upstream]}</strong>. Jak poszło?</p>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,minmax(0,1fr))', gap: 6 }}>
+                    {([['pomoglo', 'Pomogło'], ['czesciowo', 'Częściowo'], ['nic', 'Nic']] as [ReturnOutcome, string][]).map(([id, label]) => (
+                      <button key={id} type="button" onClick={() => {
+                        const h = hypothesisFrom(id);
+                        setReturnState(h);
+                        const days = daysSince(returning.at, Date.now());
+                        trackDiag('return_7d', { outcome: id, days, upstream: returning.upstream, experiment_id: returning.experimentId });
+                        trackDiag(h === 'wzmocniona' ? 'hypothesis_strengthened' : h === 'oslabiona' ? 'hypothesis_weakened' : 'hypothesis_unresolved', { upstream: returning.upstream, experiment_id: returning.experimentId });
+                        try { localStorage.removeItem(RETURN_KEY); } catch {}
+                      }} style={{ minHeight: 44, border: '1px solid rgba(200,168,78,.42)', background: 'transparent', color: '#ece7db', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}>{label}</button>
+                    ))}
+                  </div>
+                </>
+              ) : (
+                <p role="status" style={{ margin: 0, fontSize: 14.5, lineHeight: 1.5, color: '#ece7db' }}>{RETURN_LINE[returnState](LEVER_LABEL[returning.upstream])}</p>
+              )}
+            </div>
+          )}
           <h1 style={{ fontFamily: "'Instrument Serif', Georgia, serif", fontSize: 'clamp(35px, 9.1vw, 58px)', lineHeight: 1.0, fontWeight: 400, color: '#fff', margin: '0 0 16px', letterSpacing: '-0.02em', maxWidth: '100%', overflowWrap: 'break-word' }}>
             W poniedziałek ogarniasz. W piątek patrzysz na tydzień i myślisz: <em style={{ color: '#e8cc80', fontStyle: 'italic' }}>„kurwa, znowu to samo”.</em>
           </h1>
           <p style={{ fontSize: 15.8, color: '#c4bdb0', lineHeight: 1.55, margin: '0 0 16px', maxWidth: 438 }}>
-            Przejdziesz przez robotę, jedzenie, sen, trening i weekend. Na końcu zobaczysz <strong style={{ color: '#ece7db', fontWeight: 750 }}>gdzie dziś tracisz najwięcej, co ma największy zapas i który jeden ruch warto sprawdzić najpierw.</strong>
+            {topic && <>Wchodzisz od tematu: {TOPIC_LABEL[topic]}. Sprawdzimy go na tle całego tygodnia. </>}Przejdziesz przez robotę, jedzenie, sen, trening i weekend. Na końcu zobaczysz <strong style={{ color: '#ece7db', fontWeight: 750 }}>gdzie dziś tracisz najwięcej, co ma największy zapas i który jeden ruch warto sprawdzić najpierw.</strong>
           </p>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,minmax(0,1fr))', gap: 7, margin: '0 0 17px', width: '100%' }}>
             {['GDZIE TRACISZ', 'NAJWIĘKSZY ZAPAS', 'PIERWSZY RUCH 72H'].map((label, i) => (
@@ -388,6 +444,8 @@ export default function DiagnozaPage() {
     // LUSTRO (v2.9): samoocena z ekranu 2 obok energii policzonej z zachowan. Zero wplywu na
     // severity, archetyp i trase. Gdy brak samooceny albo za malo skladowych, sekcja znika.
     const awareness = computeAwarenessGap(answers);
+    // FLAGSHIP 3.0: warstwa decyzyjna nad tym samym eksperymentem i confidence. Nic nie liczy od nowa.
+    const decision = buildDecision({ answers: answers as Record<string, unknown>, experiment: pickedExperiment, confidence, routePrimary: route.primary });
     // CONTENT SIGNALS: anonimowe kategorie do uczenia contentu. Bez PII, treści otwartych, symptomów, używek, libido.
     const contentSignals: Record<string, string | boolean> = {
       break_window: breakIdStr || 'unknown',
@@ -405,6 +463,11 @@ export default function DiagnozaPage() {
       experiment_id: pickedExperiment.id,
       experiment_confidence: confidence,
       route_primary: route.primary,
+      prediction: decision.prediction.id,
+      good_day: decision.contrast_evidence.id,
+      prediction_gap: decision.prediction_gap.type,
+      confidence_state: decision.confidence.state,
+      route_category: decision.route,
       has_pain_text: typeof answers.user_pain === 'string' && answers.user_pain.trim().length > 0,
       has_trigger_text: typeof answers.user_trigger === 'string' && answers.user_trigger.trim().length > 0,
     };
@@ -432,6 +495,7 @@ export default function DiagnozaPage() {
         submissionId={submissionIdStr}
         contentSignals={contentSignals}
         awareness={awareness}
+        decision={decision}
       />
     );
   }

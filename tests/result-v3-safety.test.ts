@@ -35,6 +35,10 @@ test('analytics events use only the safe frozen event names', () => {
     'loop_viewed', 'experiment_viewed', 'horizon_viewed', 'experiment_committed',
     'method_demo_viewed', 'result_saved', 'cta_nabor_clicked', 'calibration_answer', 'content_signal',
     'result_beat_dwell', 'result_scroll_depth', 'result_exit_snapshot',
+    // 3.0 warstwa decyzyjna: same kategorie (id odpowiedzi, stan, dzwignia), zero PII i tekstu.
+    'desire_selected', 'prediction_locked', 'contrast_completed', 'failed_solution', 'constraint_selected',
+    'prediction_gap_type', 'confidence_state', 'experiment_shown', 'experiment_accepted',
+    'help_route', 'data_needed_route', 'self_serve_route',
   ]);
   // literal trackDiag('x', ...) calls + the beat->event lookup map (dynamic trackDiag(EVT[b], ...))
   const direct = [...result.matchAll(/trackDiag\('([a-z_]+)'/g)].map((m) => m[1]);

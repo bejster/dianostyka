@@ -53,7 +53,10 @@ test('result opens with current state and reserve, and names the fracture only a
   assert.ok(at('6') > at('horizon'), 'the 1:1 demonstration must follow the horizon');
   // hero mowi o zapasie, a nie o czerwonej linii/deficycie
   assert.match(result, /Poziom, na którym dziś jedziesz, nie jest jeszcze Twoim sufitem\./);
-  assert.match(result, /Największa dźwignia do sprawdzenia/);
+  // 3.0: pierwszy kadr = odczyt decyzji (os najslabsza jako najmocniejszy trop, ogniwo 168 jako wczesniejszy moment)
+  assert.match(result, /<dt>Najmocniejszy trop<\/dt>/);
+  assert.match(result, /<dt>Wcześniejszy moment warty sprawdzenia<\/dt>/);
+  assert.match(result, /<dt>Pewność<\/dt>/);
 });
 
 test('reserve language replaces fake potential precision', () => {

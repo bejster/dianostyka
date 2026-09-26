@@ -90,3 +90,21 @@ test('nowe pytania stoja we wlasciwym miejscu i nie wchodza do score', () => {
   assert.doesNotMatch(cfg.slice(at('prediction'), at('work_load')), /value: [1-9]/);
   assert.doesNotMatch(cfg.slice(at('good_day'), at('sleep_quality')), /value: [1-9]/);
 });
+
+test('wynik: odczyt decyzji w pierwszym kadrze, petla powrotu zapisuje tylko kategorie', () => {
+  const r = readFileSync('app/components/ResultExperience.tsx', 'utf8');
+  for (const dt of ['Chciałeś poprawić', 'Obstawiłeś', 'Najmocniejszy trop', 'Wcześniejszy moment warty sprawdzenia', 'Test 72h', 'Obserwuj', 'Pewność']) assert.ok(r.includes('<dt>' + dt + '</dt>'), dt);
+  assert.ok(r.indexOf('rx-readout') < r.indexOf('data-beat="mirror"'), 'odczyt stoi w hero, przed lustrem');
+  const rec = r.slice(r.indexOf('const rec: ReturnRecord'), r.indexOf('localStorage.setItem(RETURN_KEY'));
+  assert.doesNotMatch(rec, /imie|instagram|user_pain|raw/);
+  assert.match(r, /trackDiag\('experiment_accepted'/);
+});
+
+test('intro: drzwi zmieniaja tylko kicker, petla powrotu ma trzy odpowiedzi i trzy stany', () => {
+  const pg = readFileSync('app/diagnoza/page.tsx', 'utf8');
+  assert.match(pg, /pick\('door', \['hit', 'th2'\]\)/);
+  assert.match(pg, /ctx\.entry_variant = /);
+  assert.match(pg, /\['pomoglo', 'Pomogło'\], \['czesciowo', 'Częściowo'\], \['nic', 'Nic'\]/);
+  for (const ev of ['return_7d', 'hypothesis_strengthened', 'hypothesis_weakened', 'hypothesis_unresolved']) assert.ok(pg.includes(ev), ev);
+  assert.match(pg, /daysSince\(rec\.at, Date\.now\(\)\) >= 3/);
+});
