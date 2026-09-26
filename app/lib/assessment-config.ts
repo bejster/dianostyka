@@ -1,6 +1,6 @@
 // assessment-config.ts, Wersjonowana konfiguracja pytań, domen i profili Diagnostyki Tygodnia V2
 
-export const ASSESSMENT_VERSION = '2.9.0';
+export const ASSESSMENT_VERSION = '3.0.0';
 
 export type DomainKey = 'sleep' | 'energy' | 'nutrition' | 'training' | 'weekend' | 'chaos';
 
@@ -183,6 +183,31 @@ export const QUESTIONS: QuestionDef[] = [
     crossDomainImpact: 0,
   },
 
+  // ── 3.0 PREDICTION LOCK: czlowiek obstawia przyczyne ZANIM zobaczy pytania o zachowanie.
+  //    Value 0, zero wplywu na score. Na wyniku stoi obok tego, co wskazaly odpowiedzi
+  //    (decision-engine.ts: match / wczesniejsze ogniwo / inny trop). pr_hormony nie dostaje zadnego
+  //    szacunku, tylko granice informacji. Decyzja: ustawia prediction_gap i medical_boundary. ──
+  {
+    id: 'prediction',
+    section: 'Po co tu jesteś',
+    sectionNum: 'I',
+    title: 'Obstaw, zanim policzymy: co najbardziej blokuje ten cel?',
+    subtitle: 'Jedna odpowiedź. Na końcu zobaczysz, czy Twoje kliknięcia to potwierdzają.',
+    type: 'single',
+    domain: 'chaos',
+    upstreamWeight: 0,
+    crossDomainImpact: 0,
+    options: [
+      { id: 'pr_sen', label: 'Sen. Śpię za krótko albo za płytko.', value: 0 },
+      { id: 'pr_jedzenie', label: 'Jedzenie, szczególnie wieczorem.', value: 0 },
+      { id: 'pr_glowa', label: 'Praca i głowa, która nie odpuszcza.', value: 0 },
+      { id: 'pr_trening', label: 'Za mało ruchu albo treningu.', value: 0 },
+      { id: 'pr_weekend', label: 'Weekendy.', value: 0 },
+      { id: 'pr_hormony', label: 'Hormony, testosteron.', value: 0 },
+      { id: 'pr_niewiem', label: 'Nie mam pojęcia.', value: 0 },
+    ],
+  },
+
   // ── PREMIUM ICP PATCH V1 §3A: ODPOWIEDZIALNOSC. Wartosc 0, zero wplywu na severity.
   //    To jest router calej galezi kwalifikacyjnej: odpowiedz inna niz wl_clock odblokowuje 'spillover'.
   //    Pytamy o CZYJE sprawy zjadaja dzien, nie o godziny (§2: dlugie godziny NIE sa sygnalem premium). ──
@@ -222,6 +247,27 @@ export const QUESTIONS: QuestionDef[] = [
       { id: 'bw_evening', label: 'Wieczorem. Telefon, lodówka i późne chodzenie spać biorą górę.', value: 90 },
       { id: 'bw_weekend', label: 'Dopiero weekend. W tygodniu daję radę, piątek albo sobota psuje wszystko.', value: 85 },
       { id: 'bw_varies', label: 'Nie ma jednej godziny. Każdy dzień jest inny.', value: 70 },
+    ],
+  },
+  // ── 3.0 KONTRAST: najlepszy dzien z ostatnich dwoch tygodni. Value 0, zero wplywu na score.
+  //    Decyzja: wspiera albo oslabia trop z break_window (contrast_evidence, counterevidence). ──
+  {
+    id: 'good_day',
+    section: 'Rytm tygodnia',
+    sectionNum: 'II',
+    title: 'Przypomnij sobie najlepszy dzień z ostatnich dwóch tygodni. Co wtedy było inaczej?',
+    subtitle: 'Wybierz to, co najbardziej się różniło.',
+    type: 'single',
+    domain: 'sleep',
+    upstreamWeight: 0,
+    crossDomainImpact: 0,
+    options: [
+      { id: 'gd_sen', label: 'Wyspałem się.', value: 0 },
+      { id: 'gd_wieczor', label: 'Poprzedni wieczór był spokojny, zjadłem normalnie i poszedłem spać o czasie.', value: 0 },
+      { id: 'gd_glowa', label: 'Mniej presji w robocie, głowa odpuściła.', value: 0 },
+      { id: 'gd_ruch', label: 'Był trening albo dużo ruchu.', value: 0 },
+      { id: 'gd_weekend', label: 'To był dzień po spokojnym weekendzie.', value: 0 },
+      { id: 'gd_niepamietam', label: 'Nie pamiętam takiego dnia.', value: 0 },
     ],
   },
   {

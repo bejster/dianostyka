@@ -28,5 +28,5 @@ test('public entry stays diagnostic while hot lane remains available by explicit
 });
 
 test('release telemetry is versioned separately', () => {
-  assert.match(cfg, /ASSESSMENT_VERSION = '2\.9\.0'/);
+  assert.match(cfg, /ASSESSMENT_VERSION = '3\.0\.0'/);
 });

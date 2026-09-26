@@ -9,7 +9,7 @@ const packs = fs.readFileSync('app/lib/result-content.ts', 'utf8');
 const flow = fs.readFileSync('app/components/SingleQuestionFlow.tsx', 'utf8');
 
 test('v2.8.1 moves the human trust anchor out of the cold entry and into the result', () => {
-  assert.match(questions, /ASSESSMENT_VERSION = '2\.9\.0'/);
+  assert.match(questions, /ASSESSMENT_VERSION = '3\.0\.0'/);
   assert.doesNotMatch(page, /src="\/michal-portrait\.jpg"/);
   assert.match(result, /src="\/michal-portrait\.jpg"/);
   assert.match(page, /W poniedziałek ogarniasz\. W piątek patrzysz na tydzień i myślisz/);
