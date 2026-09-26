@@ -67,6 +67,17 @@ export const LEVER_LABEL: Record<Lever | 'hormony', string> = {
   hormony: 'hormony',
 };
 
+// Biernik do zdan typu "obstawiles X", "wskazuja na X". Mianownik zostaje w etykietach odczytu.
+const LEVER_ACC: Record<Lever | 'hormony', string> = {
+  sen: 'sen',
+  wieczor: 'wieczór i jedzenie',
+  glowa: 'głowę i pracę',
+  trening: 'trening',
+  weekend: 'weekend',
+  powrot: 'powroty po przerwie',
+  hormony: 'hormony',
+};
+
 const EARLY_SIGNAL: Record<string, string> = {
   bw_morning: 'rano, zaraz po przebudzeniu',
   bw_midday: 'przed obiadem',
@@ -114,12 +125,17 @@ export function predictionGap(pred: Lever | 'hormony' | null, upstream: Lever): 
 }
 
 const GAP_LINE: Record<PredictionGap, (pred: string, up: string) => string> = {
-  match: (_p, up) => `Trafiłeś. Twoje odpowiedzi też wskazują na ${up}.`,
-  upstream: (p, up) => `Obstawiłeś ${p}. Odpowiedzi wskazują wcześniejsze ogniwo: ${up}. ${cap(p)} często tylko pokazuje to, co zaczęło się wcześniej.`,
-  miss: (p, up) => `Obstawiłeś ${p}. Odpowiedzi mocniej wskazują ${up}. Warto sprawdzić to, zanim dołożysz więcej pracy tam, gdzie celowałeś.`,
-  none: (_p, up) => `Odpowiedzi same wskazują ${up}. Sprawdź, czy to pasuje do tego, co widzisz u siebie.`,
-  boundary: (_p, up) => `Obstawiłeś hormony. Tego z kliknięć nie ocenię. Z tygodnia widać za to ${up}.`,
+  match: (_p, up) => `Trafiłeś. Twoje odpowiedzi też wskazują na ${ACC(up)}.`,
+  upstream: (p, up) => `Obstawiłeś ${ACC(p)}. Odpowiedzi wskazują wcześniejsze ogniwo: ${up}. To, co czujesz w tym miejscu, często zaczyna się wcześniej.`,
+  miss: (p, up) => `Obstawiłeś ${ACC(p)}. Odpowiedzi mocniej wskazują na ${ACC(up)}. Warto sprawdzić to, zanim dołożysz więcej wysiłku tam, gdzie celowałeś.`,
+  none: (_p, up) => `Odpowiedzi same wskazują na ${ACC(up)}. Sprawdź, czy to pasuje do tego, co widzisz u siebie.`,
+  boundary: (_p, up) => `Obstawiłeś hormony. Tego z kliknięć nie ocenię. Z tygodnia widać za to jedno ogniwo: ${up}.`,
 };
+
+function ACC(label: string): string {
+  const k = (Object.keys(LEVER_LABEL) as (Lever | 'hormony')[]).find((x) => LEVER_LABEL[x] === label);
+  return k ? LEVER_ACC[k] : label;
+}
 
 function cap(s: string): string { return s.charAt(0).toUpperCase() + s.slice(1); }
 
@@ -164,7 +180,7 @@ export function buildDecision({ answers, experiment, confidence, routePrimary }:
     : gdLever && UPSTREAM_OF[upstream].includes(gdLever) ? 'neutral'
     : 'counter';
   const counter = effect === 'counter' && gdLever
-    ? `Twój najlepszy dzień różnił się czymś innym: ${LEVER_LABEL[gdLever]}. Dlatego traktuj to jako trop do sprawdzenia.`
+    ? `Twój najlepszy dzień różnił się czymś innym: ${LEVER_LABEL[gdLever]}. To obniża pewność tego tropu, więc test ma go potwierdzić albo odrzucić.`
     : null;
 
   const state = confidenceState(confidence, effect);
