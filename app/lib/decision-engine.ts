@@ -124,12 +124,13 @@ export function predictionGap(pred: Lever | 'hormony' | null, upstream: Lever): 
   return 'miss';
 }
 
-const GAP_LINE: Record<PredictionGap, (pred: string, up: string) => string> = {
-  match: (_p, up) => `Trafiłeś. Twoje odpowiedzi też wskazują na ${ACC(up)}.`,
-  upstream: (p, up) => `Obstawiłeś ${ACC(p)}. Odpowiedzi wskazują wcześniejsze ogniwo: ${up}. To, co czujesz w tym miejscu, często zaczyna się wcześniej.`,
-  miss: (p, up) => `Obstawiłeś ${ACC(p)}. Odpowiedzi mocniej wskazują na ${ACC(up)}. Warto sprawdzić to, zanim dołożysz więcej wysiłku tam, gdzie celowałeś.`,
+const GAP_LINE: Record<PredictionGap, (p: string, up: string) => string> = {
+  // Wiersz odczytu ma juz etykiete "Obstawiles" i sam typ, wiec zdanie zaczyna sie od tego, co dopowiadaja odpowiedzi.
+  match: (_p, up) => `Trafiłeś. Odpowiedzi też wskazują na ${ACC(up)}.`,
+  upstream: (_p, up) => `Odpowiedzi wskazują wcześniejsze ogniwo: ${up}. To, co czujesz w tym miejscu, często zaczyna się wcześniej.`,
+  miss: (_p, up) => `Odpowiedzi mocniej wskazują na ${ACC(up)}. Sprawdź to, zanim dołożysz więcej wysiłku tam, gdzie celowałeś.`,
   none: (_p, up) => `Odpowiedzi same wskazują na ${ACC(up)}. Sprawdź, czy to pasuje do tego, co widzisz u siebie.`,
-  boundary: (_p, up) => `Obstawiłeś hormony. Tego z kliknięć nie ocenię. Z tygodnia widać za to jedno ogniwo: ${up}.`,
+  boundary: (_p, up) => `Tego z kliknięć nie ocenię. Z tygodnia widać za to jedno ogniwo: ${up}.`,
 };
 
 function ACC(label: string): string {
@@ -137,7 +138,6 @@ function ACC(label: string): string {
   return k ? LEVER_ACC[k] : label;
 }
 
-function cap(s: string): string { return s.charAt(0).toUpperCase() + s.slice(1); }
 
 export const MEDICAL_BOUNDARY = 'Poziom hormonów pokazuje badanie krwi. Ankieta go nie zmierzy, więc nie znajdziesz tu żadnego szacunku testosteronu. Sprawdzamy to, co widać w Twoim tygodniu.';
 

@@ -342,7 +342,7 @@ export default function ResultExperience({
               )}
               <div className="rx-ro-row">
                 <dt>Test 72h</dt>
-                <dd>{experiment.name}</dd>
+                <dd>{experiment.name}<small>{experiment.action}</small></dd>
               </div>
               <div className="rx-ro-row">
                 <dt>Obserwuj</dt>
