@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { buildDecision, predictionGap, confidenceState, routeCategory, leverFromExperiment, hypothesisFrom, MEDICAL_BOUNDARY } from '../app/lib/decision-engine.ts';
+import { buildDecision, plainAction, sentenceCase, bridgeLine, predictionGap, confidenceState, routeCategory, leverFromExperiment, hypothesisFrom, MEDICAL_BOUNDARY } from '../app/lib/decision-engine.ts';
 import { EXPERIMENT_BANK } from '../app/lib/experiment-bank.ts';
 
 const base = { primary_goal: 'goal_sen', break_window: 'bw_evening', give_up_point: 'gup_wieczor', evening_eating: 'ee_binge', tried_before: 'tb_2', work_load: 'wl_owner' };
@@ -93,7 +93,9 @@ test('nowe pytania stoja we wlasciwym miejscu i nie wchodza do score', () => {
 
 test('wynik: odczyt decyzji w pierwszym kadrze, petla powrotu zapisuje tylko kategorie', () => {
   const r = readFileSync('app/components/ResultExperience.tsx', 'utf8');
-  for (const dt of ['Chciałeś poprawić', 'Obstawiłeś', 'Najmocniejszy trop', 'Wcześniejszy moment', 'Test 72h', 'Obserwuj', 'Pewność']) assert.ok(r.includes('<dt>' + dt + '</dt>'), dt);
+  for (const dt of ['Chciałeś poprawić', 'Obstawiłeś', 'Najmocniejszy trop', 'Wcześniejszy moment', 'Test 72h', 'Pewność']) assert.ok(r.includes('<dt>' + dt + '</dt>'), dt);
+  assert.ok(!r.includes('<dt>Obserwuj</dt>'), 'obserwuj siedzi w wierszu testu, bez osmego wiersza');
+  assert.match(r, /rx-ro-obs/);
   assert.ok(r.indexOf('rx-readout') < r.indexOf('data-beat="mirror"'), 'odczyt stoi w hero, przed lustrem');
   const rec = r.slice(r.indexOf('const rec: ReturnRecord'), r.indexOf('localStorage.setItem(RETURN_KEY'));
   assert.doesNotMatch(rec, /imie|instagram|user_pain|raw/);
@@ -107,4 +109,37 @@ test('intro: drzwi zmieniaja tylko kicker, petla powrotu ma trzy odpowiedzi i tr
   assert.match(pg, /\['pomoglo', 'Pomogło'\], \['czesciowo', 'Częściowo'\], \['nic', 'Nic'\]/);
   for (const ev of ['return_7d', 'hypothesis_strengthened', 'hypothesis_weakened', 'hypothesis_unresolved']) assert.ok(pg.includes(ev), ev);
   assert.match(pg, /daysSince\(rec\.at, Date\.now\(\)\) >= 3/);
+});
+
+test('failed_solution i constraint zmieniaja odczyt, nie wybor ani pewnosc', () => {
+  const a = buildDecision({ answers: { ...base, prediction: 'pr_sen', good_day: 'gd_wieczor' }, experiment: EXPERIMENT_BANK.E1, confidence: 'HIGH', routePrimary: 'experiment' });
+  const b = buildDecision({ answers: { ...base, tried_before: 'tb_0', work_load: 'wl_clock', prediction: 'pr_sen', good_day: 'gd_wieczor' }, experiment: EXPERIMENT_BANK.E1, confidence: 'HIGH', routePrimary: 'experiment' });
+  assert.match(a.failed_solution.line || '', /3-4 razy/);
+  assert.match(a.test_scope || '', /jeden ruch/);
+  assert.equal(b.failed_solution.line, null);
+  assert.equal(b.test_scope, null);
+  assert.equal(a.confidence.state, b.confidence.state);
+  assert.equal(a.experiment.id, b.experiment.id);
+});
+
+test('najlepszy dzien = to, co obstawil: nota nie mowi "czyms innym"', () => {
+  const d = buildDecision({ answers: { ...base, prediction: 'pr_trening', good_day: 'gd_ruch' }, experiment: EXPERIMENT_BANK.E1, confidence: 'HIGH', routePrimary: 'experiment' });
+  assert.equal(d.contrast_evidence.effect, 'counter');
+  assert.match(d.counterevidence || '', /co sam obstawiłeś: trening/);
+  assert.doesNotMatch(d.counterevidence || '', /czymś innym/);
+});
+
+test('odczyt: bez zargonu Punktu Pekniecia i bez caps locka', () => {
+  for (const e of Object.values(EXPERIMENT_BANK)) assert.doesNotMatch(plainAction(e.action), /Punkt\w* Pęknięcia/, e.id);
+  assert.equal(sentenceCase('JEDNA RZECZ WCZEŚNIEJ'), 'Jedna rzecz wcześniej');
+});
+
+test('bridgeLine: trop == ogniwo nie mowi "to objaw", FAILED_LINE nie mowi "wczesniej"', () => {
+  const same = bridgeLine('Weekend i rytm', 'weekend');
+  assert.ok(!same.includes('to objaw'));
+  assert.ok(same.includes('pokrywają'));
+  assert.ok(bridgeLine('Forma', 'sen').includes('Forma to objaw'));
+  assert.equal(bridgeLine(undefined, 'sen'), '');
+  const src = readFileSync('app/lib/decision-engine.ts', 'utf-8');
+  assert.ok(!src.includes('zaczynamy wcześniej'));
 });

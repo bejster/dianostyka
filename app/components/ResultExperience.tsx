@@ -14,7 +14,7 @@ import type { ExperimentDef, Confidence } from '../lib/experiment-bank';
 import type { RouteDecision } from '../lib/result-router-v3';
 import { BREAK_PHRASE, type LoopNode } from '../lib/fracture-engine';
 import type { AwarenessGap } from '../lib/awareness-gap';
-import { RETURN_KEY, type DecisionResult, type ReturnRecord } from '../lib/decision-engine';
+import { RETURN_KEY, sentenceCase, bridgeLine, type DecisionResult, type ReturnRecord } from '../lib/decision-engine';
 
 const C = {
   ink: '#08080a', pan: '#141416', pan2: '#1a1a1d', line: '#26262b', line2: '#33333a',
@@ -297,6 +297,9 @@ export default function ResultExperience({
   // mu 24px wlasnego przewijania (zmierzone w przegladarce: scrollHeight 10408 przy clientHeight 10384).
   // Na dotyku kazdy swipe najpierw wchodzil w ten wewnetrzny scroller, dopiero potem w dokument, wiec strona
   // wyniku nie przewijala sie w dol. 'clip' przycina poziom bez robienia scrollportu. Ten sam fix co w naborze.
+  // Kicker bierze tylko pierwsze slowo imienia i tnie je do 20 znakow: dluzszy wpis lamal linie nad h1.
+  const kickName = (imie || '').trim().split(/\s+/)[0]?.slice(0, 20) || '';
+
   return (
     <div className="rx" style={{ background: C.ink, color: C.paper, fontFamily: C.sans, minHeight: '100vh', overflowX: 'clip', position: 'relative' }}>
       <style>{css}</style>
@@ -308,7 +311,7 @@ export default function ResultExperience({
         {/* BEAT 1 (V2.8) — GDZIE JESTEŚ TERAZ + GDZIE MASZ ZAPAS. Awareness-first: stan i pojemność
             przed nazwaniem Punktu Pęknięcia. Zero procentu potencjału, zero wymyślonych zysków. */}
         <section className="rx-beat rx-hero" data-beat="1">
-          <div className="rx-kick rx-kick-c">Twój wynik{imie?.trim() ? ` · ${imie.trim()}` : ''}</div>
+          <div className="rx-kick rx-kick-c">Twój wynik{kickName ? ` · ${kickName}` : ''}</div>
           <div className="rx-hero-panel">
             <div className="rx-hero-signature" aria-hidden="true"><span/><span/><span/></div>
             <h1 className="rx-arch">{hasCeilingRoom ? 'Poziom, na którym dziś jedziesz, nie jest jeszcze Twoim sufitem.' : 'Twój tydzień trzyma się dziś równo w pięciu obszarach.'}</h1>
@@ -337,16 +340,13 @@ export default function ResultExperience({
               {decision && (
                 <div className="rx-ro-row rx-ro-key">
                   <dt>Wcześniejszy moment</dt>
-                  <dd>{decision.upstream_candidate.label}<small>{weakestStatus ? `${weakestStatus.label} pokazuje, gdzie boli. Tu warto sprawdzić, gdzie to się zaczyna. ` : ''}Pierwszy sygnał: {decision.early_signal}.</small></dd>
+                  <dd>{decision.upstream_candidate.label}<small>{decision.failed_solution.line || bridgeLine(weakestStatus?.label, decision.upstream_candidate.lever)} Pierwszy sygnał: {decision.early_signal}.</small></dd>
                 </div>
               )}
-              <div className="rx-ro-row">
+              {/* Obserwuj siedzi w wierszu testu: jeden ruch i jedna rzecz do patrzenia, zanim przewiniesz. */}
+              <div className="rx-ro-row rx-ro-test">
                 <dt>Test 72h</dt>
-                <dd>{experiment.name}<small>{experiment.action}</small></dd>
-              </div>
-              <div className="rx-ro-row">
-                <dt>Obserwuj</dt>
-                <dd>{experiment.observe}</dd>
+                <dd>{sentenceCase(experiment.name)}<small>{decision?.experiment.action ?? experiment.action}</small><small className="rx-ro-obs"><span>Obserwuj</span> {experiment.observe}</small>{decision?.test_scope && <small>{decision.test_scope}</small>}</dd>
               </div>
               {decision && (
                 <div className={`rx-ro-row rx-ro-conf rx-conf-${decision.confidence.state}`}>
@@ -698,7 +698,7 @@ const css = `
 .rx-hero-signature{display:flex;justify-content:center;align-items:flex-end;gap:7px;height:14px;margin:0 auto 18px}.rx-hero-signature span{display:block;width:1px;height:8px;background:${C.ruleS}}.rx-hero-signature span:nth-child(2){height:14px;background:${C.gold}}
 .rx-breakviz{width:100%;margin:22px 0 0;padding:16px 0 4px;border-top:1px solid ${C.rule};text-align:left}.rx-breakviz-now{font-family:${C.mono};font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:${C.faint};margin-bottom:14px}.rx-breakviz-now strong{color:${C.goldB};font-weight:700}.rx-breakviz-line{position:relative;height:18px;background-image:repeating-linear-gradient(90deg,rgba(255,255,255,.16) 0 1px,transparent 1px 9px);background-size:100% 8px;background-repeat:no-repeat;background-position:0 100%;border-bottom:1px solid ${C.rule}}.rx-breakviz-line span{position:absolute;bottom:0;width:1px;height:26px;background:${C.gold};transform:translateX(-50%)}.rx-breakviz-line span::after{content:"";position:absolute;left:50%;top:-5px;width:7px;height:7px;background:${C.gold};transform:translateX(-50%) rotate(45deg)}.rx-breakviz-scale{display:flex;justify-content:space-between;margin-top:9px;font-family:${C.mono};font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:${C.faint}}
 .rx-map-readout{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}.rx-map-readout>div{padding:13px 15px;border:1px solid ${C.line};border-radius:12px;background:${C.pan2}}.rx-map-readout span{display:block;font-family:${C.mono};font-size:8px;letter-spacing:1.4px;text-transform:uppercase;color:${C.faint};margin-bottom:5px}.rx-map-readout strong{font-size:14px;color:${C.paper};line-height:1.3}
-.rx-readout{width:100%;margin:18px 0 0;padding:0;text-align:left;border-top:1px solid ${C.rule}}@keyframes rxRo{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}.rx-ro-row{animation:rxRo .55s cubic-bezier(.2,.7,.2,1) both}.rx-ro-row:nth-child(1){animation-delay:270ms}.rx-ro-row:nth-child(2){animation-delay:360ms}.rx-ro-row:nth-child(3){animation-delay:450ms}.rx-ro-row:nth-child(4){animation-delay:540ms}.rx-ro-row:nth-child(5){animation-delay:630ms}.rx-ro-row:nth-child(6){animation-delay:720ms}.rx-ro-row:nth-child(7){animation-delay:810ms}.rx-ro-key dd{text-shadow:0 0 18px rgba(200,168,78,.22)}@media (prefers-reduced-motion: reduce){.rx-ro-row{animation:none}}.rx-ro-row{display:grid;grid-template-columns:118px 1fr;gap:12px;align-items:baseline;padding:10px 0;border-bottom:1px solid ${C.rule};position:relative}.rx-ro-row dt{font-family:${C.mono};font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:${C.faint};line-height:1.4}.rx-ro-row dd{margin:0;font-size:14.5px;line-height:1.3;color:${C.paper};font-weight:650;min-width:0;overflow-wrap:anywhere}.rx-ro-row dd small{display:block;margin-top:4px;font-size:12px;line-height:1.45;color:${C.mute};font-weight:400}.rx-ro-key::before{content:"";position:absolute;left:-12px;top:10px;bottom:10px;width:1px;background:${C.gold}}.rx-ro-key dt{color:${C.gold};font-weight:800}.rx-ro-key dd{color:${C.goldB}}.rx-ro-conf dd{display:flex;align-items:center;gap:9px;font-family:${C.mono};font-size:11px;letter-spacing:.08em;text-transform:uppercase}.rx-ro-conf i{display:inline-flex;gap:3px}.rx-ro-conf b{display:block;width:12px;height:3px;background:${C.line2}}.rx-conf-wzorzec b{background:${C.gold}}.rx-conf-trop b:nth-child(-n+2){background:${C.gold}}.rx-conf-za_malo b:first-child{background:${C.gold}}.rx-ro-note{margin:12px 0 0;text-align:left;font-size:12.5px;line-height:1.5;color:${C.mute};padding-left:12px;border-left:1px solid ${C.ruleS}}.rx-ro-med{border-left-color:${C.hot}}@media(max-width:400px){.rx-ro-row{grid-template-columns:96px 1fr;gap:10px}.rx-ro-row dt{font-size:10px;letter-spacing:.06em}.rx-ro-row dd{font-size:13.5px}}
+.rx-readout{width:100%;margin:18px 0 0;padding:0;text-align:left;border-top:1px solid ${C.rule}}@keyframes rxRo{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}.rx-ro-row{animation:rxRo .55s cubic-bezier(.2,.7,.2,1) both}.rx-ro-row:nth-child(1){animation-delay:270ms}.rx-ro-row:nth-child(2){animation-delay:360ms}.rx-ro-row:nth-child(3){animation-delay:450ms}.rx-ro-row:nth-child(4){animation-delay:540ms}.rx-ro-row:nth-child(5){animation-delay:630ms}.rx-ro-row:nth-child(6){animation-delay:720ms}.rx-ro-row:nth-child(7){animation-delay:810ms}.rx-ro-key dd{text-shadow:0 0 18px rgba(200,168,78,.22)}@media (prefers-reduced-motion: reduce){.rx-ro-row{animation:none}}.rx-ro-row{display:grid;grid-template-columns:118px 1fr;gap:12px;align-items:baseline;padding:10px 0;border-bottom:1px solid ${C.rule};position:relative}.rx-ro-row dt{font-family:${C.mono};font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:${C.faint};line-height:1.4}.rx-ro-row dd{margin:0;font-size:14.5px;line-height:1.3;color:${C.paper};font-weight:650;min-width:0;overflow-wrap:anywhere}.rx-ro-row dd small{display:block;margin-top:4px;font-size:12px;line-height:1.45;color:${C.mute};font-weight:400}.rx-ro-key::before{content:"";position:absolute;left:-12px;top:10px;bottom:10px;width:1px;background:${C.gold}}.rx-ro-key dt{color:${C.gold};font-weight:800}.rx-ro-key dd{color:${C.goldB}}.rx-ro-conf dd{display:flex;align-items:center;gap:9px;font-family:${C.mono};font-size:11px;letter-spacing:.08em;text-transform:uppercase}.rx-ro-conf i{display:inline-flex;gap:3px}.rx-ro-conf b{display:block;width:12px;height:3px;background:${C.line2}}.rx-conf-wzorzec b{background:${C.gold}}.rx-conf-trop b:nth-child(-n+2){background:${C.gold}}.rx-conf-za_malo b:first-child{background:${C.gold}}.rx-ro-note{margin:12px 0 0;text-align:left;font-size:12.5px;line-height:1.5;color:${C.mute};padding-left:12px;border-left:1px solid ${C.ruleS}}.rx-ro-med{border-left-color:${C.hot}}.rx-ro-obs span{font-family:${C.mono};font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:${C.gold};margin-right:4px}@media(max-width:400px){.rx-ro-row{grid-template-columns:96px 1fr;gap:10px;padding:8px 0}.rx-ro-row dt{font-size:10px;letter-spacing:.06em}.rx-ro-row dd{font-size:13.5px}}
 .rx-reserve{width:100%;margin:22px 0 0;display:grid;text-align:left;border-top:1px solid ${C.rule}}
 .rx-reserve-row{position:relative;padding:15px 0 15px 20px;border-bottom:1px solid ${C.rule}}.rx-reserve-row::before{content:"";position:absolute;left:0;top:17px;width:1px;height:22px;background:${C.ruleS}}
 .rx-reserve-row.rx-reserve-top::before{height:40px;background:${C.gold}}
@@ -803,4 +803,6 @@ const css = `
    otwieralo sie ~200px pustki i kafelek czytal sie tak, jakby cos z niego wycieto. Na szerokim ekranie
    hero dostaje wysokosc od wlasnej tresci, a strzalka wraca do normalnego przeplywu. Mobile bez zmian. */
 @media(min-width:721px){.rx-hero{min-height:auto;padding-bottom:72px}.rx-cue{position:static;transform:none;margin-top:34px}}
+/* 3.1 desktop: od 1100 px hero wychodzi poza kolumne 620 i dzieli sie na teze (lewo) i odczyt (prawo). Flex center w .rx-hero centruje panel szerszy od rodzica. */
+@media(min-width:1100px){.rx-wrap{max-width:1040px}.rx-beat:not(.rx-hero){display:grid;grid-template-columns:300px minmax(0,620px);column-gap:76px}.rx-beat:not(.rx-hero)>*{grid-column:2}.rx-beat:not(.rx-hero)>.rx-kick{grid-column:1;grid-row:1 / span 24;align-self:start;position:sticky;top:88px;margin:8px 0 0;line-height:1.6}.rx-hero{padding-top:64px;align-items:stretch}.rx-hero>.rx-kick{justify-content:flex-start}.rx-hero-panel{width:100%;max-width:none;display:grid;grid-template-columns:minmax(0,5fr) minmax(0,6fr);column-gap:56px;align-content:start;text-align:left;padding:44px 48px 40px}.rx-hero-panel>*{grid-column:1}.rx-hero-signature{justify-content:flex-start;margin:0 0 22px}.rx-arch{max-width:13ch;font-size:clamp(40px,3.6vw,54px)}.rx-hero-panel>.rx-readout{grid-column:2;grid-row:1 / span 8;margin:0;align-self:start}.rx-hero-panel>.rx-ro-note{margin-top:22px}.rx-hero-signature,.rx-arch,.rx-ro-note{align-self:start}}
 @media(prefers-reduced-motion:reduce){.rx-beat,.rx-beat:not(.rx-hero)>*{opacity:1;transform:none;transition:none}.rx-beat:not(.in) .rx-axis-fill{transform:none}.rx-axis-fill{transition:none}.rx-cue-arrow{animation:none}}`;

@@ -16,8 +16,9 @@ export interface DecisionResult {
   prediction: { id: string; lever: Lever | 'hormony' | null; label: string };
   signals: string[];
   contrast_evidence: { id: string; lever: Lever | null; effect: ContrastEffect };
-  failed_solution: { id: string; count: number };
+  failed_solution: { id: string; count: number; line: string | null };
   constraint: string;
+  test_scope: string | null;
   early_signal: string;
   upstream_candidate: { lever: Lever; label: string; moment: string };
   counterevidence: string | null;
@@ -127,7 +128,7 @@ export function predictionGap(pred: Lever | 'hormony' | null, upstream: Lever): 
 const GAP_LINE: Record<PredictionGap, (p: string, up: string) => string> = {
   // Wiersz odczytu ma juz etykiete "Obstawiles" i sam typ, wiec zdanie zaczyna sie od tego, co dopowiadaja odpowiedzi.
   match: (_p, up) => `Trafiłeś. Odpowiedzi też wskazują na ${ACC(up)}.`,
-  upstream: (_p, up) => `Odpowiedzi wskazują wcześniejsze ogniwo: ${up}. To, co czujesz w tym miejscu, często zaczyna się wcześniej.`,
+  upstream: (_p, up) => `Odpowiedzi wskazują wcześniejsze ogniwo: ${up}.`,
   miss: (_p, up) => `Odpowiedzi mocniej wskazują na ${ACC(up)}. Sprawdź to, zanim dołożysz więcej wysiłku tam, gdzie celowałeś.`,
   none: (_p, up) => `Odpowiedzi same wskazują na ${ACC(up)}. Sprawdź, czy to pasuje do tego, co widzisz u siebie.`,
   boundary: (_p, up) => `Tego z kliknięć nie ocenię. Z tygodnia widać za to jedno ogniwo: ${up}.`,
@@ -138,6 +139,36 @@ function ACC(label: string): string {
   return k ? LEVER_ACC[k] : label;
 }
 
+
+// failed_solution i constraint nie zmieniaja wyboru eksperymentu ani pewnosci (restart jest juz liczony
+// w selektorze, drugi raz bylby podwojnym liczeniem). Zmieniaja to, jak czytasz trop i jak duzy jest test.
+const FAILED_LINE: Record<string, string> = {
+  tb_2: 'Naprawiałeś to już 3-4 razy. Tym razem ruszasz jedno ogniwo i patrzysz, co się zmienia.',
+  tb_3: 'Naprawiałeś to już 5 razy albo więcej. Tym razem ruszasz jedno ogniwo i patrzysz, co się zmienia.',
+};
+
+const SCOPE_LINE: Record<string, string> = {
+  wl_firefight: 'Przy dniu pełnym cudzych pożarów robisz tylko ten jeden ruch. Nic więcej nie dokładasz.',
+  wl_people: 'Ludzie czekają na Ciebie cały dzień, więc robisz tylko ten jeden ruch. Nic więcej nie dokładasz.',
+  wl_owner: 'Firma i tak wraca do Ciebie wieczorem, więc robisz tylko ten jeden ruch. Nic więcej nie dokładasz.',
+};
+
+// Odczyt w pierwszym kadrze stoi przed sekcja, ktora definiuje Punkt Pekniecia, wiec tam mowimy prosto.
+const AXIS_LEVER: Record<string, Lever[]> = { 'Sen i regeneracja': ['sen'], 'Głowa i stres': ['glowa'], 'Forma': ['trening', 'wieczor'], 'Weekend i rytm': ['weekend', 'powrot'] };
+export function bridgeLine(weakLabel: string | undefined, upLever: Lever): string {
+  if (!weakLabel) return '';
+  if ((AXIS_LEVER[weakLabel] || []).includes(upLever)) return `${weakLabel}: tu objaw i ogniwo się pokrywają, więc test idzie prosto w to miejsce.`;
+  return `${weakLabel} to objaw. Tu sprawdzasz, gdzie się zaczyna.`;
+}
+export function plainAction(action: string): string {
+  return action
+    .replace('przed zwykłym Punktem Pęknięcia', 'przed momentem, w którym zwykle odpuszczasz,')
+    .replace('przed przewidywany Punkt Pęknięcia', 'przed moment, w którym zwykle odpuszczasz');
+}
+
+export function sentenceCase(name: string): string {
+  return name.charAt(0) + name.slice(1).toLocaleLowerCase('pl-PL');
+}
 
 export const MEDICAL_BOUNDARY = 'Poziom hormonów pokazuje badanie krwi. Ankieta go nie zmierzy, więc nie znajdziesz tu żadnego szacunku testosteronu. Sprawdzamy to, co widać w Twoim tygodniu.';
 
@@ -179,14 +210,18 @@ export function buildDecision({ answers, experiment, confidence, routePrimary }:
     : gdLever === upstream ? 'support'
     : gdLever && UPSTREAM_OF[upstream].includes(gdLever) ? 'neutral'
     : 'counter';
+  // Najlepszy dzien rozni sie tym, co czlowiek sam obstawil: to wspiera jego typ, wiec nie mowimy "czyms innym".
   const counter = effect === 'counter' && gdLever
-    ? `Twój najlepszy dzień różnił się czymś innym: ${LEVER_LABEL[gdLever]}. To obniża pewność tego tropu, więc test ma go potwierdzić albo odrzucić.`
+    ? (gdLever === predLever
+      ? `Twój najlepszy dzień różnił się tym, co sam obstawiłeś: ${LEVER_ACC[gdLever]}. Odpowiedzi wskazują jako wcześniejsze ogniwo ${LEVER_ACC[upstream]}, więc test rozstrzygnie, co stoi pierwsze.`
+      : `Twój najlepszy dzień różnił się czymś innym: ${LEVER_ACC[gdLever]}. To obniża pewność tego tropu, więc test ma go potwierdzić albo odrzucić.`)
     : null;
 
   const state = confidenceState(confidence, effect);
   const gap = predictionGap(predLever, upstream);
   const predLabel = predLever ? LEVER_LABEL[predLever] : 'nic konkretnego';
   const tb = str(answers.tried_before);
+  const wl = str(answers.work_load);
   const signals = [breakId, str(answers.give_up_point), str(answers.evening_eating), str(answers.stress_level), str(answers.weekend_pattern), str(answers.monday_recovery)].filter(Boolean);
 
   return {
@@ -194,14 +229,15 @@ export function buildDecision({ answers, experiment, confidence, routePrimary }:
     prediction: { id: predId || 'unknown', lever: predLever, label: predLabel },
     signals,
     contrast_evidence: { id: gdId || 'unknown', lever: gdLever, effect },
-    failed_solution: { id: tb || 'unknown', count: tb ? Number(tb.replace('tb_', '')) || 0 : 0 },
-    constraint: str(answers.work_load) || 'unknown',
+    failed_solution: { id: tb || 'unknown', count: tb ? Number(tb.replace('tb_', '')) || 0 : 0, line: FAILED_LINE[tb] || null },
+    constraint: wl || 'unknown',
+    test_scope: SCOPE_LINE[wl] || null,
     early_signal: EARLY_SIGNAL[breakId] || 'różnie, bez jednej godziny',
     upstream_candidate: { lever: upstream, label: upLabel, moment: experiment.moment },
     counterevidence: counter,
     confidence: { state, label: CONF_LABEL[state] },
     prediction_gap: { type: gap, line: GAP_LINE[gap](predLabel, upLabel) },
-    experiment: { id: experiment.id, name: experiment.name, action: experiment.action },
+    experiment: { id: experiment.id, name: experiment.name, action: plainAction(experiment.action) },
     observation_variable: experiment.observe,
     route: routeCategory(routePrimary, state),
     medical_boundary: predLever === 'hormony' ? MEDICAL_BOUNDARY : null,

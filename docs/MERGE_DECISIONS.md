@@ -19,11 +19,11 @@ Zasada rozstrzygania: dowód (test, dane z ruchu, zasada sprzedaży) wygrywa z g
 | Pytanie `good_day` (nowe) | brak | brak | C: „Przypomnij sobie najlepszy dzień z ostatnich dwóch tygodni. Co wtedy było inaczej?” po `break_window` | **C** | Kontrast wzmacnia albo osłabia trop (`contrast_evidence`), więc pewność ma podstawę zamiast być dekoracją. Koszt: +1 krok, jak wyżej. |
 | Pozostałe pytania (39) | 39 pytań | bez zmian treści | D: starsze wersje | **A** | Zero zmian treści pytań A. Testy A przechodzą bez zmian. |
 | Kolejność pytań | A | A | C: wstawia 2 pytania w blok „tydzień” | **A + 2 wstawki C** | `prediction` przed danymi o tygodniu (żeby obstawienie było czyste), `good_day` zaraz po `break_window` (kontrast do złego dnia na świeżo). |
-| Pierwszy ekran wyniku | nagłówek poziomu + mapa | wynik w języku przyrządu, SettlingReadout | C: odczyt 7 wierszy `rx-readout` | **B rama + C odczyt** | Człowiek w pierwszym kadrze dostaje decyzję: cel, obstawienie, trop, wcześniejsze ogniwo, test, co obserwować, pewność. QA: cały odczyt mieści się w 844 px na 390. |
+| Pierwszy ekran wyniku | nagłówek poziomu + mapa | wynik w języku przyrządu, SettlingReadout | C: odczyt 7 wierszy `rx-readout` | **B rama + C odczyt (6 wierszy)** | Człowiek w pierwszym kadrze dostaje decyzję: cel, obstawienie, trop, wcześniejsze ogniwo, test z tym, co obserwować, pewność. 3.1: „Obserwuj” wszedł do wiersza testu, więc na 375×667 nazwa testu i akcja stoją nad zgięciem (wiersz testu y=564). Od 1100 px hero dzieli się na tezę i odczyt, dalsze beaty mają szynę kickerów obok kolumny 620. |
 | Beat: Obstawiłeś | brak | brak | C | **C** | Linia gap bez powtarzania typu obstawienia (red team). |
-| Beat: Najmocniejszy trop | najsłabsza oś | ta sama oś w przyrządzie | C: zostaje jako objaw | **A logika + C etykieta** | Red team: trop i ogniwo to dwie taksonomie. Most w wierszu ogniwa: „Forma pokazuje, gdzie boli. Tu warto sprawdzić, gdzie to się zaczyna.” |
+| Beat: Najmocniejszy trop | najsłabsza oś | ta sama oś w przyrządzie | C: zostaje jako objaw | **A logika + C etykieta** | Red team: trop i ogniwo to dwie taksonomie. Most w wierszu ogniwa: „Forma to objaw. Tu sprawdzasz, gdzie się zaczyna.” |
 | Beat: Wcześniejszy moment | brak | brak | C: `UPSTREAM_OF` | **C** | Rdzeń 168: objaw rzadko jest przyczyną. Wiersz złoty, klucz odczytu. |
-| Beat: Test 72h + Obserwuj | bank eksperymentów A | bank A w przyrządzie | C: nazwa + akcja w odczycie | **A bank + C forma** | Bank eksperymentów bez zmian. 72h zostaje, bo spinają go testy i copy A. 7 dni obsługuje pętla powrotu. |
+| Beat: Test 72h + Obserwuj | bank eksperymentów A | bank A w przyrządzie | C: nazwa + akcja w odczycie | **A bank + C forma** | Bank eksperymentów bez zmian. W odczycie nazwa zdaniem, nie caps lockiem, a „Punkt Pęknięcia” zastępuje „moment, w którym zwykle odpuszczasz”, bo termin pada dopiero w beacie pęknięcia (`plainAction`). 72h zostaje, bo spinają go testy i copy A. 7 dni obsługuje pętla powrotu. |
 | Beat: Pewność | brak (score) | brak | C: słowami, 3 kreski | **C** | Bez procentów i bez pseudo-score. Kontrdowód obniża pewność i jest pokazany. |
 | Granica medyczna | brak | brak | C: `MEDICAL_BOUNDARY` | **C** | „Hormony” nie dostaje szacunku testosteronu. Usługa krwi zostaje płatna. |
 | Dalsze beaty (mapa, dowód, demo prowadzenia) | A | B forma | C: bez zmian | **A + B** | Sprawdzone na PROD. Nie ruszamy. |
@@ -37,7 +37,13 @@ Zasada rozstrzygania: dowód (test, dane z ruchu, zasada sprzedaży) wygrywa z g
 - D w całości (starsza wersja A).
 - E w całości (wyparte przez `8206f84`).
 - Wiersz testu na 7 dni. Zostaje 72h, bo tak mówi reszta produktu.
-- `constraint` i `failed_solution` na razie tylko w analityce. Nie dostały wiersza w odczycie, bo 8 wierszy nie mieści się w pierwszym kadrze na 375.
+- Osobny wiersz „Obserwuj” (wchłonięty przez wiersz testu).
 
-## Weto
-Michał wetuje tylko tam, gdzie się nie zgadza. Freeze PROD bez zmian.
+## constraint i failed_solution (rozstrzygnięte 26.09)
+Wpływają na wynik jako modyfikatory istniejących wierszy, bez ósmego wiersza:
+- `failed_solution` 3-4 albo 5+ prób: zdanie w wierszu „Wcześniejszy moment” (poprawka w miejscu objawu nie trzyma, więc zaczynamy wcześniej). Nie rusza pewności ani wyboru testu, bo selektor liczy już `restart` (tb_2/tb_3) w zgodności domen. Drugie doliczenie byłoby podwójnym liczeniem tej samej odpowiedzi.
+- `constraint` (gaszenie cudzych pożarów, ludzie czekają, własna firma): zdanie w wierszu testu, że robisz tylko ten jeden ruch. Nie zmienia wyboru eksperymentu, bo nie mamy danych, że inny test działa lepiej przy takim kalendarzu. Zmiana selektora wymaga danych z pętli powrotu.
+- Oba bez PII, testy w `tests/decision-engine.test.ts` pilnują, że pewność i eksperyment zostają te same.
+
+## Weto: ZAMKNIĘTE
+Michał 26.09 oddał rozstrzygnięcie („rozwiąż MERGE_DECISIONS.md”), więc wiersze powyżej obowiązują jako decyzja. Freeze PROD bez zmian. Kolejny krok to release przez broker z SHA potomka `5c161c8`, dopiero po jawnym GO.
