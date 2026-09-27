@@ -55,7 +55,8 @@ Michał 26.09 oddał rozstrzygnięcie („rozwiąż MERGE_DECISIONS.md”), wię
 ### REUSE-FIRST / dedupe
 | Incoming idea | Klasa | Decyzja | Dlaczego |
 |---|---|---|---|
-| External VOC radar (Reddit / YouTube / fora / komentarze) | BANK / EXTEND_EXISTING research | **ZACHOWAĆ poza runtime** | Dobre źródło języka, scen, nowych hipotez i kontrprzykładów. Nie jest dowodem dla konkretnego użytkownika i nie może automatycznie zmieniać quizu. |
+| External VOC radar (Reddit / YouTube / fora / komentarze) | DUPLICATE / ROUTE_EXISTING | **NIE BUDOWAĆ NIC NOWEGO** | Owner już istnieje: `research-intelligence` -> `research-source-miner` -> `real-voice-miner`. Te skill'e wprost obsługują Reddit/fora/komentarze jako język, tarcia i kontrprzykłady, z zasadą community anecdote != prevalence. Dla Diagnostyki output = kandydat do gap/backtestu, nigdy automatyczna zmiana quizu. |
+| Lead magnet / front-end offer selection i testowanie | DUPLICATE / ROUTE_EXISTING | **NIE PRZENOSIĆ MODELU Z FILMU 1:1** | Owner już istnieje: `demand-acquisition-engine`. Ma direct-offer-vs-lead-magnet gate, mierzy bottleneck na REACHABLE -> ENGAGED -> QUALIFIED -> OFFER -> PAYMENT i każe testować najmniejszą zmianę, nie ślepo 6×1000 wysyłek. Diagnostyka zostaje istniejącym lead magnetem/routing layerem, nie osobnym nowym front-end offerem. |
 | Prediction lock / „co sam obstawiasz” | NO_OP | **JUŻ DZIAŁA** | `prediction` + `prediction_gap` = match / upstream / deeper / miss / none / boundary. |
 | Konkurencja hipotez / counterevidence | MERGE_EXISTING / PARK | **CZĘŚCIOWO JUŻ DZIAŁA; NIE BUDOWAĆ NOWEGO ENGINE TERAZ** | Selector + good_day + counterevidence + confidence + unresolved już różnicują tropy. Pełne H1/H2/H3 ma sens dopiero po dowodzie, że obecny silnik wybiera zły pierwszy test. |
 | Dobry dzień vs zły dzień | NO_OP | **JUŻ DZIAŁA** | `good_day` wzmacnia, neutralizuje albo obniża pewność tropu. |
