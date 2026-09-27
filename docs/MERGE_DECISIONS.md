@@ -47,3 +47,34 @@ Wpływają na wynik jako modyfikatory istniejących wierszy, bez ósmego wiersza
 
 ## Weto: ZAMKNIĘTE
 Michał 26.09 oddał rozstrzygnięcie („rozwiąż MERGE_DECISIONS.md”), więc wiersze powyżej obowiązują jako decyzja. Freeze PROD bez zmian. Kolejny krok to release przez broker z SHA potomka `5c161c8`, dopiero po jawnym GO.
+
+## RR/UU 2026-09-27 — lead magnet / VOC / hypothesis ideas
+
+**BASE:** PROD truth = `202616d` / Diagnostyka 3.0, tryb POMIAR. Ten merge jest **docs-only**. Zero zmian runtime, pytań, selektora, routingu, eksperymentów, analityki i lead pipe.
+
+### REUSE-FIRST / dedupe
+| Incoming idea | Klasa | Decyzja | Dlaczego |
+|---|---|---|---|
+| External VOC radar (Reddit / YouTube / fora / komentarze) | BANK / EXTEND_EXISTING research | **ZACHOWAĆ poza runtime** | Dobre źródło języka, scen, nowych hipotez i kontrprzykładów. Nie jest dowodem dla konkretnego użytkownika i nie może automatycznie zmieniać quizu. |
+| Prediction lock / „co sam obstawiasz” | NO_OP | **JUŻ DZIAŁA** | `prediction` + `prediction_gap` = match / upstream / deeper / miss / none / boundary. |
+| Konkurencja hipotez / counterevidence | MERGE_EXISTING / PARK | **CZĘŚCIOWO JUŻ DZIAŁA; NIE BUDOWAĆ NOWEGO ENGINE TERAZ** | Selector + good_day + counterevidence + confidence + unresolved już różnicują tropy. Pełne H1/H2/H3 ma sens dopiero po dowodzie, że obecny silnik wybiera zły pierwszy test. |
+| Dobry dzień vs zły dzień | NO_OP | **JUŻ DZIAŁA** | `good_day` wzmacnia, neutralizuje albo obniża pewność tropu. |
+| Confidence bez pseudo-procentów | NO_OP | **JUŻ DZIAŁA** | Wyraźny wzorzec / Trop do sprawdzenia / Za mało danych. |
+| Experiment as diagnostic probe | NO_OP | **JUŻ DZIAŁA** | Bank ma action + moment + observe + doNotChange + purpose; LOW confidence wybiera obserwację. |
+| Return loop: test -> wynik -> aktualizacja hipotezy | NO_OP | **JUŻ DZIAŁA** | `diagnostyka_v3_return` + wzmocniona / osłabiona / nierozstrzygnięta. |
+| Cross-domain explanatory compression (1 upstream -> kilka objawów) | PARK / TEST_INSIDE_EXISTING | **NIE DOKŁADAĆ LIVE** | Obecny `UPSTREAM_OF` i priorytet selektora robią część jobu. Rozszerzenie dopiero z backtestu / danych organicznych. |
+| Dynamic discriminator questions | BLOCKED | **NIE DOKŁADAĆ PYTAŃ TERAZ** | Mogą obniżyć completion. Dodajemy tylko wtedy, gdy dane pokażą konkretną nierozstrzygalną decyzję. |
+| Osobny „evidence trace / dlaczego tak sądzimy” | PARK | **NIE DOKŁADAĆ KOLEJNEJ SEKCJI** | Wynik już pokazuje mapę, sygnały, kontrdowód i pewność. Rozbudowa tylko jeśli feedback pokaże brak zrozumienia. |
+| Medical / hormony | NO_OP | **JUŻ JEST GRANICA** | Ankieta nie szacuje hormonów; `pr_hormony` / cel napęd mają deterministyczny boundary. |
+
+### /UU — co naprawdę poprawia system bez przeciążenia
+1. **Nie zmieniamy frontu.** Złożoność ma rosnąć pod spodem tylko wtedy, gdy dane uzasadnią zmianę decyzji.
+2. **External VOC = radar, nie owner prawdy.** Kandydat z zewnątrz musi najpierw znaleźć potwierdzenie w first-party data / case'ach albo wejść jako hipoteza do testu.
+3. **Najpierw backtest, potem pytanie.** Jeśli chcemy nowy discriminator, najpierw pokazujemy case'y, w których obecne odpowiedzi nie pozwalają wybrać sensownego testu.
+4. **Jeden wynik -> jeden ruch -> jedna obserwacja.** Nie dokładamy użytkownikowi listy hipotez.
+5. **Surprise nigdy nie wygrywa z truth/confidence.** „Jak oni to wiedzieli?” jest efektem ubocznym trafnego upstreamu, nie celem silnika.
+
+### Gate do jakiejkolwiek następnej zmiany runtime
+Obowiązuje `projects/diagnostyka/MEASUREMENT_PLAN.md`: poniżej progów organicznych zero zmian produktu. Wyjątek = reprodukowalny defekt. Nowa hipoteza z VOC / pojedynczego DM / pojedynczego case'u trafia do banku, nie do produkcji.
+
+**VERDICT RR/UU:** incoming ideas zostały zredukowane do delty. Brak uzasadnienia dla nowego OS, nowego Prediction Layer ani nowego Hypothesis Engine. Najcenniejsza nowość to external VOC jako wejście do researchu + future backtest gate; reszta jest już w 3.0 albo czeka na dane.
