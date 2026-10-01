@@ -189,20 +189,19 @@ test('fit nigdy nie wychodzi do PostHoga', () => {
   assert.ok(!/premium_fit|premium_signals|work_load|spillover|agency_mode/.test(posthog));
 });
 
-test('Telegram pokazuje linie fit i koszt poza lustrem', () => {
-  assert.ok(ROUTE.includes('Fit: '));
-  assert.ok(ROUTE.includes('Koszt poza lustrem'));
-  for (const sym of ['fitMap', 'fitIco', 'workLoadMap', 'spillMap', 'spillTxt']) {
-    assert.ok(ROUTE.includes(sym), `brak ${sym} w route`);
+test('Telegram render is decision-first', () => {
+  assert.ok(ROUTE.includes('buildLeadOperatorDecision'));
+  for (const label of ['KANDYDAT:', 'FIT:', 'INTENT:', 'URGENCY:', 'FINANSE:', 'BLOCKER:', 'NEXT MOVE:', 'DM NOW:']) {
+    assert.ok(ROUTE.includes(label), `missing ${label}`);
+  }
+  assert.ok(ROUTE.includes('PROBLEM:'));
+});
+
+test('Telegram render does not contain the legacy long script', () => {
+  for (const old of ['ZAGRYWKA DM', 'POGŁĘB', 'DRUGIE DNO', 'Koszt poza lustrem']) {
+    assert.ok(!ROUTE.includes(old), `legacy block still present: ${old}`);
   }
 });
-
-test('linia fit stoi pod gotowoscia, nie nad werdyktem', () => {
-  const fit = ROUTE.indexOf('Fit: ${fitMap');
-  const verdict = ROUTE.indexOf('Werdykt:');
-  assert.ok(fit > verdict && verdict > 0);
-});
-
 test('n8n dostaje caly payload, wiec fit jedzie do Notion bez osobnego mapowania', () => {
   assert.ok(/const n8nBody = \{[^}]*\.\.\.b/.test(ROUTE.replace(/\r/g, '')));
 });
