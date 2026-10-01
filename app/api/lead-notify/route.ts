@@ -65,6 +65,9 @@ export async function POST(req: NextRequest) {
         wants_help: b.wants_help === true,
         intencja: String(b.intencja ?? ''),
         kiedy_start: String(b.kiedy_start ?? ''),
+        entry_door: String(b.entry_door ?? ''),
+        entry_topic: String(b.entry_topic ?? ''),
+        entry_variant: String(b.entry_variant ?? ''),
         lead_ref_json: jsonLiteral(leadRef),
         instagram_json: jsonLiteral(instagram),
         name_json: jsonLiteral(displayName),
@@ -153,6 +156,13 @@ export async function POST(req: NextRequest) {
     const profileLink = ig ? `https://instagram.com/${ig}` : '';
     const severity = s(b.severity_band, 20) || '—';
     const archetype = s(b.archetyp, 60);
+    const entryDoor = s(b.entry_door, 12);
+    const entryVariant = s(b.entry_variant, 40);
+    const sourceLabel = entryDoor === 'th2'
+      ? 'TH2 · Talerz i Hantle'
+      : entryDoor === 'hit'
+        ? 'HiT · Hantle i Talerz'
+        : 'Diagnostyka 168';
     const who = ig
       ? `👤 ${im ? `${im} · ` : ''}@${ig}`
       : '👤 lead anonimowy';
@@ -165,6 +175,7 @@ export async function POST(req: NextRequest) {
       `FIT: ${decision.fitLabel}`,
       `INTENT: ${decision.intentLabel}`,
       `URGENCY: ${decision.urgencyLabel}`,
+      `ŹRÓDŁO: ${sourceLabel}${entryVariant && entryVariant !== entryDoor ? ` · ${entryVariant}` : ''}`,
       'FINANSE: ? · nie pytaliśmy',
       '',
       `PROBLEM: ${score}/100 ${severity}${archetype ? ` · ${archetype}` : ''}`,
