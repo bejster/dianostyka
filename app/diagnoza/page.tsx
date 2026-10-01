@@ -31,7 +31,7 @@ type Phase = 'intro' | 'intake' | 'teaser';
 const DOOR_KICKER: Record<string, string> = {
   general: 'Diagnostyka 168 · 5 min · wynik od razu',
   hit: 'Diagnostyka 168 · praca, dom i forma · 5 min',
-  th2: 'Diagnostyka 168 · Talerz i Hantle · 5 min',
+  th2: 'Talerz i Hantle · 5 min · wynik od razu',
 };
 const TOPIC_LABEL: Record<string, string> = { sen: 'sen', energia: 'energia', glowa: 'głowa', jedzenie: 'jedzenie', trening: 'trening', weekend: 'weekend' };
 const RETURN_LINE: Record<HypothesisState, (l: string) => string> = {
@@ -90,6 +90,7 @@ export default function DiagnozaPage() {
       if (campaign) ctx.campaign = campaign;
       const d = pick('door', ['hit', 'th2']) || 'general';
       const tp = pick('topic', Object.keys(TOPIC_LABEL));
+      ctx.entry_copy = d === 'th2' ? 'th2_bridge_v1' : 'human_leverage_v2';
       ctx.entry_variant = tp ? `${d}_${tp}` : d;
       queueMicrotask(() => { setDoor(d); if (tp) setTopic(tp); });
       // 7-dniowa petla: rekord z poprzedniego wyniku, pokazany najwczesniej po 3 dniach albo z ?return=1.
@@ -195,6 +196,9 @@ export default function DiagnozaPage() {
         agency_mode: typeof raw.agency_mode === 'string' ? raw.agency_mode : '',
         premium_fit: premium.fit,
         premium_signals: premium,
+        entry_door: door,
+        entry_topic: topic || '',
+        entry_variant: topic ? `${door}_${topic}` : door,
         raw_answers: raw,
         diagnostyka_brief: leadBrief.brief,
         derived_signals: {
@@ -210,6 +214,9 @@ export default function DiagnozaPage() {
           primary_goal: typeof raw.primary_goal === 'string' ? raw.primary_goal : '',
           give_up_point: typeof raw.give_up_point === 'string' ? raw.give_up_point : '',
           tier: tgTier,
+          entry_door: door,
+          entry_topic: topic || '',
+          entry_variant: topic ? `${door}_${topic}` : door,
           premium_fit: premium.fit,
           agency: premium.agency,
           control_need: premium.controlNeed,
@@ -303,10 +310,19 @@ export default function DiagnozaPage() {
             </div>
           )}
           <h1 style={{ fontFamily: "'Instrument Serif', Georgia, serif", fontSize: 'clamp(35px, 9.1vw, 58px)', lineHeight: 1.0, fontWeight: 400, color: '#fff', margin: '0 0 16px', letterSpacing: '-0.02em', maxWidth: '100%', overflowWrap: 'break-word' }}>
-            W poniedziałek ogarniasz. W piątek patrzysz na tydzień i myślisz: <em style={{ color: '#e8cc80', fontStyle: 'italic' }}>„kurwa, znowu to samo”.</em>
+            {door === 'th2' ? (
+              <>Weekend nie zawsze jest problemem. Często tylko pokazuje, <em style={{ color: '#e8cc80', fontStyle: 'italic' }}>gdzie tydzień pęka.</em></>
+            ) : (
+              <>W poniedziałek ogarniasz. W piątek patrzysz na tydzień i myślisz: <em style={{ color: '#e8cc80', fontStyle: 'italic' }}>„kurwa, znowu to samo”.</em></>
+            )}
           </h1>
           <p style={{ fontSize: 15.8, color: '#c4bdb0', lineHeight: 1.55, margin: '0 0 16px', maxWidth: 438 }}>
-            {topic && <>Wchodzisz od tematu: {TOPIC_LABEL[topic]}. Sprawdzimy go na tle całego tygodnia. </>}Przejdziesz przez robotę, jedzenie, sen, trening i weekend. Na końcu zobaczysz <strong style={{ color: '#ece7db', fontWeight: 750 }}>gdzie dziś tracisz najwięcej, co ma największy zapas i który jeden ruch warto sprawdzić najpierw.</strong>
+            {topic && <>Wchodzisz od tematu: {TOPIC_LABEL[topic]}. Sprawdzimy go na tle całego tygodnia. </>}
+            {door === 'th2' ? (
+              <>Sprawdzimy sen, energię, apetyt, stres, trening i powrót po weekendzie. Na końcu zobaczysz <strong style={{ color: '#ece7db', fontWeight: 750 }}>gdzie problem naprawdę się zaczyna, co płacisz za niego później i który jeden ruch warto sprawdzić najpierw.</strong></>
+            ) : (
+              <>Przejdziesz przez robotę, jedzenie, sen, trening i weekend. Na końcu zobaczysz <strong style={{ color: '#ece7db', fontWeight: 750 }}>gdzie dziś tracisz najwięcej, co ma największy zapas i który jeden ruch warto sprawdzić najpierw.</strong></>
+            )}
           </p>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,minmax(0,1fr))', gap: 7, margin: '0 0 17px', width: '100%' }}>
             {['GDZIE TRACISZ', 'NAJWIĘKSZY ZAPAS', 'PIERWSZY RUCH 72H'].map((label, i) => (
@@ -325,7 +341,7 @@ export default function DiagnozaPage() {
             }}
             style={{ width: '100%', padding: '18px 17px', borderRadius: 14, border: 'none', cursor: 'pointer', background: `linear-gradient(135deg, ${GOLD}, #8a7535)`, color: BG, fontWeight: 850, fontSize: 16, letterSpacing: 0.15, boxShadow: '0 16px 38px rgba(200,168,78,.18)' }}
           >
-            Pokaż mi, co ruszyć najpierw &rarr;
+            {door === 'th2' ? <>Znajdź mój Punkt Pęknięcia &rarr;</> : <>Pokaż mi, co ruszyć najpierw &rarr;</>}
           </button>
           <p style={{ fontFamily: "'JetBrains Mono', ui-monospace, monospace", fontSize: 9.8, letterSpacing: 1.15, color: '#777169', lineHeight: 1.45, margin: '11px 0 0', textAlign: 'center', textTransform: 'uppercase' }}>
             5 min · bez maila · wynik od razu
@@ -411,7 +427,7 @@ export default function DiagnozaPage() {
     // PII i niczego o czlowieku nie zdradza, a pozwala Michalowi zlaczyc zgloszenie z formularza naboru
     // z konkretna diagnoza zamiast zgadywac po dacie.
     const submissionRef = typeof window !== 'undefined' ? (localStorage.getItem('diagnostyka_v2_submission_id') || '') : '';
-    const naborUrl = `https://nabor.talerzihantle.com/?${new URLSearchParams({ from: 'diag', arch: arch.key, intent: typeof answers.intent === 'string' ? answers.intent : '', v: ASSESSMENT_VERSION, ...(submissionRef ? { sub: submissionRef } : {}) }).toString()}`;
+    const naborUrl = `https://nabor.talerzihantle.com/?${new URLSearchParams({ from: 'diag', door, arch: arch.key, intent: typeof answers.intent === 'string' ? answers.intent : '', v: ASSESSMENT_VERSION, ...(submissionRef ? { sub: submissionRef } : {}) }).toString()}`;
     // Werdykt 3-tier (nieuzywany bezposrednio w V3 result-router, zostawiony dla kompatybilnosci z redCount): WYLACZNIE ciezkosc/potrzeba z liczby domen "na czerwono".
     const redCount = statuses.filter((st) => st.score < 45).length;
     const LEAK_LABEL: Record<string, string> = { Sen: 'sen', Stres: 'głowa wieczorem', 'Żywienie': 'wieczory', Weekend: 'weekend', Trening: 'wykonanie', 'Głowa': 'głowa wieczorem' };
