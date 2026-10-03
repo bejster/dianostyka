@@ -64,6 +64,17 @@ export async function POST(req: NextRequest) {
         wants_help: b.wants_help === true,
         intencja: String(b.intencja ?? ''),
         kiedy_start: String(b.kiedy_start ?? ''),
+        entry_door: String(b.entry_door ?? ''),
+        entry_topic: String(b.entry_topic ?? ''),
+        entry_variant: String(b.entry_variant ?? ''),
+        acquisition_channel_json: jsonLiteral(
+          String(b.entry_door ?? '') === 'th2'
+            ? 'TH2 → HiT'
+            : String(b.entry_door ?? '') === 'hit'
+              ? 'HiT Organic'
+              : 'Diagnostyka 168'
+        ),
+        acquisition_detail_json: jsonLiteral(String(b.entry_variant ?? '')),
         lead_ref_json: jsonLiteral(leadRef),
         instagram_json: jsonLiteral(instagram),
         name_json: jsonLiteral(displayName),
@@ -172,6 +183,13 @@ export async function POST(req: NextRequest) {
     const dmLink = ig ? `https://ig.me/m/${ig}?text=${encodeURIComponent(openerForLink)}` : '';
     const profileLink = ig ? `https://instagram.com/${ig}` : '';
     const intent = s(b.intencja, 20);
+    const entryDoor = s(b.entry_door, 12);
+    const entryVariant = s(b.entry_variant, 40);
+    const sourceLabel = entryDoor === 'th2'
+      ? 'TH2 · Talerz i Hantle'
+      : entryDoor === 'hit'
+        ? 'HiT · Hantle i Talerz'
+        : 'Diagnostyka 168';
     const closer = priority
       ? 'GORĄCY. Chce prowadzenia i deklaruje szybki start. Otwórz pytaniem, po 1-2 odpowiedziach proponuj rozmowę o prowadzeniu 1:1.'
       : (intent === 'in_prowadz' || intent === 'in_zobacz')
@@ -222,6 +240,7 @@ export async function POST(req: NextRequest) {
       `Peka: ${s(b.godzina, 40)} · Hamulec: ${s(b.worstCat, 30)} · Koszt: ${s(b.kwota, 20)} zl`,
       (b.primary_goal || b.tier) ? `Cel: ${goalMap[s(b.primary_goal, 30)] || '—'} · Odpuszcza: ${giveupMap[s(b.give_up_point, 30)] || '—'} · Werdykt: ${tierMap[s(b.tier, 2)] || '—'}` : '',
       `Gotowosc: ${intentMap[s(b.intencja, 20)] || '—'} · Start: ${startMap[s(b.kiedy_start, 20)] || '—'}`,
+      `Źródło: ${sourceLabel}${entryVariant && entryVariant !== entryDoor ? ` · ${entryVariant}` : ''}`,
       // PREMIUM ICP PATCH V1: linia fit stoi POD gotowoscia, bo to sygnal do sposobu rozmowy, nie do diagnozy.
       // Fit liczy klient (premium-fit.ts); tutaj tylko formatujemy. Brak pola = brak linii, zero zgadywania.
       b.premium_fit ? `${fitIco[s(b.premium_fit, 12)] || '·'} Fit: ${fitMap[s(b.premium_fit, 12)] || '—'}${workLoadMap[s(b.work_load, 20)] ? ` · ${workLoadMap[s(b.work_load, 20)]}` : ''}` : '',
