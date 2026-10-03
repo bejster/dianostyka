@@ -47,10 +47,15 @@ Private lead payload:
 - `entry_topic`
 - `entry_variant`
 
-CRM:
+CRM target po cutover:
 - Acquisition Channel = `TH2 → HiT`
 - Acquisition Detail = `entry_variant`
 - Conversion Surface = `Diagnostyka 168`
+
+Production-safety przed cutover:
+- live Make zostaje na legacy `Acquisition Channel = Diagnostyka 168`, dopóki live app nie wysyła nowych pól;
+- mapping TH2 → HiT został osobno zweryfikowany synthetic E2E, ale jest celowo wyłączony do momentu deployu app;
+- kolejność aktywacji jest atomowa: APP PROD → MAKE MAPPING → E2E → BIO.
 
 Telegram/operator:
 - pokazuje źródło TH2, żeby nie traktować tego leada jak identycznego wejścia z HiT.
@@ -90,14 +95,19 @@ Nie optymalizować samego completion rate kosztem jakości leadów.
 6. Źródło ruchu nie może zmieniać wyniku; może zmieniać framing, operator context i późniejszy follow-up.
 7. Jeden główny link w bio. Nie dokładać równorzędnego `współpraca`.
 
-## 8. Smoke przed production
-- build/test PASS
-- `?door=th2&src=organic&campaign=th2_bio_v1` renderuje TH2 hero i CTA
+## 8. Smoke / activation gates
+PREVIEW — już zweryfikowane:
+- Vercel preview READY + HTTP 200
+- `?door=th2&src=organic&campaign=th2_bio_v1` zawiera TH2 hero, CTA i `th2_bridge_v1`
+- TH2 nadal używa tego samego SingleQuestionFlow/scoringu
+- synthetic direct CRM E2E potwierdził: `TH2 → HiT`, detail=`th2`, TEST, Exclude from KPI=true, Do Not Contact=true
+
+PRODUCTION — wymagane przy cutover:
 - zwykłe wejście bez `door` nadal renderuje stare HiT/general copy
 - `door=hit` nie zmienia scoringu
-- completion tworzy lead
+- TH2 completion tworzy lead
 - Telegram pokazuje źródło
-- CRM zapisuje `TH2 → HiT`
+- po aktywacji mappingu CRM zapisuje `TH2 → HiT`
 - Acquisition Detail zapisuje `th2`
 - nabor URL niesie `door=th2`
 - synthetic QA ma Record Type=TEST, Exclude from KPI=true, Do Not Contact=true
@@ -107,11 +117,16 @@ Nie deployować starego ogromnego feature brancha tylko po to, żeby wpuścić T
 
 Release jest celowo chirurgiczny i bazuje na produkcyjnie zbliżonym `feat/content-paid-attribution-p0-20260926`.
 
-Po deployu:
-1. smoke na domenie production,
-2. dopiero potem podmiana linku w bio Instagram,
-3. pierwsze realne TH2 completion sprawdzić w CRM,
-4. po 7–14 dniach analizować nie tylko klik/completion, ale qualified i paid.
+Kolejność cutover:
+1. deploy release do app production,
+2. smoke TH2 + general/HiT na domenie production,
+3. przełącz Make modules 4/6 z legacy channel na precomputed `acquisition_channel_json` / `acquisition_detail_json`,
+4. synthetic E2E przez production endpoint i weryfikacja Notion,
+5. dopiero wtedy podmiana bio/linku Instagram,
+6. pierwsze realne TH2 completion sprawdzić w CRM,
+7. po 7–14 dniach analizować nie tylko klik/completion, ale qualified i paid.
+
+Jeśli którykolwiek krok 1–4 nie przejdzie: NIE zmieniać bio. Live CRM ma zostać na bezpiecznym legacy mappingu.
 
 ## 10. Definition of Done
 DONE dopiero gdy jednocześnie:
