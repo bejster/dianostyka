@@ -14,7 +14,7 @@ Ostatnia linia bio:
 `↓ Co naprawdę rozwala Ci tydzień?`
 
 Tytuł linku:
-`Znajdź swój Punkt Pęknięcia`
+`Sprawdź, gdzie zaczyna się rozjazd`
 
 Canonical URL:
 `https://diagnostyka.talerzihantle.com/?door=th2&src=organic&campaign=th2_bio_v1`
@@ -32,7 +32,7 @@ Opis prowadzi przez:
 sen → energia → apetyt → stres → trening → powrót po weekendzie.
 
 CTA:
-`Znajdź mój Punkt Pęknięcia →`
+`Pokaż mi, gdzie zaczyna się rozjazd →`
 
 Po kliknięciu działa TEN SAM SingleQuestionFlow, scoring, wynik i routing co w Diagnostyce 168. TH2 zmienia framing i atrybucję, nie logikę wyniku.
 
