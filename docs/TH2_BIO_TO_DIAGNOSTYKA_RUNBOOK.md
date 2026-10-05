@@ -58,7 +58,10 @@ Production-safety przed cutover:
 - kolejność aktywacji jest atomowa: APP PROD → MAKE MAPPING → E2E → BIO.
 
 Telegram/operator:
-- pokazuje źródło TH2, żeby nie traktować tego leada jak identycznego wejścia z HiT.
+- pokazuje źródło TH2, żeby nie traktować tego leada jak identycznego wejścia z HiT,
+- używa wspólnego Lead Decision Engine z `docs/LEAD_DECISION_ENGINE.md`,
+- renderuje jedną decyzję operatorską + jeden NEXT MOVE + jedno DM NOW,
+- nie wraca do starego wieloetapowego `ZAGRYWKA DM / POGŁĘB / DRUGIE DNO / MOST`.
 
 Nabór:
 - dostaje `door=th2` + istniejącą atrybucję, więc źródło nie ginie po wyniku.
@@ -96,7 +99,13 @@ Nie optymalizować samego completion rate kosztem jakości leadów.
 7. Jeden główny link w bio. Nie dokładać równorzędnego `współpraca`.
 
 ## 8. Smoke / activation gates
-PREVIEW — już zweryfikowane:
+Talerzownik preflight:
+- canonical wejście: `docs/TALERZOWNIK_LEAD_ASSET_ENTRY.md`
+- komenda: `powershell -ExecutionPolicy Bypass -File scripts/talerzownik-lead-asset-preflight.ps1`
+- szybki kontrakt: `npm run test:lead`
+- pełna bramka: `npm run check:lead-asset`
+
+PREVIEW — wymagane przed cutover:
 - Vercel preview READY + HTTP 200
 - `?door=th2&src=organic&campaign=th2_bio_v1` zawiera TH2 hero, CTA i `th2_bridge_v1`
 - TH2 nadal używa tego samego SingleQuestionFlow/scoringu
@@ -106,7 +115,7 @@ PRODUCTION — wymagane przy cutover:
 - zwykłe wejście bez `door` nadal renderuje stare HiT/general copy
 - `door=hit` nie zmienia scoringu
 - TH2 completion tworzy lead
-- Telegram pokazuje źródło
+- Telegram pokazuje źródło i decision lane
 - po aktywacji mappingu CRM zapisuje `TH2 → HiT`
 - Acquisition Detail zapisuje `th2`
 - nabor URL niesie `door=th2`
