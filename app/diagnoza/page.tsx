@@ -349,7 +349,7 @@ export default function DiagnozaPage() {
             }}
             style={{ width: '100%', padding: '18px 17px', borderRadius: 14, border: 'none', cursor: 'pointer', background: `linear-gradient(135deg, ${GOLD}, #8a7535)`, color: BG, fontWeight: 850, fontSize: 16, letterSpacing: 0.15, boxShadow: '0 16px 38px rgba(200,168,78,.18)' }}
           >
-            {door === 'th2' ? <>Znajdź mój Punkt Pęknięcia &rarr;</> : <>Pokaż mi, co ruszyć najpierw &rarr;</>}
+            {door === 'th2' ? <>Pokaż mi, gdzie zaczyna się rozjazd &rarr;</> : <>Pokaż mi, co ruszyć najpierw &rarr;</>}
           </button>
           <p style={{ fontFamily: "'JetBrains Mono', ui-monospace, monospace", fontSize: 9.8, letterSpacing: 1.15, color: '#777169', lineHeight: 1.45, margin: '11px 0 0', textAlign: 'center', textTransform: 'uppercase' }}>
             5 min · bez maila · wynik od razu
