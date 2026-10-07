@@ -4,6 +4,7 @@ import fs from 'node:fs';
 
 const PAGE = fs.readFileSync('app/diagnoza/page.tsx', 'utf8');
 const ROUTE = fs.readFileSync('app/api/lead-notify/route.ts', 'utf8');
+const NEXT_CONFIG = fs.readFileSync('next.config.ts', 'utf8');
 
 test('TH2 ma osobny front door, ale ten sam silnik diagnostyki', () => {
   assert.match(PAGE, /th2: 'Talerz i Hantle · 5 min · wynik od razu'/);
@@ -29,4 +30,9 @@ test('TH2 zmienia framing, nie scoring ani tryb produktu', () => {
   assert.match(PAGE, /th2_bridge_v1/);
   assert.ok(!PAGE.includes("mode: 'th2'"), 'TH2 nie może tworzyć osobnego scoringu');
   assert.match(PAGE, /human_leverage_v2/);
+});
+
+test('publiczny link TH2 ma czysty slug i ukrywa techniczne parametry', () => {
+  assert.match(NEXT_CONFIG, /source: "\/rozjazd"/);
+  assert.match(NEXT_CONFIG, /destination: "\/\?door=th2&src=organic&campaign=th2_bio_v1"/);
 });

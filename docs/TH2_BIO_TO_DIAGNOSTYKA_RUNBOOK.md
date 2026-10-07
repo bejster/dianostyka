@@ -17,7 +17,7 @@ Tytuł linku:
 `Sprawdź, gdzie zaczyna się rozjazd`
 
 Canonical URL:
-`https://diagnostyka.talerzihantle.com/?door=th2&src=organic&campaign=th2_bio_v1`
+`https://diagnostyka.talerzihantle.com/rozjazd`
 
 Nie dodawać `topic=weekend` do linku w bio. Weekend jest wejściem, nie diagnozą.
 

@@ -51,7 +51,7 @@ Zwykłe wejście nadal działa bez TH2 framingu.
 
 ### TH2
 Canonical URL:
-`https://diagnostyka.talerzihantle.com/?door=th2&src=organic&campaign=th2_bio_v1`
+`https://diagnostyka.talerzihantle.com/rozjazd`
 
 TH2 zmienia framing + attribution.
 Nie zmienia scoringu.
@@ -102,7 +102,7 @@ Legacy CRM mapping zostaje bezpiecznym fallbackiem.
 
 Sprawdź HTTP 200:
 - `https://diagnostyka.talerzihantle.com/diagnoza`
-- `https://diagnostyka.talerzihantle.com/?door=th2&src=organic&campaign=th2_bio_v1`
+- `https://diagnostyka.talerzihantle.com/rozjazd`
 
 Sprawdź funkcjonalnie:
 - TH2 hero,
