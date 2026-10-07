@@ -10,7 +10,8 @@ test('TH2 ma osobny front door, ale ten sam silnik diagnostyki', () => {
   assert.match(PAGE, /th2: 'Talerz i Hantle · 5 min · wynik od razu'/);
   assert.match(PAGE, /door === 'th2'/);
   assert.match(PAGE, /Ile dni wracasz do siebie <em[^>]*>po weekendzie\?<\/em>/);
-  assert.doesNotMatch(PAGE, /Weekend nie zawsze|Często tylko pokazuje/);
+  assert.doesNotMatch(PAGE, /Weekend nie zawsze|Często tylko pokazuje|problem naprawdę się zaczyna/);
+  assert.match(PAGE, /gdzie problem się zaczyna, co płacisz/);
   assert.match(PAGE, /Pokaż mi, gdzie zaczyna się rozjazd/);
   assert.match(PAGE, /<SingleQuestionFlow onComplete=\{handleComplete\} \/>/);
 });

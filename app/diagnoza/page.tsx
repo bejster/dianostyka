@@ -329,7 +329,7 @@ export default function DiagnozaPage() {
           </h1>
           <p style={{ fontSize: 15.8, color: '#c4bdb0', lineHeight: 1.55, margin: '0 0 16px', maxWidth: 438 }}>
             {door === 'th2' ? (
-              <>{topic && <>Wchodzisz od tematu: {TOPIC_LABEL[topic]}. Sprawdzimy go na tle całego tygodnia. </>}Sprawdzimy sen, energię, apetyt, stres, trening i powrót po weekendzie. Na końcu zobaczysz <strong style={{ color: '#ece7db', fontWeight: 750 }}>gdzie problem naprawdę się zaczyna, co płacisz za niego później i który jeden ruch warto sprawdzić najpierw.</strong></>
+              <>{topic && <>Wchodzisz od tematu: {TOPIC_LABEL[topic]}. Sprawdzimy go na tle całego tygodnia. </>}Sprawdzimy sen, energię, apetyt, stres, trening i powrót po weekendzie. Na końcu zobaczysz <strong style={{ color: '#ece7db', fontWeight: 750 }}>gdzie problem się zaczyna, co płacisz za niego później i który jeden ruch warto sprawdzić najpierw.</strong></>
             ) : (
               <>{topic && <>Zaczynamy od tematu: {TOPIC_LABEL[topic]}. </>}Zobacz, co w Twoim tygodniu najbardziej Ci ją zabiera i <strong style={{ color: '#ece7db', fontWeight: 750 }}>od czego zacząć w najbliższe 3 dni.</strong></>
             )}
