@@ -303,10 +303,10 @@ export default function DiagnozaPage() {
             </div>
           )}
           <h1 style={{ fontFamily: "'Instrument Serif', Georgia, serif", fontSize: 'clamp(35px, 9.1vw, 58px)', lineHeight: 1.0, fontWeight: 400, color: '#fff', margin: '0 0 16px', letterSpacing: '-0.02em', maxWidth: '100%', overflowWrap: 'break-word' }}>
-            Ile dni po weekendzie <em style={{ color: '#e8cc80', fontStyle: 'italic' }}>wracasz do siebie?</em>
+            Ile dni w tygodniu <em style={{ color: '#e8cc80', fontStyle: 'italic' }}>jesteś w formie?</em>
           </h1>
           <p style={{ fontSize: 15.8, color: '#c4bdb0', lineHeight: 1.55, margin: '0 0 16px', maxWidth: 438 }}>
-            {topic && <>Zaczynamy od tematu: {TOPIC_LABEL[topic]}. </>}Zobacz, co w Twoim tygodniu najbardziej ciągnie formę w dół i <strong style={{ color: '#ece7db', fontWeight: 750 }}>od czego zacząć w najbliższe 3 dni.</strong>
+            {topic && <>Zaczynamy od tematu: {TOPIC_LABEL[topic]}. </>}Zobacz, co w Twoim tygodniu najbardziej Ci ją zabiera i <strong style={{ color: '#ece7db', fontWeight: 750 }}>od czego zacząć w najbliższe 3 dni.</strong>
           </p>
           <button
             onClick={() => {

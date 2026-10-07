@@ -22,7 +22,7 @@ test('public entry stays diagnostic while hot lane remains available by explicit
   assert.match(page, /fast_fit_to_nabor/);
   assert.match(page, /route: 'diagnostic'/);
   assert.doesNotMatch(page, /Wiem, że chcę działać\. Sprawdźmy, czy zakres pasuje/);
-  assert.match(page, /Ile dni po weekendzie <em[^>]*>wracasz do siebie\?<\/em>/);
+  assert.match(page, /Ile dni w tygodniu <em[^>]*>jesteś w formie\?<\/em>/);
   assert.match(page, /Sprawdzam swój tydzień/);
   assert.doesNotMatch(page, /michal-portrait\.jpg/);
 });

@@ -60,3 +60,8 @@ Gałąź `copy/hero-wracasz-do-siebie-20261007` od `202616d`. Świadomie zastęp
 | Meta / OG | stare hero | nowe H1 + podtytuł | Spójność wejścia z linku. |
 
 Otwarte defekty z komisji: brak proofu w hero (19/40 tylko niżej), ryzyko „nie o mnie” dla HiT bez problemu z weekendem. Danych z ruchu jeszcze nie ma: porównać CTR startu diagnozy przed/po.
+
+### 2026-10-07 (poprawka tego samego dnia) · H1 bez weekendu
+
+H1 → „Ile dni w tygodniu *jesteś w formie?*”, podtytuł „…co w Twoim tygodniu najbardziej Ci ją zabiera i od czego zacząć w najbliższe 3 dni.”
+Dlaczego: H1 jest wspólny dla drzwi general/hit/th2 i tematów (`?topic=sen` dawało „weekend” + „Zaczynamy od tematu: sen”). Weekend pada w wyniku tylko temu, kto tak odpowiedział (`fracture-engine.ts:201`). Mechanizm z komisji zostaje: krótkie pytanie, odbiorca sam liczy, odpowiedź „7” jest możliwa. Podtytuł skrócony, „ciągnie formę w dół” (uwaga komisji: książkowe) wycięte. Test v28 pilnuje, że H1 nie zawiera „weekend”.

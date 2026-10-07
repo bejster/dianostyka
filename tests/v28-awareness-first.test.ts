@@ -22,10 +22,14 @@ test('release jest zawersjonowany 3.0.0', () => {
 
 test('cold entry sells an awareness gap, not a weekend audit', () => {
   assert.ok(coldEntry, "cold entry block (phase === 'intro') not found");
-  assert.match(coldEntry, /Ile dni po weekendzie <em[^>]*>wracasz do siebie\?<\/em>/);
+  assert.match(coldEntry, /Ile dni w tygodniu <em[^>]*>jesteś w formie\?<\/em>/);
   assert.match(coldEntry, /Sprawdzam swój tydzień/);
-  // H1 pyta o weekend, ale podtytul trzyma zakres calego tygodnia.
   assert.match(coldEntry, /w Twoim tygodniu/);
+  // 2026-10-07: H1 jest wspolny dla drzwi general/hit/th2 i tematow (sen, praca...), wiec nie zaklada weekendu.
+  // Weekend pada dopiero w wyniku, gdy ktos tak odpowiedzial (fracture-engine).
+  const h1 = coldEntry.match(/<h1[\s\S]*?<\/h1>/)?.[0] ?? '';
+  assert.ok(h1, 'h1 not found in cold entry');
+  assert.doesNotMatch(h1, /weekend/i, 'H1 presupposes weekend for every door');
   // 2026-10-07: zimny ruch nie dostaje z gory zalozonej porazki.
   assert.doesNotMatch(coldEntry, /znowu to samo|kurwa/);
   assert.doesNotMatch(coldEntry, /audyt weekendu|tylko weekend|sam weekend/i, 'weekend-only framing leaked back into the cold entry');
