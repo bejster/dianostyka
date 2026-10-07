@@ -37,3 +37,14 @@ test('publiczny link TH2 ma czysty slug i ukrywa techniczne parametry', () => {
   assert.match(PAGE, /window\.location\.pathname === '\/rozjazd'/);
   assert.match(PAGE, /\?door=th2&src=organic&campaign=th2_bio_v1/);
 });
+
+test('/rozjazd ma własny title i OG, nie dziedziczy hero general', () => {
+  assert.match(CLEAN_ROUTE, /export const metadata/);
+  assert.match(CLEAN_ROUTE, /Gdzie pęka Twój tydzień\?/);
+  assert.match(CLEAN_ROUTE, /canonical: 'https:\/\/diagnostyka\.talerzihantle\.com\/rozjazd'/);
+  assert.match(CLEAN_ROUTE, /\/api\/og\?v=th2/);
+  assert.ok(!CLEAN_ROUTE.includes('Ile dni w tygodniu'), 'TH2 nie może pokazywać OG general');
+  const OG = fs.readFileSync('app/api/og/route.tsx', 'utf8');
+  assert.match(OG, /searchParams\.get\('v'\) === 'th2'/);
+  assert.match(OG, /Gdzie pęka Twój tydzień\?/);
+});

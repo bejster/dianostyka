@@ -10,6 +10,11 @@ export async function GET(req: Request) {
   const g = rawG ? rawG.slice(0, 24) : '';
   const t = (searchParams.get('t') || '').slice(0, 48);
   const s = (searchParams.get('s') || '').slice(0, 3);
+  // v=th2: podgląd linku /rozjazd (TH2). Ten sam układ, inny nagłówek i oś tygodnia.
+  const th2 = searchParams.get('v') === 'th2';
+  const headline = th2 ? 'Gdzie pęka Twój tydzień?' : 'Ile dni w tygodniu jesteś w formie?';
+  const steps = th2 ? ['TYDZIEŃ', 'PIĄTEK', 'WEEKEND'] : ['RANO', 'PRACA', 'PO PRACY'];
+  const subline = th2 ? 'Zobacz, gdzie zaczyna się rozjazd.' : 'Zobacz, co najbardziej Ci ją zabiera.';
 
   if (!g) {
     return new ImageResponse(
@@ -32,11 +37,11 @@ export async function GET(req: Request) {
           </div>
 
           <div style={{ display: 'flex', marginTop: 30, maxWidth: 1030, fontFamily: 'Georgia, serif', fontSize: 70, lineHeight: 1.02 }}>
-            Ile dni w tygodniu jesteś w formie?
+            {headline}
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', marginTop: 42, width: '100%' }}>
-            {['RANO', 'PRACA', 'PO PRACY'].map((label, i) => (
+            {steps.map((label, i) => (
               <div key={label} style={{ display: 'flex', alignItems: 'center', flex: 1 }}>
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                   <div style={{ display: 'flex', width: 36, height: 36, borderRadius: 999, alignItems: 'center', justifyContent: 'center', border: '2px solid #b99a4a', color: '#f2d98f', background: '#15130e', fontFamily: 'Georgia, serif', fontSize: 30 }}>
@@ -55,7 +60,7 @@ export async function GET(req: Request) {
 
           <div style={{ display: 'flex', marginTop: 34, justifyContent: 'space-between', alignItems: 'center', gap: 30 }}>
             <div style={{ display: 'flex', fontSize: 25, color: '#a49e92' }}>
-              Zobacz, co najbardziej Ci ją zabiera.
+              {subline}
             </div>
             <div style={{ display: 'flex', fontSize: 20, color: '#c8a84e', fontWeight: 800 }}>
               5 MIN · WYNIK OD RAZU
