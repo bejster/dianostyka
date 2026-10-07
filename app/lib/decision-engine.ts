@@ -293,6 +293,27 @@ export type HypothesisState = 'wzmocniona' | 'oslabiona' | 'nierozstrzygnieta';
 
 export interface ReturnRecord { v: string; at: number; upstream: Lever; experimentId: string; prediction: string }
 
+// Rekord z localStorage jest niezaufany. Tylko wlasne klucze LEVER_LABEL (operator `in` przepuszczal
+// __proto__/constructor: bialy ekran albo pusta etykieta), czas jako skonczona liczba, pola tekstowe przyciete.
+export function parseReturnRecord(raw: string | null): ReturnRecord | null {
+  if (!raw) return null;
+  try {
+    const r = JSON.parse(raw) as Partial<Record<keyof ReturnRecord, unknown>> | null;
+    if (!r || typeof r !== 'object') return null;
+    if (typeof r.upstream !== 'string' || !Object.prototype.hasOwnProperty.call(LEVER_LABEL, r.upstream)) return null;
+    if (typeof r.at !== 'number' || !Number.isFinite(r.at)) return null;
+    return {
+      v: typeof r.v === 'string' ? r.v.slice(0, 16) : '',
+      at: r.at,
+      upstream: r.upstream as Lever,
+      experimentId: typeof r.experimentId === 'string' ? r.experimentId.slice(0, 16) : '',
+      prediction: typeof r.prediction === 'string' ? r.prediction.slice(0, 32) : '',
+    };
+  } catch {
+    return null;
+  }
+}
+
 export function hypothesisFrom(outcome: ReturnOutcome): HypothesisState {
   return outcome === 'pomoglo' ? 'wzmocniona' : outcome === 'nic' ? 'oslabiona' : 'nierozstrzygnieta';
 }

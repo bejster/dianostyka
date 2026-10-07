@@ -15,7 +15,7 @@ import ResultExperience from '../components/ResultExperience';
 import { computeEvidenceReceipts, computeLoop, computeWhyRepeats, computeCostFacts, BREAK_PHRASE } from '../lib/fracture-engine';
 import { selectExperiment, type SelectorInput } from '../lib/experiment-bank';
 import { routeDecision } from '../lib/result-router-v3';
-import { buildDecision, hypothesisFrom, daysSince, LEVER_LABEL, RETURN_KEY, type ReturnRecord, type ReturnOutcome, type HypothesisState } from '../lib/decision-engine';
+import { buildDecision, hypothesisFrom, daysSince, parseReturnRecord, LEVER_LABEL, RETURN_KEY, type ReturnRecord, type ReturnOutcome, type HypothesisState } from '../lib/decision-engine';
 import { ASSESSMENT_VERSION } from '../lib/assessment-config';
 import { buildLeadBrief } from '../lib/lead-brief';
 import { computeAwarenessGap } from '../lib/awareness-gap';
@@ -103,9 +103,8 @@ export default function DiagnozaPage() {
       queueMicrotask(() => { setDoor(d); if (tp) setTopic(tp); });
       // 7-dniowa petla: rekord z poprzedniego wyniku, pokazany najwczesniej po 3 dniach albo z ?return=1.
       try {
-        const raw = localStorage.getItem(RETURN_KEY);
-        const rec = raw ? (JSON.parse(raw) as ReturnRecord) : null;
-        if (rec && typeof rec.upstream === 'string' && rec.upstream in LEVER_LABEL && typeof rec.at === 'number' && (daysSince(rec.at, Date.now()) >= 3 || sp.get('return') === '1')) {
+        const rec = parseReturnRecord(localStorage.getItem(RETURN_KEY));
+        if (rec && (daysSince(rec.at, Date.now()) >= 3 || sp.get('return') === '1')) {
           queueMicrotask(() => setReturning(rec));
         }
       } catch { /* uszkodzony rekord = brak petli */ }
@@ -325,24 +324,16 @@ export default function DiagnozaPage() {
             {door === 'th2' ? (
               <>Weekend nie zawsze jest problemem. Często tylko pokazuje, <em style={{ color: '#e8cc80', fontStyle: 'italic' }}>gdzie tydzień pęka.</em></>
             ) : (
-              <>W poniedziałek ogarniasz. W piątek patrzysz na tydzień i myślisz: <em style={{ color: '#e8cc80', fontStyle: 'italic' }}>„kurwa, znowu to samo”.</em></>
+              <>Ile dni w tygodniu <em style={{ color: '#e8cc80', fontStyle: 'italic' }}>jesteś w formie?</em></>
             )}
           </h1>
           <p style={{ fontSize: 15.8, color: '#c4bdb0', lineHeight: 1.55, margin: '0 0 16px', maxWidth: 438 }}>
-            {topic && <>Wchodzisz od tematu: {TOPIC_LABEL[topic]}. Sprawdzimy go na tle całego tygodnia. </>}
             {door === 'th2' ? (
-              <>Sprawdzimy sen, energię, apetyt, stres, trening i powrót po weekendzie. Na końcu zobaczysz <strong style={{ color: '#ece7db', fontWeight: 750 }}>gdzie problem naprawdę się zaczyna, co płacisz za niego później i który jeden ruch warto sprawdzić najpierw.</strong></>
+              <>{topic && <>Wchodzisz od tematu: {TOPIC_LABEL[topic]}. Sprawdzimy go na tle całego tygodnia. </>}Sprawdzimy sen, energię, apetyt, stres, trening i powrót po weekendzie. Na końcu zobaczysz <strong style={{ color: '#ece7db', fontWeight: 750 }}>gdzie problem naprawdę się zaczyna, co płacisz za niego później i który jeden ruch warto sprawdzić najpierw.</strong></>
             ) : (
-              <>Przejdziesz przez robotę, jedzenie, sen, trening i weekend. Na końcu zobaczysz <strong style={{ color: '#ece7db', fontWeight: 750 }}>gdzie dziś tracisz najwięcej, co ma największy zapas i który jeden ruch warto sprawdzić najpierw.</strong></>
+              <>{topic && <>Zaczynamy od tematu: {TOPIC_LABEL[topic]}. </>}Zobacz, co w Twoim tygodniu najbardziej Ci ją zabiera i <strong style={{ color: '#ece7db', fontWeight: 750 }}>od czego zacząć w najbliższe 3 dni.</strong></>
             )}
           </p>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,minmax(0,1fr))', gap: 7, margin: '0 0 17px', width: '100%' }}>
-            {['GDZIE TRACISZ', 'NAJWIĘKSZY ZAPAS', 'PIERWSZY RUCH 72H'].map((label, i) => (
-              <div key={label} style={{ minWidth: 0, padding: '9px 6px', border: '1px solid #29272a', borderRadius: 10, background: 'rgba(255,255,255,.018)', textAlign: 'center' }}>
-                <span style={{ display: 'block', fontFamily: "'JetBrains Mono', ui-monospace, monospace", fontSize: 7.1, letterSpacing: .62, color: i === 1 ? GOLD : '#8f887c', lineHeight: 1.35, overflowWrap: 'anywhere' }}>{label}</span>
-              </div>
-            ))}
-          </div>
           <button
             onClick={() => {
               registerContext({ mode: 'diagnostic' });
@@ -353,10 +344,10 @@ export default function DiagnozaPage() {
             }}
             style={{ width: '100%', padding: '18px 17px', borderRadius: 14, border: 'none', cursor: 'pointer', background: `linear-gradient(135deg, ${GOLD}, #8a7535)`, color: BG, fontWeight: 850, fontSize: 16, letterSpacing: 0.15, boxShadow: '0 16px 38px rgba(200,168,78,.18)' }}
           >
-            {door === 'th2' ? <>Pokaż mi, gdzie zaczyna się rozjazd &rarr;</> : <>Pokaż mi, co ruszyć najpierw &rarr;</>}
+            {door === 'th2' ? <>Pokaż mi, gdzie zaczyna się rozjazd &rarr;</> : <>Sprawdzam swój tydzień &rarr;</>}
           </button>
           <p style={{ fontFamily: "'JetBrains Mono', ui-monospace, monospace", fontSize: 9.8, letterSpacing: 1.15, color: '#777169', lineHeight: 1.45, margin: '11px 0 0', textAlign: 'center', textTransform: 'uppercase' }}>
-            5 min · bez maila · wynik od razu
+            5 minut · bez maila · wynik od razu
           </p>
         </div>
       </div>

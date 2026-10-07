@@ -497,6 +497,7 @@ export default function SingleQuestionFlow({ onComplete, initialAnswers }: Props
                   key={opt.id}
                   className="mrow"
                   data-on={isSelected ? '1' : '0'}
+                  aria-pressed={isSelected}
                   style={{ '--i': i } as React.CSSProperties}
                   onClick={() => handleSingleSelect(opt)}
                 >
@@ -586,6 +587,7 @@ export default function SingleQuestionFlow({ onComplete, initialAnswers }: Props
                   key={opt.id}
                   className="mrow"
                   data-on={isSelected ? '1' : '0'}
+                  aria-pressed={isSelected}
                   style={{ '--i': i } as React.CSSProperties}
                   disabled={blocked}
                   onClick={() => handleMultiChipToggle(opt.id)}

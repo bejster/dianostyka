@@ -458,7 +458,7 @@ export default function ResultExperience({
         <section className="rx-beat" data-beat="fracture">
           <div className="rx-kick">Pierwszy moment do sprawdzenia</div>
           <h2 className="rx-h2">{breakPhrase}</h2>
-          <p className="rx-sub" style={{ marginBottom: 22 }}>Te odpowiedzi układają się w jeden wzorzec, który wraca co tydzień. W Metodzie 168 ten pierwszy moment nazywam Punktem Pęknięcia. To nie jest etykieta dla samej etykiety. To miejsce, od którego sprawdzam, czy reszta tygodnia w ogóle zaczyna reagować.</p>
+          <p className="rx-sub" style={{ marginBottom: 22 }}>Te odpowiedzi układają się w jeden wzorzec, który wraca co tydzień. W Metodzie 168 ten pierwszy moment nazywam Punktem Pęknięcia i od niego sprawdzam, czy reszta tygodnia w ogóle zaczyna reagować.</p>
           <div className="rx-breakviz">
             <div className="rx-breakviz-now">Pierwszy sygnał w odpowiedziach: <strong>{breakPos.label}</strong></div>
             <div className="rx-breakviz-line"><span style={{ left: `${breakPos.pct}%` }} /></div>

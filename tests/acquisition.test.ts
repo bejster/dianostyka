@@ -63,7 +63,9 @@ test('Nabor URL keeps product routing while carrying exact content attribution',
 
 test('current Diagnostyka 3.0 carries acquisition through both Nabor exits only', () => {
   const source = fs.readFileSync(path.join(process.cwd(), 'app/diagnoza/page.tsx'), 'utf8');
-  assert.match(source, /captureAcquisition\(window\.location\.search\)/);
+  // /rozjazd (TH2) podstawia czysty query; poza nim atrybucja nadal idzie z window.location.search.
+  assert.match(source, /captureAcquisition\(effectiveSearch\)/);
+  assert.match(source, /: window\.location\.search;/);
   assert.match(source, /withAcquisition\(\s*'https:\/\/nabor\.talerzihantle\.com\/\?from=diag&mode=fast_fit#prowadzenie'/);
   assert.match(source, /const naborUrl = withAcquisition\(naborBaseUrl, acquisition\)/);
   assert.doesNotMatch(source, /score\([^\n]*acquisition|routeDecision\([^\n]*acquisition|classifyPremiumFit\([^\n]*acquisition/);
