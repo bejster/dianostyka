@@ -75,8 +75,12 @@ export default function DiagnozaPage() {
   useEffect(() => {
     let m: string | null = null;
     try {
-      const sp = new URLSearchParams(window.location.search);
-      const capturedAcquisition = captureAcquisition(window.location.search);
+      const isTh2CleanEntry = window.location.pathname === '/rozjazd';
+      const effectiveSearch = isTh2CleanEntry
+        ? '?door=th2&src=organic&campaign=th2_bio_v1'
+        : window.location.search;
+      const sp = new URLSearchParams(effectiveSearch);
+      const capturedAcquisition = captureAcquisition(effectiveSearch);
       queueMicrotask(() => setAcquisition(capturedAcquisition));
       m = sp.get('mode');
       // P1-1: atrybucja settera — whitelist + walidacja, WYŁĄCZNIE do analytics (nigdy do scoringu/wyniku/fast-fit).
