@@ -322,7 +322,7 @@ export default function DiagnozaPage() {
           )}
           <h1 style={{ fontFamily: "'Instrument Serif', Georgia, serif", fontSize: 'clamp(35px, 9.1vw, 58px)', lineHeight: 1.0, fontWeight: 400, color: '#fff', margin: '0 0 16px', letterSpacing: '-0.02em', maxWidth: '100%', overflowWrap: 'break-word' }}>
             {door === 'th2' ? (
-              <>Weekend nie zawsze jest problemem. Często tylko pokazuje, <em style={{ color: '#e8cc80', fontStyle: 'italic' }}>gdzie tydzień pęka.</em></>
+              <>Ile dni wracasz do siebie <em style={{ color: '#e8cc80', fontStyle: 'italic' }}>po weekendzie?</em></>
             ) : (
               <>Ile dni w tygodniu <em style={{ color: '#e8cc80', fontStyle: 'italic' }}>jesteś w formie?</em></>
             )}
