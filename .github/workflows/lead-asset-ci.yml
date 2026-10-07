@@ -1,0 +1,50 @@
+name: Lead Asset CI
+
+on:
+  pull_request:
+    paths:
+      - 'app/api/lead-notify/**'
+      - 'app/lib/lead-operator-decision.ts'
+      - 'app/lib/premium-fit.ts'
+      - 'app/diagnoza/**'
+      - 'tests/lead-operator-decision.test.ts'
+      - 'tests/premium-icp-patch-v1.test.ts'
+      - 'tests/th2-bio-bridge.test.ts'
+      - 'docs/LEAD_DECISION_ENGINE.md'
+      - 'docs/TH2_BIO_TO_DIAGNOSTYKA_RUNBOOK.md'
+      - 'docs/TALERZOWNIK_LEAD_ASSET_ENTRY.md'
+      - 'package.json'
+      - 'package-lock.json'
+  push:
+    branches:
+      - 'release/th2-bio-bridge-v2-20261003'
+    paths:
+      - 'app/api/lead-notify/**'
+      - 'app/lib/lead-operator-decision.ts'
+      - 'app/lib/premium-fit.ts'
+      - 'app/diagnoza/**'
+      - 'tests/lead-operator-decision.test.ts'
+      - 'tests/premium-icp-patch-v1.test.ts'
+      - 'tests/th2-bio-bridge.test.ts'
+      - 'docs/LEAD_DECISION_ENGINE.md'
+      - 'docs/TH2_BIO_TO_DIAGNOSTYKA_RUNBOOK.md'
+      - 'docs/TALERZOWNIK_LEAD_ASSET_ENTRY.md'
+      - 'package.json'
+      - 'package-lock.json'
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run test:lead
+      - run: npm test
+      - run: npx tsc --noEmit
+      - run: npx eslint app/api/lead-notify/route.ts app/lib/lead-operator-decision.ts tests/lead-operator-decision.test.ts tests/premium-icp-patch-v1.test.ts tests/th2-bio-bridge.test.ts
+      - run: npx next build

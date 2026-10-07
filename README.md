@@ -1,3 +1,32 @@
+# Diagnostyka 168
+
+Canonical release branch: `release/th2-bio-bridge-v2-20261003`
+
+## Operator docs
+Before changing the TH2/HiT handoff or Telegram lead flow, read:
+- `docs/TH2_BIO_TO_DIAGNOSTYKA_RUNBOOK.md`
+- `docs/LEAD_DECISION_ENGINE.md`
+- `docs/TALERZOWNIK_LEAD_ASSET_ENTRY.md`
+
+Fast regression gate:
+```bash
+npm run test:lead
+```
+
+Full Lead Asset gate:
+```bash
+npm run check:lead-asset
+```
+
+Talerzownik preflight:
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/talerzownik-lead-asset-preflight.ps1
+```
+
+Production cutover is intentionally separate from merge/build. Follow the Talerzownik handoff and atomic cutover order before changing the production domain, Make mapping or Instagram bio.
+
+---
+
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
 ## Getting Started
