@@ -32,7 +32,7 @@ export async function GET(req: Request) {
           </div>
 
           <div style={{ display: 'flex', marginTop: 30, maxWidth: 1030, fontFamily: 'Georgia, serif', fontSize: 70, lineHeight: 1.02 }}>
-            W poniedziałek ogarniasz. W piątek znowu to samo.
+            Ile dni po weekendzie wracasz do siebie?
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', marginTop: 42, width: '100%' }}>
@@ -55,7 +55,7 @@ export async function GET(req: Request) {
 
           <div style={{ display: 'flex', marginTop: 34, justifyContent: 'space-between', alignItems: 'center', gap: 30 }}>
             <div style={{ display: 'flex', fontSize: 25, color: '#a49e92' }}>
-              Zobacz, gdzie tracisz najwięcej i co ruszyć najpierw.
+              Zobacz, co najbardziej ciągnie formę w dół.
             </div>
             <div style={{ display: 'flex', fontSize: 20, color: '#c8a84e', fontWeight: 800 }}>
               5 MIN · WYNIK OD RAZU

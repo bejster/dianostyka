@@ -15,13 +15,12 @@ test('contact is required only after explicit help/coaching intent', () => {
 });
 
 test('cold entry preserves curiosity and does not expose the hot sales branch', () => {
-  assert.match(page, /W poniedziałek ogarniasz\. W piątek patrzysz na tydzień i myślisz/);
-  assert.match(page, /gdzie dziś tracisz najwięcej, co ma największy zapas i który jeden ruch warto sprawdzić najpierw/);
-  assert.match(page, /GDZIE TRACISZ/);
-  assert.match(page, /NAJWIĘKSZY ZAPAS/);
-  assert.match(page, /PIERWSZY RUCH 72H/);
-  // Curiosity jest w scenie i w obietnicy spersonalizowanego priorytetu, nie w martwej dekoracji.
-  assert.match(page, /Pokaż mi, co ruszyć najpierw/);
+  assert.match(page, /Ile dni po weekendzie <em[^>]*>wracasz do siebie\?<\/em>/);
+  assert.match(page, /Zobacz, co w Twoim tygodniu najbardziej ciągnie formę w dół i <strong[^>]*>od czego zacząć w najbliższe 3 dni\./);
+  // 2026-10-07: chipy wyciete, kalki (headroom, 72H) i dublowaly podtytul.
+  assert.doesNotMatch(page, /NAJWIĘKSZY ZAPAS|PIERWSZY RUCH 72H|GDZIE TRACISZ/);
+  // Curiosity jest w pytaniu, na ktore odpowiada wynik, nie w martwej dekoracji.
+  assert.match(page, /Sprawdzam swój tydzień &rarr;/);
   assert.doesNotMatch(page, /michal-portrait\.jpg/);
   assert.doesNotMatch(page, /Wiem, że chcę działać/);
   assert.match(flow, /EXCLUDED_COLD_IDS = new Set\(\['alcohol_intake'\]\)/);

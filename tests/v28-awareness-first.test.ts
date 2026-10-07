@@ -22,9 +22,12 @@ test('release jest zawersjonowany 3.0.0', () => {
 
 test('cold entry sells an awareness gap, not a weekend audit', () => {
   assert.ok(coldEntry, "cold entry block (phase === 'intro') not found");
-  assert.match(coldEntry, /W poniedziałek ogarniasz\. W piątek patrzysz na tydzień i myślisz/);
-  assert.match(coldEntry, /Pokaż mi, co ruszyć najpierw/);
-  assert.match(coldEntry, /robotę, jedzenie, sen, trening i weekend/);
+  assert.match(coldEntry, /Ile dni po weekendzie <em[^>]*>wracasz do siebie\?<\/em>/);
+  assert.match(coldEntry, /Sprawdzam swój tydzień/);
+  // H1 pyta o weekend, ale podtytul trzyma zakres calego tygodnia.
+  assert.match(coldEntry, /w Twoim tygodniu/);
+  // 2026-10-07: zimny ruch nie dostaje z gory zalozonej porazki.
+  assert.doesNotMatch(coldEntry, /znowu to samo|kurwa/);
   assert.doesNotMatch(coldEntry, /audyt weekendu|tylko weekend|sam weekend/i, 'weekend-only framing leaked back into the cold entry');
   // rownie zakazane: obiecywanie diagnozy hormonalnej albo wellness-owego jezyka na wejsciu
   assert.doesNotMatch(coldEntry, /hormon|testosteron|kortyzol|wellness|dobrostan/i);

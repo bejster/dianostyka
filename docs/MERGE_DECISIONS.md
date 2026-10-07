@@ -47,3 +47,16 @@ Wpływają na wynik jako modyfikatory istniejących wierszy, bez ósmego wiersza
 
 ## Weto: ZAMKNIĘTE
 Michał 26.09 oddał rozstrzygnięcie („rozwiąż MERGE_DECISIONS.md”), więc wiersze powyżej obowiązują jako decyzja. Freeze PROD bez zmian. Kolejny krok to release przez broker z SHA potomka `5c161c8`, dopiero po jawnym GO.
+
+## 2026-10-07 · Hero C „Ile dni po weekendzie wracasz do siebie?”
+
+Gałąź `copy/hero-wracasz-do-siebie-20261007` od `202616d`. Świadomie zastępuje hero „W poniedziałek ogarniasz…” (wiersz „Hero” wyżej).
+
+| Element | Było | Jest | Dlaczego |
+|---|---|---|---|
+| H1 | „W poniedziałek ogarniasz. W piątek… »znowu to samo«” | „Ile dni po weekendzie *wracasz do siebie?*” | Michał: w piątek nikt tak nie myśli, a hero zakładało, że tydzień się sypie. Pytanie daje odbiorcy samemu policzyć koszt, bez etykiety. Komisja copy (6 soczewek): C 7,7 vs B 6,0 vs A 5,3. |
+| Podtytuł | lista obszarów + chipy GDZIE TRACISZ / NAJWIĘKSZY ZAPAS / PIERWSZY RUCH 72H | „Zobacz, co w Twoim tygodniu najbardziej ciągnie formę w dół i od czego zacząć w najbliższe 3 dni.” | Chipy były kalką z angielskiego (headroom, next move). Zakres tygodnia trzyma podtytuł, więc intencja testu v28 (awareness, nie audyt weekendu) zostaje. |
+| CTA | „Pokaż mi, co ruszyć najpierw” | „Sprawdzam swój tydzień →” | Pierwsza osoba, czasownik, zakres tygodnia. |
+| Meta / OG | stare hero | nowe H1 + podtytuł | Spójność wejścia z linku. |
+
+Otwarte defekty z komisji: brak proofu w hero (19/40 tylko niżej), ryzyko „nie o mnie” dla HiT bez problemu z weekendem. Danych z ruchu jeszcze nie ma: porównać CTR startu diagnozy przed/po.
