@@ -146,9 +146,9 @@ test('wynik: odczyt decyzji w pierwszym kadrze, petla powrotu zapisuje tylko kat
   assert.match(r, /trackDiag\('experiment_accepted'/);
 });
 
-test('intro: drzwi zmieniaja tylko kicker, petla powrotu ma trzy odpowiedzi i trzy stany', () => {
+test('intro: drzwi zmieniaja copy wejscia, petla powrotu ma trzy odpowiedzi i trzy stany', () => {
   const pg = readFileSync('app/diagnoza/page.tsx', 'utf8');
-  assert.match(pg, /pick\('door', \['hit', 'th2'\]\)/);
+  assert.match(pg, /resolveEntryDoor\(sp, window.location.pathname\)/);
   assert.match(pg, /ctx\.entry_variant = /);
   assert.match(pg, /\['pomoglo', 'Pomogło'\], \['czesciowo', 'Częściowo'\], \['nic', 'Nic'\]/);
   for (const ev of ['return_7d', 'hypothesis_strengthened', 'hypothesis_weakened', 'hypothesis_unresolved']) assert.ok(pg.includes(ev), ev);
