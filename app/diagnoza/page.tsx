@@ -21,14 +21,14 @@ import { buildLeadBrief } from '../lib/lead-brief';
 import { computeAwarenessGap } from '../lib/awareness-gap';
 import { classifyPremiumFit } from '../lib/premium-fit';
 import { Atmosphere } from './atmosphere';
+import { resolveEntryDoor, ENTRY_COPY } from '../lib/entry-copy';
 
 const GOLD = '#c8a84e';
 const BG = '#08080a';
 
 type Phase = 'intro' | 'intake' | 'teaser';
 
-// FRONT DOORS 3.0: jedno wejscie, jeden silnik. Drzwi zmieniaja wylacznie kicker i etykiete analityki.
-// Naglowek, pytania i wynik sa te same, zeby porownanie drzwi mierzylo wejscie, a nie inny produkt.
+// Front doors share one engine. Profile changes entry copy and analytics only.
 const DOOR_KICKER: Record<string, string> = {
   general: 'Diagnostyka 168 · 5 min · wynik od razu',
   hit: 'Diagnostyka 168 · praca, dom i forma · 5 min',
@@ -96,9 +96,9 @@ export default function DiagnozaPage() {
       if (src) ctx.src = src;
       if (lane) ctx.lane = lane;
       if (campaign) ctx.campaign = campaign;
-      const d = pick('door', ['hit', 'th2']) || 'general';
+      const d = resolveEntryDoor(sp, window.location.pathname);
       const tp = pick('topic', Object.keys(TOPIC_LABEL));
-      ctx.entry_copy = d === 'th2' ? 'th2_bridge_v1' : 'human_leverage_v2';
+      ctx.entry_copy = 'jj_entry_v3';
       ctx.entry_variant = tp ? `${d}_${tp}` : d;
       queueMicrotask(() => { setDoor(d); if (tp) setTopic(tp); });
       // 7-dniowa petla: rekord z poprzedniego wyniku, pokazany najwczesniej po 3 dniach albo z ?return=1.
@@ -321,18 +321,11 @@ export default function DiagnozaPage() {
             </div>
           )}
           <h1 style={{ fontFamily: "'Instrument Serif', Georgia, serif", fontSize: 'clamp(35px, 9.1vw, 58px)', lineHeight: 1.0, fontWeight: 400, color: '#fff', margin: '0 0 16px', letterSpacing: '-0.02em', maxWidth: '100%', overflowWrap: 'break-word' }}>
-            {door === 'th2' ? (
-              <>Weekend nie zawsze jest problemem. Często tylko pokazuje, <em style={{ color: '#e8cc80', fontStyle: 'italic' }}>gdzie tydzień pęka.</em></>
-            ) : (
-              <>Ile dni w tygodniu <em style={{ color: '#e8cc80', fontStyle: 'italic' }}>jesteś w formie?</em></>
-            )}
+            {ENTRY_COPY[door as keyof typeof ENTRY_COPY].headline}
           </h1>
           <p style={{ fontSize: 15.8, color: '#c4bdb0', lineHeight: 1.55, margin: '0 0 16px', maxWidth: 438 }}>
-            {door === 'th2' ? (
-              <>{topic && <>Wchodzisz od tematu: {TOPIC_LABEL[topic]}. Sprawdzimy go na tle całego tygodnia. </>}Sprawdzimy sen, energię, apetyt, stres, trening i powrót po weekendzie. Na końcu zobaczysz <strong style={{ color: '#ece7db', fontWeight: 750 }}>gdzie problem naprawdę się zaczyna, co płacisz za niego później i który jeden ruch warto sprawdzić najpierw.</strong></>
-            ) : (
-              <>{topic && <>Zaczynamy od tematu: {TOPIC_LABEL[topic]}. </>}Zobacz, co w Twoim tygodniu najbardziej Ci ją zabiera i <strong style={{ color: '#ece7db', fontWeight: 750 }}>od czego zacząć w najbliższe 3 dni.</strong></>
-            )}
+            {topic && <>Sprawdzisz też temat: {TOPIC_LABEL[topic]}. </>}{ENTRY_COPY[door as keyof typeof ENTRY_COPY].body}
+            {' '}<strong style={{ color: '#ece7db', fontWeight: 750 }}>Porównasz swoje podejrzenie z resztą odpowiedzi i dostaniesz jeden ruch do sprawdzenia przez 3 dni.</strong>
           </p>
           <button
             onClick={() => {
@@ -344,7 +337,7 @@ export default function DiagnozaPage() {
             }}
             style={{ width: '100%', padding: '18px 17px', borderRadius: 14, border: 'none', cursor: 'pointer', background: `linear-gradient(135deg, ${GOLD}, #8a7535)`, color: BG, fontWeight: 850, fontSize: 16, letterSpacing: 0.15, boxShadow: '0 16px 38px rgba(200,168,78,.18)' }}
           >
-            {door === 'th2' ? <>Pokaż mi, gdzie zaczyna się rozjazd &rarr;</> : <>Sprawdzam swój tydzień &rarr;</>}
+            {ENTRY_COPY[door as keyof typeof ENTRY_COPY].cta} &rarr;
           </button>
           <p style={{ fontFamily: "'JetBrains Mono', ui-monospace, monospace", fontSize: 9.8, letterSpacing: 1.15, color: '#777169', lineHeight: 1.45, margin: '11px 0 0', textAlign: 'center', textTransform: 'uppercase' }}>
             5 minut · bez maila · wynik od razu

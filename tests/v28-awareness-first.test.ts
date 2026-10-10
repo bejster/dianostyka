@@ -20,23 +20,15 @@ test('release jest zawersjonowany 3.0.0', () => {
   assert.match(cfg, /ASSESSMENT_VERSION = '3\.0\.0'/);
 });
 
-test('cold entry sells an awareness gap, not a weekend audit', () => {
-  assert.ok(coldEntry, "cold entry block (phase === 'intro') not found");
-  assert.match(coldEntry, /Ile dni w tygodniu <em[^>]*>jesteś w formie\?<\/em>/);
-  assert.match(coldEntry, /Sprawdzam swój tydzień/);
-  assert.match(coldEntry, /w Twoim tygodniu/);
-  // 2026-10-07: H1 drzwi general/hit i tematow (sen, praca...) nie zaklada weekendu.
-  // Weekend pada dopiero w wyniku, gdy ktos tak odpowiedzial (fracture-engine). TH2 (/rozjazd) ma wlasny H1 o weekendzie.
-  const h1 = coldEntry.match(/<h1[\s\S]*?<\/h1>/)?.[0] ?? '';
-  assert.ok(h1, 'h1 not found in cold entry');
-  const generalH1 = h1.split(') : (')[1] ?? h1;
-  assert.match(generalH1, /jesteś w formie/);
-  assert.doesNotMatch(generalH1, /weekend/i, 'H1 presupposes weekend for every door');
-  // 2026-10-07: zimny ruch nie dostaje z gory zalozonej porazki.
-  assert.doesNotMatch(coldEntry, /znowu to samo|kurwa/);
-  assert.doesNotMatch(coldEntry, /audyt weekendu|tylko weekend|sam weekend/i, 'weekend-only framing leaked back into the cold entry');
-  // rownie zakazane: obiecywanie diagnozy hormonalnej albo wellness-owego jezyka na wejsciu
-  assert.doesNotMatch(coldEntry, /hormon|testosteron|kortyzol|wellness|dobrostan/i);
+test('cold entry uses profile framing while general visitors get a neutral question', () => {
+  assert.ok(coldEntry, 'intro block not found');
+  assert.match(coldEntry, /ENTRY_COPY/);
+  const copy = fs.readFileSync(path.join(root, 'app/lib/entry-copy.ts'), 'utf8');
+  const general = copy.match(/general: \{([\s\S]*?)\n  \}/)?.[1] ?? '';
+  assert.match(general, /Ile dni w tygodniu jesteś w formie/);
+  assert.doesNotMatch(general, /weekend|impreza|jebać|znowu/i);
+  assert.doesNotMatch(copy, /hormon|testosteron|kortyzol|wellness|dobrostan/i);
+  assert.match(coldEntry, /Porównasz swoje podejrzenie z resztą odpowiedzi/);
 });
 
 test('Punkt Pęknięcia is a payoff, never a precondition of starting', () => {

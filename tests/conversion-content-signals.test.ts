@@ -15,12 +15,12 @@ test('contact is required only after explicit help/coaching intent', () => {
 });
 
 test('cold entry preserves curiosity and does not expose the hot sales branch', () => {
-  assert.match(page, /Ile dni w tygodniu <em[^>]*>jesteś w formie\?<\/em>/);
-  assert.match(page, /Zobacz, co w Twoim tygodniu najbardziej Ci ją zabiera i <strong[^>]*>od czego zacząć w najbliższe 3 dni\./);
+  assert.match(fs.readFileSync('app/lib/entry-copy.ts', 'utf8'), /Ile dni w tygodniu jesteś w formie\?/);
+  assert.match(page, /Porównasz swoje podejrzenie z resztą odpowiedzi/);
   // 2026-10-07: chipy wyciete, kalki (headroom, 72H) i dublowaly podtytul.
   assert.doesNotMatch(page, /NAJWIĘKSZY ZAPAS|PIERWSZY RUCH 72H|GDZIE TRACISZ/);
   // Curiosity jest w pytaniu, na ktore odpowiada wynik, nie w martwej dekoracji.
-  assert.match(page, /Sprawdzam swój tydzień &rarr;/);
+  assert.match(page, /ENTRY_COPY/);
   assert.doesNotMatch(page, /michal-portrait\.jpg/);
   assert.doesNotMatch(page, /Wiem, że chcę działać/);
   assert.match(flow, /EXCLUDED_COLD_IDS = new Set\(\['alcohol_intake'\]\)/);

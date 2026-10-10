@@ -8,10 +8,8 @@ const CLEAN_ROUTE = fs.readFileSync('app/rozjazd/page.tsx', 'utf8');
 
 test('TH2 ma osobny front door, ale ten sam silnik diagnostyki', () => {
   assert.match(PAGE, /th2: 'Talerz i Hantle · 5 min · wynik od razu'/);
-  assert.match(PAGE, /door === 'th2'/);
-  assert.match(PAGE, /Weekend nie zawsze jest problemem/);
-  assert.match(PAGE, /gdzie tydzień pęka/);
-  assert.match(PAGE, /Pokaż mi, gdzie zaczyna się rozjazd/);
+  assert.match(PAGE, /resolveEntryDoor/);
+  assert.match(PAGE, /ENTRY_COPY/);
   assert.match(PAGE, /<SingleQuestionFlow onComplete=\{handleComplete\} \/>/);
 });
 
@@ -27,7 +25,7 @@ test('TH2 source idzie do CRM, operatora i dalej do naboru', () => {
 });
 
 test('TH2 zmienia framing, nie scoring ani tryb produktu', () => {
-  assert.match(PAGE, /th2_bridge_v1/);
+  assert.match(PAGE, /jj_entry_v3/);
   assert.ok(!PAGE.includes("mode: 'th2'"), 'TH2 nie może tworzyć osobnego scoringu');
   assert.match(PAGE, /human_leverage_v2/);
 });

@@ -259,10 +259,8 @@ export default function ResultExperience({
     ? 'Zapas został dziś w jednym miejscu.'
     : `Zapas został dziś w ${gaps.length === 2 ? 'dwóch miejscach' : 'trzech miejscach'}.`;
 
-  // Fakt z mojego arkusza "PODSUMOWANIE TYGODNIA": 431 cotygodniowych check-inow od 44 osob, od grudnia.
-  // Podane jako obserwacja z wlasnych danych, nie jako dowod przyczynowy i nie jako teza medyczna.
-  // Ta wiedza celowo nie powtarza niczego ze strony naboru.
-  const knowledgeLine = 'Jedna rzecz z moich check-inów, zanim pójdziesz dalej. Mam 431 cotygodniowych podsumowań od 44 osób, zbieranych od grudnia. Wychodzi z nich, że sama liczba godzin snu tłumaczy zaskakująco mało. Ludzie, którzy śpią po siedem i pół godziny, mają tygodnie od bardzo dobrych po całkiem rozjechane. Różnicę robi ocena jakości snu zestawiona z energią następnego dnia, czyli dokładnie te dwie rzeczy, które ustawia się wieczorem, a nie budzikiem.';
+  // Self-reported answers suggest a test, not a confirmed cause.
+  const knowledgeLine = 'Zaznaczone odpowiedzi pokazują, co u Ciebie występuje razem. To jeszcze nie rozstrzyga, co zaczęło problem. Dlatego niżej wybieramy jeden ruch na trzy dni: sprawdzisz, czy razem z nim zmienia się sygnał z Twojego wyniku.';
 
   // Zaproszenie w moim jezyku, nie w jezyku landing page. Bez obietnicy wyniku, bez presji,
   // z jawnym powiedzeniem, co sie stanie po wyslaniu formularza.
