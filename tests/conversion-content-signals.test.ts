@@ -15,8 +15,9 @@ test('contact is required only after explicit help/coaching intent', () => {
 });
 
 test('cold entry preserves curiosity and does not expose the hot sales branch', () => {
-  assert.match(fs.readFileSync('app/lib/entry-copy.ts', 'utf8'), /Ile dni w tygodniu jesteś w formie\?/);
-  assert.match(page, /Porównasz swoje podejrzenie z resztą odpowiedzi/);
+  assert.match(fs.readFileSync('app/lib/entry-copy.ts', 'utf8'), /headline: 'Wiesz, co Ci psuje formę\?'/);
+  assert.match(fs.readFileSync('app/lib/entry-copy.ts', 'utf8'), /Porównasz swoje podejrzenie z resztą odpowiedzi/);
+  assert.match(page, /entry\.proof/);
   // 2026-10-07: chipy wyciete, kalki (headroom, 72H) i dublowaly podtytul.
   assert.doesNotMatch(page, /NAJWIĘKSZY ZAPAS|PIERWSZY RUCH 72H|GDZIE TRACISZ/);
   // Curiosity jest w pytaniu, na ktore odpowiada wynik, nie w martwej dekoracji.

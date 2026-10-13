@@ -32,7 +32,7 @@ export async function GET(req: Request) {
           </div>
 
           <div style={{ display: 'flex', marginTop: 30, maxWidth: 1030, fontFamily: 'Georgia, serif', fontSize: 70, lineHeight: 1.02 }}>
-            Ile dni w tygodniu jesteś w formie?
+            Wiesz, co Ci psuje formę? Sprawdźmy, czy masz rację.
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', marginTop: 42, width: '100%' }}>

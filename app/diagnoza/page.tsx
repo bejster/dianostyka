@@ -289,6 +289,7 @@ export default function DiagnozaPage() {
   }
 
   if (phase === 'intro') {
+    const entry = ENTRY_COPY[door as keyof typeof ENTRY_COPY] ?? ENTRY_COPY.general;
     return (
       <div style={{ minHeight: '100svh', background: BG, color: '#ece7db', fontFamily: '"Inter", sans-serif', display: 'flex', flexDirection: 'column', justifyContent: 'center', padding: '28px 22px max(28px, env(safe-area-inset-bottom))', boxSizing: 'border-box', position: 'relative', overflow: 'hidden' }}>
         <Atmosphere />
@@ -321,11 +322,12 @@ export default function DiagnozaPage() {
             </div>
           )}
           <h1 style={{ fontFamily: "'Instrument Serif', Georgia, serif", fontSize: 'clamp(35px, 9.1vw, 58px)', lineHeight: 1.0, fontWeight: 400, color: '#fff', margin: '0 0 16px', letterSpacing: '-0.02em', maxWidth: '100%', overflowWrap: 'break-word' }}>
-            {ENTRY_COPY[door as keyof typeof ENTRY_COPY].headline}
+            {entry.headline}
+            {entry.accent && <>{' '}<em style={{ color: GOLD, fontStyle: 'italic' }}>{entry.accent}</em></>}
           </h1>
           <p style={{ fontSize: 15.8, color: '#c4bdb0', lineHeight: 1.55, margin: '0 0 16px', maxWidth: 438 }}>
-            {topic && <>Sprawdzisz też temat: {TOPIC_LABEL[topic]}. </>}{ENTRY_COPY[door as keyof typeof ENTRY_COPY].body}
-            {' '}<strong style={{ color: '#ece7db', fontWeight: 750 }}>Porównasz swoje podejrzenie z resztą odpowiedzi i dostaniesz jeden ruch do sprawdzenia przez 3 dni.</strong>
+            {topic && <>Sprawdzisz też temat: {TOPIC_LABEL[topic]}. </>}{entry.body}
+            {' '}<strong style={{ color: '#ece7db', fontWeight: 750 }}>{entry.proof}</strong>
           </p>
           <button
             onClick={() => {
@@ -337,7 +339,7 @@ export default function DiagnozaPage() {
             }}
             style={{ width: '100%', padding: '18px 17px', borderRadius: 14, border: 'none', cursor: 'pointer', background: `linear-gradient(135deg, ${GOLD}, #8a7535)`, color: BG, fontWeight: 850, fontSize: 16, letterSpacing: 0.15, boxShadow: '0 16px 38px rgba(200,168,78,.18)' }}
           >
-            {ENTRY_COPY[door as keyof typeof ENTRY_COPY].cta} &rarr;
+            {entry.cta} &rarr;
           </button>
           <p style={{ fontFamily: "'JetBrains Mono', ui-monospace, monospace", fontSize: 9.8, letterSpacing: 1.15, color: '#777169', lineHeight: 1.45, margin: '11px 0 0', textAlign: 'center', textTransform: 'uppercase' }}>
             5 minut · bez maila · wynik od razu

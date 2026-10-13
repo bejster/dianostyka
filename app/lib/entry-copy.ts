@@ -11,20 +11,33 @@ export function resolveEntryDoor(params: URLSearchParams, pathname: string): Ent
   return 'general';
 }
 
-export const ENTRY_COPY = {
+type EntryCopy = {
+  headline: string;
+  // Druga czesc H1 w zlotej kursywie, tylko gdy drzwi jej potrzebuja.
+  accent?: string;
+  body: string;
+  proof: string;
+  cta: string;
+};
+
+export const ENTRY_COPY: Record<EntryDoor, EntryCopy> = {
   general: {
-    headline: 'Ile dni w tygodniu jesteś w formie?',
-    body: 'Zaznacz, jak wyglądał Twój ostatni tydzień. Zobaczysz, które odpowiedzi pasują do Twojego wyjaśnienia problemu, a które warto sprawdzić osobno.',
-    cta: 'Sprawdzam swój tydzień',
+    headline: 'Wiesz, co Ci psuje formę?',
+    accent: 'Sprawdźmy, czy masz rację.',
+    body: 'Pewnie masz już swoją wersję. Robota siedzi w głowie do nocy, wieczorem jesz to, co jest pod ręką, a trening przesuwasz na jutro. Obstaw, co z tego zabiera Ci najwięcej. Potem zaznaczysz, jak wyglądał Twój ostatni tydzień. Na końcu zobaczysz, czy Twoje odpowiedzi mówią to samo.',
+    proof: 'Do tego jeden ruch na 3 dni, który rozstrzygnie, kto ma rację.',
+    cta: 'Sprawdzam, czy mam rację',
   },
   hit: {
     headline: 'Wiesz, co robić. Więc na czym znowu się wykładasz?',
     body: 'Po robocie nie masz już siły na trening. Wieczorem jesz, co jest pod ręką. Potem obiecujesz sobie, że kolejny tydzień będzie inny. Zaznacz, jak wyglądało to u Ciebie.',
+    proof: 'Porównasz swoje podejrzenie z resztą odpowiedzi i dostaniesz jeden ruch do sprawdzenia przez 3 dni.',
     cta: 'Sprawdzam, co przeoczam',
   },
   th2: {
     headline: 'Impreza się skończyła. Czemu reszta tygodnia dalej idzie się jebać?',
     body: 'Śpisz dłużej, a dalej nie masz siły. Robota się ciągnie, trening wypada, wieczorem jesz więcej, niż chciałeś. I już sam nie wiesz, czy jeszcze dochodzisz do siebie, czy coś innego dokłada Ci problemów. Zaznacz, jak wyglądało to u Ciebie.',
+    proof: 'Porównasz swoje podejrzenie z resztą odpowiedzi i dostaniesz jeden ruch do sprawdzenia przez 3 dni.',
     cta: 'Sprawdzam, gdzie mi się to sypie',
   },
-} as const;
+};

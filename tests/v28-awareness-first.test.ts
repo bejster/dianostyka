@@ -25,10 +25,11 @@ test('cold entry uses profile framing while general visitors get a neutral quest
   assert.match(coldEntry, /ENTRY_COPY/);
   const copy = fs.readFileSync(path.join(root, 'app/lib/entry-copy.ts'), 'utf8');
   const general = copy.match(/general: \{([\s\S]*?)\n  \}/)?.[1] ?? '';
-  assert.match(general, /Ile dni w tygodniu jesteś w formie/);
+  assert.match(general, /Wiesz, co Ci psuje formę/);
   assert.doesNotMatch(general, /weekend|impreza|jebać|znowu/i);
   assert.doesNotMatch(copy, /hormon|testosteron|kortyzol|wellness|dobrostan/i);
-  assert.match(coldEntry, /Porównasz swoje podejrzenie z resztą odpowiedzi/);
+  assert.match(copy, /Porównasz swoje podejrzenie z resztą odpowiedzi/);
+  assert.match(coldEntry, /entry\.proof/);
 });
 
 test('Punkt Pęknięcia is a payoff, never a precondition of starting', () => {

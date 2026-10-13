@@ -2,11 +2,11 @@ import type { Metadata } from 'next';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'Ile dni w tygodniu jesteś w formie? | Diagnostyka 168',
+  title: 'Wiesz, co Ci psuje formę? Sprawdźmy, czy masz rację. | Diagnostyka 168',
   description: 'Zobacz, co w Twoim tygodniu najbardziej Ci ją zabiera i od czego zacząć w najbliższe 3 dni. 5 minut, bez maila, wynik od razu.',
   alternates: { canonical: 'https://diagnostyka.talerzihantle.com/' },
   openGraph: {
-    title: 'Ile dni w tygodniu jesteś w formie?',
+    title: 'Wiesz, co Ci psuje formę? Sprawdźmy, czy masz rację.',
     description: 'Zobacz, co w Twoim tygodniu najbardziej Ci ją zabiera i od czego zacząć w najbliższe 3 dni. 5 minut, wynik od razu.',
     url: 'https://diagnostyka.talerzihantle.com',
     siteName: 'Diagnostyka 168 | Hantle i Talerz',
@@ -22,7 +22,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Ile dni w tygodniu jesteś w formie?',
+    title: 'Wiesz, co Ci psuje formę? Sprawdźmy, czy masz rację.',
     description: 'Zobacz, co w Twoim tygodniu najbardziej Ci ją zabiera i od czego zacząć w najbliższe 3 dni. 5 minut, wynik od razu.',
     images: ['https://diagnostyka.talerzihantle.com/api/og'],
   },
