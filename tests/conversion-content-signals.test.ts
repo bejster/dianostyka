@@ -15,7 +15,7 @@ test('contact is required only after explicit help/coaching intent', () => {
 });
 
 test('cold entry preserves curiosity and does not expose the hot sales branch', () => {
-  assert.match(fs.readFileSync('app/lib/entry-copy.ts', 'utf8'), /headline: 'Cały dzień się pilnujesz, a wieczorem i tak pękasz\?'/);
+  assert.match(fs.readFileSync('app/lib/entry-copy.ts', 'utf8'), /headline: 'Cały dzień się pilnujesz, a\u00a0wieczorem i\u00a0tak pękasz\?'/);
   assert.match(fs.readFileSync('app/lib/entry-copy.ts', 'utf8'), /Porównasz swoje podejrzenie z resztą odpowiedzi/);
   assert.match(page, /entry\.proof/);
   // 2026-10-07: chipy wyciete, kalki (headroom, 72H) i dublowaly podtytul.

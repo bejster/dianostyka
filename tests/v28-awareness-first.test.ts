@@ -25,7 +25,7 @@ test('cold entry uses profile framing while general visitors get a neutral quest
   assert.match(coldEntry, /ENTRY_COPY/);
   const copy = fs.readFileSync(path.join(root, 'app/lib/entry-copy.ts'), 'utf8');
   const general = copy.match(/general: \{([\s\S]*?)\n  \}/)?.[1] ?? '';
-  assert.match(general, /Cały dzień się pilnujesz, a wieczorem i tak pękasz/);
+  assert.match(general, /Cały dzień się pilnujesz, a\u00a0wieczorem i\u00a0tak pękasz/);
   assert.doesNotMatch(general, /weekend|impreza|jebać|znowu/i);
   assert.doesNotMatch(copy, /hormon|testosteron|kortyzol|wellness|dobrostan/i);
   assert.match(copy, /Porównasz swoje podejrzenie z resztą odpowiedzi/);

@@ -14,7 +14,7 @@ test('general door opens a bet loop the result can close', () => {
   // 2026-10-14 hero B (/pp 14A 4/4): tozsamosc + emocja (pilnujesz sie / pekasz),
   // ciekawosc (zaczyna sie wczesniej), stawka (miesiace naprawiania nie tego miejsca),
   // obietnica = ekran wyniku (Gdzie zaczynasz + Pierwszy ruch 72h).
-  assert.match(general, /headline: 'Cały dzień się pilnujesz, a wieczorem i tak pękasz\?'/);
+  assert.match(general, /headline: 'Cały dzień się pilnujesz, a\u00a0wieczorem i\u00a0tak pękasz\?'/);
   assert.match(general, /accent: 'A jeśli to zaczyna się dużo wcześniej\?'/);
   assert.match(general, /a potem obwiniasz silną wolę\./);
   assert.match(general, /Obstaw, co Cię rozkłada\./);
@@ -22,6 +22,7 @@ test('general door opens a bet loop the result can close', () => {
   assert.match(general, /proof: 'Na końcu zobaczysz, gdzie to się u Ciebie zaczyna\. Do tego jeden ruch na 3 dni, który to sprawdzi\.'/);
   assert.match(general, /cta: 'Sprawdzam, gdzie to się zaczyna'/);
   assert.doesNotMatch(general, /Wiesz, co Ci psuje formę/);
+  assert.doesNotMatch(general, /headline: '[^']*\s(a|i|w|z) [^']*'/);
   assert.doesNotMatch(general, /Ile dni w tygodniu jesteś w formie/);
 });
 
