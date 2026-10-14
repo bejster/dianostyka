@@ -100,6 +100,9 @@ test('plan 1:1 explains the method instead of generic process language', () => {
   const rxSrc = readFileSync(new URL('../app/components/ResultExperience.tsx', import.meta.url), 'utf8');
   assert.doesNotMatch(rxSrc, /Ustawiamy wersję minimum właśnie tutaj/);
   assert.doesNotMatch(rxSrc, /Zostawiam to bez zmian, żeby był punkt odniesienia\./);
-  assert.match(rxSrc, /najpierw przyczyna, potem objaw/);
+  // 2026-10-14: "{label}: najpierw przyczyna, potem objaw" bylo haslem doklejonym do etykiety; krok 02 ma wyjasniac mechanizm.
+  assert.doesNotMatch(rxSrc, /najpierw przyczyna, potem objaw/);
+  assert.match(rxSrc, /Najniższy wynik: \{weakestStatus\?\.label\}\. Nie zaczynam od niego/);
+  assert.match(rxSrc, /Jak zaciek na suficie, który możesz zamalować/);
   assert.match(rxSrc, /W dobrym tygodniu działa każdy plan\./);
 });
