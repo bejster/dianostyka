@@ -30,7 +30,7 @@ type Phase = 'intro' | 'intake' | 'teaser';
 
 // Front doors share one engine. Profile changes entry copy and analytics only.
 const DOOR_KICKER: Record<string, string> = {
-  general: 'Diagnostyka 168 · 5 min · wynik od razu',
+  general: 'Diagnostyka 168 · 5 min',
   hit: 'Diagnostyka 168 · praca, dom i forma · 5 min',
   th2: 'Talerz i Hantle · 5 min · wynik od razu',
 };
@@ -291,7 +291,7 @@ export default function DiagnozaPage() {
   if (phase === 'intro') {
     const entry = ENTRY_COPY[door as keyof typeof ENTRY_COPY] ?? ENTRY_COPY.general;
     return (
-      <div style={{ minHeight: '100svh', background: BG, color: '#ece7db', fontFamily: '"Inter", sans-serif', display: 'flex', flexDirection: 'column', justifyContent: 'center', padding: '28px 22px max(28px, env(safe-area-inset-bottom))', boxSizing: 'border-box', position: 'relative', overflow: 'hidden' }}>
+      <div className="dx-intro" style={{ minHeight: '100svh', background: BG, color: '#ece7db', fontFamily: '"Inter", sans-serif', display: 'flex', flexDirection: 'column', padding: '28px 22px max(28px, env(safe-area-inset-bottom))', boxSizing: 'border-box', position: 'relative', overflow: 'hidden' }}>
         <Atmosphere />
         <div style={{ maxWidth: 480, margin: '0 auto', alignSelf: 'stretch', position: 'relative', zIndex: 1 }}>
           <div style={{ fontFamily: "'JetBrains Mono', ui-monospace, monospace", fontSize: 10.2, letterSpacing: 2.6, textTransform: 'uppercase', color: GOLD, fontWeight: 800, marginBottom: 14 }}>

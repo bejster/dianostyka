@@ -795,3 +795,15 @@ button[style*="C8A84E"] {
   animation: premium-sheen 7s ease-in-out infinite;
   pointer-events: none;
 }
+
+/* Hero /diagnoza: desktop wysrodkowany, telefon od gory (wysrodkowanie zostawialo ~45% pustego ekranu nad kickerem). */
+.dx-intro {
+  justify-content: center;
+}
+
+@media (max-width: 640px) {
+  .dx-intro {
+    justify-content: flex-start;
+    padding-top: max(48px, 9svh) !important;
+  }
+}
