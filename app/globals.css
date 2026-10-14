@@ -807,3 +807,24 @@ button[style*="C8A84E"] {
     padding-top: max(48px, 9svh) !important;
   }
 }
+
+/* Hero /diagnoza: kicker i tekst pod naglowkiem; na desktopie wieksze, bo przy 58 px naglowka 15.8 px ginelo. */
+.dx-kicker {
+  font-size: 10.2px;
+}
+
+.dx-lede {
+  font-size: 15.8px;
+  max-width: 438px;
+}
+
+@media (min-width: 900px) {
+  .dx-kicker {
+    font-size: 12.5px;
+  }
+
+  .dx-lede {
+    font-size: 18.5px;
+    max-width: 480px;
+  }
+}

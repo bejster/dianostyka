@@ -14,6 +14,17 @@ test('general kicker fits one line on mobile ("wynik od razu" stays under the CT
   assert.match(page, /5 minut · bez maila · wynik od razu/);
 });
 
+test('kicker and lede scale up on desktop, mobile sizes unchanged', () => {
+  assert.match(page, /className="dx-kicker"/);
+  assert.match(page, /className="dx-lede"/);
+  assert.match(css, /\.dx-kicker \{\s*font-size: 10\.2px;/);
+  assert.match(css, /\.dx-lede \{\s*font-size: 15\.8px;/);
+  const desk = css.match(/@media \(min-width: 900px\) \{([\s\S]*?)\n\}/)?.[1] ?? '';
+  const k = Number(desk.match(/\.dx-kicker \{\s*font-size: ([\d.]+)px/)?.[1]);
+  const l = Number(desk.match(/\.dx-lede \{\s*font-size: ([\d.]+)px/)?.[1]);
+  assert.ok(k >= 12 && l >= 18, `desktop kicker ${k}px, lede ${l}px`);
+});
+
 test('intro hero is top-aligned on mobile, centered on desktop', () => {
   const wrapper = page.match(/<div className="dx-intro" style=\{\{([^}]*)\}\}>/)?.[1];
   assert.ok(wrapper, 'intro wrapper has dx-intro class');

@@ -294,7 +294,7 @@ export default function DiagnozaPage() {
       <div className="dx-intro" style={{ minHeight: '100svh', background: BG, color: '#ece7db', fontFamily: '"Inter", sans-serif', display: 'flex', flexDirection: 'column', padding: '28px 22px max(28px, env(safe-area-inset-bottom))', boxSizing: 'border-box', position: 'relative', overflow: 'hidden' }}>
         <Atmosphere />
         <div style={{ maxWidth: 480, margin: '0 auto', alignSelf: 'stretch', position: 'relative', zIndex: 1 }}>
-          <div style={{ fontFamily: "'JetBrains Mono', ui-monospace, monospace", fontSize: 10.2, letterSpacing: 2.6, textTransform: 'uppercase', color: GOLD, fontWeight: 800, marginBottom: 14 }}>
+          <div className="dx-kicker" style={{ fontFamily: "'JetBrains Mono', ui-monospace, monospace", letterSpacing: 2.6, textTransform: 'uppercase', color: GOLD, fontWeight: 800, marginBottom: 14 }}>
             {DOOR_KICKER[door] || DOOR_KICKER.general}
           </div>
           {returning && (
@@ -325,7 +325,7 @@ export default function DiagnozaPage() {
             {entry.headline}
             {entry.accent && <>{' '}<em style={{ color: GOLD, fontStyle: 'italic' }}>{entry.accent}</em></>}
           </h1>
-          <p style={{ fontSize: 15.8, color: '#c4bdb0', lineHeight: 1.55, margin: '0 0 16px', maxWidth: 438 }}>
+          <p className="dx-lede" style={{ color: '#c4bdb0', lineHeight: 1.55, margin: '0 0 16px' }}>
             {topic && <>Sprawdzisz też temat: {TOPIC_LABEL[topic]}. </>}{entry.body}
             {' '}<strong style={{ color: '#ece7db', fontWeight: 750 }}>{entry.proof}</strong>
           </p>
