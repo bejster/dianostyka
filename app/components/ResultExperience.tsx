@@ -823,7 +823,7 @@ const css = `
 .rx-plan .rx-demo-n{position:relative;z-index:1;width:27px;height:27px;padding:0;display:grid;place-items:center;border:1px solid ${C.ruleS};border-radius:50%;background:${C.pan};font-size:9.5px;letter-spacing:0;color:${C.goldB}}
 .rx-plan .rx-demo li:first-child .rx-demo-n{background:${C.gold};color:${C.ink};border-color:${C.gold};box-shadow:0 0 0 5px rgba(200,168,78,.12)}
 .rx-proof{display:grid;gap:4px;margin:0 0 6px}.rx-proof .rx-gcard{border-top:0;padding:8px 2px 2px}
-.rx-final-action .rx-fine{margin:14px 0 0;text-align:center}
+.rx-final-action .rx-fine{margin:14px 0 0;text-align:center;font-family:inherit;font-size:12.5px;letter-spacing:0;color:${C.mute};overflow-wrap:anywhere}
 @media(min-width:760px){.rx-plan{padding:30px 32px 12px}.rx-plan .rx-demo::before{left:13px}}
 @media(prefers-reduced-motion:reduce){.rx-plan::before{transform:scaleX(1);transition:none}.rx-plan .rx-demo li{opacity:1;transform:none;transition:none}.rx-hero-plan span{animation:none}}
 @media(prefers-reduced-motion:reduce){.rx-beat,.rx-beat:not(.rx-hero)>*{opacity:1;transform:none;transition:none}.rx-beat:not(.in) .rx-axis-fill{transform:none}.rx-axis-fill{transition:none}.rx-cue-arrow{animation:none}}`;
