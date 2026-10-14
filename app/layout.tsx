@@ -1,9 +1,9 @@
 import type { Metadata } from 'next';
 import './globals.css';
 
-// Karta linku: obraz pokazuje zakład, tytuł zadaje pytanie, opis jest krótki. Bez dublowania nagłówka.
-const OG_TITLE = 'Wiesz, co Ci psuje formę?';
-const OG_DESCRIPTION = '5 minut. Na końcu zobaczysz, czy Twój tydzień się z Tobą zgadza.';
+// Karta linku (/pp §14A): tytuł niesie tożsamość i stawkę, opis zakład, obraz obietnicę z ekranu wyniku.
+const OG_TITLE = 'Pilnujesz się, a co poniedziałek zaczynasz od nowa?';
+const OG_DESCRIPTION = 'Obstaw, co Ci psuje formę. Wynik pokaże, czy masz rację.';
 
 export const metadata: Metadata = {
   title: 'Wiesz, co Ci psuje formę? Sprawdźmy, czy masz rację. | Diagnostyka 168',

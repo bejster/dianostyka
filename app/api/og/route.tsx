@@ -20,6 +20,12 @@ export async function GET(req: Request) {
         DIAGNOSTYKA 168
       </div>
     );
+    // Obietnica = to, co realnie stoi na ekranie wyniku: "Gdzie zaczynasz" + "Pierwszy ruch 72h" (/pp §14A).
+    const payoff = (
+      <div style={{ display: 'flex', position: 'absolute', bottom: 50, left: 0, right: 0, justifyContent: 'center', fontSize: 32, color: '#c2ab6c' }}>
+        Na końcu: od czego to się u Ciebie zaczyna i jeden ruch na 3 dni
+      </div>
+    );
     const frame = {
       width: '100%',
       height: '100%',
@@ -41,6 +47,7 @@ export async function GET(req: Request) {
               Gdzie pęka Twój tydzień?
             </div>
             <div style={{ display: 'flex', width: 120, height: 3, marginTop: 40, background: '#c8a84e' }} />
+            {payoff}
           </div>
         ),
         { width: 1200, height: 630 }
@@ -62,6 +69,7 @@ export async function GET(req: Request) {
             <div style={{ display: 'flex', fontSize: 28, letterSpacing: 5, color: '#c8a84e', fontWeight: 800 }}>TWÓJ TYDZIEŃ MÓWI</div>
             <div style={{ display: 'flex', fontFamily: 'Georgia, serif', fontSize: 170, lineHeight: 0.9, color: '#f2d98f' }}>?</div>
           </div>
+          {payoff}
         </div>
       ),
       { width: 1200, height: 630 }

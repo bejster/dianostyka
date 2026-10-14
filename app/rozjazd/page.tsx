@@ -6,8 +6,8 @@ export { default } from '../diagnoza/page';
 const TITLE = 'Gdzie pęka Twój tydzień?';
 const DESCRIPTION = 'Sen, energia, apetyt, stres, trening i powrót po weekendzie. Zobaczysz, gdzie problem się zaczyna i który jeden ruch sprawdzić najpierw. 5 minut, wynik od razu.';
 // Karta linku: obraz zadaje pytanie, og:title nie może go powtarzać.
-const OG_TITLE = 'Sen, apetyt czy weekend?';
-const OG_DESCRIPTION = '5 minut, wynik od razu.';
+const OG_TITLE = 'Pilnujesz się, a co poniedziałek zaczynasz od nowa?';
+const OG_DESCRIPTION = 'Sen, apetyt czy weekend? Wynik pokaże, od czego to się zaczyna.';
 const OG_IMAGE = 'https://diagnostyka.talerzihantle.com/api/og?v=th2';
 
 export const metadata: Metadata = {
