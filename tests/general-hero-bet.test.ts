@@ -16,14 +16,21 @@ test('general door opens a bet loop the result can close', () => {
   // obietnica = ekran wyniku (Gdzie zaczynasz + Pierwszy ruch 72h).
   assert.match(general, /headline: 'Cały dzień się pilnujesz, a\u00a0wieczorem i\u00a0tak pękasz\?'/);
   assert.match(general, /accent: 'A jeśli to zaczyna się dużo wcześniej\?'/);
-  assert.match(general, /a potem obwiniasz silną wolę\./);
   assert.match(general, /Obstaw, co Cię rozkłada\./);
-  assert.match(general, /Albo czy od miesięcy naprawiasz nie to miejsce\./);
-  assert.match(general, /proof: 'Na końcu zobaczysz, gdzie to się u Ciebie zaczyna\. Do tego jeden ruch na 3 dni, który to sprawdzi\.'/);
+  assert.match(general, /Może od miesięcy naprawiasz zupełnie nie to miejsce\./);
+  assert.match(general, /proof: 'Na końcu zobaczysz, gdzie to się u Ciebie zaczyna, plus jeden ruch na 3 dni, który to sprawdzi\.'/);
   assert.match(general, /cta: 'Sprawdzam, gdzie to się zaczyna'/);
   assert.doesNotMatch(general, /Wiesz, co Ci psuje formę/);
   assert.doesNotMatch(general, /headline: '[^']*\s(a|i|w|z) [^']*'/);
   assert.doesNotMatch(general, /Ile dni w tygodniu jesteś w formie/);
+});
+
+test('general hero body stays short on mobile (max 30 words under the headline)', () => {
+  // 2026-10-14 Michal: 58 slow pod naglowkiem = sciana tekstu na telefonie.
+  const body = general.match(/body: '([^']*)'/)?.[1] ?? '';
+  const proof = general.match(/proof: '([^']*)'/)?.[1] ?? '';
+  const words = (body + ' ' + proof).trim().split(/\s+/).length;
+  assert.ok(words <= 30, `pod naglowkiem ${words} slow`);
 });
 
 test('the promised bet exists in the product before behavioural questions', () => {
