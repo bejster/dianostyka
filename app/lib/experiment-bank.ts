@@ -18,6 +18,8 @@ export interface ExperimentDef {
   observe: string;
   doNotChange: string;
   purpose: string;
+  // 2026-10-14 (Michal): mechanizm + analogia, pokazywane pod akcja jako "Dlaczego to ma sens".
+  why: string;
 }
 
 export const EXPERIMENT_BANK: Record<ExperimentId, ExperimentDef> = {
@@ -28,6 +30,7 @@ export const EXPERIMENT_BANK: Record<ExperimentId, ExperimentDef> = {
     observe: 'liczba nieplanowanych decyzji o jedzeniu po 18:00',
     doNotChange: 'kalorii, całego jadłospisu, suplementów, treningu',
     purpose: 'sprawdzić, czy późne podejmowanie decyzji jest częścią pętli',
+    why: 'O 20:00 wybierasz jedzenie zmęczoną i głodną głową. Ta sama głowa o 15:00 wybrałaby coś innego. To jak lista zakupów pisana w sklepie na głodnego.',
   },
   E2: {
     id: 'E2', name: 'KONTROLA PRZED PĘKNIĘCIEM',
@@ -36,6 +39,7 @@ export const EXPERIMENT_BANK: Record<ExperimentId, ExperimentDef> = {
     observe: 'który z trzech sygnałów rusza pierwszy i czy powtarza się przez 3 dni',
     doNotChange: 'reszty planu',
     purpose: 'znaleźć najwcześniejszy powtarzalny sygnał',
+    why: 'Wieczorny spadek zaczyna się zwykle dużo wcześniej, tylko wtedy nikt nie patrzy. Jak kontrolka rezerwy w aucie: paliwo kończy się długo przed tym, jak silnik zgaśnie.',
   },
   E3: {
     id: 'E3', name: 'POSIŁEK AWARYJNY',
@@ -44,6 +48,7 @@ export const EXPERIMENT_BANK: Record<ExperimentId, ExperimentDef> = {
     observe: 'ile razy dowóz albo przypadkowe jedzenie było decyzją z ostatniej chwili',
     doNotChange: 'ogólnych kalorii ani całego systemu żywienia',
     purpose: 'sprawdzić, czy brak gotowej opcji napędza decyzję',
+    why: 'Kiedy nie ma gotowej opcji, wygrywa najłatwiejsza, czyli dowóz albo szafka z przekąskami. Drogę ewakuacyjną też ustala się wtedy, kiedy nic się nie pali.',
   },
   E4: {
     id: 'E4', name: 'NASTĘPNA NORMALNA DECYZJA',
@@ -52,6 +57,7 @@ export const EXPERIMENT_BANK: Record<ExperimentId, ExperimentDef> = {
     observe: 'ile czasu mija od odstępstwa do pierwszej normalnej decyzji',
     doNotChange: 'reszty planu na ten tydzień',
     purpose: 'sprawdzić zdolność powrotu bez rytuału zaczynania od nowa',
+    why: 'Badacze nazywają to efektem „a, do diabła z tym”: jedno odstępstwo i reszta dnia leci, bo „i tak już zepsute”. Nawigacja po złym zjeździe przelicza trasę od miejsca, w którym jesteś.',
   },
   G1: {
     id: 'G1', name: 'ZAMKNIĘCIE PRACY',
@@ -60,6 +66,7 @@ export const EXPERIMENT_BANK: Record<ExperimentId, ExperimentDef> = {
     observe: 'ile razy wieczorem wracasz do pracy myślami albo działaniem',
     doNotChange: 'rutyny snu, treningu i jedzenia naraz',
     purpose: 'sprawdzić, czy niedokończona praca zostaje poznawczo otwarta',
+    why: 'Niedokończona sprawa siedzi w głowie, dopóki nie dostanie planu. To ona kradnie wieczór. Jak otwarte karty w przeglądarce. Nie patrzysz na nie, a i tak zjadają pamięć.',
   },
   G2: {
     id: 'G2', name: 'ODŁÓŻ NA JUTRO',
@@ -68,6 +75,7 @@ export const EXPERIMENT_BANK: Record<ExperimentId, ExperimentDef> = {
     observe: 'liczba ponownych wejść w ten sam temat',
     doNotChange: 'reszty wieczornej rutyny',
     purpose: 'sprawdzić, czy zapisanie otwartej sprawy ogranicza powroty do niej',
+    why: 'Sprawa bez swojego miejsca krąży po głowie. Zapisana ma gdzie zaparkować, więc przestaje jeździć w kółko po osiedlu.',
   },
   G3: {
     id: 'G3', name: 'JEDNA RZECZ WCZEŚNIEJ',
@@ -76,6 +84,7 @@ export const EXPERIMENT_BANK: Record<ExperimentId, ExperimentDef> = {
     observe: 'czy ta sama rzecz jest łatwiejsza do wykonania przed pęknięciem niż po nim',
     doNotChange: 'całego harmonogramu',
     purpose: 'sprawdzić, czy pora zadania nasila problem',
+    why: 'Ta sama rzecz o 11:00 i o 19:00 to dwa różne zadania, bo po spadku każda decyzja kosztuje więcej. Dystans ten sam, tylko raz biegniesz z wiatrem, a raz pod wiatr.',
   },
   G4: {
     id: 'G4', name: 'WCZEŚNIEJSZA DECYZJA',
@@ -84,6 +93,7 @@ export const EXPERIMENT_BANK: Record<ExperimentId, ExperimentDef> = {
     observe: 'czy wieczorem zostaje mniej decyzji do podjęcia na zmęczonej głowie',
     doNotChange: 'reszty wieczoru',
     purpose: 'sprawdzić przelewanie się obciążenia decyzyjnego na wieczór',
+    why: 'Wieczorna głowa to telefon na 8% baterii: działa, ale aktualizacji na nim nie odpalasz. Każda decyzja podjęta przed końcem pracy to jedna mniej na tych 8%.',
   },
   T1: {
     id: 'T1', name: 'TRYB MINIMUM',
@@ -92,6 +102,7 @@ export const EXPERIMENT_BANK: Record<ExperimentId, ExperimentDef> = {
     observe: 'trening wykonany: TAK / NIE',
     doNotChange: 'reszty planu treningowego',
     purpose: 'sprawdzić zachowanie całość-albo-nic',
+    why: '20 minut o zwykłej porze trzyma trening w kalendarzu. Wersja całość-albo-nic wylatuje przy pierwszym gorszym dniu. Zęby myjesz też wtedy, kiedy nie ma czasu na nitkę.',
   },
   T2: {
     id: 'T2', name: 'JEDNO PRZESUNIĘCIE',
@@ -100,6 +111,7 @@ export const EXPERIMENT_BANK: Record<ExperimentId, ExperimentDef> = {
     observe: 'liczba kolejnych przesunięć tego samego treningu',
     doNotChange: 'liczby zaplanowanych treningów',
     purpose: 'sprawdzić, czy to odkładanie, nie brak intencji, jest punktem awarii',
+    why: 'Każde kolejne przesunięcie przychodzi łatwiej niż poprzednie. Jak drzemka w budziku. Trzecie „jeszcze 10 minut” nie kosztuje już nic.',
   },
   T3: {
     id: 'T3', name: 'CHRONIONY TRENING',
@@ -108,6 +120,7 @@ export const EXPERIMENT_BANK: Record<ExperimentId, ExperimentDef> = {
     observe: 'czy jeden jasno chroniony termin jest dowieziony',
     doNotChange: 'całego harmonogramu treningowego',
     purpose: 'sprawdzić, czy zbyt wiele równoległych priorytetów obniża wykonanie',
+    why: 'Pięć priorytetów naraz oznacza, że żaden nie jest chroniony. Ten jeden trening traktujesz jak wizytę u dentysty. Nie przesuwasz jej, bo ktoś napisał na Slacku.',
   },
   T4: {
     id: 'T4', name: 'BEZ NADRABIANIA',
@@ -116,6 +129,7 @@ export const EXPERIMENT_BANK: Record<ExperimentId, ExperimentDef> = {
     observe: 'ile czasu mija do powrotu do normalnego planu',
     doNotChange: 'kolejnych treningów, żeby coś odrobić',
     purpose: 'sprawdzić, czy nadrabianie wydłuża rozjazd',
+    why: 'Nadrabianie robi z jednego opuszczonego treningu dwa ciężkie, a po dwóch ciężkich łatwiej odpuścić cały tydzień. Po przespanym przystanku wsiadasz w następny autobus.',
   },
   W1: {
     id: 'W1', name: 'POWRÓT NASTĘPNEGO DNIA',
@@ -124,6 +138,7 @@ export const EXPERIMENT_BANK: Record<ExperimentId, ExperimentDef> = {
     observe: 'czy jeden gorszy dzień zamienia się w dwa albo trzy',
     doNotChange: 'reszty planu na weekend',
     purpose: 'sprawdzić czas trwania rozjazdu',
+    why: 'Rozjazd rzadko trwa przez sam gorszy dzień. Przedłuża go pierwsza decyzja następnego ranka. Jedna plama na ścianie to plama. Trzy to już nowy kolor.',
   },
   W2: {
     id: 'W2', name: 'NIEDZIELNY PUNKT POWROTU',
@@ -132,6 +147,7 @@ export const EXPERIMENT_BANK: Record<ExperimentId, ExperimentDef> = {
     observe: 'czy poniedziałek zaczyna się od gotowej decyzji czy od improwizacji',
     doNotChange: 'całej niedzieli',
     purpose: 'sprawdzić, czy weekendowi brakuje jasnego punktu powrotu',
+    why: 'Poniedziałek bez gotowego pierwszego ruchu zaczyna się od improwizacji, a improwizacja po weekendzie ciągnie w stronę weekendu. Pilot ustala podejście do lądowania długo przed pasem.',
   },
   W3: {
     id: 'W3', name: 'DZIENNIK PĘKNIĘCIA WEEKENDU',
@@ -140,6 +156,7 @@ export const EXPERIMENT_BANK: Record<ExperimentId, ExperimentDef> = {
     observe: 'pora i sytuacja pierwszego pęknięcia',
     doNotChange: 'weekendu specjalnie, żeby wyszedł lepszy wynik',
     purpose: 'zaobserwować realne pierwsze pęknięcie zamiast zgadywać',
+    why: 'Na tym etapie zgadywanie przyczyny kosztuje więcej niż trzy dni patrzenia. Mechanik nie wymienia silnika po opisie „coś stuka”. Najpierw słucha, kiedy stuka.',
   },
   W4: {
     id: 'W4', name: 'PUNKT POWROTU',
@@ -148,6 +165,7 @@ export const EXPERIMENT_BANK: Record<ExperimentId, ExperimentDef> = {
     observe: 'pierwszy dzień, w którym wynik wraca do Twojej zwykłej wartości',
     doNotChange: 'kilku rzeczy naraz, żeby szybciej wrócić',
     purpose: 'ustalić realny czas powrotu do formy',
+    why: 'Przesunięty w weekend sen to dla zegara biologicznego lot do innej strefy czasowej. Badacze nazywają to społecznym jet lagiem. Wraca się z niego dzień po dniu, więc pięć nowych rzeczy w poniedziałek tego nie przyspieszy.',
   },
   R1: {
     id: 'R1', name: 'BEZ PONIEDZIAŁKOWEGO STARTU OD NOWA',
@@ -156,6 +174,7 @@ export const EXPERIMENT_BANK: Record<ExperimentId, ExperimentDef> = {
     observe: 'czy potrafisz wrócić bez ceremonii nowego startu',
     doNotChange: 'aplikacji, programu, kalorii, układu treningów, całego systemu',
     purpose: 'sprawdzić zależność od zaczynania od nowa',
+    why: 'Nowy start daje zastrzyk motywacji, dlatego tak łatwo się od niego uzależnić. Po dwóch tygodniach zastrzyk schodzi. Jak przeprowadzka zamiast sprzątania. Nowe mieszkanie, a po miesiącu ten sam bałagan.',
   },
   R2: {
     id: 'R2', name: 'BEZ OPTYMALIZACJI',
@@ -164,6 +183,7 @@ export const EXPERIMENT_BANK: Record<ExperimentId, ExperimentDef> = {
     observe: 'pierwszy powtarzalny moment albo sytuacja pęknięcia',
     doNotChange: 'kalorii, planu treningowego, suplementów, aplikacji, protokołu snu',
     purpose: 'znaleźć sygnał zanim przepiszesz działanie',
+    why: 'Zmiana przed pomiarem zaciera jedyny ślad, który mamy. Fotograf najpierw robi zdjęcie próbne, a dopiero potem kręci ustawieniami.',
   },
   R3: {
     id: 'R3', name: 'STAŁA PORA POBUDKI',
@@ -172,6 +192,7 @@ export const EXPERIMENT_BANK: Record<ExperimentId, ExperimentDef> = {
     observe: 'jak oceniasz swój poranek w skali 0-10',
     doNotChange: 'pory snu, suplementów, kofeiny i pięciu innych rzeczy naraz',
     purpose: 'prosty test spójności zachowania',
+    why: 'Pora pobudki ustawia zegar biologiczny na cały dzień, łącznie z tym, kiedy wieczorem przyjdzie senność. Działa jak kotwica. Łódka się buja, ale nie odpływa.',
   },
   R4: {
     id: 'R4', name: 'MAPA ENERGII',
@@ -180,6 +201,7 @@ export const EXPERIMENT_BANK: Record<ExperimentId, ExperimentDef> = {
     observe: 'pierwsza godzina, w której spadek powtarza się w więcej niż jednym dniu',
     doNotChange: 'całej rutyny w trakcie obserwacji',
     purpose: 'znaleźć powtarzalne pęknięcie energii przed interwencją',
+    why: 'Spadek energii po południu jest wpisany w rytm dobowy, ale każdy ma go o innej godzinie. Korki też stoją codziennie w tym samym miejscu. Wystarczy raz zobaczyć je na mapie.',
   },
 };
 

@@ -516,6 +516,7 @@ export default function ResultExperience({
             {/* Cztery identyczne karty czytaly sie jak lista rownorzednych polecen. Samo zadanie prowadzi,
                 trzy parametry sa doprecyzowaniem i dostaja lzejszy, cichszy wiersz. */}
             <div className="rx-exp-row rx-exp-lead"><span className="rx-exp-k">{experiment.name}</span><p>{experiment.action}</p></div>
+            <div className="rx-exp-row rx-exp-why"><span className="rx-exp-k">Dlaczego to ma sens</span><p>{experiment.why}</p></div>
             <div className="rx-exp-row rx-exp-meta"><span className="rx-exp-k">Kiedy</span><p>{experiment.moment}</p></div>
             <div className="rx-exp-row rx-exp-meta"><span className="rx-exp-k">Obserwuj</span><p>{experiment.observe}</p></div>
             <div className="rx-exp-row rx-exp-meta"><span className="rx-exp-k">Przez te 3 dni nie ruszaj</span><p>{experiment.doNotChange}</p></div>
@@ -585,10 +586,10 @@ export default function ResultExperience({
             <div className="rx-plan-top"><span>Plan startu</span>{kickName && <span>{kickName}</span>}</div>
             <h2 className="rx-plan-h">Ten wynik byłby punktem startu, nie formularzem do wyrzucenia.</h2>
             <ol className="rx-demo">
-              <li><span className="rx-demo-n">01</span><div><strong>Pierwszy punkt: moment, w którym pękasz ({breakPos.label})</strong><p>Ustawiamy wersję minimum właśnie tutaj. Ma zadziałać też w dniu, w którym nic nie idzie po planie.</p></div></li>
-              <li><span className="rx-demo-n">02</span><div><strong>Sprawdzamy: {weakestStatus?.label}</strong><p>Przez 72 godziny robisz jedno zadanie z wyniku wyżej. Potem razem patrzymy, co pokazało.</p></div></li>
-              <li><span className="rx-demo-n">03</span><div><strong>Tego na start nie ruszam: {strongestStatus?.label}</strong><p>Zostawiam to bez zmian, żeby był punkt odniesienia.</p></div></li>
-              <li><span className="rx-demo-n">04</span><div><strong>Dokładam dopiero po dowodzie</strong><p>Kolejny element wchodzi wtedy, gdy pierwszy przeżyje gorszy tydzień. Jeśli nie przeżyje, zmieniam ruch zamiast dokładać kolejne zasady.</p></div></li>
+              <li><span className="rx-demo-n">01</span><div><strong>Na start biorę: {breakPos.label}</strong><p>Tu najczęściej rozjeżdża się Twój tydzień, więc tu stawiamy wersję minimum. Taką, która przeżyje dzień, w którym nic nie idzie po planie.</p></div></li>
+              <li><span className="rx-demo-n">02</span><div><strong>{weakestStatus?.label}: najpierw przyczyna, potem objaw</strong><p>Test 72h z wyniku wyżej to pierwszy pomiar. Po trzech dniach patrzymy razem, który sygnał ruszył pierwszy. Od tego zależy następny ruch.</p></div></li>
+              <li><span className="rx-demo-n">03</span><div><strong>Tego na start nie ruszam: {strongestStatus?.label}</strong><p>To Twój punkt odniesienia. Jeśli po zmianie spadnie, wiem, że ruch kosztuje za dużo i trzeba go zmniejszyć. Jak grupa kontrolna w badaniu, tylko na Twoim tygodniu.</p></div></li>
+              <li><span className="rx-demo-n">04</span><div><strong>Dokładam dopiero po dowodzie</strong><p>Kolejny element wchodzi wtedy, gdy pierwszy przeżyje gorszy tydzień. W dobrym tygodniu działa każdy plan. Sprawdzianem jest tydzień z deadlinem, krótszą nocą i imprezą w sobotę. Jeśli ruch go nie przeżyje, zmieniam ruch zamiast dokładać kolejne zasady.</p></div></li>
             </ol>
           </div>
 
@@ -767,6 +768,7 @@ const css = `
 .rx-exp-row p{margin:0;font-size:15px;color:${C.paper};line-height:1.55}
 .rx-exp-lead{padding:18px 0 18px 20px;position:relative}.rx-exp-lead::before{content:"";position:absolute;left:0;top:20px;bottom:20px;width:1px;background:${C.gold}}
 .rx-exp-lead p{font-size:16.5px;line-height:1.5}
+.rx-exp-why{padding:13px 0 14px 20px}.rx-exp-why .rx-exp-k{color:${C.goldB};font-weight:600;letter-spacing:1.4px;margin-bottom:5px}.rx-exp-why p{font-size:14.5px;color:${C.paper};line-height:1.6;font-style:italic}
 .rx-exp-meta{padding:11px 0}
 .rx-exp-meta .rx-exp-k{color:${C.faint};font-weight:600;letter-spacing:1.4px;margin-bottom:4px}
 .rx-exp-meta p{font-size:14px;color:${C.mute}}

@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import { EXPERIMENT_BANK, computeConfidence, selectExperiment, type SelectorInput } from '../app/lib/experiment-bank.ts';
 
 const EXPECTED_IDS = [
@@ -13,7 +14,7 @@ test('bank has exactly the 20 frozen-spec experiment ids, each internally consis
     const exp = EXPERIMENT_BANK[id as keyof typeof EXPERIMENT_BANK];
     assert.ok(exp, `missing experiment ${id}`);
     assert.equal(exp.id, id);
-    for (const field of ['name', 'action', 'moment', 'observe', 'doNotChange', 'purpose'] as const) {
+    for (const field of ['name', 'action', 'moment', 'observe', 'doNotChange', 'purpose', 'why'] as const) {
       assert.ok(typeof exp[field] === 'string' && exp[field].length > 0, `${id}.${field} must be non-empty`);
     }
   }
@@ -75,4 +76,30 @@ test('safety gate: selector never reads morning_wood / libido / substance fields
   for (const forbidden of ['morningWood', 'libido', 'substance', 'alcohol']) {
     assert.ok(!keys.includes(forbidden), `SelectorInput must not carry ${forbidden}`);
   }
+});
+
+// 2026-10-14 audyt Michala: testy 72h byly sucha procedura (co, kiedy, obserwuj), bez mechanizmu i analogii.
+// Kazdy eksperyment dostaje pole why: mechanizm + analogia, krotko (mobile), w glosie Michala.
+test('every experiment explains why it works: mechanism plus analogy, short and in voice', () => {
+  for (const def of Object.values(EXPERIMENT_BANK)) {
+    const why = (def as { why?: string }).why ?? '';
+    assert.ok(why.length >= 80, `${def.id} has a why line`);
+    assert.ok(why.length <= 240, `${def.id} why fits mobile (${why.length})`);
+    assert.doesNotMatch(why, /pęknię|PĘKNIĘ/, `${def.id} why avoids internal jargon`);
+    assert.doesNotMatch(why, /[\u2013\u2014]|naprawdę/, `${def.id} why passes voice bans`);
+    assert.doesNotMatch(why, /, i /, `${def.id} why has no comma before "i"`);
+  }
+});
+
+test('result renders the why row under the 72h action', () => {
+  const rxSrc = readFileSync(new URL('../app/components/ResultExperience.tsx', import.meta.url), 'utf8');
+  assert.match(rxSrc, /rx-exp-why[\s\S]{0,200}\{experiment\.why\}/);
+});
+
+test('plan 1:1 explains the method instead of generic process language', () => {
+  const rxSrc = readFileSync(new URL('../app/components/ResultExperience.tsx', import.meta.url), 'utf8');
+  assert.doesNotMatch(rxSrc, /Ustawiamy wersję minimum właśnie tutaj/);
+  assert.doesNotMatch(rxSrc, /Zostawiam to bez zmian, żeby był punkt odniesienia\./);
+  assert.match(rxSrc, /najpierw przyczyna, potem objaw/);
+  assert.match(rxSrc, /W dobrym tygodniu działa każdy plan\./);
 });
