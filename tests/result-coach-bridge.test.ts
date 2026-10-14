@@ -26,8 +26,17 @@ test('hero lets a nabor-route reader jump straight to the plan', () => {
   assert.match(hero, /route\.primary === 'nabor'[\s\S]*?href="#plan-1na1"/);
 });
 
-test('trust reassurance sits next to the CTA, not after it in a fold', () => {
-  const cta = beat6.slice(beat6.indexOf('className="rx-final-action"'));
-  assert.match(cta, /Nie musisz niczego wypełniać drugi raz/);
+test('trust reassurance sits right above the CTA, not after it in a fold', () => {
+  const cta = beat6.indexOf('className="rx-final-action"');
+  const reassure = beat6.indexOf('Nie każę Ci opisywać od nowa');
+  assert.ok(reassure > -1 && reassure < cta, 'reassurance stands before the CTA');
   assert.doesNotMatch(beat6, /Zobacz, co byłoby następnym krokiem/);
+});
+
+// 2026-10-14 zrzuty z telefonu: koncowka byla o ekran za dluga przez dwa powtorzenia.
+test('closing section does not repeat what the reader already saw', () => {
+  const step02 = beat6.match(/rx-demo-n">02[\s\S]*?<\/li>/)?.[0] ?? '';
+  assert.ok(step02, 'step 02 exists');
+  assert.doesNotMatch(step02, /experiment\.action|experiment\.observe/, 'step 02 does not repeat the 72h task from the result card');
+  assert.equal((beat6.match(/drugi raz|od nowa/g) ?? []).length, 1, 'reassurance about not filling twice appears once');
 });

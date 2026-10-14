@@ -586,7 +586,7 @@ export default function ResultExperience({
             <h2 className="rx-plan-h">Ten wynik byłby punktem startu, nie formularzem do wyrzucenia.</h2>
             <ol className="rx-demo">
               <li><span className="rx-demo-n">01</span><div><strong>Pierwszy punkt: moment, w którym pękasz ({breakPos.label})</strong><p>Ustawiamy wersję minimum właśnie tutaj. Ma zadziałać też w dniu, w którym nic nie idzie po planie.</p></div></li>
-              <li><span className="rx-demo-n">02</span><div><strong>Sprawdzamy: {weakestStatus?.label}</strong><p>Na start dostajesz jedno zadanie na 72 godziny: {experiment.action.charAt(0).toLowerCase() + experiment.action.slice(1)} Obserwujemy: {experiment.observe.toLowerCase()}.</p></div></li>
+              <li><span className="rx-demo-n">02</span><div><strong>Sprawdzamy: {weakestStatus?.label}</strong><p>Przez 72 godziny robisz jedno zadanie z wyniku wyżej. Potem razem patrzymy, co pokazało.</p></div></li>
               <li><span className="rx-demo-n">03</span><div><strong>Tego na start nie ruszam: {strongestStatus?.label}</strong><p>Zostawiam to bez zmian, żeby był punkt odniesienia.</p></div></li>
               <li><span className="rx-demo-n">04</span><div><strong>Dokładam dopiero po dowodzie</strong><p>Kolejny element wchodzi wtedy, gdy pierwszy przeżyje gorszy tydzień. Jeśli nie przeżyje, zmieniam ruch zamiast dokładać kolejne zasady.</p></div></li>
             </ol>
@@ -645,7 +645,7 @@ export default function ResultExperience({
                 {route.secondaryNabor && <a className="rx-route-alt" href={naborHref} target="_blank" rel="noopener noreferrer" onClick={onNaborClick}>{route.secondaryNabor.label} →</a>}
               </>
             )}
-            {instagram && <p className="rx-fine">Mam ten wynik przypisany do @{instagram}. Nie musisz niczego wypełniać drugi raz.</p>}
+            {instagram && <p className="rx-fine">Mam ten wynik przypisany do @{instagram}.</p>}
           </div>
         </section>
 
