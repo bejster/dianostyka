@@ -6,8 +6,8 @@ const layout = fs.readFileSync('app/layout.tsx', 'utf8');
 const og = fs.readFileSync('app/api/og/route.tsx', 'utf8');
 
 test('cold social metadata carries the same curiosity loop as the public hero', () => {
-  assert.match(layout, /Wiesz, co Ci psuje formę\? Sprawdźmy, czy masz rację\. \| Diagnostyka 168/);
-  assert.match(layout, /co w Twoim tygodniu najbardziej Ci ją zabiera i od czego zacząć w najbliższe 3 dni/);
+  assert.match(layout, /Cały dzień się pilnujesz, a wieczorem i tak pękasz\? \| Diagnostyka 168/);
+  assert.match(layout, /Zobacz, gdzie to się u Ciebie zaczyna i jaki ruch sprawdzić w najbliższe 3 dni/);
   assert.match(layout, /https:\/\/diagnostyka\.talerzihantle\.com\/api\/og/);
   assert.doesNotMatch(layout, /\/og\.png/);
 });

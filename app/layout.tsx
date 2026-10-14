@@ -6,8 +6,8 @@ const OG_TITLE = 'Cały dzień się pilnujesz, a wieczorem i tak pękasz?';
 const OG_DESCRIPTION = 'Obstaw przyczynę. Wynik pokaże, czy to w ogóle zaczyna się wieczorem.';
 
 export const metadata: Metadata = {
-  title: 'Wiesz, co Ci psuje formę? Sprawdźmy, czy masz rację. | Diagnostyka 168',
-  description: 'Zobacz, co w Twoim tygodniu najbardziej Ci ją zabiera i od czego zacząć w najbliższe 3 dni. 5 minut, bez maila, wynik od razu.',
+  title: 'Cały dzień się pilnujesz, a wieczorem i tak pękasz? | Diagnostyka 168',
+  description: 'Zobacz, gdzie to się u Ciebie zaczyna i jaki ruch sprawdzić w najbliższe 3 dni. 5 minut, bez maila, wynik od razu.',
   alternates: { canonical: 'https://diagnostyka.talerzihantle.com/' },
   openGraph: {
     title: OG_TITLE,

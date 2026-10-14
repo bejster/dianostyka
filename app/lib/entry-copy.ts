@@ -22,11 +22,11 @@ type EntryCopy = {
 
 export const ENTRY_COPY: Record<EntryDoor, EntryCopy> = {
   general: {
-    headline: 'Wiesz, co Ci psuje formę?',
-    accent: 'Sprawdźmy, czy masz rację.',
-    body: 'Pewnie masz już swoją wersję. Robota siedzi w głowie do nocy, wieczorem jesz to, co jest pod ręką, a trening przesuwasz na jutro. Obstaw, co z tego zabiera Ci najwięcej. Potem zaznaczysz, jak wyglądał Twój ostatni tydzień. Na końcu zobaczysz, czy Twoje odpowiedzi mówią to samo.',
-    proof: 'Do tego jeden ruch na 3 dni, który rozstrzygnie, kto ma rację.',
-    cta: 'Sprawdzam, czy mam rację',
+    headline: 'Cały dzień się pilnujesz, a wieczorem i tak pękasz?',
+    accent: 'A jeśli to zaczyna się dużo wcześniej?',
+    body: 'Obiad przesuwa się na 16 albo wypada, robota siedzi w głowie do nocy, a potem obwiniasz silną wolę. Obstaw, co Cię rozkłada. Twój ostatni tydzień pokaże, czy masz rację. Albo czy od miesięcy naprawiasz nie to miejsce.',
+    proof: 'Na końcu zobaczysz, gdzie to się u Ciebie zaczyna. Do tego jeden ruch na 3 dni, który to sprawdzi.',
+    cta: 'Sprawdzam, gdzie to się zaczyna',
   },
   hit: {
     headline: 'Wiesz, co robić. Więc na czym znowu się wykładasz?',
