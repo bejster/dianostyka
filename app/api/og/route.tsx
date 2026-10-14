@@ -10,61 +10,57 @@ export async function GET(req: Request) {
   const g = rawG ? rawG.slice(0, 24) : '';
   const t = (searchParams.get('t') || '').slice(0, 48);
   const s = (searchParams.get('s') || '').slice(0, 3);
-  // v=th2: podgląd linku /rozjazd (TH2). Ten sam układ, inny nagłówek i oś tygodnia.
+  // v=th2: podgląd linku /rozjazd (TH2). Obraz niesie jedno pytanie, og:title dokłada drugie.
+  // 2026-10-14: z obrazu wyleciały oś kroków, podpis i badge. Za dużo tekstu w karcie FB.
   const th2 = searchParams.get('v') === 'th2';
-  const headline = th2 ? 'Gdzie pęka Twój tydzień?' : 'Wiesz, co Ci psuje formę? Sprawdźmy, czy masz rację.';
-  const steps = th2 ? ['TYDZIEŃ', 'PIĄTEK', 'WEEKEND'] : ['RANO', 'PRACA', 'PO PRACY'];
-  const subline = th2 ? 'Zobacz, gdzie zaczyna się rozjazd.' : 'Zobacz, co najbardziej Ci ją zabiera.';
 
   if (!g) {
+    const brand = (
+      <div style={{ display: 'flex', position: 'absolute', top: 54, left: 74, fontSize: 18, letterSpacing: 8, color: '#8a7535', fontWeight: 800 }}>
+        DIAGNOSTYKA 168
+      </div>
+    );
+    const frame = {
+      width: '100%',
+      height: '100%',
+      display: 'flex',
+      position: 'relative' as const,
+      alignItems: 'center',
+      justifyContent: 'center',
+      background: 'radial-gradient(circle at 50% 5%, #1b170d 0%, #09090a 48%, #050506 100%)',
+      color: '#ece7db',
+      fontFamily: 'Arial, sans-serif',
+    };
+
+    if (th2) {
+      return new ImageResponse(
+        (
+          <div style={{ ...frame, flexDirection: 'column' }}>
+            {brand}
+            <div style={{ display: 'flex', fontFamily: 'Georgia, serif', fontSize: 84, lineHeight: 1.02, textAlign: 'center' }}>
+              Gdzie pęka Twój tydzień?
+            </div>
+            <div style={{ display: 'flex', width: 120, height: 3, marginTop: 40, background: '#c8a84e' }} />
+          </div>
+        ),
+        { width: 1200, height: 630 }
+      );
+    }
+
+    // General: zakład kontra tydzień. Puste pole i znak zapytania zostają otwarte do wyniku.
+    const card = { display: 'flex', flexDirection: 'column' as const, justifyContent: 'space-between', width: 460, height: 320, padding: '36px 40px', borderRadius: 18 };
     return new ImageResponse(
       (
-        <div
-          style={{
-            width: '100%',
-            height: '100%',
-            display: 'flex',
-            flexDirection: 'column',
-            justifyContent: 'center',
-            background: 'radial-gradient(circle at 50% 5%, #1b170d 0%, #09090a 48%, #050506 100%)',
-            color: '#ece7db',
-            padding: '64px 74px',
-            fontFamily: 'Arial, sans-serif',
-          }}
-        >
-          <div style={{ display: 'flex', fontSize: 20, letterSpacing: 8, color: '#c8a84e', fontWeight: 800 }}>
-            DIAGNOSTYKA 168
+        <div style={frame}>
+          {brand}
+          <div style={{ ...card, border: '2px solid #2d2a22', background: '#0e0d0a' }}>
+            <div style={{ display: 'flex', fontSize: 28, letterSpacing: 5, color: '#a49e92', fontWeight: 800 }}>TY OBSTAWIASZ</div>
+            <div style={{ display: 'flex', width: '100%', height: 3, marginBottom: 46, background: '#5b5242' }} />
           </div>
-
-          <div style={{ display: 'flex', marginTop: 30, maxWidth: 1030, fontFamily: 'Georgia, serif', fontSize: 70, lineHeight: 1.02 }}>
-            {headline}
-          </div>
-
-          <div style={{ display: 'flex', alignItems: 'center', marginTop: 42, width: '100%' }}>
-            {steps.map((label, i) => (
-              <div key={label} style={{ display: 'flex', alignItems: 'center', flex: 1 }}>
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                  <div style={{ display: 'flex', width: 36, height: 36, borderRadius: 999, alignItems: 'center', justifyContent: 'center', border: '2px solid #b99a4a', color: '#f2d98f', background: '#15130e', fontFamily: 'Georgia, serif', fontSize: 30 }}>
-                    {i === 1 ? '?' : ''}
-                  </div>
-                  <div style={{ display: 'flex', marginTop: 10, fontSize: 15, letterSpacing: 2, color: '#8f887c' }}>{label}</div>
-                </div>
-                <div style={{ display: 'flex', height: 2, flex: 1, margin: '0 16px 28px', background: 'linear-gradient(90deg,#514629,#8a7535)' }} />
-              </div>
-            ))}
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-              <div style={{ display: 'flex', width: 36, height: 36, borderRadius: 999, background: '#e0552e', boxShadow: '0 0 24px rgba(224,85,46,.45)' }} />
-              <div style={{ display: 'flex', marginTop: 10, fontSize: 15, letterSpacing: 2, color: '#df8c73' }}>OBJAW</div>
-            </div>
-          </div>
-
-          <div style={{ display: 'flex', marginTop: 34, justifyContent: 'space-between', alignItems: 'center', gap: 30 }}>
-            <div style={{ display: 'flex', fontSize: 25, color: '#a49e92' }}>
-              {subline}
-            </div>
-            <div style={{ display: 'flex', fontSize: 20, color: '#c8a84e', fontWeight: 800 }}>
-              5 MIN · WYNIK OD RAZU
-            </div>
+          <div style={{ display: 'flex', fontFamily: 'Georgia, serif', fontSize: 40, color: '#6f6858', margin: '0 34px' }}>vs</div>
+          <div style={{ ...card, border: '2px solid #b99a4a', background: '#15130e', boxShadow: '0 0 60px rgba(200,168,78,.18)' }}>
+            <div style={{ display: 'flex', fontSize: 28, letterSpacing: 5, color: '#c8a84e', fontWeight: 800 }}>TWÓJ TYDZIEŃ MÓWI</div>
+            <div style={{ display: 'flex', fontFamily: 'Georgia, serif', fontSize: 170, lineHeight: 0.9, color: '#f2d98f' }}>?</div>
           </div>
         </div>
       ),

@@ -18,6 +18,6 @@ test('/rozjazd ma wlasny title i OG, nie dziedziczy hero general', () => {
 
 test('OG ma wariant th2 obok nowego naglowka general', () => {
   assert.match(OG, /searchParams\.get\('v'\) === 'th2'/);
-  assert.match(OG, /th2 \? 'Gdzie pęka Twój tydzień\?' : 'Wiesz, co Ci psuje formę\? Sprawdźmy, czy masz rację\.'/);
-  assert.match(OG, /\{headline\}/);
+  assert.match(OG, /if \(th2\)/);
+  assert.match(OG, /Gdzie pęka Twój tydzień\?/);
 });

@@ -1,13 +1,17 @@
 import type { Metadata } from 'next';
 import './globals.css';
 
+// Karta linku: obraz pokazuje zakład, tytuł zadaje pytanie, opis jest krótki. Bez dublowania nagłówka.
+const OG_TITLE = 'Wiesz, co Ci psuje formę?';
+const OG_DESCRIPTION = '5 minut. Na końcu zobaczysz, czy Twój tydzień się z Tobą zgadza.';
+
 export const metadata: Metadata = {
   title: 'Wiesz, co Ci psuje formę? Sprawdźmy, czy masz rację. | Diagnostyka 168',
   description: 'Zobacz, co w Twoim tygodniu najbardziej Ci ją zabiera i od czego zacząć w najbliższe 3 dni. 5 minut, bez maila, wynik od razu.',
   alternates: { canonical: 'https://diagnostyka.talerzihantle.com/' },
   openGraph: {
-    title: 'Wiesz, co Ci psuje formę? Sprawdźmy, czy masz rację.',
-    description: 'Zobacz, co w Twoim tygodniu najbardziej Ci ją zabiera i od czego zacząć w najbliższe 3 dni. 5 minut, wynik od razu.',
+    title: OG_TITLE,
+    description: OG_DESCRIPTION,
     url: 'https://diagnostyka.talerzihantle.com',
     siteName: 'Diagnostyka 168 | Hantle i Talerz',
     images: [
@@ -22,8 +26,8 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Wiesz, co Ci psuje formę? Sprawdźmy, czy masz rację.',
-    description: 'Zobacz, co w Twoim tygodniu najbardziej Ci ją zabiera i od czego zacząć w najbliższe 3 dni. 5 minut, wynik od razu.',
+    title: OG_TITLE,
+    description: OG_DESCRIPTION,
     images: ['https://diagnostyka.talerzihantle.com/api/og'],
   },
   icons: {

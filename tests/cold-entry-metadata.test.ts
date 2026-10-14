@@ -15,7 +15,7 @@ test('cold social metadata carries the same curiosity loop as the public hero', 
 test('public OG never invents a fracture time for a cold visitor', () => {
   assert.match(og, /const rawG = searchParams\.get\('g'\)/);
   assert.match(og, /if \(!g\)/);
-  assert.match(og, /Wiesz, co Ci psuje formę\? Sprawdźmy, czy masz rację\./);
-  assert.match(og, /Zobacz, co najbardziej Ci ją zabiera\./);
+  assert.match(og, /TY OBSTAWIASZ/);
+  assert.match(og, /TWÓJ TYDZIEŃ MÓWI/);
   assert.doesNotMatch(og, /\|\| '22:47'/);
 });

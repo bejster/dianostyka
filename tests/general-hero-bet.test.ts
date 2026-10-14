@@ -39,7 +39,7 @@ test('hit and th2 keep their own proof line, page renders accent and proof from 
 test('social metadata and OG carry the new general headline', () => {
   assert.match(layout, /title: 'Wiesz, co Ci psuje formę\? Sprawdźmy, czy masz rację\. \| Diagnostyka 168'/);
   assert.doesNotMatch(layout, /Ile dni w tygodniu jesteś w formie/);
-  assert.match(og, /Wiesz, co Ci psuje formę\? Sprawdźmy, czy masz rację\./);
+  assert.match(og, /TY OBSTAWIASZ/);
   assert.doesNotMatch(og, /Ile dni w tygodniu jesteś w formie/);
 });
 
