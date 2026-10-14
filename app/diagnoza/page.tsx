@@ -381,7 +381,12 @@ export default function DiagnozaPage() {
     // istotnosc godziny pekniecia dnia dla snu: rano/wieczor najmocniej, indeks = D.breakWindow (0-6)
     const bwSleep = [1, 0.2, 0.3, 0.4, 0.8, 0.3, 0.5][D.breakWindow] ?? 0.5;
     const senSev = (0.40 * (D.sleepQ / 3) + 0.20 * bwSleep + 0.20 * (D.lost / 4) + 0.20 * (D.mondayFeel / 3)) * 100;
-    const napedSev = (0.68 * (cnt(['libido', 'motivation', 'confidence', 'recovery']) / 4) + 0.32 * (D.lost / 4)) * 100;
+    // Samoocena napedu (1-10) to najbardziej bezposrednia odpowiedz o tej osi. Bez niej 2/10 przy zerze
+    // zaznaczonych objawow dawalo "mało zapasu", a obok stalo ostrzezenie o badaniach.
+    const selfDriveRaw = answers.self_drive;
+    const selfDriveSev = typeof selfDriveRaw === 'number' && Number.isFinite(selfDriveRaw) ? clamp01((10 - selfDriveRaw) / 9) : undefined;
+    const driveTags = cnt(['libido', 'motivation', 'confidence', 'recovery']) / 4;
+    const napedSev = (selfDriveSev === undefined ? 0.68 * driveTags + 0.32 * (D.lost / 4) : 0.50 * selfDriveSev + 0.35 * driveTags + 0.15 * (D.lost / 4)) * 100;
     const trainSev = D.plan >= 1 ? D.miss / D.plan : 0.85; // nie trenuje wcale = wysoki deficyt
     const formaSev = (0.50 * trainSev + 0.35 * (D.binge / 4) + 0.15 * (T.has('belly') ? 1 : 0)) * 100;
     const wkndSev = (0.55 * (D.wknd / 4) + 0.45 * (D.mondayFeel / 3)) * 100;
@@ -399,7 +404,7 @@ export default function DiagnozaPage() {
     // Liczba zaznaczonych sygnalow wobec czterech mozliwych tlumaczy oba konce skali tym samym zdaniem:
     // jeden z czterech uzasadnia wysoki wynik, trzy z czterech uzasadniaja niski. Zrodlo zostaje w tej osi.
     const DRIVE_COUNT_PL = ['', 'jeden', 'dwa', 'trzy', 'cztery'];
-    const driveReason = driveLabels.length ? `zaznaczyłeś tu ${DRIVE_COUNT_PL[driveLabels.length]} z czterech sygnałów: ${driveLabels.join(', ')}` : 'nie zaznaczyłeś tu żadnego z czterech sygnałów';
+    const driveReason = (selfDriveSev === undefined ? '' : `oceniasz to na ${hoursPl(selfDriveRaw as number)}/10, a `) + (driveLabels.length ? `zaznaczyłeś tu ${DRIVE_COUNT_PL[driveLabels.length]} z czterech sygnałów: ${driveLabels.join(', ')}` : 'nie zaznaczyłeś tu żadnego z czterech sygnałów');
     // plan < 1 to najmocniejszy pojedynczy składnik formaSev (trainSev 0.85). Bez tej gałęzi oś schodzi w dół,
     // a podpis mówi userowi, że trening trzyma rytm. Podpis ma zawsze zgadzać się z jego własną odpowiedzią.
     const formReason = D.plan < 1 ? 'w zwykłym tygodniu nie planujesz treningów'

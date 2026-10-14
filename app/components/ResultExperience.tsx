@@ -36,10 +36,12 @@ function SettlingReadout({ from, to }: { from?: number; to?: number }) {
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
     const dec = /\./.test(String(from) + String(to)) ? 10 : 1;
     let raf = 0;
-    setShown(fmt(from));
+    // from pojawia sie dopiero, gdy animacja faktycznie rusza. Wczesniej licznik stal na wlasnej ocenie,
+    // jesli element nigdy nie wszedl w kadr w 80%, i przeczyl pomiarowi w zdaniu obok.
     const io = new IntersectionObserver(([e]) => {
       if (!e.isIntersecting) return;
       io.disconnect();
+      setShown(fmt(from));
       const t0 = performance.now(), D = 1300;
       const tick = (t: number) => {
         const p = Math.min(1, (t - t0) / D), k = 1 - Math.pow(1 - p, 3);
@@ -47,7 +49,7 @@ function SettlingReadout({ from, to }: { from?: number; to?: number }) {
         if (p < 1) raf = requestAnimationFrame(tick);
       };
       raf = requestAnimationFrame(tick);
-    }, { threshold: 0.8 });
+    }, { threshold: 0.3 });
     io.observe(el);
     return () => { io.disconnect(); cancelAnimationFrame(raf); };
   }, [from, to]);
@@ -191,7 +193,8 @@ export default function ResultExperience({
   const breakPhrase = BREAK_PHRASE[breakId] || 'Odpowiedzi nie wskazują jednego stałego momentu. Wzorzec zmienia się zależnie od dnia.';
   const orderedStatuses = [...statuses].sort((a,b) => a.score - b.score);
   const weakestStatus = orderedStatuses[0];
-  const strongestStatus = orderedStatuses[orderedStatuses.length - 1];
+  // Samoocena napedu <= 4 idzie z ostrzezeniem o badaniach. Ta sama os nie moze potem byc "tego nie ruszaj".
+  const strongestStatus = [...orderedStatuses].reverse().find((st) => !((awareness?.selfDrive ?? 10) <= 4 && st.label.toLowerCase().includes('napęd'))) ?? orderedStatuses[orderedStatuses.length - 1];
   const breakTrack: Record<string,{pct:number;label:string}> = { bw_morning:{pct:5,label:'rano'}, bw_midday:{pct:24,label:'przed obiadem'}, bw_afternoon:{pct:43,label:'po 14'}, bw_afterwork:{pct:62,label:'po pracy'}, bw_evening:{pct:81,label:'wieczorem'}, bw_weekend:{pct:96,label:'weekend'}, bw_varies:{pct:50,label:'zmiennie'} };
   const breakPos = breakTrack[breakId] || breakTrack.bw_varies;
   const radarPoints = statuses.map((st, i) => { const a = -Math.PI / 2 + i * (Math.PI * 2 / statuses.length); const r = Math.max(24, Math.min(st.score, 90)) * 0.82; return `${110 + Math.cos(a) * r},${110 + Math.sin(a) * r}`; }).join(' ');
