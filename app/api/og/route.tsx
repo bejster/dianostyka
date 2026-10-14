@@ -23,7 +23,7 @@ export async function GET(req: Request) {
     // Obietnica = to, co realnie stoi na ekranie wyniku: "Gdzie zaczynasz" + "Pierwszy ruch 72h" (/pp §14A).
     const payoff = (
       <div style={{ display: 'flex', position: 'absolute', bottom: 50, left: 0, right: 0, justifyContent: 'center', fontSize: 32, color: '#c2ab6c' }}>
-        Na końcu: od czego to się u Ciebie zaczyna i jeden ruch na 3 dni
+        Na końcu: gdzie to się u Ciebie zaczyna i co zrobić przez 3 dni
       </div>
     );
     const frame = {

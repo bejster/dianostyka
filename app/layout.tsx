@@ -2,8 +2,8 @@ import type { Metadata } from 'next';
 import './globals.css';
 
 // Karta linku (/pp §14A): tytuł niesie tożsamość i stawkę, opis zakład, obraz obietnicę z ekranu wyniku.
-const OG_TITLE = 'Pilnujesz się, a co poniedziałek zaczynasz od nowa?';
-const OG_DESCRIPTION = 'Obstaw, co Ci psuje formę. Wynik pokaże, czy masz rację.';
+const OG_TITLE = 'Cały dzień się pilnujesz, a wieczorem i tak pękasz?';
+const OG_DESCRIPTION = 'Obstaw przyczynę. Wynik pokaże, czy to w ogóle zaczyna się wieczorem.';
 
 export const metadata: Metadata = {
   title: 'Wiesz, co Ci psuje formę? Sprawdźmy, czy masz rację. | Diagnostyka 168',
