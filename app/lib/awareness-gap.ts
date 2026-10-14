@@ -128,7 +128,7 @@ export function computeAwarenessGap(answers: RawAnswers): AwarenessGap {
     verdict === 'ABOVE'
       ? 'Ta różnica bierze się z godzin, których przy ocenianiu własnej energii nikt sobie nie liczy. Poniżej masz je wypisane.'
       : verdict === 'BELOW'
-        ? 'Jesteś dla siebie ostrzejszy niż Twój własny tydzień. Poniżej masz to, co Twoje odpowiedzi mówią naprawdę.'
+        ? 'Jesteś dla siebie ostrzejszy niż Twój własny tydzień. Poniżej masz to, co mówią Twoje odpowiedzi.'
         : 'Widzisz swój tydzień trzeźwo. Poniżej masz odpowiedzi, które złożyły się na tę liczbę.';
 
   const headline =

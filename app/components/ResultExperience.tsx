@@ -360,6 +360,8 @@ export default function ResultExperience({
             </dl>
             {decision?.counterevidence && <p className="rx-ro-note">{decision.counterevidence}</p>}
             {(decision?.medical_boundary || (decision && weakestStatus?.label === 'Napęd i libido')) && <p className="rx-ro-note rx-ro-med">{decision.medical_boundary || MEDICAL_BOUNDARY}</p>}
+            {/* Kto przyszedl po prowadzenie, nie musi przewijac 10 ekranow, zeby zobaczyc, co by dostal. */}
+            {route.primary === 'nabor' && <a className="rx-hero-plan" href="#plan-1na1">Od czego zacząłbym z Tobą 1:1 <span aria-hidden="true">↓</span></a>}
           </div>
           <div className="rx-cue" aria-hidden="true">
             <span className="rx-cue-arrow">↓</span>
@@ -566,7 +568,7 @@ export default function ResultExperience({
         </details>
 
         {/* BEAT 6 — krótki most do 1:1. Długi opis jest opcjonalny. */}
-        <section className="rx-beat" data-beat="6">
+        <section className="rx-beat rx-coach" data-beat="6" id="plan-1na1">
           <div className="rx-kick">Gdybym prowadził Cię 1:1</div>
           <div className="rx-human">
             {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -577,16 +579,36 @@ export default function ResultExperience({
             </div>
           </div>
 
-          <p className="rx-method-lead">{repairLead}</p>
+          {/* Plan startu stoi PRZED przyciskiem. Wczesniej siedzial zwiniety pod nim, wiec kto klikal,
+              klikal w ciemno, a kto nie klikal, nigdy nie zobaczyl, co by dostal. */}
+          <div className="rx-plan">
+            <div className="rx-plan-top"><span>Plan startu</span>{kickName && <span>{kickName}</span>}</div>
+            <h2 className="rx-plan-h">Ten wynik byłby punktem startu, nie formularzem do wyrzucenia.</h2>
+            <ol className="rx-demo">
+              <li><span className="rx-demo-n">01</span><div><strong>Pierwszy punkt: {breakPos.label}</strong><p>Ustawiamy wersję minimum właśnie tutaj. Ma zadziałać też w dniu, w którym nic nie idzie po planie.</p></div></li>
+              <li><span className="rx-demo-n">02</span><div><strong>Sprawdzamy: {weakestStatus?.label}</strong><p>Na start dostajesz jedno zadanie na 72 godziny: {experiment.action} Obserwujemy: {experiment.observe.toLowerCase()}.</p></div></li>
+              <li><span className="rx-demo-n">03</span><div><strong>Tego na start nie ruszam: {strongestStatus?.label}</strong><p>Zostawiam to bez zmian, żeby był punkt odniesienia.</p></div></li>
+              <li><span className="rx-demo-n">04</span><div><strong>Dokładam dopiero po dowodzie</strong><p>Kolejny element wchodzi wtedy, gdy pierwszy przeżyje gorszy tydzień. Jeśli nie przeżyje, zmieniam ruch zamiast dokładać kolejne zasady.</p></div></li>
+            </ol>
+          </div>
 
-          <a className="rx-badge" style={{ marginTop: 16 }} href={GOOGLE_AGG.url} target="_blank" rel="noopener noreferrer">
-            <span className="rx-g">G</span>
-            <span className="rx-r">{GOOGLE_AGG.rating} <span style={{ color: C.gold }}>★★★★★</span><span style={{ color: C.mute, fontWeight: 400 }}> · {GOOGLE_AGG.count} opinii w Google</span></span>
-          </a>
+          <div className="rx-proof">
+            <a className="rx-badge" href={GOOGLE_AGG.url} target="_blank" rel="noopener noreferrer">
+              <span className="rx-g">G</span>
+              <span className="rx-r">{GOOGLE_AGG.rating} <span style={{ color: C.gold }}>★★★★★</span><span style={{ color: C.mute, fontWeight: 400 }}> · {GOOGLE_AGG.count} opinii w Google</span></span>
+            </a>
+            {GOOGLE_CARDS.slice(0, 1).map((r, i) => (
+              <div key={i} className="rx-gcard">
+                <div className="rx-gtop"><span style={{ color: C.gold, letterSpacing: 1 }}>★★★★★</span><span style={{ fontFamily: C.mono, fontSize: 10, color: C.faint }}>{r.name}</span></div>
+                <p className="rx-gq">„{r.text}”</p>
+              </div>
+            ))}
+          </div>
 
           <details className="rx-more rx-more-before">
             <summary>Zanim zamkniesz wynik: dlaczego ten kierunek?</summary>
             <div className="rx-more-body">
+              <p className="rx-method-lead">{repairLead}</p>
               <div className="rx-ceiling">
                 <p className="rx-ceiling-lead">{ceilingLead}</p>
                 <p>{ceilingBody}</p>
@@ -603,6 +625,8 @@ export default function ResultExperience({
               {route.secondaryNabor && <p className="rx-invite rx-invite-soft">{naborInviteSoft}</p>}
             </div>
           </details>
+
+          <div className="rx-expectation"><p>Jeśli myślisz o prowadzeniu, niżej masz następny krok.</p><p>Nie każę Ci opisywać od nowa tego, co przed chwilą wypełniłeś. Ta diagnostyka jest już punktem wyjścia.</p></div>
 
           <div className="rx-final-action" data-compact="true">
             <h3>{route.primaryKicker}</h3>
@@ -621,34 +645,10 @@ export default function ResultExperience({
                 {route.secondaryNabor && <a className="rx-route-alt" href={naborHref} target="_blank" rel="noopener noreferrer" onClick={onNaborClick}>{route.secondaryNabor.label} →</a>}
               </>
             )}
+            {instagram && <p className="rx-fine">Mam ten wynik przypisany do @{instagram}. Nie musisz niczego wypełniać drugi raz.</p>}
           </div>
-
-          <details className="rx-more">
-            <summary>Zobacz, co byłoby następnym krokiem</summary>
-            <div className="rx-more-body">
-              <h2 className="rx-h2" style={{ fontSize: 'clamp(23px,4.8vw,34px)' }}>Ten wynik byłby punktem startu, nie formularzem do wyrzucenia.</h2>
-              <ol className="rx-demo">
-                <li><span className="rx-demo-n">1</span><div><strong>Pierwszy punkt: {breakPos.label}</strong><p>Ustawiamy wersję minimum właśnie tutaj. Ma zadziałać też w dniu, w którym nic nie idzie po planie.</p></div></li>
-                <li><span className="rx-demo-n">2</span><div><strong>Sprawdzamy: {weakestStatus?.label}</strong><p>Na start dostajesz jedno zadanie na 72 godziny: {experiment.action} Obserwujemy: {experiment.observe.toLowerCase()}.</p></div></li>
-                <li><span className="rx-demo-n">3</span><div><strong>Tego na start nie ruszam: {strongestStatus?.label}</strong><p>Zostawiam to bez zmian, żeby był punkt odniesienia.</p></div></li>
-                <li><span className="rx-demo-n">4</span><div><strong>Dokładam dopiero po dowodzie</strong><p>Kolejny element wchodzi wtedy, gdy pierwszy przeżyje gorszy tydzień. Jeśli nie przeżyje, zmieniam ruch zamiast dokładać kolejne zasady.</p></div></li>
-              </ol>
-              <div className="rx-expectation">
-                <p>Jeśli myślisz o prowadzeniu, niżej masz następny krok.</p>
-                <p>Nie każę Ci opisywać od nowa tego, co przed chwilą wypełniłeś. Ta diagnostyka jest już punktem wyjścia.</p>
-              </div>
-              <div className="rx-gcards">
-                {GOOGLE_CARDS.slice(0, 1).map((r, i) => (
-                  <div key={i} className="rx-gcard">
-                    <div className="rx-gtop"><span style={{ color: C.gold, letterSpacing: 1 }}>★★★★★</span><span style={{ fontFamily: C.mono, fontSize: 10, color: C.faint }}>{r.name}</span></div>
-                    <p className="rx-gq">„{r.text}”</p>
-                  </div>
-                ))}
-              </div>
-              {instagram && <p className="rx-fine">Mam ten wynik przypisany do @{instagram}. Nie musisz niczego wypełniać drugi raz.</p>}
-            </div>
-          </details>
         </section>
+
 
         {/* BEAT 7 — opcjonalna kalibracja, domyślnie zwinięta. */}
         <section className="rx-beat rx-calibration-section" data-beat="7">
@@ -808,4 +808,22 @@ const css = `
 @media(min-width:721px){.rx-hero{min-height:auto;padding-bottom:72px}.rx-cue{position:static;transform:none;margin-top:34px}}
 /* 3.1 desktop: od 1100 px hero wychodzi poza kolumne 620 i dzieli sie na teze (lewo) i odczyt (prawo). Flex center w .rx-hero centruje panel szerszy od rodzica. */
 @media(min-width:1100px){.rx-wrap{max-width:1040px}.rx-beat:not(.rx-hero){display:grid;grid-template-columns:300px minmax(0,620px);column-gap:76px}.rx-beat:not(.rx-hero)>*{grid-column:2}.rx-beat:not(.rx-hero)>.rx-kick{grid-column:1;grid-row:1 / span 24;align-self:start;position:sticky;top:88px;margin:8px 0 0;line-height:1.6}.rx-hero{padding-top:64px;align-items:stretch}.rx-hero>.rx-kick{justify-content:flex-start}.rx-hero-panel{width:100%;max-width:none;display:grid;grid-template-columns:minmax(0,5fr) minmax(0,6fr);column-gap:56px;align-content:start;text-align:left;padding:44px 48px 40px}.rx-hero-panel>*{grid-column:1}.rx-hero-signature{justify-content:flex-start;margin:0 0 22px}.rx-arch{max-width:13ch;font-size:clamp(40px,3.6vw,54px)}.rx-hero-panel>.rx-readout{grid-column:2;grid-row:1 / span 8;margin:0;align-self:start}.rx-hero-panel>.rx-ro-note{margin-top:22px}.rx-hero-signature,.rx-arch,.rx-ro-note{align-self:start}}
+.rx-hero-plan{display:inline-flex;align-items:center;gap:8px;margin-top:18px;padding:11px 16px;border:1px solid ${C.ruleS};border-radius:999px;color:${C.goldB};text-decoration:none;font-size:13.5px;font-weight:650;background:rgba(200,168,78,.06);transition:background .2s,border-color .2s,transform .2s}.rx-hero-plan:hover{background:rgba(200,168,78,.12);border-color:${C.gold};transform:translateY(-1px)}.rx-hero-plan span{display:inline-block;animation:rxbob 2.4s ease-in-out infinite}
+.rx-coach{scroll-margin-top:24px}
+.rx-plan{position:relative;margin:4px 0 18px;padding:22px 20px 6px;border:1px solid ${C.line2};border-radius:18px;background:radial-gradient(120% 80% at 0% 0%,rgba(200,168,78,.10),transparent 55%),linear-gradient(180deg,${C.pan2},${C.pan});box-shadow:0 1px 0 rgba(255,255,255,.04) inset,0 30px 80px -40px rgba(0,0,0,.9),0 0 0 1px rgba(200,168,78,.05);overflow:hidden}
+.rx-plan::before{content:"";position:absolute;top:0;left:18px;right:18px;height:1px;background:linear-gradient(90deg,transparent,${C.goldB},transparent);transform:scaleX(0);transform-origin:left;transition:transform 1.4s cubic-bezier(.22,1,.36,1) .2s}
+.rx-beat.in .rx-plan::before{transform:scaleX(1)}
+.rx-plan-top{display:flex;justify-content:space-between;gap:12px;font-family:${C.mono};font-size:10px;letter-spacing:2.4px;text-transform:uppercase;color:${C.gold};font-weight:800;margin-bottom:12px}.rx-plan-top span:last-child{color:${C.faint}}
+.rx-plan-h{font-family:${C.serif};font-weight:400;font-size:clamp(25px,5.4vw,36px);line-height:1.06;color:${C.paper};margin:0 0 14px;letter-spacing:-.01em}
+.rx-plan .rx-demo{position:relative;margin:0;border-top:0}
+.rx-plan .rx-demo::before{content:"";position:absolute;left:13px;top:22px;bottom:30px;width:1px;background:linear-gradient(180deg,${C.ruleS},${C.rule} 70%,transparent)}
+.rx-plan .rx-demo li{border-bottom:0;padding:13px 0;opacity:0;transform:translateY(10px);transition:opacity .6s cubic-bezier(.22,1,.36,1),transform .6s cubic-bezier(.22,1,.36,1)}
+.rx-beat.in .rx-plan .rx-demo li{opacity:1;transform:none}
+.rx-beat.in .rx-plan .rx-demo li:nth-child(1){transition-delay:.35s}.rx-beat.in .rx-plan .rx-demo li:nth-child(2){transition-delay:.5s}.rx-beat.in .rx-plan .rx-demo li:nth-child(3){transition-delay:.65s}.rx-beat.in .rx-plan .rx-demo li:nth-child(4){transition-delay:.8s}
+.rx-plan .rx-demo-n{position:relative;z-index:1;width:27px;height:27px;padding:0;display:grid;place-items:center;border:1px solid ${C.ruleS};border-radius:50%;background:${C.pan};font-size:9.5px;letter-spacing:0;color:${C.goldB}}
+.rx-plan .rx-demo li:first-child .rx-demo-n{background:${C.gold};color:${C.ink};border-color:${C.gold};box-shadow:0 0 0 5px rgba(200,168,78,.12)}
+.rx-proof{display:grid;gap:4px;margin:0 0 6px}.rx-proof .rx-gcard{border-top:0;padding:8px 2px 2px}
+.rx-final-action .rx-fine{margin:14px 0 0;text-align:center}
+@media(min-width:760px){.rx-plan{padding:30px 32px 12px}.rx-plan .rx-demo::before{left:13px}}
+@media(prefers-reduced-motion:reduce){.rx-plan::before{transform:scaleX(1);transition:none}.rx-plan .rx-demo li{opacity:1;transform:none;transition:none}.rx-hero-plan span{animation:none}}
 @media(prefers-reduced-motion:reduce){.rx-beat,.rx-beat:not(.rx-hero)>*{opacity:1;transform:none;transition:none}.rx-beat:not(.in) .rx-axis-fill{transform:none}.rx-axis-fill{transition:none}.rx-cue-arrow{animation:none}}`;
