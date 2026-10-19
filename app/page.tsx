@@ -8,6 +8,7 @@ import {
   sanitizeAnalyticsData,
 } from './lib/funnel-pilot';
 import WeekPage from './components/WeekPage';
+import { validEmail, validInstagram } from './lib/lead-integrity';
 import { buildWeekPlan } from './lib/week-plan';
 import {
   type ChipKey,
@@ -929,6 +930,7 @@ export default function Page() {
   const [imie, setImie] = useState('');
   const [igErr, setIgErr] = useState('');
   const [emailErr, setEmailErr] = useState('');
+  const [formErr, setFormErr] = useState('');
   const [loading, setLoading] = useState(false);
   // Tier 3: dwuetapowy lejek (wynik przed kontaktem → intencja → miękki kontakt)
   const [intent, setIntent] = useState<number | null>(null); // 0=działam sam, 1=zobaczyć pomoc, 2=napisz mi, 3=nie wiem
@@ -1102,29 +1104,12 @@ export default function Page() {
       // Tier 3: value-first. Wynik pokazuje się OD RAZU, bez ściany email. Kontakt zbieramy niżej, po intencji.
       const sc = score(D);
       const worst = [...catScores].sort((a, b) => a.pct - b.pct)[0]?.label || '';
-      // Pixel: Lead - skonczyl 7 sekcji i zobaczyl wynik
-      fbqTrack('Lead', { content_name: 'diagnostyka_results', content_category: 'lead_gen', value: sc });
+      // Meta: samo obejrzenie wyniku NIE jest pozyskaniem leada — nie zawyżamy konwersji.
+      fbqTrack('ViewContent', { content_name: 'diagnostyka_results', content_category: 'diagnostic_result', value: sc });
       fetchReframe({ pain, selfDx, trigger, worstCat: worst, segment: '', age: D.age });
-      // ANONIMOWY zapis odpowiedzi przy KAZDYM wyniku (bez imienia/maila/IG) - agregaty pod content
-      // ("o ktorej peka tydzien X facetow"), przyszle percentyle i real-voice mine takze od tych, co nie zostawia kontaktu.
-      try {
-        if (typeof navigator !== 'undefined' && navigator.sendBeacon) {
-          navigator.sendBeacon(
-            'https://n8n.srv1313512.hstgr.cloud/webhook/unified-leads',
-            JSON.stringify({
-              event: 'diagnostyka_anon_result',
-              ts: new Date().toISOString(),
-              score: sc,
-              stan: sc < 12 ? 'dobry' : sc < 40 ? 'sredni' : 'zly',
-              godzina: hourRange(D),
-              hamulec: worst,
-              typ: pickArchetype(D, worst).key,
-              odpowiedzi: { ...D, tags: Array.from(D.tags) },
-              pain, trigger, selfDx,
-            })
-          );
-        }
-      } catch {}
+      // Ukończenie anonimowego quizu to tylko ANALITYKA, nie lead dla Telegrama/CRM.
+      // NIE wysyłaj danych osobowych, tekstów otwartych ani pustych rekordów na unified-leads.
+      trackEvent('diagnostyka_anon_result', { score: sc, top_category: worst });
       try { localStorage.removeItem('diag_progress_v2'); } catch {}
       try { localStorage.setItem('diag_last_result', JSON.stringify({ ts: Date.now(), score: sc, hour: hourRange(D), typ: pickArchetype(D, worst).label })); } catch {}
       setPhase('results');
@@ -1161,12 +1146,25 @@ export default function Page() {
   }, []);
 
   const submit = async () => {
-    // Tier 3: email wymagany (raport + lista), IG opcjonalny (kanał DM). Jeden wymagany kanał zamiast dwóch.
+    // Kontakt weryfikowany PRZED wysłaniem. Deklarowany DM wymaga prawdziwego kanału kontaktu.
     const handle = igHandle.trim().replace(/^@/, '');
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) { setEmailErr('Podaj poprawny email'); vibe([30, 80, 30]); return; }
-    // Successful submit - confetti burst + mocna wibracja
-    vibe([20, 60, 20, 60, 40]);
-    spawnConfetti();
+    setFormErr('');
+    setEmailErr('');
+    setIgErr('');
+    if (!validEmail(email)) { setEmailErr('Podaj poprawny email'); vibe([30, 80, 30]); return; }
+    if ((intent === 1 || intent === 2 || handle.length > 0) && !validInstagram(handle)) {
+      setIgErr('Podaj prawidłowy Instagram, żebym mógł odpowiedzieć w DM.');
+      vibe([30, 80, 30]);
+      return;
+    }
+    if ((intent === 1 || intent === 2) && startWhen === null) {
+      setFormErr('Zaznacz kiedy realnie chcesz zacząć.');
+      return;
+    }
+    if (intent === 2 && hotWhy.trim().length < 12) {
+      setFormErr('Napisz jedno konkretne zdanie o tym, czego potrzebujesz od prowadzenia.');
+      return;
+    }
     setLoading(true);
     const c = costs(D); const sc = score(D);
     // Oblicz metryki biologiczne na potrzeby payloadu
@@ -1297,8 +1295,8 @@ export default function Page() {
     // PRIORITY FLAG - proxy dla HOT+WYSOKI budget (per Council recommendation)
     // Bez dodatkowego pytania - wyliczane z istniejacych odpowiedzi
     const commitmentProxy = (D.triedBefore >= 2 ? 2 : D.triedBefore) + (D.frustration >= 3 ? 2 : D.frustration >= 1 ? 1 : 0);
-    const budgetProxy = (c.hardTotal >= 3000 ? 3 : c.hardTotal >= 1500 ? 2 : 1);
-    const priorityLead = sc >= 40 && commitmentProxy >= 3 && budgetProxy >= 2;
+    // Wydatki na weekend nie pokazują budżetu na usługę. Priorytet tylko z jawnej intencji i terminu.
+    const priorityLead = sc >= 40 && (intent === 1 || intent === 2) && startWhen !== null && startWhen <= 1;
     // Kotwica roczna do payloadu: ta sama kwota co na hero wyniku, slowo w slowo (rada: jeden rozjazd = zaufanie pada)
     const arP = anchorRok(D);
     const payload = {
@@ -1335,7 +1333,7 @@ export default function Page() {
       // Priority routing fields (dla n8n priority_lead switch node)
       severity_score: sc,
       commitment_proxy: commitmentProxy,
-      budget_proxy: budgetProxy,
+      budget_proxy: null, // nie pytaliśmy o budżet; nigdy nie udawaj potwierdzonego finansowania
       priority_lead: priorityLead,
       priority_tag: priorityLead ? 'segment_priority_1on1' : `segment_${segment.toLowerCase()}`,
       timestamp: new Date().toISOString(),
@@ -1368,26 +1366,13 @@ export default function Page() {
         return false;
       }
     };
-    await sendPayload(payload);
-    // Telegram notification usunięta - n8n workflow (SK powiadomienia) obsługuje to przez /api/subscribe
-    // Backup: wyslij do unified-leads (Notion + Telegram + MailerLite)
-    try {
-      if (typeof navigator !== 'undefined' && navigator.sendBeacon) {
-        navigator.sendBeacon(
-          'https://n8n.srv1313512.hstgr.cloud/webhook/unified-leads',
-          JSON.stringify({
-            event: 'diagnostyka_lead',
-            name: payload.imie || '',
-            email: payload.email || '',
-            ig: payload.instagram_handle || '',
-            scores: { overall: payload.wynik_score, categories: payload.biggest_category, potential: payload.wynik_potential, bioAge: payload.wynik_bio_age, brainAge: payload.wynik_brain_age, cognitive: payload.wynik_cognitive },
-            utm_source: utmSource || null,
-            hormony_problem: utmProblem || null,
-            ts: new Date().toISOString(),
-          })
-        );
-      }
-    } catch (_e) {}
+    const saved = await sendPayload(payload);
+    if (!saved) {
+      setLoading(false);
+      setFormErr('Nie udało się zapisać zgłoszenia. Spróbuj ponownie za chwilę.');
+      return;
+    }
+    // Bez drugiego, niekompletnego sendBeacon do unified-leads: wcześniej tworzył duplikaty.
     // Pixel: CompleteRegistration - lead skonczyl diagnostyke (zapisany do MailerLite + n8n)
     fbqTrack('CompleteRegistration', {
       content_name: 'diagnostyka_complete',
@@ -3303,7 +3288,7 @@ export default function Page() {
                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2,1fr)', gap: 8 }}>
                           {['W ciągu 7 dni', 'W ciągu 30 dni', 'Za 2-3 miesiące', 'Na razie tylko sprawdzam'].map((l, v) => {
                             const on = startWhen === v;
-                            return (<button key={v} onClick={() => { vibe(6); setStartWhen(v); }} style={{ padding: '12px 8px', textAlign: 'center', border: `1.5px solid ${on ? M.gold : M.brd2}`, background: on ? M.gold + '0e' : M.s1, color: on ? M.t1 : M.t4, cursor: 'pointer', borderRadius: 10, fontSize: 12, fontWeight: 600, fontFamily: M.sans, minHeight: 46, lineHeight: 1.3 }}>{l}</button>);
+                            return (<button key={v} onClick={() => { vibe(6); setStartWhen(v); setFormErr(''); }} style={{ padding: '12px 8px', textAlign: 'center', border: `1.5px solid ${on ? M.gold : M.brd2}`, background: on ? M.gold + '0e' : M.s1, color: on ? M.t1 : M.t4, cursor: 'pointer', borderRadius: 10, fontSize: 12, fontWeight: 600, fontFamily: M.sans, minHeight: 46, lineHeight: 1.3 }}>{l}</button>);
                           })}
                         </div>
                       </div>
@@ -3313,7 +3298,7 @@ export default function Page() {
                       <div style={{ marginTop: 18 }}>
                         <div style={{ fontSize: 14, color: M.t1, fontWeight: 600, marginBottom: 6, lineHeight: 1.4 }}>Co musiałoby być prawdą, żeby prowadzenie było dobrą decyzją?</div>
                         <div style={{ fontSize: 12.5, color: M.t4, marginBottom: 8, lineHeight: 1.5 }}>Jedno zdanie. Ustawia naszą pierwszą rozmowę tak, że nie zgaduję.</div>
-                        <textarea value={hotWhy} onChange={e => setHotWhy(e.target.value.slice(0, 300))} rows={2} placeholder="np. muszę wiedzieć, że da się to pogodzić z moją pracą..." style={{ width: '100%', boxSizing: 'border-box', resize: 'vertical', fontFamily: M.sans, fontSize: 13.5 }} />
+                        <textarea value={hotWhy} onChange={e => { setHotWhy(e.target.value.slice(0, 300)); setFormErr(''); }} aria-required="true" rows={2} placeholder="np. muszę wiedzieć, że da się to pogodzić z moją pracą..." style={{ width: '100%', boxSizing: 'border-box', resize: 'vertical', fontFamily: M.sans, fontSize: 13.5 }} />
                       </div>
                     )}
 
@@ -3330,12 +3315,14 @@ export default function Page() {
                         </div>
                         <div>
                           <div style={{ fontSize: 11, color: M.t4, fontWeight: 600, marginBottom: 5, fontFamily: M.mono, letterSpacing: 0.5 }}>Instagram {intent === 1 || intent === 2 ? '(żebym odpisał w DM)' : '(opcjonalnie)'}</div>
-                          <input type="text" placeholder="@twojnick" value={igHandle} aria-label="Nick na Instagramie" onChange={e => setIgHandle(e.target.value)} />
+                          <input type="text" placeholder="@twojnick" value={igHandle} aria-label="Nick na Instagramie" aria-required={intent === 1 || intent === 2} aria-invalid={Boolean(igErr)} onChange={e => { setIgHandle(e.target.value); setIgErr(''); }} style={{ borderColor: igErr ? M.red : undefined }} />
+                          {igErr && <div role="alert" style={{ fontSize: 12, color: M.red, marginTop: 5 }}>{igErr}</div>}
                         </div>
                         <div>
                           <div style={{ fontSize: 11, color: M.t4, fontWeight: 600, marginBottom: 5, fontFamily: M.mono, letterSpacing: 0.5 }}>Imię (opcjonalne)</div>
                           <input type="text" placeholder="Jak masz na imię?" value={imie} aria-label="Imię" onChange={e => setImie(e.target.value.slice(0, 50))} />
                         </div>
+                        {formErr && <p role="alert" style={{ color: M.red, fontSize: 13, lineHeight: 1.5 }}>{formErr}</p>}
                         <button onClick={submit} disabled={loading} className={!loading ? 'shimmer-btn' : ''} style={{ width: '100%', padding: '15px 24px', marginTop: 4, background: loading ? M.brd2 : 'linear-gradient(135deg, #c8a84e, #a08a3e)', color: loading ? M.t4 : '#0a0a0a', border: 'none', fontFamily: M.sans, fontSize: 14, fontWeight: 700, letterSpacing: 1.5, textTransform: 'uppercase', cursor: loading ? 'not-allowed' : 'pointer', borderRadius: 12, minHeight: 48 }}>
                           {loading ? 'Zapisuję...' : intent === 2 ? 'Wyślij, odezwij się do mnie →' : 'Zapisz mój raport →'}
                         </button>

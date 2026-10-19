@@ -1,13 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
-
-// Walidacja email — regex RFC 5322 uproszczony
-function isValidEmail(email: string): boolean {
-  return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email);
-}
+import { validEmail, validInstagram } from '../../lib/lead-integrity';
 
 export async function POST(req: NextRequest) {
   try {
-    const body = await req.json();
+    const parsed: unknown = await req.json();
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+      return NextResponse.json({ error: 'Nieprawidłowe zgłoszenie' }, { status: 400 });
+    }
+    const body = parsed as Record<string, unknown>;
     const {
       email,
       instagram_handle,
@@ -34,9 +34,28 @@ export async function POST(req: NextRequest) {
       fields,
     } = body;
 
-    if (!email || !isValidEmail(email)) {
-      return NextResponse.json({ error: 'Podaj poprawny email' }, { status: 400 });
+    if (!validEmail(email)) {
+      return NextResponse.json({ error: 'Podaj poprawny email' }, { status: 422 });
     }
+    const intent = typeof body.intencja === 'string' ? body.intencja : '';
+    const needsDm = intent === 'napisz_mi' || intent === 'chce_zobaczyc_pomoc';
+    if ((needsDm || Boolean(instagram_handle)) && !validInstagram(instagram_handle)) {
+      return NextResponse.json({ error: 'Podaj poprawny Instagram do kontaktu w DM' }, { status: 422 });
+    }
+    if (needsDm && !['7dni', '30dni', '2-3mies', 'tylko_sprawdza'].includes(String(body.kiedy_start || ''))) {
+      return NextResponse.json({ error: 'Podaj termin planowanego startu' }, { status: 422 });
+    }
+    if (intent === 'napisz_mi' && (typeof body.warunek_decyzji !== 'string' || body.warunek_decyzji.trim().length < 12)) {
+      return NextResponse.json({ error: 'Uzupełnij oczekiwania wobec współpracy' }, { status: 422 });
+    }
+    // Nie dopuszczaj puste rekordy do handoffu; klient może publikować tylko komplet z diagnostyki.
+    if (source === 'diagnostyka_hit' && (!odpowiedzi || typeof odpowiedzi !== 'object' || Array.isArray(odpowiedzi)
+      || !Number.isFinite(Number(wynik_score)) || Number(wynik_score) < 0 || Number(wynik_score) > 100)) {
+      return NextResponse.json({ error: 'Niekompletny wynik diagnostyki' }, { status: 422 });
+    }
+    const declaredPriority = needsDm
+      && ['7dni', '30dni'].includes(String(body.kiedy_start || ''))
+      && Number(wynik_score) >= 40;
 
     const apiKey = process.env.MAILERLITE_API_KEY;
     const groupId = process.env.MAILERLITE_GROUP_ID;
@@ -46,9 +65,9 @@ export async function POST(req: NextRequest) {
       diagnostyka_score: String(wynik_score ?? score ?? ''),
       diagnostyka_cost: String(wynik_kwota ?? totalCost ?? ''),
     };
-    if (instagram_handle) mlFields.diagnostyka_ig = instagram_handle;
-    if (imie) mlFields.name = imie;
-    if (biggest_category) mlFields.diagnostyka_top_cat = biggest_category;
+    if (instagram_handle) mlFields.diagnostyka_ig = String(instagram_handle);
+    if (imie) mlFields.name = String(imie);
+    if (biggest_category) mlFields.diagnostyka_top_cat = String(biggest_category);
     // Nowe pola — potencjał, hamulce, badania
     if (wynik_potencjal) mlFields.diagnostyka_blocked = String(wynik_potencjal);
     if (wynik_niewykorzystany) mlFields.diagnostyka_usable = String(wynik_niewykorzystany);
@@ -56,11 +75,14 @@ export async function POST(req: NextRequest) {
     if (wynik_badania_count) mlFields.diagnostyka_tests_count = String(wynik_badania_count);
     if (wynik_badania_priorytet) mlFields.diagnostyka_tests_priority = String(wynik_badania_priorytet);
     // Whitelist nowych pól — routing i scoring lead
-    if (priority_lead !== undefined) mlFields.diagnostyka_priority_lead = String(priority_lead);
+    if (priority_lead !== undefined) mlFields.diagnostyka_priority_lead = String(declaredPriority);
     if (commitment_proxy !== undefined) mlFields.diagnostyka_commitment = String(commitment_proxy);
-    if (budget_proxy !== undefined) mlFields.diagnostyka_budget = String(budget_proxy);
+    // Brak jawnego pytania o budżet — nie zapisuj wydatków z weekendu jako budżetu klienta.
     if (path) mlFields.diagnostyka_path = String(path);
-    if (fields) Object.assign(mlFields, fields);
+    // Nie przyjmuj arbitralnego nadpisania budżetu ani priorytetu przez przeglądarkę.
+    if (fields && source !== 'diagnostyka_hit' && typeof fields === 'object' && !Array.isArray(fields)) {
+      Object.assign(mlFields, fields);
+    }
 
     let mlOk = false;
     let webhookOk = false;
@@ -108,7 +130,8 @@ export async function POST(req: NextRequest) {
             imie: imie || '',
             wynik_kwota: wynik_kwota || String(totalCost ?? ''),
             wynik_score: wynik_score || String(score ?? ''),
-            priority_lead: priority_lead ?? '0',
+            priority_lead: declaredPriority,
+            budget_proxy: null,
             path: path || 'general',
             timestamp: timestamp || new Date().toISOString(),
             source: source || 'diagnostyka_hit',
@@ -160,13 +183,14 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // Zwracamy status — frontend wie czy się udało
+    // Nie ogłaszaj zapisu, jeśli żaden kanał nie przyjął danych.
+    const saved = mlOk || webhookOk || tgOk;
     return NextResponse.json({
-      ok: true,
+      ok: saved,
       mailerlite: mlOk,
       webhook: webhookOk,
       telegram: tgOk,
-    });
+    }, { status: saved ? 200 : 503 });
   } catch (e) {
     console.error('Subscribe API error:', e);
     return NextResponse.json({ error: 'Server error' }, { status: 500 });

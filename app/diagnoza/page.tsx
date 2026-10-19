@@ -13,6 +13,7 @@ import { answersToFD } from '../lib/answers-to-fd';
 import { score, costs, pickArchetype, tagScoreWeighted, hourRange } from '../lib/diagnostic-core';
 import { buildWeekPlan } from '../lib/week-plan';
 import { Atmosphere } from './atmosphere';
+import { invalidDiagnosticFields } from '../lib/lead-integrity';
 
 const GOLD = '#c8a84e';
 const BG = '#08080a';
@@ -30,18 +31,13 @@ interface ReframeData {
 }
 
 // ── Kwalifikacja leada na prowadzenie 1:1 (niewidoczna dla usera) ──
-// budżet z realnego wydatku (hardTotal, bez pytania o zarobki), gotowość z intencji + kiedy chce ruszyć + ile razy próbował.
-// priorityLead = mocny ból + budżet + gotowość. wantsHelp = miękki sygnał (chce z kimś, nie sam) -> routing na współpracę.
-function qualify(raw: RawAnswers, triedBefore: number, sc: number, hardTotal: number) {
+// Gotowość z deklarowanej intencji i terminu. Wydatki z weekendu nie są budżetem na opiekę.
+function qualify(raw: RawAnswers, sc: number) {
   const intent = typeof raw.intent === 'string' ? raw.intent : '';
   const startWhen = typeof raw.start_when === 'string' ? raw.start_when : '';
-  const budgetProxy = hardTotal >= 3000 ? 3 : hardTotal >= 1500 ? 2 : 1;
-  const intentPts = intent === 'in_prowadz' ? 2 : intent === 'in_zobacz' ? 1 : 0;
-  const startPts = (startWhen === 'sw_7dni' || startWhen === 'sw_30dni') ? 1 : 0;
-  const commitment = Math.min((triedBefore >= 2 ? 2 : triedBefore) + intentPts + startPts, 5);
-  const priorityLead = sc >= 40 && commitment >= 3 && budgetProxy >= 2;
   const wantsHelp = intent === 'in_prowadz' || intent === 'in_zobacz';
-  return { intent, startWhen, budgetProxy, commitment, priorityLead, wantsHelp };
+  const priorityLead = sc >= 40 && wantsHelp && (startWhen === 'sw_7dni' || startWhen === 'sw_30dni');
+  return { intent, startWhen, priorityLead, wantsHelp };
 }
 
 export default function DiagnozaPage() {
@@ -54,6 +50,7 @@ export default function DiagnozaPage() {
   useEffect(() => { track('diag_intro_viewed'); }, []);
 
   const handleComplete = (raw: RawAnswers) => {
+    if (invalidDiagnosticFields(raw).length) return; // obrona przed pustą/przywróconą sesją
     setAnswers(raw);
     setPhase('teaser');
     if (typeof window !== 'undefined') window.scrollTo({ top: 0 });
@@ -70,8 +67,7 @@ export default function DiagnozaPage() {
     ];
     const worstCat = [...catScores].sort((a, b) => a.pct - b.pct)[0]?.label || 'Sen';
     const sc = score(D);
-    const C = costs(D);
-    const q = qualify(raw, D.triedBefore, sc, C.hardTotal);
+    const q = qualify(raw, sc);
     const segment = sc >= 40 ? 'goracy' : sc >= 20 ? 'cieply' : 'zimny';
 
     // Podepnij cala sesje (kroki + nagranie) pod handle IG leada, jesli go zostawil.
@@ -85,30 +81,11 @@ export default function DiagnozaPage() {
     const painText = typeof raw.user_pain === 'string' ? raw.user_pain.trim() : '';
     const rawImie = raw.imie ?? raw.name;
 
-    // ── Powiadomienie leada na Telegram: ZAWSZE, gdy ktoś skończył quiz (Michał chce wiedzieć od razu) ──
+    // Backend liczy wynik SAM z pełnych, sprawdzonych odpowiedzi. Pusta sesja nie trafi do Telegrama.
     void fetch('/api/lead-notify', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        score: sc,
-        segment: segment.toUpperCase(),
-        worstCat,
-        archetyp: pickArchetype(D, worstCat).label,
-        archetypKey: pickArchetype(D, worstCat).key,
-        godzina: hourRange(D),
-        kwota: C.total,
-        priority_lead: q.priorityLead,
-        budget_proxy: q.budgetProxy,
-        commitment: q.commitment,
-        intencja: q.intent,
-        kiedy_start: q.startWhen,
-        pain: painText,
-        imie: typeof rawImie === 'string' ? rawImie : '',
-        instagram: typeof raw.instagram === 'string' ? raw.instagram.replace(/^@?/, '@') : '',
-        objawy: Array.isArray(raw.symptoms_chips) ? (raw.symptoms_chips as string[]).join(',') : '',
-        triedBefore: D.triedBefore,
-        drinks: D.drinks,
-      }),
+      body: JSON.stringify({ answers: raw }),
     }).catch(() => {});
 
     // ── Reframe z wlasnych slow usera (LLM), tylko gdy coś napisał. Fire-and-forget, Karta stoi bez niego. ──
@@ -179,7 +156,7 @@ export default function DiagnozaPage() {
     const arch = pickArchetype(D, worstW);
     const rawImie = answers.imie ?? answers.name;
     const imie = typeof rawImie === 'string' ? rawImie : '';
-    const q = qualify(answers, D.triedBefore, SC, C.hardTotal);
+    const q = qualify(answers, SC);
     const qualified = q.priorityLead || q.wantsHelp;
     const wkPlan = buildWeekPlan({
       archetypeKey: arch.key, archetypeLabel: arch.label, archetypeTagline: arch.tagline, mirror: arch.mirror,
