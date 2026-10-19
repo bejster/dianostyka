@@ -5,6 +5,7 @@ import { QUESTIONS, QuestionDef, QuestionOption } from '../lib/assessment-config
 import { RawAnswers } from '../lib/scoring-engine';
 import { track } from '../lib/analytics';
 import { Atmosphere } from '../diagnoza/atmosphere';
+import { invalidDiagnosticFields, validAnswer, validInstagram } from '../lib/lead-integrity';
 
 interface Props {
   onComplete: (answers: RawAnswers) => void;
@@ -84,6 +85,7 @@ export default function SingleQuestionFlow({ onComplete, initialAnswers }: Props
   const [transitionState, setTransitionState] = useState<'idle' | 'out' | 'in'>('idle');
   // Pytania realnie dotkniete (slider/number musi byc ruszony, inaczej "Zatwierdz" zablokowany).
   const [touched, setTouched] = useState<Set<string>>(new Set());
+  const [flowErr, setFlowErr] = useState('');
 
   // Autosave w localStorage
   useEffect(() => {
@@ -109,16 +111,9 @@ export default function SingleQuestionFlow({ onComplete, initialAnswers }: Props
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentIndex]);
 
-  // Bramka "Dalej": slider/number musi być ruszony, multi min 1 chip, tekst min 15 znaków.
-  const chipsCount = Array.isArray(answers.symptoms_chips) ? (answers.symptoms_chips as string[]).length : 0;
-  // Handle IG bez @ i spacji; gate kontaktu wymaga min. 2 znakow (bez tego lead jest anonimowy).
-  const igClean = String(answers.instagram || '').replace(/[@\s]/g, '');
-  const advanceOk =
-    currentQ.type === 'multi' ? chipsCount >= 1 :
-    currentQ.type === 'text' ? enoughContent(String(answers[currentQ.id] || '')) && !isGibberish(String(answers[currentQ.id] || '')) :
-    currentQ.type === 'contact' ? igClean.length >= 2 :
-    (currentQ.type === 'slider' || currentQ.type === 'number') ? touched.has(currentQ.id) :
-    true;
+  // Jeden kontrakt wymaganych odpowiedzi dla UI i API. Zero jest poprawną odpowiedzią.
+  const advanceOk = validAnswer(currentQ, answers as Record<string, unknown>)
+    && (!(currentQ.type === 'slider' || currentQ.type === 'number') || touched.has(currentQ.id));
 
   // Haptic feedback na mobile
   const vibe = useCallback((pattern: number | number[] = 8) => {
@@ -129,11 +124,17 @@ export default function SingleQuestionFlow({ onComplete, initialAnswers }: Props
     } catch (_e) {}
   }, []);
 
-  const goToNext = useCallback(() => {
+  const goToNext = useCallback((nextAnswers: RawAnswers = answers) => {
+    // Walidacja także w handlerze: nie da się obejść disabled ani ominąć pola z przywróconej sesji.
+    if (!validAnswer(currentQ, nextAnswers as Record<string, unknown>)) {
+      setFlowErr('Uzupełnij prawidłowo tę odpowiedź.');
+      return;
+    }
+    setFlowErr('');
     let next = currentIndex + 1;
     while (next < QUESTIONS.length) {
       const c = QUESTIONS[next].condition;
-      if (!c || c(answers as Record<string, unknown>)) break;
+      if (!c || c(nextAnswers as Record<string, unknown>)) break;
       next++;
     }
     if (next < QUESTIONS.length) {
@@ -145,10 +146,17 @@ export default function SingleQuestionFlow({ onComplete, initialAnswers }: Props
         setTimeout(() => setTransitionState('idle'), 250);
       }, 200);
     } else {
+      const invalid = invalidDiagnosticFields(nextAnswers);
+      if (invalid.length) {
+        const first = QUESTIONS.findIndex(q => q.id === invalid[0]);
+        setCurrentIndex(Math.max(0, first));
+        setFlowErr('Dokończ brakującą odpowiedź, zanim wyświetlimy wynik.');
+        return;
+      }
       vibe([20, 50, 20]);
-      onComplete(answers);
+      onComplete(nextAnswers);
     }
-  }, [currentIndex, answers, onComplete, vibe]);
+  }, [currentIndex, currentQ, answers, onComplete, vibe]);
 
   const goToPrev = useCallback(() => {
     let prev = currentIndex - 1;
@@ -170,10 +178,10 @@ export default function SingleQuestionFlow({ onComplete, initialAnswers }: Props
 
   const handleSingleSelect = (opt: QuestionOption) => {
     vibe(10);
-    setAnswers(prev => ({ ...prev, [currentQ.id]: opt.id }));
-    setTimeout(() => {
-      goToNext();
-    }, 280);
+    const updated = { ...answers, [currentQ.id]: opt.id };
+    setAnswers(updated);
+    // Warunki kolejnego pytania muszą widzieć wybór z TEGO kliknięcia, nie poprzedni render.
+    setTimeout(() => goToNext(updated), 280);
   };
 
   const handleSliderChange = (val: number) => {
@@ -280,6 +288,8 @@ export default function SingleQuestionFlow({ onComplete, initialAnswers }: Props
           {currentQ.title}
         </h2>
 
+        {flowErr && <p role="alert" style={{ color: '#ff8f84', fontSize: 13.5, lineHeight: 1.45 }}>{flowErr}</p>}
+
         {/* Podtytuł */}
         {currentQ.subtitle && (
           <p style={{ fontSize: 14.5, color: '#999999', lineHeight: 1.55, marginBottom: 28 }}>
@@ -323,7 +333,7 @@ export default function SingleQuestionFlow({ onComplete, initialAnswers }: Props
         )}
         {currentQ.type === 'single' && currentQ.optional && (
           <button
-            onClick={goToNext}
+            onClick={() => goToNext()}
             style={{
               marginTop: 14, width: '100%', padding: '12px', borderRadius: 12,
               background: 'transparent', color: '#888',
@@ -365,7 +375,7 @@ export default function SingleQuestionFlow({ onComplete, initialAnswers }: Props
             </div>
 
             <button
-              onClick={goToNext}
+              onClick={() => goToNext()}
               disabled={!advanceOk}
               style={{
                 marginTop: 36, width: '100%', padding: '16px', borderRadius: 14,
@@ -388,8 +398,16 @@ export default function SingleQuestionFlow({ onComplete, initialAnswers }: Props
                 type="number"
                 min={currentQ.min ?? 0}
                 max={currentQ.max ?? 10000}
-                value={Number(answers[currentQ.id] ?? 300)}
-                onChange={e => handleNumberChange(parseInt(e.target.value, 10) || 0)}
+                value={typeof answers[currentQ.id] === 'number' ? answers[currentQ.id] as number : ''}
+                placeholder="Wpisz liczbę"
+                onChange={e => {
+                  if (e.target.value === '') {
+                    setAnswers(prev => ({ ...prev, [currentQ.id]: undefined }));
+                    setTouched(prev => { const next = new Set(prev); next.delete(currentQ.id); return next; });
+                  } else {
+                    handleNumberChange(Number(e.target.value));
+                  }
+                }}
                 style={{
                   flex: 1, padding: '16px', borderRadius: 14, background: 'rgba(255,255,255,0.04)',
                   border: '1.5px solid rgba(200,168,78,0.4)', color: '#ffffff',
@@ -402,7 +420,7 @@ export default function SingleQuestionFlow({ onComplete, initialAnswers }: Props
             </div>
 
             <button
-              onClick={goToNext}
+              onClick={() => goToNext()}
               disabled={!advanceOk}
               style={{
                 width: '100%', padding: '16px', borderRadius: 14,
@@ -450,7 +468,7 @@ export default function SingleQuestionFlow({ onComplete, initialAnswers }: Props
             })}
 
             <button
-              onClick={goToNext}
+              onClick={() => goToNext()}
               disabled={!advanceOk}
               style={{
                 marginTop: 20, width: '100%', padding: '16px', borderRadius: 14,
@@ -501,7 +519,7 @@ export default function SingleQuestionFlow({ onComplete, initialAnswers }: Props
             )}
 
             <button
-              onClick={goToNext}
+              onClick={() => goToNext()}
               disabled={!advanceOk}
               style={{
                 marginTop: 20, width: '100%', padding: '16px', borderRadius: 14,
@@ -534,7 +552,8 @@ export default function SingleQuestionFlow({ onComplete, initialAnswers }: Props
                 spellCheck={false}
                 placeholder="twoj_nick"
                 value={String(answers.instagram || '').replace(/^@/, '')}
-                onChange={e => setAnswers(prev => ({ ...prev, instagram: e.target.value.replace(/[@\s]/g, '').slice(0, 40) }))}
+                onChange={e => { setFlowErr(''); setAnswers(prev => ({ ...prev, instagram: e.target.value.replace(/[@\s]/g, '').slice(0, 40) })); }}
+                aria-invalid={Boolean(answers.instagram) && !validInstagram(answers.instagram)}
                 style={{
                   flex: 1, padding: '16px', borderRadius: '0 14px 14px 0', background: 'rgba(255,255,255,0.04)',
                   border: '1.5px solid rgba(200,168,78,0.4)', borderLeft: 'none', color: '#ffffff',
@@ -542,6 +561,12 @@ export default function SingleQuestionFlow({ onComplete, initialAnswers }: Props
                 }}
               />
             </div>
+
+            {Boolean(answers.instagram) && !validInstagram(answers.instagram) && (
+              <p role="alert" style={{ color: '#ff8f84', fontSize: 12.5, margin: '0 0 12px' }}>
+                Podaj prawdziwy nick Instagram: 2–30 znaków, litery, cyfry, kropki lub podkreślniki.
+              </p>
+            )}
 
             <input
               type="text"
@@ -556,7 +581,7 @@ export default function SingleQuestionFlow({ onComplete, initialAnswers }: Props
             />
 
             <button
-              onClick={goToNext}
+              onClick={() => goToNext()}
               disabled={!advanceOk}
               style={{
                 marginTop: 20, width: '100%', padding: '16px', borderRadius: 14,
