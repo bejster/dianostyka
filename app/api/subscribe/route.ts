@@ -154,23 +154,34 @@ export async function POST(req: NextRequest) {
     if (tgToken && tgChat) {
       try {
         const o = (odpowiedzi || {}) as Record<string, unknown>;
-        const stan = String(body.wynik_stan || '');
-        const stanIco = stan === 'dobry' ? '🟢' : stan === 'średni' ? '🟡' : '🔴';
-        const q = (v: unknown) => { const s = String(v ?? '').trim(); return s ? `„${s.slice(0, 160)}"` : '—'; };
+        const v = (value: unknown) => typeof value === 'string' ? value.trim() : typeof value === 'number' && Number.isFinite(value) ? String(value) : '';
+        const q = (value: unknown) => v(value) ? `„${v(value).slice(0, 160)}”` : '';
+        const stan = v(body.wynik_stan);
+        const stanIco = stan === 'dobry' ? '🟢' : stan === 'średni' ? '🟡' : stan ? '🔴' : '📩';
+        const resultScore = v(wynik_score ?? score);
+        const who = [v(imie), instagram_handle ? `IG: @${String(instagram_handle).trim().replace(/^@/, '')}` : '', v(email)].filter(Boolean).join(' · ');
+        const details = [
+          o.sleep == null ? '' : `sen ${v(o.sleep)}h`,
+          o.workHours == null ? '' : `praca ${v(o.workHours)}h`,
+          o.lost == null ? '' : `pół mocy ${v(o.lost)}h`,
+          o.plan == null ? '' : `treningi ${v(o.plan)}/tydz`,
+          o.miss == null ? '' : `wypada ${v(o.miss)}`,
+        ].filter(Boolean).join(' · ');
+        // Nie wyświetlaj „?”, „—”, „brak IG” ani innych atrap przy opcjonalnych polach.
         const lines = [
-          `${stanIco} DIAGNOSTYKA — ${String(body.wynik_score ?? '?')}/100 (tydzień ${stan || '?'})`,
-          `${imie || 'bez imienia'} · ${instagram_handle || 'brak IG'} · ${email}`,
-          ``,
-          `Pęka: ${String(body.wynik_godzina || '—')} · Typ: ${String(body.wynik_typ || '—')}`,
-          `Hamulec: ${String(biggest_category || '—')} · Intencja: ${String(body.intencja || '—')}${body.kiedy_start ? ` · start: ${String(body.kiedy_start)}` : ''}`,
-          body.warunek_decyzji ? `Warunek decyzji: ${q(body.warunek_decyzji)}` : '',
-          ``,
-          `Wkurza: ${q(o.pain)}`,
-          `Dlaczego teraz: ${q(o.trigger)}`,
-          `Próbował: ${q(o.selfDx)}`,
-          ``,
-          `Sen ${String(o.sleep ?? '?')}h · praca ${String(o.workHours ?? '?')}h · pół mocy ${String(o.lost ?? '?')}h · treningi ${String(o.plan ?? '?')}/tydz (wypada ${String(o.miss ?? '?')})`,
-        ].filter(l => l !== '');
+          `${stanIco} DIAGNOSTYKA${resultScore ? ` — ${resultScore}/100` : ''}${stan ? ` (tydzień ${stan})` : ''}`,
+          who,
+          v(body.wynik_godzina) ? `Pęka: ${v(body.wynik_godzina)}` : '',
+          v(body.wynik_typ) ? `Typ: ${v(body.wynik_typ)}` : '',
+          v(biggest_category) ? `Hamulec: ${v(biggest_category)}` : '',
+          v(body.intencja) ? `Intencja: ${v(body.intencja)}` : '',
+          v(body.kiedy_start) ? `Start: ${v(body.kiedy_start)}` : '',
+          q(body.warunek_decyzji) ? `Warunek decyzji: ${q(body.warunek_decyzji)}` : '',
+          q(o.pain) ? `Wkurza: ${q(o.pain)}` : '',
+          q(o.trigger) ? `Dlaczego teraz: ${q(o.trigger)}` : '',
+          q(o.selfDx) ? `Próbował: ${q(o.selfDx)}` : '',
+          details ? `Dane: ${details}` : '',
+        ].filter(Boolean);
         const tgRes = await fetch(`https://api.telegram.org/bot${tgToken}/sendMessage`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
