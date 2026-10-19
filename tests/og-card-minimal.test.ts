@@ -34,7 +34,7 @@ test('og:title nie dubluje obrazu, opis krótki', () => {
     const desc = src.match(/const OG_DESCRIPTION = '([^']+)'/);
     assert.ok(desc, 'brak OG_DESCRIPTION');
     assert.ok(desc[1].length <= 70, `opis za długi: ${desc[1].length}`);
-    assert.match(src, /openGraph: \{\n    title: OG_TITLE,\n    description: OG_DESCRIPTION,/);
-    assert.match(src, /card: 'summary_large_image',\n    title: OG_TITLE,\n    description: OG_DESCRIPTION,/);
+    assert.match(src, /openGraph: \{\r?\n    title: OG_TITLE,\r?\n    description: OG_DESCRIPTION,/);
+    assert.match(src, /card: 'summary_large_image',\r?\n    title: OG_TITLE,\r?\n    description: OG_DESCRIPTION,/);
   }
 });

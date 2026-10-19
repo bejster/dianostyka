@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { buildLeadOperatorDecision } from '../../lib/lead-operator-decision';
+import { invalidDiagnosticFields, validInstagram } from '../../lib/lead-integrity';
 
 const NOTION_CHUNK = 1900;
 
@@ -35,6 +36,13 @@ async function postJson(url: string, body: unknown): Promise<{ ok: boolean; stat
 export async function POST(req: NextRequest) {
   try {
     const b = (await req.json().catch(() => ({}))) as Record<string, unknown>;
+
+    // Wyłącznie kompletne sesje: pusta albo przywrócona sesja nie trafia ani do CRM, ani na Telegram.
+    // Kontakt jest w tej linii opcjonalny, więc brak @ nie bramkuje zapisu; resztę sprawdzamy tak jak UI.
+    const invalid = invalidDiagnosticFields(b.raw_answers).filter((id) => id !== 'instagram');
+    if (invalid.length) {
+      return NextResponse.json({ ok: false, error: 'incomplete_lead', invalid_fields: invalid }, { status: 422 });
+    }
 
     // ── CRM PERSISTENCE: Make zapisuje pełny output, n8n jest tylko fallbackiem minimalnym. ──
     // Make ma idempotentny router Lead Ref -> UPDATE/CREATE i aktywne canonical Notion credentials.
@@ -116,6 +124,11 @@ export async function POST(req: NextRequest) {
 
     if (qaSynthetic) {
       return NextResponse.json({ ok: makeOk === true || n8nOk === true, qa: true, telegram: false, make: makeOk, makeStatus, n8n: n8nOk });
+    }
+
+    // Anonimowy wynik to analityka, nie kandydat do DM: zapis w CRM zostaje, alert sprzedażowy nie idzie.
+    if (!validInstagram(b.instagram)) {
+      return NextResponse.json({ ok: makeOk === true || n8nOk === true, reason: 'anonymous', telegram: false, make: makeOk, makeStatus, n8n: n8nOk });
     }
 
     // Osobny bot dla leadow (Nocna Zmiana, admin w HiT Leady). Fallback na wspolny, gdy nieustawiony.
