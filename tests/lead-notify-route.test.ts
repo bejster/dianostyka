@@ -5,6 +5,7 @@ import { readFileSync } from 'node:fs';
 const route = readFileSync(new URL('../app/api/lead-notify/route.ts', import.meta.url), 'utf8');
 const diagnosis = readFileSync(new URL('../app/diagnoza/page.tsx', import.meta.url), 'utf8');
 const legacy = readFileSync(new URL('../app/page.tsx', import.meta.url), 'utf8');
+const subscriber = readFileSync(new URL('../app/api/subscribe/route.ts', import.meta.url), 'utf8');
 
 test('endpoint blokuje puste payloady PRZED wysyłką na Telegram', () => {
   assert.match(route, /invalidDiagnosticFields\(b\?\.answers\)/);
@@ -25,4 +26,11 @@ test('notyfikacja ma realny kontakt i własne słowa, bez sztucznego budżetu', 
   assert.match(route, /cleanInstagram\(raw\.instagram\)/);
   assert.match(route, /statedProblem/);
   assert.doesNotMatch(route, /budzet_proxy|budget_proxy|Budżet na usługę/);
+});
+
+test('awaryjny Telegram nie dopisuje pustych pól ani zastępczych symboli', () => {
+  assert.doesNotMatch(subscriber, /instagram_handle\s*\|\|\s*'brak IG'/);
+  assert.doesNotMatch(subscriber, /o\.sleep\s*\?\?\s*'\?'/);
+  assert.doesNotMatch(subscriber, /body\.wynik_score\s*\?\?\s*'\?'/);
+  assert.match(subscriber, /\.filter\(Boolean\)/);
 });
