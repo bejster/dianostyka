@@ -3,6 +3,7 @@ import test from 'node:test';
 import { readFileSync } from 'node:fs';
 
 const route = readFileSync(new URL('../app/api/lead-notify/route.ts', import.meta.url), 'utf8');
+const subscriber = readFileSync(new URL('../app/api/subscribe/route.ts', import.meta.url), 'utf8');
 
 test('endpoint odrzuca niekompletną sesję PRZED zapisem w CRM i Telegramem', () => {
   assert.match(route, /invalidDiagnosticFields\(b\.raw_answers\)/);
@@ -21,4 +22,11 @@ test('anonimowy wynik nie wywołuje alertu sprzedażowego', () => {
 
 test('notyfikacja bez sztucznego budżetu', () => {
   assert.doesNotMatch(route, /budzet_proxy|budget_proxy|Budżet na usługę/);
+});
+
+test('awaryjny Telegram nie dopisuje pustych pól ani zastępczych symboli', () => {
+  assert.doesNotMatch(subscriber, /instagram_handle\s*\|\|\s*'brak IG'/);
+  assert.doesNotMatch(subscriber, /o\.sleep\s*\?\?\s*'\?'/);
+  assert.doesNotMatch(subscriber, /body\.wynik_score\s*\?\?\s*'\?'/);
+  assert.match(subscriber, /\.filter\(Boolean\)/);
 });
