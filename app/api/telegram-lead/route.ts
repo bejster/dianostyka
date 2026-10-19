@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createRemoteJWKSet, decodeJwt, jwtVerify } from 'jose';
+import { parseChannel, relaySend, resolveRelayTarget } from '../../lib/hit-relay';
 
 const TEAM_SLUG = 'michals-projects-20fc032f';
 const LANDING_PROJECT = 'landing-pages';
@@ -70,9 +71,16 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ ok: false, error: 'bad payload' }, { status: 400 });
   }
 
-  const botToken = process.env.TELEGRAM_BOT_TOKEN;
-  const chatId = process.env.TELEGRAM_CHAT_ID;
-  if (!botToken || !chatId) {
+  // Kanał HiT (CARE / SALES / OPS). Brak pola = SALES, jak dotąd.
+  const channel = parseChannel(
+    body && typeof body === 'object' && 'channel' in body ? (body as { channel?: unknown }).channel : undefined,
+  );
+  if (!channel) {
+    return NextResponse.json({ ok: false, error: 'bad payload' }, { status: 400 });
+  }
+
+  const target = resolveRelayTarget(channel, process.env);
+  if (!target) {
     console.error('telegram relay unavailable: missing configuration');
     return NextResponse.json(
       { ok: false, error: 'telegram unavailable' },
@@ -80,32 +88,13 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  try {
-    const response = await fetch(
-      `https://api.telegram.org/bot${botToken}/sendMessage`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          chat_id: chatId,
-          text: text.trim(),
-          disable_web_page_preview: true,
-        }),
-      },
-    );
-    if (!response.ok) {
-      console.error('telegram relay failed', response.status);
-      return NextResponse.json(
-        { ok: false, error: 'telegram failed' },
-        { status: 502 },
-      );
-    }
-    return NextResponse.json({ ok: true });
-  } catch (error) {
-    console.error('telegram relay failed', error);
+  const result = await relaySend(target, text.trim(), channel);
+  if (!result.ok) {
+    console.error('telegram relay failed', result.http);
     return NextResponse.json(
       { ok: false, error: 'telegram failed' },
       { status: 502 },
     );
   }
+  return NextResponse.json({ ok: true });
 }
