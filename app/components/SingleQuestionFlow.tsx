@@ -50,7 +50,10 @@ export default function SingleQuestionFlow({ onComplete, initialAnswers }: Props
         const savedStep = localStorage.getItem(STEP_KEY);
         if (savedStep) {
           const parsed = parseInt(savedStep, 10);
-          if (!isNaN(parsed) && parsed >= 0 && parsed < QUESTIONS.length) return parsed;
+          if (!isNaN(parsed) && parsed >= 0 && parsed < QUESTIONS.length) {
+            const visible = QUESTIONS.findIndex((q, i) => i >= parsed && (!q.condition || q.condition(answers)));
+            return visible >= 0 ? visible : 0;
+          }
         }
       } catch (_e) {}
     }
@@ -339,6 +342,11 @@ export default function SingleQuestionFlow({ onComplete, initialAnswers }: Props
               step={currentQ.step ?? 0.5}
               value={Number(answers[currentQ.id] ?? currentQ.min ?? 7)}
               onPointerDown={() => { if (answers[currentQ.id] === undefined) handleSliderChange(Number(currentQ.min ?? 7)); }}
+              onKeyDown={e => {
+                if (answers[currentQ.id] === undefined && ['Home', 'End', 'ArrowLeft', 'ArrowRight', 'ArrowDown', 'ArrowUp'].includes(e.key)) {
+                  handleSliderChange(Number(e.currentTarget.value));
+                }
+              }}
               onChange={e => handleSliderChange(parseFloat(e.target.value))}
               style={{
                 width: '100%', height: 10, borderRadius: 5, accentColor: '#c8a84e',

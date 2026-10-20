@@ -55,7 +55,7 @@ export default function DiagnozaPage() {
       const res = await fetch('/api/lead-notify', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ answers: raw, lead_ref: leadRef.current }),
-        signal: AbortSignal.timeout(20000),
+        signal: AbortSignal.timeout(30000),
       });
       const result = await res.json();
       setDelivery(res.ok && result?.ok === true && result?.crm === true ? 'accepted' : 'failed');

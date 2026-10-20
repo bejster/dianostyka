@@ -3,13 +3,13 @@ import { validEmail, validInstagram, validLegacyDiagnosticAnswers } from '../../
 
 export async function POST(req: NextRequest) {
   try {
-    const parsed: unknown = await req.json();
+    const parsed: unknown = await req.json().catch(() => null);
     if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
       return NextResponse.json({ error: 'Nieprawidłowe zgłoszenie' }, { status: 400 });
     }
     const body = parsed as Record<string, unknown>;
     const {
-      email,
+      email: rawEmail,
       instagram_handle,
       imie,
       wynik_kwota,
@@ -34,6 +34,7 @@ export async function POST(req: NextRequest) {
       fields,
     } = body;
 
+    const email = typeof rawEmail === 'string' ? rawEmail.trim() : rawEmail;
     if (!validEmail(email)) {
       return NextResponse.json({ error: 'Podaj poprawny email' }, { status: 422 });
     }
@@ -151,6 +152,10 @@ export async function POST(req: NextRequest) {
       }
     }
 
+    if (!mlOk && !webhookOk) {
+      return NextResponse.json({ ok: false, mailerlite: mlOk, webhook: webhookOk, telegram: false }, { status: 503 });
+    }
+
     // 3. Telegram BEZPOŚREDNIO (niezależnie od n8n) — spersonalizowany wynik leada do Michała
     let tgOk = false;
     const tgToken = process.env.TELEGRAM_BOT_TOKEN;
@@ -191,7 +196,8 @@ export async function POST(req: NextRequest) {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ chat_id: tgChat, text: lines.join('\n') }),
         });
-        tgOk = tgRes.ok;
+        const tgBody = await tgRes.json().catch(() => null);
+        tgOk = tgRes.ok && tgBody?.ok === true;
         if (!tgRes.ok) console.error('Telegram error:', tgRes.status, await tgRes.text());
       } catch (tgErr) {
         console.error('Telegram fetch error:', tgErr);
@@ -199,7 +205,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Nie ogłaszaj zapisu, jeśli żaden kanał nie przyjął danych.
-    const saved = mlOk || webhookOk || tgOk;
+    const saved = mlOk || webhookOk;
     return NextResponse.json({
       ok: saved,
       mailerlite: mlOk,

@@ -69,3 +69,23 @@ test('legacy source omission cannot bypass diagnostic validation',async()=>harne
  const r=await subscribe(request({email:'qa@example.invalid'}));
  assert.equal(r.status,422);assert.equal(calls.length,0);
 }));
+
+test('malformed JSON is a client error, not an internal server error',async()=>harness(async calls=>{
+ const r=await subscribe(new NextRequest('http://localhost/api/subscribe',{method:'POST',body:'{',headers:{'Content-Type':'application/json'}}));
+ assert.equal(r.status,400);assert.equal(calls.length,0);
+}));
+test('legacy Telegram alone is not a stored contact',async()=>harness(async calls=>{
+ const {INIT}=await import('../app/lib/diagnostic-core.ts');
+ process.env.TELEGRAM_BOT_TOKEN='SYNTHETIC_LEGACY_TOKEN';process.env.TELEGRAM_CHAT_ID='SYNTHETIC_CHAT';
+ const r=await subscribe(request({email:'qa@example.invalid',source:'diagnostyka_hit',intencja:'dziala_sam',odpowiedzi:{...INIT,tags:[],pain:'Po pracy brakuje mi energii na trening.'},wynik_score:0}));
+ assert.equal(r.status,503);assert.equal((await r.json()).ok,false);
+ assert.equal(calls.filter(c=>c.url.includes('api.telegram.org')).length,0);
+}));
+
+test('legacy complete snapshot keeps numeric zero and normalizes email before handoff',async()=>harness(async calls=>{
+ const {INIT}=await import('../app/lib/diagnostic-core.ts');
+ process.env.N8N_DIAGNOSTYKA_WEBHOOK='https://crm.invalid/capture';
+ const r=await subscribe(request({email:'  qa@example.invalid  ',source:'diagnostyka_hit',intencja:'dziala_sam',odpowiedzi:{...INIT,tags:[],pain:'Po pracy brakuje mi energii na trening.'},wynik_score:0,wynik_kwota:0}));
+ assert.equal(r.status,200);assert.equal((await r.json()).webhook,true);
+ assert.equal(calls[0].body.email,'qa@example.invalid');assert.equal(calls[0].body.wynik_score,0);assert.equal(calls[0].body.wynik_kwota,0);
+}));

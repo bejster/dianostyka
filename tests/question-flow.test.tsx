@@ -83,7 +83,7 @@ test('from first question to result, real API, captured CRM record and Telegram 
  process.env.TELEGRAM_LEADS_BOT_TOKEN='SYNTHETIC_NOT_A_SECRET';process.env.TELEGRAM_LEADS_CHAT_ID='SYNTHETIC_CHAT';
  const calls:{url:string;body:Record<string,unknown>}[]=[];const oldFetch=globalThis.fetch;
  globalThis.fetch=(async(url,init)=>{
-  if(url==='/api/lead-notify')return POST(new NextRequest('http://localhost/api/lead-notify',init));
+  if(url==='/api/lead-notify')return POST(new NextRequest('http://localhost/api/lead-notify',{method:init?.method,body:init?.body,headers:init?.headers,signal:init?.signal??undefined}));
   if(url==='/api/diagnoza')return new Response('{"ok":false}');
   calls.push({url:String(url),body:JSON.parse(String(init?.body))});
   assert.ok(String(url).startsWith('https://crm.invalid/')||String(url).includes('SYNTHETIC_NOT_A_SECRET'));
@@ -95,17 +95,17 @@ test('from first question to result, real API, captured CRM record and Telegram 
   const a:Record<string,unknown>={};
   for(const q of QUESTIONS){
    if(q.condition&&!q.condition(a))continue;
-   await v.findByRole('heading',{name:q.title,exact:true});
+   await v.findByRole('heading',{name:q.title});
    if(q.type==='single'){
     a[q.id]=q.id==='weekend_pattern'?'wp_reset':q.options![0].id;
-    fireEvent.click(v.getByRole('button',{name:q.options!.find(o=>o.id===a[q.id])!.label,exact:true}));
+    fireEvent.click(v.getByRole('button',{name:q.options!.find(o=>o.id===a[q.id])!.label}));
    } else if(q.type==='slider'||q.type==='number'){
     a[q.id]=q.id==='planned_trainings'?3:q.min??0;
     const input=v.getByRole(q.type==='slider'?'slider':'spinbutton');
     fireEvent.pointerDown(input);fireEvent.change(input,{target:{value:String(a[q.id])}});
     fireEvent.click(v.getByRole('button',{name:/Zatwierdź/i}));
    } else if(q.type==='multi'){
-    a[q.id]=[q.options![0].id];fireEvent.click(v.getByRole('button',{name:q.options![0].label,exact:true}));
+    a[q.id]=[q.options![0].id];fireEvent.click(v.getByRole('button',{name:q.options![0].label}));
     fireEvent.click(v.getByRole('button',{name:/Dalej/i}));
    } else if(q.type==='text'){
     a[q.id]='Po pracy brakuje mi energii na trening i jedzenie.';
@@ -123,4 +123,13 @@ test('from first question to result, real API, captured CRM record and Telegram 
   assert.equal(calls[1].body.chat_id,'SYNTHETIC_CHAT');
   assert.match(String(calls[1].body.text),/@qa.synthetic_2026/);
  } finally {globalThis.fetch=oldFetch;for(const k of keys){if(previous[k]===undefined)delete process.env[k];else process.env[k]=previous[k];}}
+});
+
+test('keyboard Home explicitly confirms a genuine zero',()=>{
+ const v=step('planned_trainings');fireEvent.keyDown(v.getByRole('slider'),{key:'Home'});
+ assert.equal((v.getByRole('button',{name:/Zatwierdź/i}) as HTMLButtonElement).disabled,false);
+});
+test('restoring an old hidden step resumes at a visible question',()=>{
+ const v=step('sleep_hours',{age:30});
+ assert.equal(v.getByRole('heading').textContent,'Jak często budzisz się wyspany?');
 });

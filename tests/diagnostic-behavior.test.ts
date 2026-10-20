@@ -34,3 +34,12 @@ test('changing a branch cannot preserve hidden answers in the result', () => {
   const stale = {...a,missed_trainings:7,weekend_cash:800,sleep_hours:3,screen_bed:'sb_fallasleep'};
   assert.deepEqual(answersToFD(stale), answersToFD(a));
 });
+
+test('numeric answers reject out-of-range, non-finite, wrong step and strings', () => {
+ const a={...completeAnswers(),planned_trainings:3,missed_trainings:0,weekend_pattern:'wp_reset',weekend_cash:0};
+ for(const q of QUESTIONS.filter(q=>(q.type==='slider'||q.type==='number')&&(!q.condition||q.condition(a)))){
+  for(const bad of [NaN,Infinity,-Infinity,String(q.min??0),(q.min??0)-(q.step??1),(q.max??1000)+(q.step??1),(q.min??0)+(q.step??1)/3]){
+   assert.ok(invalidDiagnosticFields({...a,[q.id]:bad}).includes(q.id),`${q.id}: ${String(bad)}`);
+  }
+ }
+});
