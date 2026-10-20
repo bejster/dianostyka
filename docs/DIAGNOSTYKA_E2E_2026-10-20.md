@@ -48,7 +48,7 @@ Potwierdzono przejście od intro przez 18 pytań do Karty Tygodnia; zera w liczb
 
 Przed wysłaniem sprawdzono metadane konfiguracji Vercel (bez odszyfrowywania wartości): nowa gałąź Preview nie dziedziczy produkcyjnych Make/n8n/Telegram. Make dla Preview istnieje wyłącznie dla innej, starej gałęzi. MailerLite jest współdzielony z Preview, dlatego NIE wykonywano poprawnego `/api/subscribe` na Preview. Aktywna ścieżka `/api/lead-notify` nie wywołuje MailerLite i przy braku CRM kończy się przed zewnętrznym I/O.
 
-Dodatkowe poprawki wznowienia sesji i starego API są w następnym commicie tego samego PR; opis ostatniego Preview i wynik HTTP zostanie dopisany poniżej.
+Dodatkowe poprawki wznowienia sesji i starego API są w następnym commicie tego samego PR; wyniki jego weryfikacji znajdują się poniżej.
 
 ## Produkcja — dowody i granice
 
@@ -74,3 +74,14 @@ Jeden oznaczony test w izolowanym środowisku: od wypełnienia do ID odpowiedzi 
 Dla ścieżek z włączonym treningiem i weekendem kompletność i obie dodatkowe odpowiedzi sprawdzono lokalnie (realny handler z atrapami); nie mylić tego z powyższą macierzą HTTP Preview.
 
 Sprawdzenie źródeł: GitHub PR #10/#11 i git history; Vercel project/deployment oraz metadane konfiguracji; przeglądarka produkcji i Preview; lokalne testy behawioralne i komendy walidacyjne. Nie odszyfrowywano ani nie kopiowano sekretów produkcyjnych.
+
+
+## Końcowy Preview kodu cb96334f — 25/25 odpowiedzi HTTP
+
+- URL: https://dianostyka-lyhyo1ahg-michals-projects-20fc032f.vercel.app/diagnoza
+- Deployment: `dpl_8K1z1qRsLHYPxPjTaja5CjDqpcEo`, READY, commit `cb96334f81fd7dc70ef76afd61b25eb996d0e7b8`.
+- Plik dowodów: `docs/evidence/diagnostyka-http-final-2026-10-20.json`.
+- 25/25 odpowiedzi zgodnych z oczekiwaniem: dwa puste endpointy -> 422; spacje w każdym z 19 wymaganych pól z WŁĄCZONYMI warunkami treningów/weekendu -> 422; poprawny syntetyczny komplet -> 503 `crm_unavailable`; sparse legacy snapshot bez source -> 422; 7 opuszczonych przy 1 planowanym -> 422; wadliwy JSON starego API -> 400.
+- Przeglądarka: Home potwierdza początkową wartość; zadeklarowane zero treningów przeżywa reload i ponowne wejście do testu (przycisk aktywny); po zmianie planu na 3 pojawia się pytanie o opuszczone, z maksimum 3 i podpowiedzią zakresu 0–3.
+- Ta gałąź Preview nie zapisuje prawdziwych kontaktów ani nie wysyła Telegrama; oczekiwane 503 nadal NIE jest testem udanego rzeczywistego odbioru.
+- Końcowe komendy lokalne: 49/49 testów, TypeScript exit 0, build exit 0. Lokalne drzewo kodu jest identyczne z opublikowanym drzewem `d4a89a086413fbeaf3ae136ae3210b10e46c38ef`. Późniejsze dopisanie tego raportu i dowodów nie zmienia kodu aplikacji.
