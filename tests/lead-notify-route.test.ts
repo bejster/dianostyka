@@ -10,12 +10,12 @@ const subscriber = readFileSync(new URL('../app/api/subscribe/route.ts', import.
 test('endpoint blokuje puste payloady PRZED wysyłką na Telegram', () => {
   assert.match(route, /invalidDiagnosticFields\(b\?\.answers\)/);
   assert.match(route, /status: 422/);
-  assert.match(route, /const raw = b!\.answers/);
+  assert.match(route, /const raw = activeDiagnosticAnswers/);
   assert.match(route, /const sc = score\(D\)/);
   assert.doesNotMatch(route, /const score = Number\(b\.score\)/);
 });
 test('formularz przesyła odpowiedzi, nie wynik kwalifikacji do podpisania w przeglądarce', () => {
-  assert.match(diagnosis, /JSON\.stringify\(\{ answers: raw \}\)/);
+  assert.match(diagnosis, /JSON\.stringify\(\{ answers: raw, lead_ref:/);
   assert.doesNotMatch(diagnosis, /budget_proxy: q\.budgetProxy/);
 });
 test('anonimowy wynik nie jest rekordem w unified-leads i nie jest eventem Meta Lead', () => {

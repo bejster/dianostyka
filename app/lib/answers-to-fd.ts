@@ -7,6 +7,7 @@
 // Pola, ktorych zywa strona swiadomie NIE pyta (dietChaos, subs, gym, rate, progress,
 // frustration, raise, supps, wakeTime, alarm, meals, cooking), zostaja na INIT.
 
+import { activeDiagnosticAnswers } from './lead-integrity.ts';
 import { INIT, type FD, type ChipKey } from './diagnostic-core.ts';
 import type { RawAnswers } from './scoring-engine.ts';
 
@@ -15,7 +16,8 @@ function num(v: unknown, fallback: number): number {
   return typeof v === 'number' && !Number.isNaN(v) ? v : fallback;
 }
 
-export function answersToFD(a: RawAnswers): FD {
+export function answersToFD(raw: RawAnswers): FD {
+  const a = activeDiagnosticAnswers(raw) as RawAnswers;
   // wiek -> age (slider 18-50, wartosc wprost)
   const age = num(a.age, INIT.age);
 

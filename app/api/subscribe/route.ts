@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { validEmail, validInstagram } from '../../lib/lead-integrity';
+import { validEmail, validInstagram, validLegacyDiagnosticAnswers } from '../../lib/lead-integrity';
 
 export async function POST(req: NextRequest) {
   try {
@@ -49,9 +49,13 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Uzupełnij oczekiwania wobec współpracy' }, { status: 422 });
     }
     // Nie dopuszczaj puste rekordy do handoffu; klient może publikować tylko komplet z diagnostyki.
-    if (source === 'diagnostyka_hit' && (!odpowiedzi || typeof odpowiedzi !== 'object' || Array.isArray(odpowiedzi)
-      || !Number.isFinite(Number(wynik_score)) || Number(wynik_score) < 0 || Number(wynik_score) > 100)) {
+    if (!validLegacyDiagnosticAnswers(odpowiedzi)
+      || wynik_score === null || wynik_score === undefined || (typeof wynik_score === 'string' && !wynik_score.trim())
+      || !Number.isFinite(Number(wynik_score)) || Number(wynik_score) < 0 || Number(wynik_score) > 100) {
       return NextResponse.json({ error: 'Niekompletny wynik diagnostyki' }, { status: 422 });
+    }
+    if (!['dziala_sam', 'chce_zobaczyc_pomoc', 'napisz_mi', 'nie_wie'].includes(intent)) {
+      return NextResponse.json({ error: 'Wybierz, jak chcesz dalej działać' }, { status: 422 });
     }
     const declaredPriority = needsDm
       && ['7dni', '30dni'].includes(String(body.kiedy_start || ''))
@@ -128,8 +132,8 @@ export async function POST(req: NextRequest) {
             email,
             instagram_handle: instagram_handle || '',
             imie: imie || '',
-            wynik_kwota: wynik_kwota || String(totalCost ?? ''),
-            wynik_score: wynik_score || String(score ?? ''),
+            wynik_kwota: wynik_kwota ?? String(totalCost ?? ''),
+            wynik_score: wynik_score ?? String(score ?? ''),
             priority_lead: declaredPriority,
             budget_proxy: null,
             path: path || 'general',

@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { answersToFD } from '../../lib/answers-to-fd';
 import { score, pickArchetype, hourRange, tagScoreWeighted } from '../../lib/diagnostic-core';
-import { cleanInstagram, invalidDiagnosticFields } from '../../lib/lead-integrity';
+import { activeDiagnosticAnswers, cleanInstagram, invalidDiagnosticFields } from '../../lib/lead-integrity';
+import { persistDiagnosticLead } from '../../lib/diagnostic-crm';
 import type { RawAnswers } from '../../lib/scoring-engine';
 
 const INTENTS: Record<string, string> = {
@@ -44,7 +45,7 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const raw = b!.answers as RawAnswers;
+  const raw = activeDiagnosticAnswers(b!.answers as Record<string, unknown>) as RawAnswers;
   const ig = cleanInstagram(raw.instagram);
   const D = answersToFD(raw);
   const sc = score(D);
@@ -82,25 +83,48 @@ export async function POST(req: NextRequest) {
     followUp,
   ];
 
+  const leadRef = typeof b!.lead_ref === 'string' && /^[a-zA-Z0-9_-]{8,100}$/.test(b!.lead_ref)
+    ? b!.lead_ref : crypto.randomUUID();
+  let crm;
+  try {
+    crm = await persistDiagnosticLead({
+      lead_ref: leadRef, instagram: ig, imie: name, score: sc,
+      severity_band: sc >= 40 ? 'goracy' : sc >= 20 ? 'cieply' : 'zimny',
+      archetyp: archetype.label, archetypKey: archetype.key,
+      followup_priority: priority, wants_help: wantsHelp, intencja: intent, kiedy_start: start,
+      pain: statedProblem, raw_answers: raw,
+      derived_signals: {score:sc,worst_category:worst,break_window:point,intent,start_when:start},
+      diagnostyka_brief: lines.join('\n'),
+    });
+  } catch {
+    return NextResponse.json({ok:false,error:'crm_payload_failed',crm:false,telegram:false},{status:502});
+  }
+  if (!crm.accepted) {
+    return NextResponse.json({ok:false,error:crm.configured ? 'crm_failed' : 'crm_unavailable',crm:false,telegram:false,lead_ref:leadRef}, {status:crm.configured ? 502 : 503});
+  }
+  const receipt = {ok:true,crm:true,crm_status:'accepted',make:crm.make,n8n:crm.n8n,lead_ref:leadRef};
+
   const token = process.env.TELEGRAM_LEADS_BOT_TOKEN || process.env.TELEGRAM_BOT_TOKEN;
   const chat = process.env.TELEGRAM_LEADS_CHAT_ID || '-1004328603395';
   if (!token || !chat) {
     console.error('diagnostic lead delivery unavailable: missing configuration');
-    return NextResponse.json({ ok: false, error: 'telegram_unavailable' }, { status: 503 });
+    return NextResponse.json({ ...receipt, telegram: false, warning: 'telegram_unavailable' });
   }
   try {
     const res = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ chat_id: chat, text: lines.join('\n'), disable_web_page_preview: true }),
+      signal: AbortSignal.timeout(8000),
     });
-    if (!res.ok) {
+    const telegramBody = await res.json().catch(() => null);
+    if (!res.ok || telegramBody?.ok !== true) {
       console.error('diagnostic lead delivery failed', res.status);
-      return NextResponse.json({ ok: false, error: 'telegram_failed' }, { status: 502 });
+      return NextResponse.json({ ...receipt, telegram: false, warning: 'telegram_failed' });
     }
-    return NextResponse.json({ ok: true });
+    return NextResponse.json({ ...receipt, telegram: true });
   } catch {
     console.error('diagnostic lead delivery exception');
-    return NextResponse.json({ ok: false, error: 'telegram_failed' }, { status: 502 });
+    return NextResponse.json({ ...receipt, telegram: false, warning: 'telegram_failed' });
   }
 }
