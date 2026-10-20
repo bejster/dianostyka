@@ -1,4 +1,5 @@
 // Wspólna walidacja: UI, komplet sesji i endpoint leadowy. Nie myl 0 z brakiem odpowiedzi.
+import { INIT } from './diagnostic-core.ts';
 import { QUESTIONS, type QuestionDef } from './assessment-config.ts';
 
 type AnswerBag = Record<string, unknown>;
@@ -54,6 +55,7 @@ export function validAnswer(q: QuestionDef, answers: AnswerBag): boolean {
     case 'slider':
     case 'number': {
       if (typeof v !== 'number' || !Number.isFinite(v)) return false;
+      if (q.id === 'missed_trainings' && typeof answers.planned_trainings === 'number' && v > answers.planned_trainings) return false;
       if (v < (q.min ?? Number.NEGATIVE_INFINITY) || v > (q.max ?? Number.POSITIVE_INFINITY)) return false;
       const step = q.step ?? 1;
       return step > 0 && Math.abs((v - (q.min ?? 0)) / step - Math.round((v - (q.min ?? 0)) / step)) < 1e-6;
@@ -76,4 +78,46 @@ export function invalidDiagnosticFields(raw: unknown): string[] {
   return QUESTIONS.filter(q => !q.condition || q.condition(answers))
     .filter(q => !validAnswer(q, answers))
     .map(q => q.id);
+}
+
+// Only active, validated answers can influence a result or leave the server.
+export function activeDiagnosticAnswers(raw: AnswerBag): AnswerBag {
+  const active: AnswerBag = {};
+  for (const q of QUESTIONS) {
+    if ((!q.condition || q.condition(raw)) && validAnswer(q, raw) && !missing(raw[q.id])) {
+      active[q.id] = q.type === 'contact' ? cleanInstagram(raw[q.id])
+        : typeof raw[q.id] === 'string' ? (raw[q.id] as string).trim() : raw[q.id];
+    }
+  }
+  if (typeof raw.imie === 'string' && raw.imie.trim()) active.imie = raw.imie.trim().slice(0, 40);
+  return active;
+}
+
+export function answerHint(q: QuestionDef, answers: AnswerBag): string {
+  if (validAnswer(q, answers)) return '';
+  switch (q.type) {
+    case 'slider': case 'number':
+      if (q.id === 'missed_trainings' && typeof answers.planned_trainings === 'number')
+        return `Podaj liczbę od 0 do ${answers.planned_trainings}, zgodnie z planem treningów.`;
+      return `Wybierz liczbę od ${q.min ?? 0} do ${q.max ?? 10000}${q.min === 0 ? '. Zero też jest odpowiedzią' : ''}.`;
+    case 'text': return 'Napisz jedno zdanie: minimum 15 znaków i 3 słowa, maksymalnie 500 znaków.';
+    case 'contact': return 'Podaj nick Instagram: 2–30 znaków, litery, cyfry, kropki lub podkreślniki. Bez spacji i linku.';
+    case 'multi': return 'Wybierz od 1 do 3 odpowiedzi.';
+    case 'single': return 'Wybierz jedną odpowiedź.';
+  }
+}
+
+// The retained V1 endpoint consumes FD, not the V2 questionnaire answer IDs.
+// Require the full numeric snapshot it actually sends, never an arbitrary non-empty object.
+export function validLegacyDiagnosticAnswers(value: unknown): boolean {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return false;
+  const a = value as AnswerBag;
+  const numericKeys = Object.entries(INIT).filter(([key, v]) => typeof v === 'number' && key !== 'supps').map(([key]) => key);
+  if (!numericKeys.every(key => typeof a[key] === 'number' && Number.isFinite(a[key]))) return false;
+  return (a.age as number) >= 18 && (a.age as number) <= 50
+    && (a.sleep as number) >= 0 && (a.sleep as number) <= 24
+    && (a.plan as number) >= 0 && (a.plan as number) <= 7
+    && (a.miss as number) >= 0 && (a.miss as number) <= (a.plan as number)
+    && Array.isArray(a.tags) && a.tags.every(t => typeof t === 'string' && t.trim().length > 0)
+    && typeof a.pain === 'string' && enoughContent(a.pain) && !isGibberish(a.pain);
 }

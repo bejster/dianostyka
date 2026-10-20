@@ -1255,6 +1255,7 @@ export default function Page() {
     }
     const finalHandle = handle ? '@' + handle : '';
     const odpowiedzi = {
+      age: D.age,
       sleep: D.sleep, sleepQ: D.sleepQ, screenBed: D.screenBed,
       wakeTime: D.wakeTime, alarm: D.alarm,
       stress: D.stress, energy: D.energy, dopamine: D.dopamine,

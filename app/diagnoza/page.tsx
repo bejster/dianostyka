@@ -4,7 +4,7 @@
 // intro -> intake (1 pytanie/ekran) -> teaser (Karta Tygodnia, koniec). Lead leci na Telegram w handleComplete.
 // Mail wycięty (backend Faza 4 niepodłączony, nie kłamiemy). Stare "/" (v1) nietknięte.
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { track, identify } from '../lib/analytics';
 import SingleQuestionFlow from '../components/SingleQuestionFlow';
 import WeekPage from '../components/WeekPage';
@@ -43,6 +43,25 @@ function qualify(raw: RawAnswers, sc: number) {
 export default function DiagnozaPage() {
   const [phase, setPhase] = useState<Phase>('intro');
   const [answers, setAnswers] = useState<RawAnswers | null>(null);
+  const [delivery, setDelivery] = useState<'idle' | 'sending' | 'accepted' | 'failed'>('idle');
+  const leadRef = useRef('');
+  const sending = useRef(false);
+  const sendLead = async (raw: RawAnswers) => {
+    if (sending.current) return;
+    sending.current = true;
+    if (!leadRef.current) leadRef.current = crypto.randomUUID();
+    setDelivery('sending');
+    try {
+      const res = await fetch('/api/lead-notify', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ answers: raw, lead_ref: leadRef.current }),
+        signal: AbortSignal.timeout(30000),
+      });
+      const result = await res.json();
+      setDelivery(res.ok && result?.ok === true && result?.crm === true ? 'accepted' : 'failed');
+    } catch { setDelivery('failed'); }
+    finally { sending.current = false; }
+  };
   // Reframe personalizujacy Karte Tygodnia. Dochodzi w tle po LLM, re-renderuje teaser.
   const [reframe, setReframe] = useState<ReframeData | null>(null);
 
@@ -82,11 +101,7 @@ export default function DiagnozaPage() {
     const rawImie = raw.imie ?? raw.name;
 
     // Backend liczy wynik SAM z pełnych, sprawdzonych odpowiedzi. Pusta sesja nie trafi do Telegrama.
-    void fetch('/api/lead-notify', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ answers: raw }),
-    }).catch(() => {});
+    void sendLead(raw);
 
     // ── Reframe z wlasnych slow usera (LLM), tylko gdy coś napisał. Fire-and-forget, Karta stoi bez niego. ──
     if (painText) {
@@ -176,6 +191,14 @@ export default function DiagnozaPage() {
           <a href={'https://nabor.talerzihantle.com/'} target="_blank" rel="noopener noreferrer" onClick={() => track('diag_nabor_click', { loc: 'header' })} style={{ fontSize: 12.5, color: '#ece7db', textDecoration: 'none', whiteSpace: 'nowrap' }}>
             {qualified ? 'zobacz, jak wygląda współpraca' : 'zobacz, jak pracuję z innymi'} &rarr;
           </a>
+        </div>
+        <div style={{maxWidth:520,margin:'16px auto',padding:'0 20px',position:'relative',zIndex:1}}>
+          {delivery === 'sending' && <p role="status">Twój wynik jest gotowy. Przekazuję odpowiedzi…</p>}
+          {delivery === 'accepted' && <p role="status">Zgłoszenie przyjęte. Wynik znajdziesz poniżej.</p>}
+          {delivery === 'failed' && <div role="alert">
+            <p>Wynik jest gotowy, ale nie udało się przekazać zgłoszenia. Twoje odpowiedzi zostają w tej przeglądarce.</p>
+            <button onClick={() => void sendLead(answers)} style={{padding:'12px 18px',borderRadius:12,border:'1px solid #c8a84e',background:'#151515',color:'#ece7db',cursor:'pointer'}}>Spróbuj ponownie</button>
+          </div>}
         </div>
         <WeekPage plan={wkPlan} imie={imie} qualified={qualified} naborHref={'https://nabor.talerzihantle.com/'} />
       </>

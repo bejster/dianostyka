@@ -1,0 +1,325 @@
+[
+  {
+    "environment": "production",
+    "label": "empty payload",
+    "path": "/api/lead-notify",
+    "status": 422,
+    "expected": 422,
+    "pass": true,
+    "response": {
+      "ok": false,
+      "error": "incomplete_lead",
+      "invalid_fields": [
+        "answers"
+      ]
+    }
+  },
+  {
+    "environment": "production",
+    "label": "empty payload",
+    "path": "/api/subscribe",
+    "status": 422,
+    "expected": 422,
+    "pass": true,
+    "response": {
+      "error": "Podaj poprawny email"
+    }
+  },
+  {
+    "environment": "preview",
+    "label": "empty payload",
+    "path": "/api/lead-notify",
+    "status": 422,
+    "expected": 422,
+    "pass": true,
+    "response": {
+      "ok": false,
+      "error": "incomplete_lead",
+      "invalid_fields": [
+        "answers"
+      ]
+    }
+  },
+  {
+    "environment": "preview",
+    "label": "empty payload",
+    "path": "/api/subscribe",
+    "status": 422,
+    "expected": 422,
+    "pass": true,
+    "response": {
+      "error": "Podaj poprawny email"
+    }
+  },
+  {
+    "environment": "preview",
+    "label": "whitespace age",
+    "path": "/api/lead-notify",
+    "status": 422,
+    "expected": 422,
+    "pass": true,
+    "response": {
+      "ok": false,
+      "error": "incomplete_lead",
+      "invalid_fields": [
+        "age"
+      ]
+    }
+  },
+  {
+    "environment": "preview",
+    "label": "whitespace sleep_quality",
+    "path": "/api/lead-notify",
+    "status": 422,
+    "expected": 422,
+    "pass": true,
+    "response": {
+      "ok": false,
+      "error": "incomplete_lead",
+      "invalid_fields": [
+        "sleep_quality"
+      ]
+    }
+  },
+  {
+    "environment": "preview",
+    "label": "whitespace break_window",
+    "path": "/api/lead-notify",
+    "status": 422,
+    "expected": 422,
+    "pass": true,
+    "response": {
+      "ok": false,
+      "error": "incomplete_lead",
+      "invalid_fields": [
+        "break_window"
+      ]
+    }
+  },
+  {
+    "environment": "preview",
+    "label": "whitespace stress_level",
+    "path": "/api/lead-notify",
+    "status": 422,
+    "expected": 422,
+    "pass": true,
+    "response": {
+      "ok": false,
+      "error": "incomplete_lead",
+      "invalid_fields": [
+        "stress_level"
+      ]
+    }
+  },
+  {
+    "environment": "preview",
+    "label": "whitespace half_power_hours",
+    "path": "/api/lead-notify",
+    "status": 422,
+    "expected": 422,
+    "pass": true,
+    "response": {
+      "ok": false,
+      "error": "incomplete_lead",
+      "invalid_fields": [
+        "half_power_hours"
+      ]
+    }
+  },
+  {
+    "environment": "preview",
+    "label": "whitespace evening_eating",
+    "path": "/api/lead-notify",
+    "status": 422,
+    "expected": 422,
+    "pass": true,
+    "response": {
+      "ok": false,
+      "error": "incomplete_lead",
+      "invalid_fields": [
+        "evening_eating"
+      ]
+    }
+  },
+  {
+    "environment": "preview",
+    "label": "whitespace takeout_cost",
+    "path": "/api/lead-notify",
+    "status": 422,
+    "expected": 422,
+    "pass": true,
+    "response": {
+      "ok": false,
+      "error": "incomplete_lead",
+      "invalid_fields": [
+        "takeout_cost"
+      ]
+    }
+  },
+  {
+    "environment": "preview",
+    "label": "whitespace planned_trainings",
+    "path": "/api/lead-notify",
+    "status": 422,
+    "expected": 422,
+    "pass": true,
+    "response": {
+      "ok": false,
+      "error": "incomplete_lead",
+      "invalid_fields": [
+        "planned_trainings"
+      ]
+    }
+  },
+  {
+    "environment": "preview",
+    "label": "whitespace weekend_pattern",
+    "path": "/api/lead-notify",
+    "status": 422,
+    "expected": 422,
+    "pass": true,
+    "response": {
+      "ok": false,
+      "error": "incomplete_lead",
+      "invalid_fields": [
+        "weekend_pattern",
+        "weekend_cash"
+      ]
+    }
+  },
+  {
+    "environment": "preview",
+    "label": "whitespace alcohol_intake",
+    "path": "/api/lead-notify",
+    "status": 422,
+    "expected": 422,
+    "pass": true,
+    "response": {
+      "ok": false,
+      "error": "incomplete_lead",
+      "invalid_fields": [
+        "alcohol_intake"
+      ]
+    }
+  },
+  {
+    "environment": "preview",
+    "label": "whitespace monday_recovery",
+    "path": "/api/lead-notify",
+    "status": 422,
+    "expected": 422,
+    "pass": true,
+    "response": {
+      "ok": false,
+      "error": "incomplete_lead",
+      "invalid_fields": [
+        "monday_recovery"
+      ]
+    }
+  },
+  {
+    "environment": "preview",
+    "label": "whitespace symptoms_chips",
+    "path": "/api/lead-notify",
+    "status": 422,
+    "expected": 422,
+    "pass": true,
+    "response": {
+      "ok": false,
+      "error": "incomplete_lead",
+      "invalid_fields": [
+        "symptoms_chips"
+      ]
+    }
+  },
+  {
+    "environment": "preview",
+    "label": "whitespace tried_before",
+    "path": "/api/lead-notify",
+    "status": 422,
+    "expected": 422,
+    "pass": true,
+    "response": {
+      "ok": false,
+      "error": "incomplete_lead",
+      "invalid_fields": [
+        "tried_before"
+      ]
+    }
+  },
+  {
+    "environment": "preview",
+    "label": "whitespace user_pain",
+    "path": "/api/lead-notify",
+    "status": 422,
+    "expected": 422,
+    "pass": true,
+    "response": {
+      "ok": false,
+      "error": "incomplete_lead",
+      "invalid_fields": [
+        "user_pain"
+      ]
+    }
+  },
+  {
+    "environment": "preview",
+    "label": "whitespace intent",
+    "path": "/api/lead-notify",
+    "status": 422,
+    "expected": 422,
+    "pass": true,
+    "response": {
+      "ok": false,
+      "error": "incomplete_lead",
+      "invalid_fields": [
+        "intent"
+      ]
+    }
+  },
+  {
+    "environment": "preview",
+    "label": "whitespace start_when",
+    "path": "/api/lead-notify",
+    "status": 422,
+    "expected": 422,
+    "pass": true,
+    "response": {
+      "ok": false,
+      "error": "incomplete_lead",
+      "invalid_fields": [
+        "start_when"
+      ]
+    }
+  },
+  {
+    "environment": "preview",
+    "label": "whitespace instagram",
+    "path": "/api/lead-notify",
+    "status": 422,
+    "expected": 422,
+    "pass": true,
+    "response": {
+      "ok": false,
+      "error": "incomplete_lead",
+      "invalid_fields": [
+        "instagram"
+      ]
+    }
+  },
+  {
+    "environment": "preview",
+    "label": "complete input; CRM unconfigured",
+    "path": "/api/lead-notify",
+    "status": 503,
+    "expected": 503,
+    "pass": true,
+    "response": {
+      "ok": false,
+      "error": "crm_unavailable",
+      "crm": false,
+      "telegram": false,
+      "lead_ref": "qa-http-20261020"
+    }
+  }
+]

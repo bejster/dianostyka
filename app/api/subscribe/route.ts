@@ -1,15 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { validEmail, validInstagram } from '../../lib/lead-integrity';
+import { validEmail, validInstagram, validLegacyDiagnosticAnswers } from '../../lib/lead-integrity';
 
 export async function POST(req: NextRequest) {
   try {
-    const parsed: unknown = await req.json();
+    const parsed: unknown = await req.json().catch(() => null);
     if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
       return NextResponse.json({ error: 'Nieprawidłowe zgłoszenie' }, { status: 400 });
     }
     const body = parsed as Record<string, unknown>;
     const {
-      email,
+      email: rawEmail,
       instagram_handle,
       imie,
       wynik_kwota,
@@ -34,6 +34,7 @@ export async function POST(req: NextRequest) {
       fields,
     } = body;
 
+    const email = typeof rawEmail === 'string' ? rawEmail.trim() : rawEmail;
     if (!validEmail(email)) {
       return NextResponse.json({ error: 'Podaj poprawny email' }, { status: 422 });
     }
@@ -49,9 +50,13 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Uzupełnij oczekiwania wobec współpracy' }, { status: 422 });
     }
     // Nie dopuszczaj puste rekordy do handoffu; klient może publikować tylko komplet z diagnostyki.
-    if (source === 'diagnostyka_hit' && (!odpowiedzi || typeof odpowiedzi !== 'object' || Array.isArray(odpowiedzi)
-      || !Number.isFinite(Number(wynik_score)) || Number(wynik_score) < 0 || Number(wynik_score) > 100)) {
+    if (!validLegacyDiagnosticAnswers(odpowiedzi)
+      || wynik_score === null || wynik_score === undefined || (typeof wynik_score === 'string' && !wynik_score.trim())
+      || !Number.isFinite(Number(wynik_score)) || Number(wynik_score) < 0 || Number(wynik_score) > 100) {
       return NextResponse.json({ error: 'Niekompletny wynik diagnostyki' }, { status: 422 });
+    }
+    if (!['dziala_sam', 'chce_zobaczyc_pomoc', 'napisz_mi', 'nie_wie'].includes(intent)) {
+      return NextResponse.json({ error: 'Wybierz, jak chcesz dalej działać' }, { status: 422 });
     }
     const declaredPriority = needsDm
       && ['7dni', '30dni'].includes(String(body.kiedy_start || ''))
@@ -128,8 +133,8 @@ export async function POST(req: NextRequest) {
             email,
             instagram_handle: instagram_handle || '',
             imie: imie || '',
-            wynik_kwota: wynik_kwota || String(totalCost ?? ''),
-            wynik_score: wynik_score || String(score ?? ''),
+            wynik_kwota: wynik_kwota ?? String(totalCost ?? ''),
+            wynik_score: wynik_score ?? String(score ?? ''),
             priority_lead: declaredPriority,
             budget_proxy: null,
             path: path || 'general',
@@ -145,6 +150,10 @@ export async function POST(req: NextRequest) {
       } catch (whErr) {
         console.error('n8n webhook fetch error:', whErr);
       }
+    }
+
+    if (!mlOk && !webhookOk) {
+      return NextResponse.json({ ok: false, mailerlite: mlOk, webhook: webhookOk, telegram: false }, { status: 503 });
     }
 
     // 3. Telegram BEZPOŚREDNIO (niezależnie od n8n) — spersonalizowany wynik leada do Michała
@@ -187,7 +196,8 @@ export async function POST(req: NextRequest) {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ chat_id: tgChat, text: lines.join('\n') }),
         });
-        tgOk = tgRes.ok;
+        const tgBody = await tgRes.json().catch(() => null);
+        tgOk = tgRes.ok && tgBody?.ok === true;
         if (!tgRes.ok) console.error('Telegram error:', tgRes.status, await tgRes.text());
       } catch (tgErr) {
         console.error('Telegram fetch error:', tgErr);
@@ -195,7 +205,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Nie ogłaszaj zapisu, jeśli żaden kanał nie przyjął danych.
-    const saved = mlOk || webhookOk || tgOk;
+    const saved = mlOk || webhookOk;
     return NextResponse.json({
       ok: saved,
       mailerlite: mlOk,

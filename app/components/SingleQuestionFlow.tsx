@@ -5,7 +5,7 @@ import { QUESTIONS, QuestionDef, QuestionOption } from '../lib/assessment-config
 import { RawAnswers } from '../lib/scoring-engine';
 import { track } from '../lib/analytics';
 import { Atmosphere } from '../diagnoza/atmosphere';
-import { invalidDiagnosticFields, validAnswer, validInstagram } from '../lib/lead-integrity';
+import { activeDiagnosticAnswers, answerHint, invalidDiagnosticFields, validAnswer, validInstagram } from '../lib/lead-integrity';
 
 interface Props {
   onComplete: (answers: RawAnswers) => void;
@@ -28,41 +28,16 @@ function fmtVal(val: number, unit?: string): string {
   return u ? `${val} ${u}` : `${val}`;
 }
 
-// ── Antybełkot: wykrywa klepanie w klawiaturę ("zzz", "asdfgh", "ee ee ee") w pytaniu otwartym ──
-// Cel: nie przepuścić leada, który nabił byle co. Konserwatywne progi, żeby nie krzyczeć na realne zdania.
-const _CONS = 'bcdfghjklmnpqrstvwxzżźćńłś';
-function isGibberish(raw: string): boolean {
-  const t = (raw || '').trim().toLowerCase();
-  const letters = t.replace(/[^a-ząćęłńóśźż]/g, '');
-  if (letters.length < 5) return false; // za krótko, jeszcze nie oceniamy
-  // 1) ten sam znak 4+ pod rząd: zzzz, aaaaa
-  if (/(.)\1{3,}/.test(t)) return true;
-  // 2) dłuższy tekst, a mało różnych liter: asdasdasd, ee ee ee, aaa bbb ccc
-  if (letters.length >= 10 && new Set(letters).size < 5) return true;
-  // 3) brak samogłosek albo prawie same samogłoski (bdfg / eeee)
-  const vowels = (letters.match(/[aeiouyąęó]/g) || []).length;
-  if (letters.length >= 6 && vowels === 0) return true;
-  if (letters.length >= 6 && vowels / letters.length > 0.85) return true;
-  // 4) token z ciągiem 6+ spółgłosek: asdfghjk (polskie słowa nie mają tak długich zbitek)
-  const consRun = new RegExp('[' + _CONS + ']{6,}');
-  if (t.split(/\s+/).some(w => consRun.test(w))) return true;
-  return false;
-}
-// Minimum treści: 15 znaków i co najmniej 3 słowa (2+ liter). Odsiewa "ok", "nie wiem".
-function enoughContent(raw: string): boolean {
-  const t = (raw || '').trim();
-  if (t.length < 15) return false;
-  const tokens = t.toLowerCase().split(/\s+/).filter(w => w.replace(/[^a-ząćęłńóśźż]/g, '').length >= 2);
-  return tokens.length >= 3;
-}
-
 export default function SingleQuestionFlow({ onComplete, initialAnswers }: Props) {
   const [answers, setAnswers] = useState<RawAnswers>(() => {
     if (initialAnswers && Object.keys(initialAnswers).length > 0) return initialAnswers;
     if (typeof window !== 'undefined') {
       try {
         const saved = localStorage.getItem(STORAGE_KEY);
-        if (saved) return JSON.parse(saved);
+        if (saved) {
+          const parsed: unknown = JSON.parse(saved);
+          if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) return parsed as RawAnswers;
+        }
       } catch (_e) {}
     }
     // Zero domyslnych wartosci: slider/number bez ruchu = brak odpowiedzi (nie zapisujemy smieci).
@@ -75,7 +50,10 @@ export default function SingleQuestionFlow({ onComplete, initialAnswers }: Props
         const savedStep = localStorage.getItem(STEP_KEY);
         if (savedStep) {
           const parsed = parseInt(savedStep, 10);
-          if (!isNaN(parsed) && parsed >= 0 && parsed < QUESTIONS.length) return parsed;
+          if (!isNaN(parsed) && parsed >= 0 && parsed < QUESTIONS.length) {
+            const visible = QUESTIONS.findIndex((q, i) => i >= parsed && (!q.condition || q.condition(answers)));
+            return visible >= 0 ? visible : 0;
+          }
         }
       } catch (_e) {}
     }
@@ -83,8 +61,6 @@ export default function SingleQuestionFlow({ onComplete, initialAnswers }: Props
   });
 
   const [transitionState, setTransitionState] = useState<'idle' | 'out' | 'in'>('idle');
-  // Pytania realnie dotkniete (slider/number musi byc ruszony, inaczej "Zatwierdz" zablokowany).
-  const [touched, setTouched] = useState<Set<string>>(new Set());
   const [flowErr, setFlowErr] = useState('');
 
   // Autosave w localStorage
@@ -112,8 +88,10 @@ export default function SingleQuestionFlow({ onComplete, initialAnswers }: Props
   }, [currentIndex]);
 
   // Jeden kontrakt wymaganych odpowiedzi dla UI i API. Zero jest poprawną odpowiedzią.
-  const advanceOk = validAnswer(currentQ, answers as Record<string, unknown>)
-    && (!(currentQ.type === 'slider' || currentQ.type === 'number') || touched.has(currentQ.id));
+  const advanceOk = validAnswer(currentQ, answers as Record<string, unknown>);
+  const hint = answerHint(currentQ, answers);
+  const numericMax = currentQ.id === 'missed_trainings' && typeof answers.planned_trainings === 'number'
+    ? answers.planned_trainings : currentQ.max;
 
   // Haptic feedback na mobile
   const vibe = useCallback((pattern: number | number[] = 8) => {
@@ -127,7 +105,7 @@ export default function SingleQuestionFlow({ onComplete, initialAnswers }: Props
   const goToNext = useCallback((nextAnswers: RawAnswers = answers) => {
     // Walidacja także w handlerze: nie da się obejść disabled ani ominąć pola z przywróconej sesji.
     if (!validAnswer(currentQ, nextAnswers as Record<string, unknown>)) {
-      setFlowErr('Uzupełnij prawidłowo tę odpowiedź.');
+      setFlowErr(answerHint(currentQ, nextAnswers));
       return;
     }
     setFlowErr('');
@@ -154,7 +132,7 @@ export default function SingleQuestionFlow({ onComplete, initialAnswers }: Props
         return;
       }
       vibe([20, 50, 20]);
-      onComplete(nextAnswers);
+      onComplete(activeDiagnosticAnswers(nextAnswers) as RawAnswers);
     }
   }, [currentIndex, currentQ, answers, onComplete, vibe]);
 
@@ -185,12 +163,10 @@ export default function SingleQuestionFlow({ onComplete, initialAnswers }: Props
   };
 
   const handleSliderChange = (val: number) => {
-    setTouched(t => new Set(t).add(currentQ.id));
     setAnswers(prev => ({ ...prev, [currentQ.id]: val }));
   };
 
   const handleNumberChange = (val: number) => {
-    setTouched(t => new Set(t).add(currentQ.id));
     setAnswers(prev => ({ ...prev, [currentQ.id]: val }));
   };
 
@@ -276,7 +252,7 @@ export default function SingleQuestionFlow({ onComplete, initialAnswers }: Props
         transition: 'opacity 0.2s ease, transform 0.2s ease',
       }}>
         {/* Tytuł pytania */}
-        <h2 style={{
+        <h2 id="diagnostic-question" style={{
           fontFamily: 'Georgia, serif',
           fontSize: 'clamp(24px, 5.8vw, 32px)',
           fontWeight: 400,
@@ -296,6 +272,8 @@ export default function SingleQuestionFlow({ onComplete, initialAnswers }: Props
             {currentQ.subtitle}
           </p>
         )}
+
+        {hint && <p id="answer-hint" role="status" aria-live="polite" style={{ color: '#d5bd7a', fontSize: 13.5, lineHeight: 1.5, margin: '0 0 16px' }}>{hint}</p>}
 
         {/* TYP 1: SINGLE CHOICE CARDS */}
         {currentQ.type === 'single' && currentQ.options && (
@@ -357,11 +335,18 @@ export default function SingleQuestionFlow({ onComplete, initialAnswers }: Props
 
             <input
               type="range"
+              aria-labelledby="diagnostic-question"
+              aria-describedby={hint ? "answer-hint" : undefined}
               min={currentQ.min ?? 4}
-              max={currentQ.max ?? 12}
+              max={numericMax ?? 12}
               step={currentQ.step ?? 0.5}
               value={Number(answers[currentQ.id] ?? currentQ.min ?? 7)}
               onPointerDown={() => { if (answers[currentQ.id] === undefined) handleSliderChange(Number(currentQ.min ?? 7)); }}
+              onKeyDown={e => {
+                if (answers[currentQ.id] === undefined && ['Home', 'End', 'ArrowLeft', 'ArrowRight', 'ArrowDown', 'ArrowUp'].includes(e.key)) {
+                  handleSliderChange(Number(e.currentTarget.value));
+                }
+              }}
               onChange={e => handleSliderChange(parseFloat(e.target.value))}
               style={{
                 width: '100%', height: 10, borderRadius: 5, accentColor: '#c8a84e',
@@ -371,7 +356,7 @@ export default function SingleQuestionFlow({ onComplete, initialAnswers }: Props
 
             <div style={{ display: 'flex', justifyContent: 'space-between', fontFamily: 'monospace', fontSize: 11, color: '#666', marginTop: 12 }}>
               <span>{fmtVal(currentQ.min ?? 0, currentQ.unit)}</span>
-              <span>{fmtVal(currentQ.max ?? 0, currentQ.unit)}</span>
+              <span>{fmtVal(numericMax ?? 0, currentQ.unit)}</span>
             </div>
 
             <button
@@ -396,6 +381,9 @@ export default function SingleQuestionFlow({ onComplete, initialAnswers }: Props
             <div style={{ display: 'flex', gap: 10, alignItems: 'center', marginBottom: 28 }}>
               <input
                 type="number"
+                aria-labelledby="diagnostic-question"
+                aria-describedby={hint ? "answer-hint" : undefined}
+                step={currentQ.step ?? 1}
                 min={currentQ.min ?? 0}
                 max={currentQ.max ?? 10000}
                 value={typeof answers[currentQ.id] === 'number' ? answers[currentQ.id] as number : ''}
@@ -403,13 +391,12 @@ export default function SingleQuestionFlow({ onComplete, initialAnswers }: Props
                 onChange={e => {
                   if (e.target.value === '') {
                     setAnswers(prev => ({ ...prev, [currentQ.id]: undefined }));
-                    setTouched(prev => { const next = new Set(prev); next.delete(currentQ.id); return next; });
                   } else {
                     handleNumberChange(Number(e.target.value));
                   }
                 }}
                 style={{
-                  flex: 1, padding: '16px', borderRadius: 14, background: 'rgba(255,255,255,0.04)',
+                  flex: 1, minWidth: 0, padding: '16px', borderRadius: 14, background: 'rgba(255,255,255,0.04)',
                   border: '1.5px solid rgba(200,168,78,0.4)', color: '#ffffff',
                   fontFamily: 'monospace', fontSize: 24, fontWeight: 700, outline: 'none',
                 }}
@@ -488,6 +475,9 @@ export default function SingleQuestionFlow({ onComplete, initialAnswers }: Props
           <div>
             <textarea
               rows={4}
+              aria-labelledby="diagnostic-question"
+              aria-describedby={hint ? "answer-hint" : undefined}
+              aria-invalid={!advanceOk}
               placeholder="np. Trenuję regularnie, trzymam miskę w dzień, ale po 21:00 zjadam pół lodówki i w poniedziałki w ogóle nie mam siły..."
               value={String(answers[currentQ.id] || '')}
               onChange={e => handleTextChange(e.target.value)}
@@ -500,23 +490,6 @@ export default function SingleQuestionFlow({ onComplete, initialAnswers }: Props
             <div style={{ textAlign: 'right', fontFamily: 'monospace', fontSize: 11, color: '#666', marginTop: 6 }}>
               {String(answers[currentQ.id] || '').length} / 500 znaków
             </div>
-
-            {/* Antybełkot: ktoś naklepał byle co ("zzz", "asdfgh") -> pociśnij w głosie Michała */}
-            {isGibberish(String(answers[currentQ.id] || '')) && (
-              <div style={{
-                marginTop: 14, padding: '14px 16px', borderRadius: 12,
-                background: 'rgba(220,70,60,0.10)', border: '1.5px solid rgba(220,70,60,0.45)',
-                color: '#ff8f84', fontSize: 14.5, lineHeight: 1.55, fontWeight: 500,
-              }}>
-                Stary, nie wal w chuja. Jak nie chce Ci się tego wypełniać i klepiesz byle co, to wyjdź stąd i nie marnuj mojego czasu. A chcesz, żebym Ci realnie pomógł? Napisz jedno prawdziwe zdanie, co Cię wkurwia.
-              </div>
-            )}
-            {/* Za mało treści (ale nie bełkot): miękka podpowiedź, bez krzyku */}
-            {!isGibberish(String(answers[currentQ.id] || '')) && String(answers[currentQ.id] || '').trim().length > 0 && !enoughContent(String(answers[currentQ.id] || '')) && (
-              <div style={{ marginTop: 12, fontSize: 13.5, color: '#999', lineHeight: 1.5 }}>
-                Napisz jedno pełne zdanie własnymi słowami. Bez tego nie ruszymy dalej.
-              </div>
-            )}
 
             <button
               onClick={() => goToNext()}
@@ -551,11 +524,13 @@ export default function SingleQuestionFlow({ onComplete, initialAnswers }: Props
                 autoCorrect="off"
                 spellCheck={false}
                 placeholder="twoj_nick"
+                aria-label="Nick Instagram"
+                aria-describedby={hint ? "answer-hint" : undefined}
                 value={String(answers.instagram || '').replace(/^@/, '')}
-                onChange={e => { setFlowErr(''); setAnswers(prev => ({ ...prev, instagram: e.target.value.replace(/[@\s]/g, '').slice(0, 40) })); }}
+                onChange={e => { setFlowErr(''); setAnswers(prev => ({ ...prev, instagram: e.target.value.replace(/^@/, '').slice(0, 40) })); }}
                 aria-invalid={Boolean(answers.instagram) && !validInstagram(answers.instagram)}
                 style={{
-                  flex: 1, padding: '16px', borderRadius: '0 14px 14px 0', background: 'rgba(255,255,255,0.04)',
+                  flex: 1, minWidth: 0, padding: '16px', borderRadius: '0 14px 14px 0', background: 'rgba(255,255,255,0.04)',
                   border: '1.5px solid rgba(200,168,78,0.4)', borderLeft: 'none', color: '#ffffff',
                   fontSize: 17, fontWeight: 600, outline: 'none', boxSizing: 'border-box',
                 }}
