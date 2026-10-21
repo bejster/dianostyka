@@ -1,6 +1,6 @@
 // assessment-config.ts, Wersjonowana konfiguracja pytań, domen i profili Diagnostyki Tygodnia V2
 
-export const ASSESSMENT_VERSION = '2.3.0';
+export const ASSESSMENT_VERSION = '3.0.0';
 
 export type DomainKey = 'sleep' | 'energy' | 'nutrition' | 'training' | 'weekend' | 'chaos';
 
@@ -74,14 +74,16 @@ export interface QuestionDef {
   max?: number;
   step?: number;
   unit?: string;
+  placeholder?: string; // podpowiedź w polu tekstowym (per pytanie, nie jeden generyk)
   options?: QuestionOption[];
+  maxSelect?: number; // tylko dla 'multi': ile chipow wolno zaznaczyc. Domyslnie 3.
   condition?: (answers: Record<string, unknown>) => boolean;
   upstreamWeight: number; // jak bardzo ten problem jest przyrodzoną przyczyną
   crossDomainImpact: number; // ile innych domen pogarsza
 }
 
 // ── ŹRÓDŁO PRAWDY: pytania w głosie Michała, JĘZYK MAKSYMALNIE PROSTY (poziom "5-latek zrozumie").
-// Zero metafor, zero slangu, ktory zaciemnia. Os: energia, glowa, uzywki, libido, nie sylwetka.
+// Zero metafor, zero slangu, który zaciemnia. Front: forma/sylwetka jako widoczny cel; weekend/sen/stres/jedzenie jako mechanizmy do odkrycia.
 //
 // TWARDE OGRANICZENIA SILNIKA (scoring-engine.ts + answers-to-fd.ts):
 // - id opcji scoringowych (sleep_quality sq_*, break_window bw_*, stress_level st_*,
@@ -91,6 +93,7 @@ export const QUESTIONS: QuestionDef[] = [
   // ── SEKCJA I: KONTEKST (kotwica domeny 'sleep' -> wagi 0.85/0.90) ──
   {
     id: 'age',
+    condition: () => false, // wyciete 2026-08-26: niski sygnal diagnostyczny, chroni completion (age -> INIT.age)
     section: 'Kontekst',
     sectionNum: 'I',
     title: 'Ile masz lat?',
@@ -111,7 +114,7 @@ export const QUESTIONS: QuestionDef[] = [
     condition: () => false, // wyciete (2026-08-01), sleep_quality niesie warstwe snu
     section: 'Sen',
     sectionNum: 'II',
-    title: 'Ile realnie śpisz, a nie ile leżysz?',
+    title: 'Ile śpisz, a nie ile leżysz?',
     subtitle: 'Odejmij scrollowanie i wybudzenia. Zostaje sam sen.',
     type: 'slider',
     domain: 'sleep',
@@ -139,29 +142,99 @@ export const QUESTIONS: QuestionDef[] = [
       { id: 'sb_fallasleep', label: '6-7, zasypiam z nim w ręce', value: 100 },
     ],
   },
+  // ── PYTANIE-DANE (opener): mierzy PRAGNIENIE, nie objaw. Nie wchodzi do score (value 0). ──
   {
-    id: 'sleep_quality',
-    section: 'Sen',
-    sectionNum: 'II',
-    title: 'Jak często budzisz się wyspany?',
-    subtitle: 'Chodzi o to, czy rano masz siłę.',
+    id: 'primary_goal',
+    section: 'Po co tu jesteś',
+    sectionNum: 'I',
+    title: 'Co najbardziej chcesz poprawić w najbliższych miesiącach?',
+    subtitle: 'Wybierz rzecz, po której najbardziej zauważysz, że to działa.',
     type: 'single',
-    domain: 'sleep',
-    upstreamWeight: 0.80,
-    crossDomainImpact: 0.85,
+    domain: 'chaos',
+    upstreamWeight: 0,
+    crossDomainImpact: 0,
     options: [
-      { id: 'sq_great', label: 'Prawie codziennie budzę się z energią.', value: 0 },
-      { id: 'sq_ok', label: '3-4 razy w tygodniu.', value: 30 },
-      { id: 'sq_heavy', label: '1-2 razy. Resztę dni wstaję zmęczony.', value: 70 },
-      { id: 'sq_wrecked', label: 'Prawie nigdy. Rano jestem rozbity.', value: 100 },
+      { id: 'goal_forma', label: 'Sylwetkę i wygląd. Chcę wreszcie widzieć różnicę.', value: 0 },
+      { id: 'goal_energia', label: 'Moc na cały dzień, bez zjazdów.', value: 0 },
+      { id: 'goal_sen', label: 'Sen i regeneracja, budzić się wyspanym.', value: 0 },
+      { id: 'goal_glowa', label: 'Spokój w głowie, mniej napięcia.', value: 0 },
+      { id: 'goal_naped', label: 'Napęd i libido, wrócić do siebie.', value: 0 },
+      { id: 'goal_inne', label: 'Coś innego.', value: 0 },
+    ],
+  },
+  // ── SAMOOCENA (v2.9): jedyne pytanie w calym flow, w ktorym czlowiek ocenia SAM SIEBIE liczba.
+  //    Stoi celowo jako ekran 2, PRZED jakimkolwiek pytaniem o zachowanie. Kto najpierw przeczyta
+  //    dwadziescia pytan o sen, wieczory i weekend, ten poda liczbe juz skalibrowana i cala roznica
+  //    znika. Wartosc nie wchodzi do score ani do FD. Sluzy wylacznie sekcji LUSTRO na stronie wyniku
+  //    (app/lib/awareness-gap.ts), gdzie stoi obok energii policzonej z jego wlasnych klikniec. ──
+  {
+    id: 'self_energy',
+    section: 'Po co tu jesteś',
+    sectionNum: 'I',
+    title: 'W skali 1-10, ile masz dziś energii?',
+    subtitle: 'Pierwsza liczba, jaka Ci przychodzi do głowy. Nie licz jej i nie poprawiaj.',
+    type: 'slider',
+    domain: 'chaos',
+    min: 1,
+    max: 10,
+    step: 1,
+    unit: '/10',
+    upstreamWeight: 0,
+    crossDomainImpact: 0,
+  },
+
+  // ── 3.0 PREDICTION LOCK: czlowiek obstawia przyczyne ZANIM zobaczy pytania o zachowanie.
+  //    Value 0, zero wplywu na score. Na wyniku stoi obok tego, co wskazaly odpowiedzi
+  //    (decision-engine.ts: match / wczesniejsze ogniwo / inny trop). pr_hormony nie dostaje zadnego
+  //    szacunku, tylko granice informacji. Decyzja: ustawia prediction_gap i medical_boundary. ──
+  {
+    id: 'prediction',
+    section: 'Po co tu jesteś',
+    sectionNum: 'I',
+    title: 'Obstaw, zanim policzymy: co najbardziej blokuje ten cel?',
+    subtitle: 'Jedna odpowiedź. Na końcu zobaczysz, czy Twoje kliknięcia to potwierdzają.',
+    type: 'single',
+    domain: 'chaos',
+    upstreamWeight: 0,
+    crossDomainImpact: 0,
+    options: [
+      { id: 'pr_sen', label: 'Sen. Śpię za krótko albo za płytko.', value: 0 },
+      { id: 'pr_jedzenie', label: 'Jedzenie, szczególnie wieczorem.', value: 0 },
+      { id: 'pr_glowa', label: 'Praca i głowa, która nie odpuszcza.', value: 0 },
+      { id: 'pr_trening', label: 'Za mało ruchu albo treningu.', value: 0 },
+      { id: 'pr_weekend', label: 'Weekendy.', value: 0 },
+      { id: 'pr_hormony', label: 'Hormony, testosteron.', value: 0 },
+      { id: 'pr_niewiem', label: 'Nie mam pojęcia.', value: 0 },
+    ],
+  },
+
+  // ── PREMIUM ICP PATCH V1 §3A: ODPOWIEDZIALNOSC. Wartosc 0, zero wplywu na severity.
+  //    To jest router calej galezi kwalifikacyjnej: odpowiedz inna niz wl_clock odblokowuje 'spillover'.
+  //    Pytamy o CZYJE sprawy zjadaja dzien, nie o godziny (§2: dlugie godziny NIE sa sygnalem premium). ──
+  {
+    id: 'work_load',
+    section: 'Rytm tygodnia',
+    sectionNum: 'I',
+    title: 'Czyje sprawy zjadają Ci dzień?',
+    subtitle: 'Weź zwykły dzień roboczy, nie ten najgorszy w miesiącu.',
+    type: 'single',
+    domain: 'chaos',
+    upstreamWeight: 0,
+    crossDomainImpact: 0,
+    options: [
+      { id: 'wl_clock', label: 'Swoje. Robię, co mam zrobić, i o 17 zamykam laptopa.', value: 0 },
+      { id: 'wl_deadline', label: 'Swoje, ale termin wisi nade mną. Jak nie dowiozę, widać to od razu.', value: 0 },
+      { id: 'wl_firefight', label: 'Cudze. Cały dzień gaszę pożary, a swoją robotę odrabiam po nocy.', value: 0 },
+      { id: 'wl_people', label: 'Ludzie czekają, aż coś powiem. Jak ja stoję, stoi kilka osób.', value: 0 },
+      { id: 'wl_owner', label: 'Wszystko. To moja firma, więc każda niezrobiona rzecz i tak wraca do mnie.', value: 0 },
     ],
   },
   {
     id: 'break_window',
     section: 'Sen',
     sectionNum: 'II',
-    title: 'O której godzinie dzień zaczyna Ci się psuć?',
-    subtitle: 'Ten pierwszy moment, po którym reszta dnia leci w dół.',
+    title: 'Kiedy pojawia się pierwszy moment, po którym reszta dnia zaczyna lecieć gorzej?',
+    subtitle: 'Zaznacz najwcześniejszy moment, który rozpoznajesz u siebie.',
     type: 'single',
     domain: 'sleep',
     upstreamWeight: 0.75,
@@ -176,6 +249,44 @@ export const QUESTIONS: QuestionDef[] = [
       { id: 'bw_varies', label: 'Nie ma jednej godziny. Każdy dzień jest inny.', value: 70 },
     ],
   },
+  // ── 3.0 KONTRAST: najlepszy dzien z ostatnich dwoch tygodni. Value 0, zero wplywu na score.
+  //    Decyzja: wspiera albo oslabia trop z break_window (contrast_evidence, counterevidence). ──
+  {
+    id: 'good_day',
+    section: 'Rytm tygodnia',
+    sectionNum: 'II',
+    title: 'Przypomnij sobie najlepszy dzień z ostatnich dwóch tygodni. Co wtedy było inaczej?',
+    subtitle: 'Wybierz to, co najbardziej się różniło.',
+    type: 'single',
+    domain: 'sleep',
+    upstreamWeight: 0,
+    crossDomainImpact: 0,
+    options: [
+      { id: 'gd_sen', label: 'Wyspałem się.', value: 0 },
+      { id: 'gd_wieczor', label: 'Poprzedni wieczór był spokojny, zjadłem normalnie i poszedłem spać o czasie.', value: 0 },
+      { id: 'gd_glowa', label: 'Mniej presji w robocie, głowa odpuściła.', value: 0 },
+      { id: 'gd_ruch', label: 'Był trening albo dużo ruchu.', value: 0 },
+      { id: 'gd_weekend', label: 'To był dzień po spokojnym weekendzie.', value: 0 },
+      { id: 'gd_niepamietam', label: 'Nie pamiętam takiego dnia.', value: 0 },
+    ],
+  },
+  {
+    id: 'sleep_quality',
+    section: 'Sen',
+    sectionNum: 'II',
+    title: 'Ile poranków w tygodniu budzisz się naprawdę gotowy na dzień?',
+    subtitle: 'Pomyśl o pierwszych 30 minutach po przebudzeniu.',
+    type: 'single',
+    domain: 'sleep',
+    upstreamWeight: 0.80,
+    crossDomainImpact: 0.85,
+    options: [
+      { id: 'sq_great', label: 'Prawie codziennie budzę się z energią.', value: 0 },
+      { id: 'sq_ok', label: '3-4 razy w tygodniu.', value: 30 },
+      { id: 'sq_heavy', label: '1-2 razy. Resztę dni wstaję zmęczony.', value: 70 },
+      { id: 'sq_wrecked', label: 'Prawie nigdy. Rano jestem rozbity.', value: 100 },
+    ],
+  },
 
   // ── SEKCJA III: GŁOWA I ENERGIA (kotwica domeny 'energy' -> wagi 0.70/0.75) ──
   {
@@ -183,7 +294,7 @@ export const QUESTIONS: QuestionDef[] = [
     section: 'Głowa',
     sectionNum: 'III',
     title: 'Leżysz już w łóżku, a głowa dalej w robocie?',
-    subtitle: 'Ile z ostatnich 7 wieczorów tak wyglądało.',
+    subtitle: 'Policz ostatnie 7 wieczorów.',
     type: 'single',
     domain: 'energy',
     upstreamWeight: 0.70,
@@ -200,7 +311,7 @@ export const QUESTIONS: QuestionDef[] = [
     section: 'Głowa',
     sectionNum: 'III',
     title: 'Ile godzin dziennie lecisz na pół mocy?',
-    subtitle: 'Niby coś robisz, ale wiesz, że Cię tam nie ma. Policz te godziny.',
+    subtitle: 'Te godziny, kiedy siedzisz przy robocie, ale wszystko idzie ciężej. Na oko.',
     type: 'slider',
     domain: 'energy',
     min: 0,
@@ -233,14 +344,14 @@ export const QUESTIONS: QuestionDef[] = [
     id: 'evening_eating',
     section: 'Jedzenie',
     sectionNum: 'IV',
-    title: 'Co się dzieje z jedzeniem po 18:00?',
-    subtitle: 'Wieczorem najłatwiej odpuścić. Jak to u Ciebie wygląda?',
+    title: 'Co się dzieje z jedzeniem pod koniec dnia?',
+    subtitle: 'Pomyśl o ostatnich 7 wieczorach.',
     type: 'single',
     domain: 'nutrition',
     upstreamWeight: 0.85,
     crossDomainImpact: 0.75,
     options: [
-      { id: 'ee_clean', label: 'Jem to, co zaplanowałem, i koniec.', value: 0 },
+      { id: 'ee_clean', label: 'Jem tyle, ile planowałem.', value: 0 },
       { id: 'ee_snack', label: 'Dochodzi jedna przekąska poza planem.', value: 45 },
       { id: 'ee_binge', label: '1-2 razy w tygodniu jem dużo więcej, niż chciałem.', value: 70 },
       { id: 'ee_uncontrolled', label: '3 wieczory albo więcej kończą się jedzeniem bez kontroli.', value: 90 },
@@ -249,6 +360,7 @@ export const QUESTIONS: QuestionDef[] = [
   },
   {
     id: 'takeout_cost',
+    condition: () => false, // 2.5.0: usuniete z main flow (nie proxy severity ani budzetu), zostaje disabled
     section: 'Jedzenie',
     sectionNum: 'IV',
     title: 'Ile miesięcznie wydajesz na dowozy i jedzenie na mieście?',
@@ -268,8 +380,8 @@ export const QUESTIONS: QuestionDef[] = [
     id: 'planned_trainings',
     section: 'Trening',
     sectionNum: 'V',
-    title: 'Ile razy w tygodniu planujesz trening?',
-    subtitle: 'Zero to też odpowiedź. Nie musisz trenować, żeby zrobić ten test.',
+    title: 'Ile treningów planujesz w zwykłym tygodniu?',
+    subtitle: 'Wpisz swój zwykły plan. Za chwilę sprawdzimy, ile z niego zostaje przy gorszym tygodniu.',
     type: 'slider',
     domain: 'training',
     min: 0,
@@ -284,8 +396,8 @@ export const QUESTIONS: QuestionDef[] = [
     condition: (a) => typeof a.planned_trainings === 'number' && a.planned_trainings >= 1, // bramka: pytaj tylko trenujacych
     section: 'Trening',
     sectionNum: 'V',
-    title: 'Ile z nich zwykle wypada, gdy tydzień się psuje?',
-    subtitle: 'Przez zmęczenie, brak czasu albo rozwalony tydzień.',
+    title: 'Kiedy tydzień robi się cięższy, ile z tych treningów wypada?',
+    subtitle: 'Weź zwykły gorszy tydzień: więcej roboty, słabszy sen albo wyjazd.',
     type: 'slider',
     domain: 'training',
     min: 0,
@@ -299,37 +411,56 @@ export const QUESTIONS: QuestionDef[] = [
   // ── SEKCJA VI: WEEKEND (kotwica domeny 'weekend' -> wagi 0.85/0.85) ──
   {
     id: 'weekend_pattern',
-    section: 'Weekend',
+    // Te dwa pytania sa w cold flow ekranem 1 i 2. Etykieta "WEEKEND" nad pierwszym ekranem kasowala
+    // obietnice z hero i robila z calosci diagnostyke weekendu. Pytanie zostaje, naglowek sekcji sie poszerza.
+    section: 'Rytm tygodnia',
     sectionNum: 'VI',
-    title: 'Jak często weekend psuje Ci sen, jedzenie albo ruch?',
-    subtitle: 'Czy weekend rozwala to, co ustawiasz przez cały tydzień?',
+    title: 'Jak bardzo Twój weekend różni się od zwykłego dnia w tygodniu?',
+    subtitle: 'Pomyśl o ostatnich czterech weekendach.',
     type: 'single',
     domain: 'weekend',
     upstreamWeight: 0.85,
     crossDomainImpact: 0.85,
     options: [
-      { id: 'wp_same', label: 'Prawie nigdy. Weekend wygląda jak reszta tygodnia.', value: 0 },
-      { id: 'wp_slight', label: 'Raz na miesiąc coś się psuje.', value: 35 },
-      { id: 'wp_shifted', label: '2-3 weekendy w miesiącu.', value: 75 },
-      { id: 'wp_reset', label: 'Prawie każdy weekend psuje rytm.', value: 100 },
+      { id: 'wp_same', label: 'Prawie wcale. Godziny, jedzenie i ruch są podobne.', value: 0 },
+      { id: 'wp_slight', label: 'Trochę luźniej, ale rytm zwykle zostaje.', value: 35 },
+      { id: 'wp_shifted', label: 'Wyraźnie inaczej. Później śpię, jem albo ruszam się inaczej.', value: 75 },
+      { id: 'wp_reset', label: 'Weekend rządzi się własnymi prawami.', value: 100 },
+    ],
+  },
+  {
+    id: 'monday_recovery',
+    section: 'Rytm tygodnia',
+    sectionNum: 'VI',
+    title: 'W poniedziałek rano jesteś zwykle…',
+    subtitle: 'Zaznacz tylko, jak szybko wracasz do swojego zwykłego poziomu.',
+    type: 'single',
+    domain: 'weekend',
+    upstreamWeight: 0.70,
+    crossDomainImpact: 0.75,
+    options: [
+      { id: 'mon_0', label: 'Na swoim zwykłym poziomie.', value: 0 },
+      { id: 'mon_1', label: 'Do południa potrzebuję się rozkręcić.', value: 40 },
+      { id: 'mon_2', label: 'Dopiero we wtorek czuję swój normalny poziom.', value: 70 },
+      { id: 'mon_3', label: 'W środę albo później.', value: 100 },
     ],
   },
   {
     id: 'alcohol_intake',
     section: 'Weekend',
     sectionNum: 'VI',
-    title: 'Weekend. Jak mocno się urywasz?',
-    subtitle: 'Alkohol, zioło, coś mocniejszego. Zero moralizowania, liczę tylko co to robi z Twoją głową i regeneracją.',
+    title: 'Jak zwykle wygląda u Ciebie weekend pod kątem alkoholu albo innych używek?',
+    subtitle: 'Pytam o to, bo wynik bierze pod uwagę, jak długo wracasz po weekendzie.',
     type: 'single',
     domain: 'weekend',
     upstreamWeight: 0.80,
     crossDomainImpact: 0.90,
     options: [
-      { id: 'alc_zero', label: 'Czysto, nie ruszam.', value: 0 },
-      { id: 'alc_low', label: 'Kilka piw, nic dzikiego.', value: 35 },
+      { id: 'alc_zero', label: 'Nie piję ani nie biorę.', value: 0 },
+      { id: 'alc_low', label: 'Kilka piw albo drinków.', value: 35 },
       { id: 'alc_mid', label: 'Solidnie, czasem urywa mi się film.', value: 70 },
       { id: 'alc_high', label: 'Alkohol plus coś jeszcze, zioło albo prochy.', value: 90 },
-      { id: 'alc_extreme', label: 'Mocno i nie tylko w weekend.', value: 100 },
+      { id: 'alc_extreme', label: 'Mocno. Zdarza się też w tygodniu.', value: 100 },
     ],
   },
   {
@@ -344,26 +475,9 @@ export const QUESTIONS: QuestionDef[] = [
     max: 800,
     step: 50,
     unit: ' zł',
-    condition: (a) => a.weekend_pattern !== undefined && a.weekend_pattern !== 'wp_same',
+    condition: () => false, // wyciete 2026-08-26: drugi proxy budzetu, takeout_cost wystarcza (cash -> INIT.cash)
     upstreamWeight: 0.40,
     crossDomainImpact: 0.40,
-  },
-  {
-    id: 'monday_recovery',
-    section: 'Weekend',
-    sectionNum: 'VI',
-    title: 'Ile dni po weekendzie zdychasz, zanim wrócisz do formy?',
-    subtitle: 'Zanim sen, energia i głowa wrócą do normy.',
-    type: 'single',
-    domain: 'weekend',
-    upstreamWeight: 0.70,
-    crossDomainImpact: 0.75,
-    options: [
-      { id: 'mon_0', label: 'Zero. W poniedziałek rano jestem gotowy.', value: 0 },
-      { id: 'mon_1', label: 'W poniedziałek po południu wracam do formy.', value: 40 },
-      { id: 'mon_2', label: 'Dopiero we wtorek.', value: 70 },
-      { id: 'mon_3', label: 'W środę albo później. Pół tygodnia zdycham.', value: 100 },
-    ],
   },
 
   // ── SEKCJA VII: NAPĘD I LIBIDO (kotwica domeny 'chaos' -> wagi 0.60/0.80) ──
@@ -372,7 +486,7 @@ export const QUESTIONS: QuestionDef[] = [
     section: 'Napęd',
     sectionNum: 'VII',
     title: 'Co ostatnio najbardziej Ci siadało?',
-    subtitle: 'Zaznacz maksymalnie 3, te najmocniejsze. Bóle, stawy i tętno zostaw lekarzowi, tu ich nie liczę.',
+    subtitle: 'Zaznacz maksymalnie 3, które najmocniej czujesz w ostatnich tygodniach. Ból, problemy ze stawami albo niepokojące tętno konsultuj z lekarzem.',
     type: 'multi',
     domain: 'chaos',
     upstreamWeight: 0.60,
@@ -390,15 +504,60 @@ export const QUESTIONS: QuestionDef[] = [
       { id: 'confidence', label: 'Mniej pewny siebie niż rok temu, omijam lustra.', value: 15 },
     ],
   },
+  // ── SAMOOCENA NAPEDU (v2.9). Michal wymienil libido wprost jako nawyk do zebrania. Do tej pory
+  //    siedzialo wylacznie jako jeden chip wsrod dziesieciu, wiec czlowiek, ktory uwaza, ze u niego
+  //    wszystko gra, po prostu go nie zaznaczal. Liczba zmusza do zajecia stanowiska.
+  //    ZERO TEZY HORMONALNEJ, tak samo jak przy wylaczonym 'morning_wood'. Wartosc poza score. ──
+  {
+    id: 'self_drive',
+    section: 'Napęd',
+    sectionNum: 'VII',
+    title: 'W skali 1-10, jak oceniasz swój napęd oraz libido w ostatnim miesiącu?',
+    subtitle: 'Bez oceniania. To sygnał, który sam u siebie widzisz, a prawie nikt o nim głośno nie mówi. Jeśli coś zmieniło się na dłużej, warto to sprawdzić u lekarza.',
+    type: 'slider',
+    domain: 'chaos',
+    min: 1,
+    max: 10,
+    step: 1,
+    unit: '/10',
+    upstreamWeight: 0,
+    crossDomainImpact: 0,
+  },
+
+  // ── PREMIUM ICP PATCH V1 §3B/3E: SPILLOVER I STAWKA. Wartosc 0, zero wplywu na severity.
+  //    Widoczne tylko dla kogos, kto niesie realna odpowiedzialnosc (work_load != wl_clock),
+  //    wiec lead bez stakes nie ogląda tego ekranu i nie placi za niego dlugoscia quizu. ──
+  {
+    id: 'spillover',
+    section: 'Rytm tygodnia',
+    sectionNum: 'I',
+    title: 'Po czym poznajesz, że forma zaczyna Ci mieszać poza siłownią?',
+    subtitle: 'Zaznacz maksymalnie 2. Jeśli nic takiego nie widzisz, zaznacz ostatnią odpowiedź.',
+    type: 'multi',
+    maxSelect: 2,
+    domain: 'chaos',
+    upstreamWeight: 0,
+    crossDomainImpact: 0,
+    condition: (a) => a.work_load !== 'wl_clock',
+    options: [
+      { id: 'sp_night', label: 'Zadanie, które rano zajęłoby 20 minut, robię o północy.', value: 0 },
+      { id: 'sp_slow', label: 'Na spotkaniu jestem obecny, a głowa mieli wolniej niż rok temu.', value: 0 },
+      { id: 'sp_home', label: 'Wieczorem nie zostaje mi już nic dla ludzi w domu.', value: 0 },
+      { id: 'sp_ceiling', label: 'Wiem, że stać mnie na więcej, a od dwóch lat stoję w tym samym miejscu.', value: 0 },
+      { id: 'sp_none', label: 'Nie mieszało. Chodzi mi po prostu o sylwetkę.', value: 0 },
+    ],
+  },
   {
     id: 'morning_wood',
+    condition: () => false, // 2.5.0: usuniete z main flow (nie wplywa na severity), zostaje disabled
     section: 'Napęd',
     sectionNum: 'VII',
     title: 'Poranne wzwody, szczerze, jak często?',
-    subtitle: 'Bez oceniania. To dobry sygnał snu i testosteronu. Możesz pominąć.',
+    // Zadnej tezy hormonalnej. Pytanie jest wylaczone, ale nawet wylaczone nie moze niesc claimu,
+    // ktorego nie wolno nam postawic bez badan. Zostaje obserwacja regeneracji i zaproszenie do lekarza.
+    subtitle: 'Bez oceniania. To sygnał regeneracji, który sam u siebie widzisz, dlatego pytam wprost. Jeśli coś się zmieniło na dłużej, warto to sprawdzić u lekarza.',
     type: 'single',
     domain: 'chaos',
-    optional: true,
     upstreamWeight: 0.55,
     crossDomainImpact: 0.60,
     options: [
@@ -407,12 +566,34 @@ export const QUESTIONS: QuestionDef[] = [
       { id: 'mw_2', label: 'Rzadko. Widzę, że to już nie to.', value: 100 },
     ],
   },
+  // ── STAGNACJA 12 MIESIECY (v2.9). 'tried_before' liczy plany, ktore padly. To jest inne pytanie:
+  //    czy CIALO w ogole ruszylo. Czlowiek, ktory uwaza, ze u niego wszystko gra, ma tu zwykle zero
+  //    padnietych planow, bo niczego nie zaczynal, i plaskie dwanascie miesiecy. Dopiero ta para
+  //    liczb go zatrzymuje. Opcja 'nie sprawdzalem' jest tu najwazniejsza, bo to jest wlasnie on.
+  //    Wartosc 0: uswiadomienie robi strona wyniku, nie severity (§10, trasa sprzedazowa bez zmian). ──
+  {
+    id: 'stagnation_12m',
+    section: 'Napęd',
+    sectionNum: 'VII',
+    title: 'Ostatnie 12 miesięcy. Twoja forma poszła do przodu?',
+    subtitle: 'Oceń po tym, co widzisz w lustrze i co czujesz na treningu.',
+    type: 'single',
+    domain: 'chaos',
+    upstreamWeight: 0,
+    crossDomainImpact: 0,
+    options: [
+      { id: 'st12_forward', label: 'Tak. Widać różnicę.', value: 0 },
+      { id: 'st12_flat', label: 'Stoję w tym samym miejscu.', value: 0 },
+      { id: 'st12_back', label: 'Cofnęło się.', value: 0 },
+      { id: 'st12_unknown', label: 'Nie wiem. Nie sprawdzałem.', value: 0 },
+    ],
+  },
   {
     id: 'tried_before',
     section: 'Napęd',
     sectionNum: 'VII',
-    title: 'Ile razy w tym roku zacząłeś plan, który padł w niecały miesiąc?',
-    subtitle: 'Chodzi o te, które nie przetrwały czterech tygodni.',
+    title: 'Ile planów w ostatnich 12 miesiącach nie dożyło czterech tygodni?',
+    subtitle: 'Liczą się trening, jedzenie oraz cały reset od poniedziałku.',
     type: 'single',
     domain: 'chaos',
     upstreamWeight: 0.65,
@@ -424,16 +605,67 @@ export const QUESTIONS: QuestionDef[] = [
       { id: 'tb_3', label: '5 albo więcej. Zaczynam mieć tego dość.', value: 100 },
     ],
   },
+  // ── PYTANIE-DANE: "gdzie odpuszczają". Nie wchodzi do score (value 0). ──
+  {
+    id: 'give_up_point',
+    section: 'Gdzie się sypie',
+    sectionNum: 'VII',
+    title: 'Co najczęściej uruchamia u Ciebie odpuszczenie?',
+    subtitle: 'Ten moment, po którym łatwo powiedzieć sobie: dobra, wrócę jutro.',
+    type: 'single',
+    domain: 'chaos',
+    upstreamWeight: 0,
+    crossDomainImpact: 0,
+    options: [
+      { id: 'gup_weekend', label: 'Na weekendzie.', value: 0 },
+      { id: 'gup_wieczor', label: 'Wieczorem, po całym dniu.', value: 0 },
+      { id: 'gup_stres', label: 'Gdy w robocie albo w głowie się pali.', value: 0 },
+      { id: 'gup_efekt', label: 'Gdy nie widać efektów.', value: 0 },
+      { id: 'gup_czas', label: 'Gdy braknie czasu.', value: 0 },
+    ],
+  },
   {
     id: 'user_pain',
+    optional: true, // P1-4 (rc-002): opcjonalne w diagnostic mode — cold lead nie jest karany za brak VOC; skip pod polem
     section: 'Główna przeszkoda',
     sectionNum: 'VII',
     title: 'Co Cię w tym wszystkim najbardziej wkurwia?',
-    subtitle: 'Jedno zdanie, własnymi słowami. Bez ładnego pisania.',
+    subtitle: 'Jedno prawdziwe zdanie. To często mówi mi więcej niż kilka kliknięć wyżej. Możesz pominąć.',
     type: 'text',
     domain: 'chaos',
+    placeholder: 'napisz po swojemu, tak jak powiedziałbyś to komuś znajomemu...',
     upstreamWeight: 0.90,
     crossDomainImpact: 0.90,
+  },
+  {
+    id: 'user_trigger',
+    // 2026-09-16 (v2.9): WYLACZONE, zeby zaplacic za trzy nowe ekrany swiadomosci dlugoscia, nie completionem.
+    // To bylo drugie z rzedu pole tekstowe, czyli najdrozszy ekran w calym flow. Jedyne, co niosLo dalej,
+    // to flaga has_trigger_text w content signals oraz jedno zdanie w brief. 'user_pain' zostaje i pokrywa VOC.
+    condition: () => false,
+    optional: true, // 2026-08-26: kto wypelni mimo opcjonalnosci = goracy lead (self-select); zimny nie odbija sie o 3. pole tekstowe
+    section: 'Główna przeszkoda',
+    sectionNum: 'VII',
+    title: 'Co wydarzyło się ostatnio, że wszedłeś w ten test właśnie dziś?',
+    subtitle: 'Jedno zdanie wystarczy. Możesz pominąć.',
+    type: 'text',
+    domain: 'chaos',
+    placeholder: 'co konkretnie wydarzyło się ostatnio?',
+    upstreamWeight: 0.85,
+    crossDomainImpact: 0.80,
+  },
+  {
+    id: 'user_selfdx',
+    condition: () => false, // wyciete 2026-08-26: trzeci esej = najwieksze tarcie, pokrywa sie z user_pain
+    section: 'Główna przeszkoda',
+    sectionNum: 'VII',
+    title: 'Co Twoim zdaniem trzyma Cię w miejscu?',
+    subtitle: 'Nie musisz mieć racji. Chcę usłyszeć, jak Ty to sobie tłumaczysz.',
+    type: 'text',
+    domain: 'chaos',
+    placeholder: 'np. Myślę, że to brak czasu i silnej woli. Zaczynam mocno, po dwóch tygodniach coś wybija mnie z rytmu i odpuszczam całość...',
+    upstreamWeight: 0.85,
+    crossDomainImpact: 0.80,
   },
 
   // ── SEKCJA VIII: CO DALEJ (kwalifikacja fit, niewidoczna, nie wchodzi do score) ──
@@ -441,8 +673,8 @@ export const QUESTIONS: QuestionDef[] = [
     id: 'intent',
     section: 'Co dalej',
     sectionNum: 'VIII',
-    title: 'Gdybyś miał to w końcu zmienić, jak wolisz działać?',
-    subtitle: 'Bez zobowiązań. Chcę tylko wiedzieć, jak wolisz to ograć.',
+    title: 'Gdy zobaczysz swój wynik, jaki kolejny ruch będzie dla Ciebie najbardziej użyteczny?',
+    subtitle: 'Wybierz odpowiedź, która jest najbliżej prawdy dzisiaj.',
     type: 'single',
     domain: 'chaos',
     upstreamWeight: 0,
@@ -454,11 +686,32 @@ export const QUESTIONS: QuestionDef[] = [
       { id: 'in_niewiem', label: 'Jeszcze nie wiem.', value: 0 },
     ],
   },
+  // ── PREMIUM ICP PATCH V1 §3D/§4: AGENCY x CONTROL NEED. Wartosc 0, zero wplywu na severity.
+  //    'intent' pyta, CZEGO chcesz po wyniku. To pyta, JAK sie zachowujesz po dostaniu kierunku.
+  //    Kto wybral in_sam juz na to odpowiedzial, wiec tego ekranu nie oglada. ──
+  {
+    id: 'agency_mode',
+    section: 'Co dalej',
+    sectionNum: 'VIII',
+    title: 'Powiedzmy, że dostajesz jasny kierunek na najbliższe tygodnie. Co się dzieje dalej?',
+    subtitle: 'Bez ściemy. Po tym poznaję, czy prowadzenie w ogóle ma u Ciebie sens.',
+    type: 'single',
+    domain: 'chaos',
+    upstreamWeight: 0,
+    crossDomainImpact: 0,
+    condition: (a) => a.intent !== 'in_sam',
+    options: [
+      { id: 'ag_solo', label: 'Zrobię. Jak coś się posypie, sam się odezwę.', value: 0 },
+      { id: 'ag_data', label: 'Zrobię, tylko chcę, żeby ktoś patrzył w dane i mówił, co poprawić.', value: 0 },
+      { id: 'ag_return', label: 'Ruszę mocno, a przy pierwszym gorszym tygodniu siadam i sam nie wracam.', value: 0 },
+      { id: 'ag_handoff', label: 'Wolałbym dostać wszystko podane i nie musieć o tym myśleć.', value: 0 },
+    ],
+  },
   {
     id: 'start_when',
     section: 'Co dalej',
     sectionNum: 'VIII',
-    title: 'Kiedy chcesz zacząć?',
+    title: 'Jeśli wynik trafi, kiedy chcesz coś z tym zrobić?',
     type: 'single',
     domain: 'chaos',
     upstreamWeight: 0,
@@ -471,14 +724,14 @@ export const QUESTIONS: QuestionDef[] = [
     ],
   },
 
-  // ── SEKCJA IX: KONTAKT (ostatni ekran, gate przed wynikiem; nie wchodzi do score) ──
-  // Bez tego pola lead jest anonimowy i nie da sie odezwac. IG wymagane, imie opcjonalne.
+  // ── SEKCJA IX: KONTAKT (ostatni ekran; P0-1: OPCJONALNY, NIE bramkuje wyniku; nie wchodzi do score) ──
+  // IG opcjonalne — bez niego lead jest anonimowy, ale wynik i tak sie pokazuje. Imie opcjonalne.
   {
     id: 'instagram',
     section: 'Kontakt',
     sectionNum: 'IX',
-    title: 'Podaj swój Instagram, pokażę Ci wynik.',
-    subtitle: 'Wynik widzę tylko ja. Jak coś w nim będzie, odezwę się osobiście.',
+    title: 'Chcesz, żebym mógł wrócić do Ciebie z tym wynikiem?',
+    subtitle: 'Zostaw @ z Instagrama. Jeśli wybrałeś prowadzenie albo chcesz zobaczyć, jak pracuję, potrzebuję go tylko po to, żeby wiedzieć, do kogo należy wynik.',
     type: 'contact',
     domain: 'chaos',
     upstreamWeight: 0,
@@ -539,7 +792,8 @@ export const PROFILES: Record<string, ProfileDef> = {
     code: 'E',
     title: 'Cały tydzień jedziesz na napięciu',
     tagline: 'Dowozisz wynik siłą, ale rachunek przychodzi wtedy, gdy puszcza kontrola.',
-    coreInsight: 'Ciągłe napięcie trzyma wysoki poziom kortyzolu, a to blokuje regenerację i zbija formę.',
+    // Bez tezy o kortyzolu. Opisujemy zachowanie i jego skutek, nie stan hormonalny, ktorego nie badamy.
+    coreInsight: 'Dzień kończy się na tych samych obrotach, na których się zaczął, więc wieczór nie jest regeneracją, tylko ciszą przy tym samym napięciu.',
     mirrorText: 'Pracujesz na wysokich obrotach i wszystko dowozisz. Ale po pracy nie umiesz wyłączyć głowy, więc ciało się nie regeneruje.',
     primaryDomain: 'energy',
   },
@@ -547,7 +801,7 @@ export const PROFILES: Record<string, ProfileDef> = {
     id: 'profile_f',
     code: 'F',
     title: 'Nie brakuje Ci wiedzy. Brakuje Ci punktu powrotu',
-    tagline: 'Problemem nie jest jeden gorszy dzień. Problemem jest to, ile czasu wracasz po nim do rytmu.',
+    tagline: 'Jeden gorszy dzień robi się kosztowny wtedy, gdy powrót do rytmu zajmuje Ci kolejne dni.',
     coreInsight: 'Myślisz zero-jedynkowo: po jednym gorszym posiłku albo opuszczonym treningu odpuszczasz resztę tygodnia.',
     mirrorText: 'Teorię znasz świetnie. Ale gdy jeden dzień pójdzie nie tak, czekasz na "czysty poniedziałek" i tracisz kolejne dni.',
     primaryDomain: 'chaos',

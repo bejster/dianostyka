@@ -4,53 +4,135 @@
 // intro -> intake (1 pytanie/ekran) -> teaser (Karta Tygodnia, koniec). Lead leci na Telegram w handleComplete.
 // Mail wycięty (backend Faza 4 niepodłączony, nie kłamiemy). Stare "/" (v1) nietknięte.
 
-import { useState, useEffect } from 'react';
-import { track, identify } from '../lib/analytics';
+import { useState, useEffect, useRef } from 'react';
+import { trackDiag, registerContext } from '../lib/analytics';
+import { captureAcquisition, withAcquisition, type AcquisitionAttribution } from '../lib/acquisition';
 import SingleQuestionFlow from '../components/SingleQuestionFlow';
-import WeekPage from '../components/WeekPage';
 import { type RawAnswers } from '../lib/scoring-engine';
 import { answersToFD } from '../lib/answers-to-fd';
 import { score, costs, pickArchetype, tagScoreWeighted, hourRange } from '../lib/diagnostic-core';
-import { buildWeekPlan } from '../lib/week-plan';
+import ResultExperience from '../components/ResultExperience';
+import { computeEvidenceReceipts, computeLoop, computeWhyRepeats, computeCostFacts, BREAK_PHRASE } from '../lib/fracture-engine';
+import { selectExperiment, type SelectorInput } from '../lib/experiment-bank';
+import { routeDecision } from '../lib/result-router-v3';
+import { buildDecision, hypothesisFrom, daysSince, parseReturnRecord, LEVER_LABEL, RETURN_KEY, type ReturnRecord, type ReturnOutcome, type HypothesisState } from '../lib/decision-engine';
+import { ASSESSMENT_VERSION } from '../lib/assessment-config';
+import { buildLeadBrief } from '../lib/lead-brief';
+import { computeAwarenessGap } from '../lib/awareness-gap';
+import { classifyPremiumFit } from '../lib/premium-fit';
 import { Atmosphere } from './atmosphere';
-import { invalidDiagnosticFields } from '../lib/lead-integrity';
+import { resolveEntryDoor, ENTRY_COPY } from '../lib/entry-copy';
 
 const GOLD = '#c8a84e';
 const BG = '#08080a';
 
 type Phase = 'intro' | 'intake' | 'teaser';
 
-// Reframe z wlasnych slow usera (LLM /api/diagnoza). Ksztalt zgodny z json.reframe
-// z route.ts oraz z opcjonalnym polem `reframe` w WeekPlanInput (week-plan.ts).
-interface ReframeData {
-  cytat?: string;
-  falszywe_zalozenie?: string;
-  mechanizm?: string;
-  kolejnosc?: string[];
-  pulapka?: string;
-}
+// Front doors share one engine. Profile changes entry copy and analytics only.
+const DOOR_KICKER: Record<string, string> = {
+  general: 'Diagnostyka 168 · 5 min',
+  hit: 'Diagnostyka 168 · praca, dom i forma · 5 min',
+  th2: 'Talerz i Hantle · 5 min · wynik od razu',
+};
+const TOPIC_LABEL: Record<string, string> = { sen: 'sen', energia: 'energia', glowa: 'głowa', jedzenie: 'jedzenie', trening: 'trening', weekend: 'weekend' };
+const RETURN_LINE: Record<HypothesisState, (l: string) => string> = {
+  wzmocniona: (l) => `To wzmacnia trop: ${l}. Zostań przy tym jednym ruchu jeszcze tydzień, zanim dołożysz cokolwiek nowego.`,
+  nierozstrzygnieta: (l) => `Trop „${l}” zostaje otwarty. Daj testowi jeszcze trzy dni i patrz na ten sam sygnał. Jedna zmienna naraz.`,
+  oslabiona: (l) => `To osłabia trop: ${l}. Dobrze to wiedzieć. Przejdź diagnostykę jeszcze raz i sprawdź, które ogniwo wyjdzie teraz.`,
+};
 
-// ── Kwalifikacja leada na prowadzenie 1:1 (niewidoczna dla usera) ──
-// Gotowość z deklarowanej intencji i terminu. Wydatki z weekendu nie są budżetem na opiekę.
-function qualify(raw: RawAnswers, sc: number) {
+// ── Sygnały leada dla operatora (niewidoczne dla usera) — WYŁĄCZNIE z jawnych sygnałów kupna/startu ──
+// diag-setter-rc-003 / P0-1: brak composite "readiness". triedBefore (chronologia porażek), severity, symptomy,
+// score, koszt i archetyp NIE wchodzą do żadnego sygnału sprzedażowego. Payload niesie tylko jawne fakty osobno.
+// diag-setter-rc-002 / P0-2: severity liczona osobno (severity_band, diagnoza). Zero budgetProxy.
+function qualify(raw: RawAnswers) {
   const intent = typeof raw.intent === 'string' ? raw.intent : '';
   const startWhen = typeof raw.start_when === 'string' ? raw.start_when : '';
   const wantsHelp = intent === 'in_prowadz' || intent === 'in_zobacz';
-  const priorityLead = sc >= 40 && wantsHelp && (startWhen === 'sw_7dni' || startWhen === 'sw_30dni');
-  return { intent, startWhen, priorityLead, wantsHelp };
+  // followup_priority: WYŁĄCZNIE jawna chęć prowadzenia + konkretny termin startu. Bez severity, bez triedBefore, bez budżetu.
+  const followupPriority = intent === 'in_prowadz' && (startWhen === 'sw_7dni' || startWhen === 'sw_30dni');
+  return { intent, startWhen, wantsHelp, followupPriority };
 }
 
 export default function DiagnozaPage() {
   const [phase, setPhase] = useState<Phase>('intro');
   const [answers, setAnswers] = useState<RawAnswers | null>(null);
-  // Reframe personalizujacy Karte Tygodnia. Dochodzi w tle po LLM, re-renderuje teaser.
-  const [reframe, setReframe] = useState<ReframeData | null>(null);
+  // P1-1: tryb wejscia. 'diagnostic' = domyslny (cold/warm, pelny flow). 'fast_fit' = tylko dla jawnego
+  // ready-to-buy z ?mode=fast_fit (setter/DM), zeby NIE wpychac gotowego leada w 19 ekranow diagnozy.
+  const [mode, setMode] = useState<'diagnostic' | 'fast_fit'>('diagnostic');
+  // P1-2: dopoki nie rozstrzygniemy trybu, renderujemy neutralny shell (zero flash diagnostyki dla fast_fit).
+  const [modeResolved, setModeResolved] = useState(false);
+  // P0-1/P1-3: opaque lead_ref settera. TYLKO do prywatnego payloadu leada (Telegram/CRM). NIGDY do PostHog ani copy wyniku.
+  const leadRef = useRef<string>('');
+  const [acquisition, setAcquisition] = useState<AcquisitionAttribution>({});
+  const completionHandledRef = useRef(false);
+  const [door, setDoor] = useState<string>('general');
+  const [topic, setTopic] = useState<string>('');
+  const [returning, setReturning] = useState<ReturnRecord | null>(null);
+  const [returnState, setReturnState] = useState<HypothesisState | null>(null);
 
-  // Wejscie na strone diagnostyki (pierwszy ekran). Lejek: intro_view -> started -> step_view... -> completed.
-  useEffect(() => { track('diag_intro_viewed'); }, []);
+  // Wejscie na strone diagnostyki. Kolejnosc (P1-1): parsuj+zarejestruj atrybucje -> DOPIERO potem pierwsze eventy lejka.
+  useEffect(() => {
+    let m: string | null = null;
+    try {
+      const isTh2CleanEntry = window.location.pathname === '/rozjazd';
+      const effectiveSearch = isTh2CleanEntry
+        ? '?door=th2&src=organic&campaign=th2_bio_v1'
+        : window.location.search;
+      const sp = new URLSearchParams(effectiveSearch);
+      const capturedAcquisition = captureAcquisition(effectiveSearch);
+      queueMicrotask(() => setAcquisition(capturedAcquisition));
+      m = sp.get('mode');
+      // P1-1: atrybucja settera — whitelist + walidacja, WYŁĄCZNIE do analytics (nigdy do scoringu/wyniku/fast-fit).
+      const pick = (k: string, allow: string[]): string | undefined => {
+        const v = (sp.get(k) || '').toLowerCase();
+        return allow.includes(v) ? v : undefined;
+      };
+      const ctx: Record<string, string> = { mode: m === 'fast_fit' ? 'fast_fit' : 'diagnostic', entry_copy: 'human_leverage_v2' };
+      const src = pick('src', ['setter', 'organic', 'story', 'dm', 'other']);
+      const lane = pick('lane', ['cold', 'warm', 'hot']); // ATRYBUCJA ONLY — nie miesza sie z diagnostycznym severity
+      const campaignRaw = (sp.get('campaign') || '').toLowerCase().slice(0, 40);
+      const campaign = /^[a-z0-9_-]+$/.test(campaignRaw) ? campaignRaw : undefined;
+      if (src) ctx.src = src;
+      if (lane) ctx.lane = lane;
+      if (campaign) ctx.campaign = campaign;
+      const d = resolveEntryDoor(sp, window.location.pathname);
+      const tp = pick('topic', Object.keys(TOPIC_LABEL));
+      ctx.entry_copy = 'jj_entry_v3';
+      ctx.entry_variant = tp ? `${d}_${tp}` : d;
+      queueMicrotask(() => { setDoor(d); if (tp) setTopic(tp); });
+      // 7-dniowa petla: rekord z poprzedniego wyniku, pokazany najwczesniej po 3 dniach albo z ?return=1.
+      try {
+        const rec = parseReturnRecord(localStorage.getItem(RETURN_KEY));
+        if (rec && (daysSince(rec.at, Date.now()) >= 3 || sp.get('return') === '1')) {
+          queueMicrotask(() => setReturning(rec));
+        }
+      } catch { /* uszkodzony rekord = brak petli */ }
+      registerContext({ ...ctx, ...capturedAcquisition }); // PRZED pierwszymi eventami lejka
+      // P0-1: lead_ref czytany z sessionStorage (bootstrap w layout.tsx zdjal go z #fragmentu PRZED trackerami). Zero query-string.
+      let rid = (typeof sessionStorage !== 'undefined' ? sessionStorage.getItem('diag_lead_ref') : '') || '';
+      if (!/^[A-Za-z0-9_-]{6,64}$/.test(rid)) {
+        const rand = typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
+          ? crypto.randomUUID().replace(/-/g, '')
+          : `${Date.now()}${Math.random().toString(36).slice(2)}`;
+        rid = `lr_web_${rand}`.slice(0, 64);
+        try { sessionStorage.setItem('diag_lead_ref', rid); } catch {}
+      }
+      leadRef.current = rid;
+    } catch { /* brak URL/storage API = zostajemy w diagnostic bez atrybucji */ }
+    // Tryb rozstrzygniety -> render wlasciwego ekranu; pierwsze eventy lejka PO registerContext (P1-1).
+    queueMicrotask(() => {
+      if (m === 'fast_fit') setMode('fast_fit');
+      setModeResolved(true);
+    });
+    trackDiag('diag_intro_viewed');
+    trackDiag('entry_variant', {});
+    if (m === 'fast_fit') trackDiag('fast_fit_intro_viewed');
+  }, []);
 
   const handleComplete = (raw: RawAnswers) => {
-    if (invalidDiagnosticFields(raw).length) return; // obrona przed pustą/przywróconą sesją
+    if (completionHandledRef.current) return;
+    completionHandledRef.current = true;
     setAnswers(raw);
     setPhase('teaser');
     if (typeof window !== 'undefined') window.scrollTo({ top: 0 });
@@ -67,67 +149,200 @@ export default function DiagnozaPage() {
     ];
     const worstCat = [...catScores].sort((a, b) => a.pct - b.pct)[0]?.label || 'Sen';
     const sc = score(D);
-    const q = qualify(raw, sc);
-    const segment = sc >= 40 ? 'goracy' : sc >= 20 ? 'cieply' : 'zimny';
+    const C = costs(D);
+    const q = qualify(raw);
+    // severity_band = WYŁĄCZNIE diagnostyka (nie sales temperature). Neutralne nazwy, oddzielone od intencji.
+    const severityBand = sc >= 40 ? 'high' : sc >= 20 ? 'moderate' : 'low';
 
-    // Podepnij cala sesje (kroki + nagranie) pod handle IG leada, jesli go zostawil.
-    if (typeof raw.instagram === 'string' && raw.instagram.length > 0) {
-      identify(raw.instagram, { segment, score: sc, priority_lead: q.priorityLead });
-    }
-    // Lejek: quiz dokonczony + wynik pokazany (jeden moment). Bez PII, tylko metryki.
-    track('diag_completed', { score: sc, segment, worstCat, priority_lead: q.priorityLead, has_ig: typeof raw.instagram === 'string' && raw.instagram.length > 0 });
-    track('diag_result_viewed', { score: sc, segment, worstCat });
+    // diag-setter-rc-001 / scope #8 (privacy): NIE identyfikujemy sesji po handlu IG w product analytics (PostHog).
+    // IG to PII — trafia wyłącznie do Michała przez /api/lead-notify (Telegram/CRM), nie do analityki produktu.
+    // Funnel zostaje anonimowy (device-level); score/priority_lead nie są wiązane z realnym @handle w PostHog.
+    // diag_complete = FLOW REALNIE SKONCZONY: po setPhase('teaser') (commit do renderu wyniku) i udanym
+    // policzeniu wyniku. NIE przed. Gdyby computacja rzucila, ten event by nie poszedl. Bez PII, tylko metryki.
+    // P0-3: product analytics dostaje TYLKO neutralne, nie-PII pola. Zero sales temperature, zero priority_lead, zero raw answers.
+    trackDiag('diag_complete', { score: sc, severity_band: severityBand, worstCat, has_ig: typeof raw.instagram === 'string' && raw.instagram.length > 0 });
+    trackDiag('diag_result_viewed', { score: sc, severity_band: severityBand, worstCat });
 
     const painText = typeof raw.user_pain === 'string' ? raw.user_pain.trim() : '';
+    const leadBrief = buildLeadBrief(raw); // pelny brief + 3 pola wolnego tekstu do personalizacji
     const rawImie = raw.imie ?? raw.name;
+    // Werdykt 3-tier do Telegrama = TYLKO ciezkosc/potrzeba z domen (P0-2: intencja zakupu NIE podnosi diagnozy).
+    const tgRedCount = catScores.filter((c) => c.pct < 45).length;
+    const tgTier: 'A' | 'B' | 'C' = tgRedCount >= 3 ? 'C' : tgRedCount <= 1 ? 'A' : 'B';
+    // PREMIUM ICP PATCH V1: sygnaly fit z trzech pytan o wartosci 0. Kanal prywatny, zero wplywu na wynik.
+    const premium = classifyPremiumFit(raw as Record<string, unknown>);
 
-    // Backend liczy wynik SAM z pełnych, sprawdzonych odpowiedzi. Pusta sesja nie trafi do Telegrama.
+    // ── Powiadomienie leada na Telegram: ZAWSZE, gdy ktoś skończył quiz (Michał chce wiedzieć od razu) ──
     void fetch('/api/lead-notify', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ answers: raw }),
+      body: JSON.stringify({
+        score: sc,
+        severity_band: severityBand.toUpperCase(),
+        worstCat,
+        archetyp: pickArchetype(D, worstCat).label,
+        archetypKey: pickArchetype(D, worstCat).key,
+        godzina: hourRange(D),
+        kwota: C.total,
+        followup_priority: q.followupPriority,
+        wants_help: q.wantsHelp,
+        lead_ref: leadRef.current || undefined, // P1-3: tylko prywatny kanał (Telegram/n8n->Notion). NIGDY do PostHog.
+        intencja: q.intent,
+        kiedy_start: q.startWhen,
+        pain: painText,
+        imie: typeof rawImie === 'string' ? rawImie : '',
+        instagram: typeof raw.instagram === 'string' ? raw.instagram.replace(/^@?/, '@') : '',
+        objawy: Array.isArray(raw.symptoms_chips) ? (raw.symptoms_chips as string[]).join(',') : '',
+        triedBefore: D.triedBefore,
+        drinks: D.drinks,
+        primary_goal: typeof raw.primary_goal === 'string' ? raw.primary_goal : '',
+        give_up_point: typeof raw.give_up_point === 'string' ? raw.give_up_point : '',
+        tier: tgTier,
+        // PREMIUM ICP PATCH V1 §3/§4 — surowe odpowiedzi + wyliczony fit. Telegram i n8n->Notion, NIGDY PostHog.
+        work_load: typeof raw.work_load === 'string' ? raw.work_load : '',
+        spillover: Array.isArray(raw.spillover) ? (raw.spillover as string[]).join(',') : '',
+        agency_mode: typeof raw.agency_mode === 'string' ? raw.agency_mode : '',
+        premium_fit: premium.fit,
+        premium_signals: premium,
+        entry_door: door,
+        entry_topic: topic || '',
+        entry_variant: topic ? `${door}_${topic}` : door,
+        raw_answers: raw,
+        diagnostyka_brief: leadBrief.brief,
+        derived_signals: {
+          score: sc,
+          severity_band: severityBand,
+          worstCat,
+          archetyp: pickArchetype(D, worstCat).label,
+          archetypKey: pickArchetype(D, worstCat).key,
+          followup_priority: q.followupPriority,
+          wants_help: q.wantsHelp,
+          intencja: q.intent,
+          kiedy_start: q.startWhen,
+          primary_goal: typeof raw.primary_goal === 'string' ? raw.primary_goal : '',
+          give_up_point: typeof raw.give_up_point === 'string' ? raw.give_up_point : '',
+          tier: tgTier,
+          entry_door: door,
+          entry_topic: topic || '',
+          entry_variant: topic ? `${door}_${topic}` : door,
+          premium_fit: premium.fit,
+          agency: premium.agency,
+          control_need: premium.controlNeed,
+          responsibility: premium.responsibility,
+          stakes: premium.stakes,
+        },
+      }),
     }).catch(() => {});
-
-    // ── Reframe z wlasnych slow usera (LLM), tylko gdy coś napisał. Fire-and-forget, Karta stoi bez niego. ──
-    if (painText) {
-      void (async () => {
-        try {
-          const res = await fetch('/api/diagnoza', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ pain: painText, selfDx: '', trigger: '', worstCat, segment, age: D.age }),
-          });
-          const json = await res.json();
-          if (json?.ok && json.reframe) setReframe(json.reframe as ReframeData);
-        } catch {
-          // cisza: bez reframe Karta i tak stoi (fallback deterministyczny)
-        }
-      })();
-    }
   };
 
-  if (phase === 'intro') {
+  // ── P1-2: dopoki tryb nie rozstrzygniety, neutralny shell (zero flash diagnostyki na ?mode=fast_fit) ──
+  // Renderowany na 1. paint (SSR + hydration) az useEffect ustali mode. Zero diagnostycznego H1/CTA.
+  if (phase === 'intro' && !modeResolved) {
+    return (
+      <div style={{ minHeight: '100vh', background: BG, display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', overflow: 'hidden' }} aria-hidden="true">
+        <Atmosphere />
+        <div style={{ width: 34, height: 34, borderRadius: '50%', border: `2px solid ${GOLD}`, borderTopColor: 'transparent', animation: 'dxspin 0.7s linear infinite', position: 'relative', zIndex: 1 }} />
+        <style>{`@keyframes dxspin{to{transform:rotate(360deg)}}@media(prefers-reduced-motion:reduce){[aria-hidden] div{animation:none!important}}`}</style>
+      </div>
+    );
+  }
+
+  // ── P1-1 FAST FIT: tylko dla jawnego ready-to-buy (?mode=fast_fit). Zero forsowania 19 ekranow. ──
+  // Ready-to-buy dostaje jasna sciezke do prowadzenia; kto woli, przechodzi do pelnej diagnostyki (never downgrade intent).
+  if (phase === 'intro' && mode === 'fast_fit') {
+    // V4: ready-to-buy nie musi pisać pierwszy. Główna akcja prowadzi do zakresu/prowadzenia.
+    const fastLaneNabor = withAcquisition(
+      'https://nabor.talerzihantle.com/?from=diag&mode=fast_fit#prowadzenie',
+      acquisition,
+    );
     return (
       <div style={{ minHeight: '100vh', background: BG, color: '#ece7db', fontFamily: '"Inter", sans-serif', display: 'flex', flexDirection: 'column', justifyContent: 'center', padding: '32px 22px', boxSizing: 'border-box', position: 'relative', overflow: 'hidden' }}>
         <Atmosphere />
-        <div style={{ maxWidth: 480, margin: '0 auto', width: '100%', position: 'relative', zIndex: 1 }}>
+        <div style={{ maxWidth: 480, margin: '0 auto', alignSelf: 'stretch', position: 'relative', zIndex: 1 }}>
           <div style={{ fontFamily: "'JetBrains Mono', ui-monospace, monospace", fontSize: 11, letterSpacing: 3, textTransform: 'uppercase', color: GOLD, fontWeight: 700, marginBottom: 22 }}>
-            Test na 4 minuty &middot; wynik widzę tylko ja
+            Diagnostyka 168 · szybka ścieżka
           </div>
-          <h1 style={{ fontFamily: "'Instrument Serif', Georgia, serif", fontSize: 'clamp(38px, 9vw, 58px)', lineHeight: 1.05, fontWeight: 400, color: '#fff', margin: '0 0 20px', letterSpacing: '-0.01em' }}>
-            Robisz swoje, a i tak lecisz na pół mocy.
+          <h1 style={{ fontFamily: "'Instrument Serif', Georgia, serif", fontSize: 'clamp(30px, 7.5vw, 48px)', lineHeight: 1.08, fontWeight: 400, color: '#fff', margin: '0 0 20px', letterSpacing: '-0.01em' }}>
+            Wiesz już, że chcesz działać. Sprawdźmy tylko, czy zakres pasuje.
           </h1>
-          <p style={{ fontSize: 16.5, color: '#c4bdb0', lineHeight: 1.65, margin: '0 0 28px' }}>
-            W każdym tygodniu masz jeden dzień, który po cichu psuje Ci pozostałe sześć. Prawie nigdy nie jest to ten, który myślisz. Odpowiesz na kilka pytań, a pokażę Ci, który to i co z nim zrobić już jutro.
+          <p style={{ fontSize: 16.5, color: '#c4bdb0', lineHeight: 1.65, margin: '0 0 26px' }}>
+            Zobacz zakres, sposób pracy i warunki. Jeśli to pasuje, ja mam już kontekst wejścia i nie musisz pisać pierwszej wiadomości.
+          </p>
+          <a
+            href={fastLaneNabor}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={() => trackDiag('fast_fit_to_nabor')}
+            style={{ display: 'block', textAlign: 'center', textDecoration: 'none', width: '100%', padding: '17px', borderRadius: 14, border: 'none', cursor: 'pointer', background: `linear-gradient(135deg, ${GOLD}, #8a7535)`, color: BG, fontWeight: 800, fontSize: 16, letterSpacing: 0.5, boxSizing: 'border-box' }}
+          >
+            Sprawdźmy, czy zakres pasuje &rarr;
+          </a>
+          <button
+            onClick={() => { registerContext({ mode: 'diagnostic' }); trackDiag('fast_fit_to_diagnostic'); setMode('diagnostic'); if (typeof window !== 'undefined') window.scrollTo({ top: 0 }); }}
+            style={{ marginTop: 14, width: '100%', padding: '13px', background: 'transparent', color: '#8f887c', fontSize: 14, border: '1px solid #26262b', borderRadius: 12, cursor: 'pointer', letterSpacing: 0.3 }}
+          >
+            Chcę najpierw przejść pełną diagnostykę
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (phase === 'intro') {
+    const entry = ENTRY_COPY[door as keyof typeof ENTRY_COPY] ?? ENTRY_COPY.general;
+    return (
+      <div className="dx-intro" style={{ minHeight: '100svh', background: BG, color: '#ece7db', fontFamily: '"Inter", sans-serif', display: 'flex', flexDirection: 'column', padding: '28px 22px max(28px, env(safe-area-inset-bottom))', boxSizing: 'border-box', position: 'relative', overflow: 'hidden' }}>
+        <Atmosphere />
+        <div style={{ maxWidth: 480, margin: '0 auto', alignSelf: 'stretch', position: 'relative', zIndex: 1 }}>
+          <div className="dx-kicker" style={{ fontFamily: "'JetBrains Mono', ui-monospace, monospace", letterSpacing: 2.6, textTransform: 'uppercase', color: GOLD, fontWeight: 800, marginBottom: 14 }}>
+            {DOOR_KICKER[door] || DOOR_KICKER.general}
+          </div>
+          {returning && (
+            <div className="dx-return" style={{ border: '1px solid rgba(200,168,78,.42)', padding: '14px 14px 12px', margin: '0 0 18px' }}>
+              <div style={{ fontFamily: "'JetBrains Mono', ui-monospace, monospace", fontSize: 9, letterSpacing: 2, textTransform: 'uppercase', color: GOLD, fontWeight: 800, marginBottom: 8 }}>Wracasz po teście</div>
+              {!returnState ? (
+                <>
+                  <p style={{ margin: '0 0 12px', fontSize: 15, lineHeight: 1.45, color: '#ece7db' }}>Ostatnio sprawdzałeś: <strong style={{ color: '#e8cc80' }}>{LEVER_LABEL[returning.upstream]}</strong>. Jak poszło?</p>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,minmax(0,1fr))', gap: 6 }}>
+                    {([['pomoglo', 'Pomogło'], ['czesciowo', 'Częściowo'], ['nic', 'Nic']] as [ReturnOutcome, string][]).map(([id, label]) => (
+                      <button key={id} type="button" onClick={() => {
+                        const h = hypothesisFrom(id);
+                        setReturnState(h);
+                        const days = daysSince(returning.at, Date.now());
+                        trackDiag('return_7d', { outcome: id, days, upstream: returning.upstream, experiment_id: returning.experimentId });
+                        trackDiag(h === 'wzmocniona' ? 'hypothesis_strengthened' : h === 'oslabiona' ? 'hypothesis_weakened' : 'hypothesis_unresolved', { upstream: returning.upstream, experiment_id: returning.experimentId });
+                        try { localStorage.removeItem(RETURN_KEY); } catch {}
+                      }} style={{ minHeight: 44, border: '1px solid rgba(200,168,78,.42)', background: 'transparent', color: '#ece7db', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}>{label}</button>
+                    ))}
+                  </div>
+                </>
+              ) : (
+                <p role="status" style={{ margin: 0, fontSize: 14.5, lineHeight: 1.5, color: '#ece7db' }}>{RETURN_LINE[returnState](LEVER_LABEL[returning.upstream])}</p>
+              )}
+            </div>
+          )}
+          <h1 style={{ fontFamily: "'Instrument Serif', Georgia, serif", fontSize: 'clamp(35px, 9.1vw, 58px)', lineHeight: 1.0, fontWeight: 400, color: '#fff', margin: '0 0 16px', letterSpacing: '-0.02em', maxWidth: '100%', overflowWrap: 'break-word' }}>
+            {entry.headline}
+            {entry.accent && <>{' '}<em style={{ color: GOLD, fontStyle: 'italic' }}>{entry.accent}</em></>}
+          </h1>
+          <p className="dx-lede" style={{ color: '#c4bdb0', lineHeight: 1.55, margin: '0 0 16px' }}>
+            {topic && <>Sprawdzisz też temat: {TOPIC_LABEL[topic]}. </>}{entry.body}
+            {' '}<strong style={{ color: '#ece7db', fontWeight: 750 }}>{entry.proof}</strong>
           </p>
           <button
-            onClick={() => { track('diag_started'); setPhase('intake'); if (typeof window !== 'undefined') window.scrollTo({ top: 0 }); }}
-            style={{ width: '100%', padding: '17px', borderRadius: 14, border: 'none', cursor: 'pointer', background: `linear-gradient(135deg, ${GOLD}, #8a7535)`, color: BG, fontWeight: 800, fontSize: 16, letterSpacing: 0.5 }}
+            onClick={() => {
+              registerContext({ mode: 'diagnostic' });
+              trackDiag('entry_route_selected', { route: 'diagnostic' });
+              trackDiag('diag_start');
+              setPhase('intake');
+              if (typeof window !== 'undefined') window.scrollTo({ top: 0 });
+            }}
+            style={{ width: '100%', padding: '18px 17px', borderRadius: 14, border: 'none', cursor: 'pointer', background: `linear-gradient(135deg, ${GOLD}, #8a7535)`, color: BG, fontWeight: 850, fontSize: 16, letterSpacing: 0.15, boxShadow: '0 16px 38px rgba(200,168,78,.18)' }}
           >
-            Pokaż mi ten dzień &rarr;
+            {entry.cta} &rarr;
           </button>
-          <p style={{ fontSize: 12.5, color: '#8f887c', lineHeight: 1.55, margin: '16px 2px 0', textAlign: 'center' }}>
-            9 lat roboty. Ponad 180 chłopa, których przeprowadziłem przez dokładnie to.
+          <p style={{ fontFamily: "'JetBrains Mono', ui-monospace, monospace", fontSize: 9.8, letterSpacing: 1.15, color: '#777169', lineHeight: 1.45, margin: '11px 0 0', textAlign: 'center', textTransform: 'uppercase' }}>
+            5 minut · bez maila · wynik od razu
           </p>
         </div>
       </div>
@@ -141,8 +356,6 @@ export default function DiagnozaPage() {
   if (phase === 'teaser' && answers) {
     // ── Wynik przed mailem: bogata Karta Tygodnia z istniejacego silnika (FD -> score/costs/archetyp) ──
     const D = answersToFD(answers);
-    const SC = score(D);
-    const C = costs(D);
     // najslabsza kategoria (worstCat) liczona z FD tak samo jak w page.tsx (v1), zeby dobrac archetyp i szablon tygodnia
     const catScores = [
       { label: 'Sen', pct: Math.max(100 - Math.round(((D.sleepQ + D.screenBed) / 6 + (7.5 - Math.min(D.sleep, 7.5)) / 1.5) * 55), 5) },
@@ -152,33 +365,157 @@ export default function DiagnozaPage() {
       { label: 'Trening', pct: Math.max(100 - Math.round(((D.miss * 1.5 + (D.trainHappy >= 1 && D.trainHappy <= 2 ? 1 : 0)) / 4) * 100), 5) },
       { label: 'Głowa', pct: Math.max(100 - Math.round((tagScoreWeighted(D.tags) / 10) * 60 + D.defer * 8 + D.dopamine * 6 + (D.triedBefore >= 2 ? 10 : 0)), 5) },
     ];
-    const worstW = [...catScores].sort((a, b) => a.pct - b.pct)[0]?.label || 'Sen';
+    // deterministic tie-break przy remisie pct: stala kolejnosc domen (zero losowosci, zero undefined/NaN)
+    const DOMAIN_TIE = ['Sen', 'Stres', 'Żywienie', 'Weekend', 'Trening', 'Głowa'];
+    const sortedDom = [...catScores].sort((a, b) => (a.pct - b.pct) || (DOMAIN_TIE.indexOf(a.label) - DOMAIN_TIE.indexOf(b.label)));
+    const worstW = sortedDom[0]?.label || 'Sen';
     const arch = pickArchetype(D, worstW);
+
+    // ── MAPA STATUSU: 5 osi, KAZDA liczona TYLKO z realnie zbieranych odpowiedzi (zero domyslnych
+    //    stalych ze starego quizu). Severity 0-100 -> indeks w uczciwym pasmie 24-90 (bez 0/100,
+    //    ktore wygladaja na scieme). Wyzszy = lepiej. Labele nie obiecuja pomiaru, ktorego nie robimy. ──
+    const T = new Set<string>(Array.from(D.tags));
+    const cnt = (cs: string[]) => cs.filter((c) => T.has(c)).length;
+    const clamp01 = (x: number) => Math.max(0, Math.min(1, x));
+    const idx = (sev: number) => Math.round(24 + (1 - clamp01(sev / 100)) * 66); // sev0->90, sev100->24
+    // istotnosc godziny pekniecia dnia dla snu: rano/wieczor najmocniej, indeks = D.breakWindow (0-6)
+    const bwSleep = [1, 0.2, 0.3, 0.4, 0.8, 0.3, 0.5][D.breakWindow] ?? 0.5;
+    const senSev = (0.40 * (D.sleepQ / 3) + 0.20 * bwSleep + 0.20 * (D.lost / 4) + 0.20 * (D.mondayFeel / 3)) * 100;
+    // Samoocena napedu (1-10) to najbardziej bezposrednia odpowiedz o tej osi. Bez niej 2/10 przy zerze
+    // zaznaczonych objawow dawalo "mało zapasu", a obok stalo ostrzezenie o badaniach.
+    const selfDriveRaw = answers.self_drive;
+    const selfDriveSev = typeof selfDriveRaw === 'number' && Number.isFinite(selfDriveRaw) ? clamp01((10 - selfDriveRaw) / 9) : undefined;
+    const driveTags = cnt(['libido', 'motivation', 'confidence', 'recovery']) / 4;
+    const napedSev = (selfDriveSev === undefined ? 0.68 * driveTags + 0.32 * (D.lost / 4) : 0.50 * selfDriveSev + 0.35 * driveTags + 0.15 * (D.lost / 4)) * 100;
+    const trainSev = D.plan >= 1 ? D.miss / D.plan : 0.85; // nie trenuje wcale = wysoki deficyt
+    const formaSev = (0.50 * trainSev + 0.35 * (D.binge / 4) + 0.15 * (T.has('belly') ? 1 : 0)) * 100;
+    const wkndSev = (0.55 * (D.wknd / 4) + 0.45 * (D.mondayFeel / 3)) * 100;
+    const glowaSev = (0.40 * (D.stress / 3) + 0.25 * (D.lost / 4) + 0.20 * (cnt(['focus', 'anxiety', 'fatigue']) / 3) + 0.15 * (D.triedBefore / 3)) * 100;
+    // suwak godzin ma krok 0.5, wiec surowa liczba wchodzi do polskiego zdania jako "0.5 h"
+    const hoursPl = (h: number) => String(h).replace('.', ',');
+    const sleepReason = ['rano zwykle wstajesz gotowy', 'gotowy rano 3-4 dni w tygodniu', 'gotowy rano tylko 1-2 dni', 'rano prawie nigdy nie czujesz się gotowy'][D.sleepQ] || 'poranki są nierówne';
+    const stressReason = ['głowa zwykle odpuszcza wieczorem', '2-3 wieczory w tygodniu głowa zostaje w robocie', '4-5 wieczorów w tygodniu głowa zostaje w robocie', 'praktycznie codziennie zasypiasz z listą w głowie'][D.stress] || `${hoursPl(D.lost)} h dziennie lecisz na pół mocy`;
+    const weekendReason = ['weekend zwykle trzyma rytm', 'mniej więcej raz w miesiącu coś się sypie', '2-3 weekendy w miesiącu psują rytm', 'prawie każdy weekend psuje rytm', 'prawie każdy weekend psuje rytm'][D.wknd] || 'weekend bywa niestabilny';
+    const driveLabels = [['libido','libido'],['motivation','motywacja'],['confidence','pewność siebie'],['recovery','regeneracja']].filter(([id]) => T.has(id)).map(([,label]) => label);
+    // godziny na pol mocy naleza do osi glowy i stresu. Podstawione tutaj tlumaczyly WYSOKI wynik napedu
+    // negatywnym faktem, wiec dowod przeczyl ocenie tuz obok niego.
+    // Sam objaw tez tego nie zamykal. "zaznaczyles: motywacja" pod etykieta TRZYMA SIE DZIS NAJLEPIEJ
+    // czytalo sie jak zaprzeczenie, bo goly objaw brzmi jak zarzut niezaleznie od tego, jak wypadla os.
+    // Liczba zaznaczonych sygnalow wobec czterech mozliwych tlumaczy oba konce skali tym samym zdaniem:
+    // jeden z czterech uzasadnia wysoki wynik, trzy z czterech uzasadniaja niski. Zrodlo zostaje w tej osi.
+    const DRIVE_COUNT_PL = ['', 'jeden', 'dwa', 'trzy', 'cztery'];
+    const driveReason = (selfDriveSev === undefined ? '' : `oceniasz to na ${hoursPl(selfDriveRaw as number)}/10, a `) + (driveLabels.length ? `zaznaczyłeś tu ${DRIVE_COUNT_PL[driveLabels.length]} z czterech sygnałów: ${driveLabels.join(', ')}` : 'nie zaznaczyłeś tu żadnego z czterech sygnałów');
+    // plan < 1 to najmocniejszy pojedynczy składnik formaSev (trainSev 0.85). Bez tej gałęzi oś schodzi w dół,
+    // a podpis mówi userowi, że trening trzyma rytm. Podpis ma zawsze zgadzać się z jego własną odpowiedzią.
+    const formReason = D.plan < 1 ? 'w zwykłym tygodniu nie planujesz treningów'
+      : D.miss >= D.plan ? (D.plan === 1 ? 'w cięższym tygodniu wypada ten jeden trening, który planujesz' : `w cięższym tygodniu wypadają wszystkie ${D.plan} zaplanowane treningi`)
+      : D.miss > 0 ? `w cięższym tygodniu wypada ${D.miss} z ${D.plan} treningów`
+      : (D.binge >= 2 ? 'wieczorne jedzenie regularnie wychodzi poza plan' : 'trening i wieczorne jedzenie zwykle trzymają rytm');
+    const statuses = [
+      { label: 'Forma', score: idx(formaSev), reason: formReason },
+      { label: 'Sen i regeneracja', score: idx(senSev), reason: sleepReason },
+      { label: 'Napęd i libido', score: idx(napedSev), reason: driveReason },
+      { label: 'Głowa i stres', score: idx(glowaSev), reason: stressReason },
+      { label: 'Weekend i rytm', score: idx(wkndSev), reason: weekendReason },
+    ];
     const rawImie = answers.imie ?? answers.name;
     const imie = typeof rawImie === 'string' ? rawImie : '';
-    const q = qualify(answers, SC);
-    const qualified = q.priorityLead || q.wantsHelp;
-    const wkPlan = buildWeekPlan({
-      archetypeKey: arch.key, archetypeLabel: arch.label, archetypeTagline: arch.tagline, mirror: arch.mirror,
-      qualified,
-      worstCat: worstW, breakWindow: D.breakWindow, score: SC, costTotal: C.total, wknd: D.wknd,
-      imie, potentialPct: 100 - SC, costMonths: C.stagnationMonths,
-      drinks: D.drinks, screenBed: D.screenBed, junk: D.junk, protein: D.protein,
-      sleep: D.sleep, miss: D.miss, binge: D.binge, gym: D.gym,
-      reframe: reframe || undefined,
-    });
+    // #1 handoff: niesie kontekst diagnozy do nabora w URL (nabor personalizuje sie po ?from=diagnoza).
+    // Same-tab (#2) + parametry = ciaglosc lejka, zero przepisywania danych przez usera.
+    const igClean = typeof answers.instagram === 'string' ? answers.instagram.replace(/^@?/, '') : '';
+    // URL naboru (Beat 8 End Experience): ZERO PII — tylko routing/analytics. IG/score/kwota NIE lecą.
+    // Bez kotwicy. Na zywej stronie naboru (candidate-20260915) nie ma id="prowadzenie", wiec #prowadzenie
+    // bylo martwym fragmentem. Czlowiek ma wejsc od gory strony oferty i sam dojsc do formularza.
+    // sub = anonimowy identyfikator wypelnienia diagnostyki (ten sam, ktory idzie w shareSafe). Nie jest
+    // PII i niczego o czlowieku nie zdradza, a pozwala Michalowi zlaczyc zgloszenie z formularza naboru
+    // z konkretna diagnoza zamiast zgadywac po dacie.
+    const submissionRef = typeof window !== 'undefined' ? (localStorage.getItem('diagnostyka_v2_submission_id') || '') : '';
+    const naborBaseUrl = `https://nabor.talerzihantle.com/?${new URLSearchParams({ from: 'diag', door, arch: arch.key, intent: typeof answers.intent === 'string' ? answers.intent : '', v: ASSESSMENT_VERSION, ...(submissionRef ? { sub: submissionRef } : {}) }).toString()}`;
+    const naborUrl = withAcquisition(naborBaseUrl, acquisition);
+    // Werdykt 3-tier (nieuzywany bezposrednio w V3 result-router, zostawiony dla kompatybilnosci z redCount): WYLACZNIE ciezkosc/potrzeba z liczby domen "na czerwono".
+    const redCount = statuses.filter((st) => st.score < 45).length;
+    const LEAK_LABEL: Record<string, string> = { Sen: 'sen', Stres: 'głowa wieczorem', 'Żywienie': 'wieczory', Weekend: 'weekend', Trening: 'wykonanie', 'Głowa': 'głowa wieczorem' };
+    const leakLabel = LEAK_LABEL[worstW] || 'jeden dzień';
+    // ── RESULT PAGE V3 (frozen spec 2026-09-08): Beat 1-4 z fracture-engine, Beat 5 z deterministycznego
+    //    bank-selectora (zero LLM), Beat 6 router z result-router-v3 (severity NIGDY nie zmienia trasy). ──
+    const breakIdStr = typeof answers.break_window === 'string' ? answers.break_window : '';
+    const intentStr = typeof answers.intent === 'string' ? answers.intent : '';
+    const startWhenStr = typeof answers.start_when === 'string' ? answers.start_when : '';
+    const evidenceReceipts = computeEvidenceReceipts(answers);
+    const selectorInput: SelectorInput = {
+      breakId: breakIdStr,
+      giveUpPoint: typeof answers.give_up_point === 'string' ? answers.give_up_point : '',
+      eveningEating: typeof answers.evening_eating === 'string' ? answers.evening_eating : '',
+      takeoutCost: typeof answers.takeout_cost === 'number' ? answers.takeout_cost : undefined,
+      stressLevel: typeof answers.stress_level === 'string' ? answers.stress_level : '',
+      halfPowerHours: typeof answers.half_power_hours === 'number' ? answers.half_power_hours : undefined,
+      plannedTrainings: typeof answers.planned_trainings === 'number' ? answers.planned_trainings : undefined,
+      missedTrainings: typeof answers.missed_trainings === 'number' ? answers.missed_trainings : undefined,
+      weekendPattern: typeof answers.weekend_pattern === 'string' ? answers.weekend_pattern : '',
+      mondayRecovery: typeof answers.monday_recovery === 'string' ? answers.monday_recovery : '',
+      triedBefore: typeof answers.tried_before === 'string' ? answers.tried_before : '',
+    };
+    const { experiment: pickedExperiment, confidence } = selectExperiment(selectorInput);
+    const loop = computeLoop(BREAK_PHRASE[breakIdStr] || 'Odpowiedzi nie wskazują jednego stałego momentu. Wzorzec zmienia się zależnie od dnia.', evidenceReceipts, answers, confidence);
+    const whyRepeats = computeWhyRepeats(answers);
+    const costFacts = computeCostFacts(answers);
+    const route = routeDecision(intentStr, startWhenStr);
+    // LUSTRO (v2.9): samoocena z ekranu 2 obok energii policzonej z zachowan. Zero wplywu na
+    // severity, archetyp i trase. Gdy brak samooceny albo za malo skladowych, sekcja znika.
+    const awareness = computeAwarenessGap(answers);
+    // FLAGSHIP 3.0: warstwa decyzyjna nad tym samym eksperymentem i confidence. Nic nie liczy od nowa.
+    const decision = buildDecision({ answers: answers as Record<string, unknown>, experiment: pickedExperiment, confidence, routePrimary: route.primary });
+    // CONTENT SIGNALS: anonimowe kategorie do uczenia contentu. Bez PII, treści otwartych, symptomów, używek, libido.
+    const contentSignals: Record<string, string | boolean> = {
+      break_window: breakIdStr || 'unknown',
+      give_up_point: typeof answers.give_up_point === 'string' ? answers.give_up_point : 'unknown',
+      weekend_pattern: typeof answers.weekend_pattern === 'string' ? answers.weekend_pattern : 'unknown',
+      tried_before: typeof answers.tried_before === 'string' ? answers.tried_before : 'unknown',
+      // v2.9: dwa nowe sygnaly do contentu. stagnation_12m mowi, czy cialo w ogole ruszylo,
+      // gap_verdict mowi, czy czlowiek widzi u siebie to, co widac w jego odpowiedziach.
+      // Samooceny libido tu NIE ma i miec nie bedzie, tak samo jak objawow i uzywek.
+      stagnation_12m: typeof answers.stagnation_12m === 'string' ? answers.stagnation_12m : 'unknown',
+      gap_verdict: awareness.verdict,
+      intent: intentStr || 'unknown',
+      start_when: startWhenStr || 'unknown',
+      archetype: arch.key,
+      experiment_id: pickedExperiment.id,
+      experiment_confidence: confidence,
+      route_primary: route.primary,
+      prediction: decision.prediction.id,
+      good_day: decision.contrast_evidence.id,
+      prediction_gap: decision.prediction_gap.type,
+      confidence_state: decision.confidence.state,
+      route_category: decision.route,
+      has_pain_text: typeof answers.user_pain === 'string' && answers.user_pain.trim().length > 0,
+      has_trigger_text: typeof answers.user_trigger === 'string' && answers.user_trigger.trim().length > 0,
+    };
+    const submissionIdStr = submissionRef;
+    const userPainSafe = typeof answers.user_pain === 'string' && answers.user_pain.trim() ? answers.user_pain.trim() : undefined;
     return (
-      <>
-        {/* prowadzenie 1:1 na gorze: WeekPage ma most na dole (VII), to dodatkowy cue u szczytu */}
-        <div style={{ position: 'sticky', top: 0, zIndex: 50, background: 'rgba(11,11,12,0.94)', backdropFilter: 'blur(8px)', borderBottom: '1px solid #26262b', padding: '11px 18px', display: 'flex', alignItems: 'center', gap: 12 }}>
-          <span style={{ fontFamily: "'JetBrains Mono', ui-monospace, monospace", fontSize: 10, letterSpacing: 2, textTransform: 'uppercase', color: '#8f887c', fontWeight: 700 }}>Diagnoza gotowa</span>
-          <span style={{ flex: 1 }} />
-          <a href={'https://nabor.talerzihantle.com/'} target="_blank" rel="noopener noreferrer" onClick={() => track('diag_nabor_click', { loc: 'header' })} style={{ fontSize: 12.5, color: '#ece7db', textDecoration: 'none', whiteSpace: 'nowrap' }}>
-            {qualified ? 'zobacz, jak wygląda współpraca' : 'zobacz, jak pracuję z innymi'} &rarr;
-          </a>
-        </div>
-        <WeekPage plan={wkPlan} imie={imie} qualified={qualified} naborHref={'https://nabor.talerzihantle.com/'} />
-      </>
+      <ResultExperience
+        archLabel={arch.label}
+        archKey={arch.key}
+        redCount={redCount}
+        breakId={breakIdStr}
+        domainLabel={leakLabel}
+        statuses={statuses}
+        evidenceReceipts={evidenceReceipts}
+        loop={loop}
+        whyRepeats={whyRepeats}
+        costFacts={costFacts}
+        userPain={userPainSafe}
+        experiment={pickedExperiment}
+        experimentConfidence={confidence}
+        route={route}
+        imie={imie}
+        instagram={igClean}
+        naborHref={naborUrl}
+        submissionId={submissionIdStr}
+        contentSignals={contentSignals}
+        awareness={awareness}
+        decision={decision}
+      />
     );
   }
 

@@ -1,8 +1,10 @@
 import type { WeekPlan, DayState } from '../lib/week-plan';
 import SaveCardButton from './SaveCardButton';
 import { PROOF } from '../lib/proof';
+import { CASES } from '../lib/cases';
 import { Atmosphere } from '../diagnoza/atmosphere';
 import { track } from '../lib/analytics';
+import { GOOGLE_AGG, GOOGLE_CARDS, GOOGLE_SHOTS } from '../lib/google-reviews';
 
 // ── KARTA TYGODNIA ──
 // Sygnatura: krzywa napięcia tygodnia (linia jak z odczytu kortyzolu/tętna),
@@ -120,8 +122,7 @@ function Eyebrow({ n, children }: { n: string; children: React.ReactNode }) {
   );
 }
 
-export default function WeekPage({ plan, imie, naborHref = 'https://nabor.talerzihantle.com/', qualified = false }: { plan: WeekPlan; imie?: string; naborHref?: string; qualified?: boolean }) {
-  const hi = imie?.trim() ? `${imie.trim()}, ` : '';
+export default function WeekPage({ plan, imie, instagram, naborHref = 'https://nabor.talerzihantle.com/', qualified = false, statuses = [], reframeStatus = 'off' }: { plan: WeekPlan; imie?: string; instagram?: string; naborHref?: string; qualified?: boolean; statuses?: { label: string; score: number }[]; reframeStatus?: 'off' | 'pending' | 'ready' | 'failed' }) {
   return (
     <div className="wp" style={{ background: C.ink, color: C.paper, fontFamily: C.sans, minHeight: '100vh' }}>
       <style>{css}</style>
@@ -137,6 +138,16 @@ export default function WeekPage({ plan, imie, naborHref = 'https://nabor.talerz
           <span style={{ fontFamily: C.mono, fontSize: 11, letterSpacing: 5, color: C.gold, fontWeight: 700 }}>HANTLE I TALERZ</span>
           <span style={{ fontFamily: C.mono, fontSize: 10, letterSpacing: 3, color: C.faint, textTransform: 'uppercase' }}>Karta tygodnia · wydanie prywatne</span>
         </header>
+
+        {/* Ball-in-court: zero „mam Cię / odezwę się" (pasywna furtka gasi CTA). Prywatnosc + kontrola u leada. */}
+        {instagram && (
+          <div className="wp-noprint" style={{ display: 'flex', alignItems: 'flex-start', gap: 12, background: C.panel2, border: `1px solid ${C.line2}`, borderRadius: 12, padding: '13px 16px', marginBottom: 44 }}>
+            <span aria-hidden style={{ color: C.gold, fontSize: 17, lineHeight: 1.3, flexShrink: 0 }}>✓</span>
+            <p style={{ margin: 0, fontSize: 13.5, color: C.mute, lineHeight: 1.55 }}>
+              Ta Karta jest tylko Twoja, pod <b style={{ color: C.paper }}>@{instagram}</b>. Nie wrzucam Cię na żadną listę i nie zaczepiam w DM. Jak zechcesz to ze mną przegadać, jestem na dole.
+            </p>
+          </div>
+        )}
 
         {/* I. ROZPOZNANIE */}
         <section className="wp-rise" style={{ marginBottom: 72 }}>
@@ -175,55 +186,111 @@ export default function WeekPage({ plan, imie, naborHref = 'https://nabor.talerz
           </div>
         </section>
 
-        {/* III. DRUGIE DNO */}
+        {/* MAPA STATUSU: per-obszar 0-100 (forma, sen, hormony...). Odczyt z odpowiedzi, nie badanie.
+            Dostarcza obietnice Story „wysylam mape: forma, sen, hormony". Najnizszy slupek = przeciek. */}
+        {statuses.length > 0 && (() => {
+          const lo = Math.min(...statuses.map((s) => s.score));
+          const avg = Math.round(statuses.reduce((s, x) => s + x.score, 0) / statuses.length); // agregat = srednia osi (scala dawny „Zapas")
+          const tier = (n: number) => (n < 40 ? C.hot : n < 65 ? C.amber : C.gold);
+          return (
+            <section className="wp-rise" style={{ marginBottom: 72 }}>
+              <Eyebrow n="◆">Mapa statusu</Eyebrow>
+              <div style={{ display: 'flex', alignItems: 'baseline', gap: 14, marginBottom: 16, flexWrap: 'wrap' }}>
+                <span style={{ fontFamily: C.serif, fontSize: 'clamp(56px, 14vw, 96px)', lineHeight: 0.9, color: C.gold, fontWeight: 400 }}>{avg}<span style={{ fontSize: '0.35em', color: C.faint }}>/100</span></span>
+                <span style={{ fontFamily: C.mono, fontSize: 12, letterSpacing: 1.5, textTransform: 'uppercase', color: C.faint, maxWidth: 200, lineHeight: 1.5 }}>tyle z siebie dziś średnio wyciągasz</span>
+              </div>
+              <p style={{ fontSize: 15.5, color: C.mute, lineHeight: 1.65, margin: '0 0 24px', maxWidth: 540 }}>
+                Rozbicie na obszary niżej, policzone z tego, co pozaznaczałeś. Najniższy słupek to miejsce, gdzie ucieka Ci najwięcej. Reszta to zapas, który trzyma Twój tydzień w miejscu.
+              </p>
+              <div style={{ display: 'grid', gap: 16 }}>
+                {statuses.map((s, i) => {
+                  const col = tier(s.score);
+                  const low = s.score === lo;
+                  return (
+                    <div key={i}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 7, gap: 10 }}>
+                        <span style={{ fontSize: 14.5, color: low ? C.paper : C.mute, fontWeight: low ? 700 : 500 }}>
+                          {s.label}
+                          {low && <span style={{ fontFamily: C.mono, fontSize: 9.5, letterSpacing: 1.5, color: C.hot, marginLeft: 9, fontWeight: 700 }}>← TU PRZECIEK</span>}
+                        </span>
+                        <span style={{ fontFamily: C.mono, fontSize: 15, fontWeight: 700, color: col, fontVariantNumeric: 'tabular-nums', flexShrink: 0 }}>
+                          {s.score}<span style={{ color: C.faint, fontSize: 11 }}>/100</span>
+                        </span>
+                      </div>
+                      <div style={{ height: 8, borderRadius: 5, background: C.panel, overflow: 'hidden', display: 'flex', border: `1px solid ${C.line}` }}>
+                        <div style={{ width: `${s.score}%`, background: `linear-gradient(90deg, ${col}88, ${col})` }} />
+                        <div style={{ flex: 1, background: `repeating-linear-gradient(45deg, ${C.panel2}, ${C.panel2} 5px, ${C.ink} 5px, ${C.ink} 10px)` }} />
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+              <p style={{ fontSize: 13.5, color: C.faint, margin: '18px 2px 0', lineHeight: 1.55, maxWidth: 520 }}>
+                U większości te słupki ruszają z miejsca w parę tygodni, gdy zdejmiesz właściwy hamulec. Nie po kolei, od tego jednego, który ciągnie resztę za sobą.
+              </p>
+            </section>
+          );
+        })()}
+
+        {/* III. DRUGIE DNO — mechanizm: najostrzejsza, spersonalizowana warstwa (z wlasnych slow usera przez reframe LLM albo deterministyczna). Wczesniej renderowal sie sam naglowek; body+analogy+note byly liczone i niewidoczne. */}
         <section className="wp-rise" style={{ marginBottom: 72 }}>
           <Eyebrow n="III">Drugie dno</Eyebrow>
           <div style={{ background: `linear-gradient(180deg, ${C.panel2}, ${C.ink})`, border: `1px solid ${C.line2}`, borderRadius: 18, padding: 'clamp(22px, 5vw, 34px)' }}>
-            <h2 style={{ fontFamily: C.serif, fontSize: 'clamp(24px, 4.6vw, 34px)', lineHeight: 1.2, color: C.paper, margin: '0 0 18px', fontWeight: 400 }}>
+            <h2 style={{ fontFamily: C.serif, fontSize: 'clamp(24px, 4.6vw, 34px)', lineHeight: 1.2, color: C.paper, margin: `0 0 ${plan.deeper.body ? 20 : 0}px`, fontWeight: 400 }}>
               {plan.deeper.label}
             </h2>
+            {plan.deeper.body && (
+              <p style={{ fontSize: 16.5, color: C.mute, lineHeight: 1.75, margin: 0 }}>
+                {plan.deeper.body}
+              </p>
+            )}
+            {plan.deeper.analogy && (
+              <p style={{ fontFamily: C.serif, fontSize: 'clamp(18px, 3.6vw, 22px)', fontStyle: 'italic', color: C.gold, lineHeight: 1.42, margin: '20px 0 0', paddingLeft: 18, borderLeft: `2px solid ${C.goldDeep}` }}>
+                {plan.deeper.analogy}
+              </p>
+            )}
           </div>
+          {plan.deeperNote && (
+            <p style={{ fontSize: 12.5, color: C.faint, lineHeight: 1.55, margin: '14px 2px 0', maxWidth: 540 }}>
+              {plan.deeperNote}
+            </p>
+          )}
         </section>
 
         {/* IV. UKRYTY KOSZT */}
         <section className="wp-rise" style={{ marginBottom: 72 }}>
           <Eyebrow n="IV">Jeden ukryty koszt</Eyebrow>
           <blockquote style={{ margin: 0 }}>
-            <p style={{ fontFamily: C.serif, fontSize: 'clamp(26px, 5vw, 38px)', lineHeight: 1.22, color: C.paper, margin: '0 0 22px', fontWeight: 400 }}>
+            <p style={{ fontFamily: C.serif, fontSize: 'clamp(26px, 5vw, 38px)', lineHeight: 1.22, color: C.paper, margin: '0 0 18px', fontWeight: 400 }}>
               {plan.hiddenCost.headline}
             </p>
+            {plan.hiddenCost.math && (
+              <p style={{ fontSize: 16, color: C.mute, lineHeight: 1.65, margin: '0 0 20px', maxWidth: 540 }}>
+                {plan.hiddenCost.math}
+              </p>
+            )}
             <p style={{ display: 'inline-block', fontFamily: C.mono, fontSize: 13.5, color: C.ink, background: `linear-gradient(135deg, ${C.gold}, ${C.goldBright})`, padding: '10px 16px', borderRadius: 8, letterSpacing: 0.2, fontWeight: 700, margin: 0 }}>
               {plan.hiddenCost.multiplier}
             </p>
           </blockquote>
         </section>
 
-        {/* V. POTENCJAŁ NA STOLE */}
+        {/* V. WARTOŚĆ: zaawansowany mechanizm (co widzę, czego inni nie) + ruch na 7 dni + efekt/most.
+            To „elite" beat: buduje zaufanie kompetencją i daje realną wartość do wdrożenia. */}
         <section className="wp-rise" style={{ marginBottom: 72 }}>
-          <Eyebrow n="V">Zapas na stole</Eyebrow>
-          <div style={{ display: 'flex', alignItems: 'baseline', gap: 14, marginBottom: 18, flexWrap: 'wrap' }}>
-            <span style={{ fontFamily: C.serif, fontSize: 'clamp(64px, 16vw, 108px)', lineHeight: 0.9, color: C.gold, fontWeight: 400 }}>{plan.potential.usedPct}%</span>
-            <span style={{ fontFamily: C.mono, fontSize: 12, letterSpacing: 1.5, textTransform: 'uppercase', color: C.faint, maxWidth: 190, lineHeight: 1.5 }}>tyle z siebie dziś wyciągasz</span>
+          <Eyebrow n="V">Zacznij tu</Eyebrow>
+          {/* co widzę, czego inni nie — insight budujący zaufanie */}
+          <div style={{ background: `linear-gradient(180deg, ${C.panel2}, ${C.ink})`, border: `1px solid ${C.line2}`, borderRadius: 16, padding: 'clamp(20px, 5vw, 28px)', marginBottom: 16 }}>
+            <div style={{ fontFamily: C.mono, fontSize: 10, letterSpacing: 2, textTransform: 'uppercase', color: C.gold, fontWeight: 700, marginBottom: 12 }}>Co widzę, czego inni nie</div>
+            <p style={{ fontSize: 16.5, color: C.paper, lineHeight: 1.7, margin: 0 }}>{plan.firstMove.widze}</p>
           </div>
-          {/* pasek: wykorzystane vs zablokowane */}
-          <div style={{ height: 10, borderRadius: 6, background: C.panel, overflow: 'hidden', display: 'flex', marginBottom: 22, border: `1px solid ${C.line}` }}>
-            <div style={{ width: `${plan.potential.usedPct}%`, background: `linear-gradient(90deg, ${C.goldDeep}, ${C.gold})` }} />
-            <div style={{ flex: 1, background: `repeating-linear-gradient(45deg, ${C.panel2}, ${C.panel2} 6px, ${C.ink} 6px, ${C.ink} 12px)` }} />
+          {/* ruch na 7 dni — realna wartość do wdrożenia */}
+          <div style={{ background: `linear-gradient(180deg, ${C.goldGlow}, transparent)`, border: `1px solid ${C.line2}`, borderRadius: 16, padding: 'clamp(20px, 5vw, 28px)', marginBottom: 18 }}>
+            <div style={{ fontFamily: C.mono, fontSize: 10, letterSpacing: 2, textTransform: 'uppercase', color: C.gold, fontWeight: 700, marginBottom: 12 }}>Zrób to przez 7 dni</div>
+            <p style={{ fontFamily: C.serif, fontSize: 'clamp(18px, 3.6vw, 21px)', color: C.paper, lineHeight: 1.5, margin: 0 }}>{plan.firstMove.ruch}</p>
           </div>
-          <h2 style={{ fontFamily: C.serif, fontSize: 'clamp(24px, 4.6vw, 34px)', lineHeight: 1.22, color: C.paper, margin: 0, fontWeight: 400, maxWidth: 540 }}>
-            {plan.potential.headline}
-          </h2>
-        </section>
-
-        {/* VI. PIERWSZE KROKI */}
-        <section className="wp-rise" style={{ marginBottom: 72 }}>
-          <Eyebrow n="VI">Pierwsze kroki</Eyebrow>
-          <div style={{ background: `linear-gradient(180deg, ${C.goldGlow}, transparent)`, border: `1px solid ${C.line2}`, borderRadius: 14, padding: '20px 22px', marginBottom: 24 }}>
-            <div style={{ fontFamily: C.mono, fontSize: 10, letterSpacing: 2, textTransform: 'uppercase', color: C.gold, fontWeight: 700, marginBottom: 9 }}>Zacznij tu, jutro rano</div>
-            <p style={{ fontFamily: C.serif, fontSize: 20, lineHeight: 1.4, color: C.paper, margin: 0 }}>{plan.firstMove}</p>
-          </div>
-          <p style={{ fontSize: 15, color: C.faint, margin: '0 2px', lineHeight: 1.55, maxWidth: 500 }}>
-            {hi}jeden ruch na jutro. Resztę układamy, jak uznasz, że chcesz to zrobić na serio.
+          <p style={{ fontSize: 15, color: C.faint, margin: '0 2px', lineHeight: 1.6, maxWidth: 520 }}>
+            {plan.firstMove.efekt}
           </p>
         </section>
 
@@ -249,9 +316,64 @@ export default function WeekPage({ plan, imie, naborHref = 'https://nabor.talerz
           </section>
         )}
 
-        {/* VII. MOST */}
+        {/* DOWÓD TEKSTOWY: przypadki, które zrobiły formę BEZ rzucania życia (nisza) */}
+        {CASES.length > 0 && (
+          <section className="wp-rise" style={{ marginBottom: 72 }}>
+            <Eyebrow n="★">Jak to idzie, bez rzucania życia</Eyebrow>
+            <div style={{ display: 'grid', gap: 16 }}>
+              {CASES.map((c, i) => (
+                <div key={i} style={{ background: `linear-gradient(180deg, ${C.panel2}, ${C.ink})`, border: `1px solid ${C.line2}`, borderRadius: 16, padding: 'clamp(20px, 5vw, 28px)' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 12, marginBottom: 14, flexWrap: 'wrap' }}>
+                    <span style={{ fontFamily: C.mono, fontSize: 11, letterSpacing: 1.5, textTransform: 'uppercase', color: C.gold, fontWeight: 700 }}>{c.kto}</span>
+                    <span style={{ fontFamily: C.mono, fontSize: 10.5, letterSpacing: 1, color: C.faint }}>{c.wIle}</span>
+                  </div>
+                  <p style={{ fontSize: 15, color: C.mute, lineHeight: 1.6, margin: '0 0 12px' }}>{c.punktWyjscia}</p>
+                  <p style={{ fontFamily: C.serif, fontSize: 'clamp(18px, 3.4vw, 21px)', fontStyle: 'italic', color: C.gold, lineHeight: 1.4, margin: '0 0 14px', paddingLeft: 16, borderLeft: `2px solid ${C.goldDeep}` }}>{c.coRobilDalej}</p>
+                  <p style={{ fontFamily: C.serif, fontSize: 'clamp(22px, 4.4vw, 28px)', color: C.paper, lineHeight: 1.25, margin: 0 }}>{c.wynik}</p>
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
+
+        {/* VI. MOST */}
         <section className="wp-rise" style={{ marginBottom: 20 }}>
-          <Eyebrow n="VII">Krok dalej</Eyebrow>
+          <Eyebrow n="VI">Krok dalej</Eyebrow>
+
+          {/* PERSONALIZOWANY ODCZYT (async reveal): jego slowa + mechanizm z LLM. Cala personalizacja
+              zjechala tu, na dol, gdzie model zdazy dojsc. 'pending' -> shimmer „dopisuje pod Twoje slowa",
+              'ready' -> realny odczyt, 'failed'/'off' -> blok znika (gora i tak jest deterministyczna). */}
+          {reframeStatus === 'pending' && (
+            <div className="wp-noprint" style={{ background: `linear-gradient(180deg, ${C.panel2}, ${C.ink})`, border: `1px solid ${C.line2}`, borderRadius: 18, padding: 'clamp(22px, 5vw, 32px)', marginBottom: 34 }}>
+              <div style={{ fontFamily: C.mono, fontSize: 10, letterSpacing: 2.5, textTransform: 'uppercase', color: C.gold, marginBottom: 18, display: 'flex', alignItems: 'center', gap: 10 }}>
+                <span className="wp-dotpulse" style={{ width: 7, height: 7, borderRadius: '50%', background: C.gold, display: 'inline-block' }} aria-hidden />
+                Dopisuję to pod Twoje słowa
+              </div>
+              <div className="wp-shimmer" style={{ height: 15, width: '92%', marginBottom: 12 }} aria-hidden />
+              <div className="wp-shimmer" style={{ height: 15, width: '100%', marginBottom: 12 }} aria-hidden />
+              <div className="wp-shimmer" style={{ height: 15, width: '74%' }} aria-hidden />
+            </div>
+          )}
+          {reframeStatus === 'ready' && plan.reading && (plan.reading.cytat || plan.reading.mechanizm) && (
+            <div style={{ background: `linear-gradient(180deg, ${C.panel2}, ${C.ink})`, border: `1px solid ${C.line2}`, borderRadius: 18, padding: 'clamp(22px, 5vw, 32px)', marginBottom: 34 }}>
+              <div style={{ fontFamily: C.mono, fontSize: 10, letterSpacing: 2.5, textTransform: 'uppercase', color: C.gold, marginBottom: 16 }}>Twój tydzień, Twoimi słowami</div>
+              {plan.reading.cytat && (
+                <p style={{ fontFamily: C.serif, fontSize: 'clamp(20px, 4vw, 26px)', fontStyle: 'italic', color: C.paper, lineHeight: 1.32, margin: '0 0 18px' }}>
+                  „{plan.reading.cytat}”
+                </p>
+              )}
+              {plan.reading.mechanizm && (
+                <p style={{ fontSize: 16.5, color: C.mute, lineHeight: 1.75, margin: 0 }}>
+                  {plan.reading.mechanizm}
+                </p>
+              )}
+              {plan.reading.pulapka && (
+                <p style={{ fontFamily: C.serif, fontSize: 'clamp(18px, 3.6vw, 22px)', fontStyle: 'italic', color: C.gold, lineHeight: 1.42, margin: '18px 0 0', paddingLeft: 18, borderLeft: `2px solid ${C.goldDeep}` }}>
+                  {plan.reading.pulapka}
+                </p>
+              )}
+            </div>
+          )}
 
           {/* zaproszenie osobiste */}
           <div className="wp-noprint" style={{ background: `linear-gradient(180deg, ${C.goldGlow}, transparent)`, border: `1px solid ${C.line2}`, borderRadius: 18, padding: 'clamp(22px, 5vw, 32px)', marginBottom: 34 }}>
@@ -262,7 +384,7 @@ export default function WeekPage({ plan, imie, naborHref = 'https://nabor.talerz
           </div>
 
           <p style={{ fontSize: 16, color: C.mute, lineHeight: 1.65, margin: '0 0 26px', maxWidth: 540 }}>
-            Pewnie nieraz wywaliłeś kasę na dietę z neta albo plan, który po dwóch tygodniach się rozsypał. Dlatego tu nie dostajesz kolejnego szablonu. Widzę, gdzie dokładnie pęka Twój tydzień, i wiem, co zdjąć najpierw u Ciebie, nie u wszystkich. Nie każdego biorę, a jak nie widzę, że da się ruszyć, powiem wprost. Napisz do mnie z tym wynikiem, odpiszę ja, nie zespół.
+            {plan.bridgeIntro}
           </p>
 
           {/* drabina akcji */}
@@ -272,41 +394,98 @@ export default function WeekPage({ plan, imie, naborHref = 'https://nabor.talerz
                 <span style={{ fontFamily: C.mono, fontSize: 12, fontWeight: 700, color: C.numGold, flexShrink: 0, marginTop: 2, width: 20 }}>{String(i + 1).padStart(2, '0')}</span>
                 <div style={{ flex: 1 }}>
                   <div style={{ fontSize: 15, fontWeight: 700, color: C.paper, marginBottom: 5 }}>{b.tier}</div>
-                  <div style={{ fontSize: 14.5, color: C.mute, lineHeight: 1.55, marginBottom: b.kind === 'save' ? 12 : 0 }}>{b.line}</div>
-                  {b.kind === 'save' && <SaveCardButton label="Zapisz Kartę tygodnia (PDF)" />}
+                  <div style={{ fontSize: 14.5, color: C.mute, lineHeight: 1.55 }}>{b.line}</div>
                 </div>
               </div>
             ))}
           </div>
 
-          {/* Przycisk bezpośredniego kontaktu w DM i Prowadzenia */}
+          {/* NISZA: rekompozycja bez rzucania zycia. Oś przekazu, zawsze widoczna (nie zalezy od LLM). */}
+          <div style={{ background: C.panel2, border: `1px solid ${C.line2}`, borderLeft: `3px solid ${C.gold}`, borderRadius: 12, padding: '16px 18px', marginBottom: 30 }}>
+            <p style={{ fontSize: 15, color: C.paper, lineHeight: 1.65, margin: 0, maxWidth: 560 }}>
+              Żebyś wiedział, w co wchodzisz: chłopaki, których prowadzę, dalej wychodzą w weekend, piją wino do kolacji i jadą na wypady z ekipą. Forma rośnie <b style={{ color: C.gold }}>obok tego życia, nie zamiast niego</b>. Wolniej niż obiecują cudotwórcy z reklam, ale w tempie, które utrzymasz przez lata. Ponad 200 facetów zrobiło rekompozycję właśnie tak, nie żyjąc jak mnich.
+            </p>
+          </div>
+
+          {/* OPINIE GOOGLE: trzeci typ proofu tuz nad blokiem "zanim napiszesz". Mix: badge (agregat + link
+              do profilu = weryfikowalne) + ciemne karty (czytelne, spojne z premium) + 2 realne zrzuty
+              (dowod, ze prawdziwe). Autentycznosc badge'a i zrzutow splywa na przepisane karty. */}
+          <div style={{ marginBottom: 30 }}>
+            <a href={GOOGLE_AGG.url} target="_blank" rel="noopener noreferrer" onClick={() => track('diag_google_click', { qualified })}
+              style={{ display: 'flex', alignItems: 'center', gap: 12, textDecoration: 'none', background: C.panel2, border: `1px solid ${C.line2}`, borderRadius: 12, padding: '13px 16px', marginBottom: 16 }}>
+              <span aria-hidden style={{ fontFamily: C.sans, fontWeight: 800, fontSize: 19, color: '#4285F4', flexShrink: 0, lineHeight: 1 }}>G</span>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: 14.5, color: C.paper, fontWeight: 700 }}>
+                  {GOOGLE_AGG.rating} <span style={{ color: C.gold, letterSpacing: 1 }}>★★★★★</span>
+                  <span style={{ color: C.mute, fontWeight: 400 }}> · {GOOGLE_AGG.count} opinii w Google</span>
+                </div>
+                <div style={{ fontSize: 12.5, color: C.faint, marginTop: 2 }}>Zobacz wszystkie na profilu &rarr;</div>
+              </div>
+            </a>
+            <div style={{ display: 'grid', gap: 12 }}>
+              {GOOGLE_CARDS.map((r, i) => (
+                <div key={i} style={{ background: `linear-gradient(180deg, ${C.panel2}, ${C.ink})`, border: `1px solid ${C.line2}`, borderRadius: 14, padding: '16px 18px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 10, marginBottom: 8 }}>
+                    <span style={{ color: C.gold, fontSize: 13, letterSpacing: 1 }}>★★★★★</span>
+                    <span style={{ fontFamily: C.mono, fontSize: 10.5, color: C.faint }}>Google · {r.when}</span>
+                  </div>
+                  <p style={{ fontFamily: C.serif, fontSize: 'clamp(16px, 3.4vw, 19px)', fontStyle: 'italic', color: C.paper, lineHeight: 1.46, margin: '0 0 10px' }}>„{r.text}”</p>
+                  <div style={{ fontSize: 13, color: C.mute, fontWeight: 700 }}>{r.name}</div>
+                </div>
+              ))}
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginTop: 12 }}>
+              {GOOGLE_SHOTS.map((s, i) => (
+                <img key={i} src={s.src} alt={s.alt} loading="lazy" style={{ width: '100%', display: 'block', borderRadius: 10, border: `1px solid ${C.line2}` }} />
+              ))}
+            </div>
+            <div style={{ fontFamily: C.mono, fontSize: 10, letterSpacing: 2, textTransform: 'uppercase', color: C.faint, textAlign: 'center', marginTop: 10 }}>
+              prosto z Google, bez retuszu
+            </div>
+          </div>
+
+          {/* ZANIM NAPISZESZ: co dalej + ze glebsza robota jest platna + ze nie scigam. Cynik nie klika
+              w niezdefiniowane. Deterministyczne, zawsze widoczne, tuz nad przyciskiem DM. */}
+          <div className="wp-noprint" style={{ background: C.panel2, border: `1px solid ${C.line2}`, borderRadius: 12, padding: 'clamp(16px, 4vw, 20px) clamp(16px, 4vw, 22px)', marginBottom: 26 }}>
+            <div style={{ fontFamily: C.mono, fontSize: 10, letterSpacing: 2.5, textTransform: 'uppercase', color: C.faint, fontWeight: 700, marginBottom: 12 }}>Zanim napiszesz</div>
+            <p style={{ fontSize: 15, color: C.mute, lineHeight: 1.65, margin: '0 0 10px', maxWidth: 560 }}>
+              Jak klikniesz, piszesz do mnie na Instagramie. Czyta to ja, nie automat. Zadam dwa, trzy pytania o Twój tydzień i powiem wprost, od czego zacząć.
+            </p>
+            <p style={{ fontSize: 15, color: C.mute, lineHeight: 1.65, margin: '0 0 10px', maxWidth: 560 }}>
+              Jak z tego wyjdzie, że chcesz, żebym Cię przez to przeprowadził, to już płatne prowadzenie. Mówię od razu, żebyś wiedział, w co wchodzisz.
+            </p>
+            <p style={{ fontSize: 15, color: C.mute, lineHeight: 1.65, margin: 0, maxWidth: 560 }}>
+              Nie ścigam i nie zasypuję Cię wiadomościami. Piszesz, kiedy chcesz, albo wcale.
+            </p>
+          </div>
+
+          {/* Jeden oczywisty ruch = DM. Slaby punkt tuz nad przyciskiem, DM zawsze primary
+              (sprzedaz wylacznie IG DM), nabor jako drugorzedny link, Save cicho obok. */}
           {(() => {
-            const dmMsg = imie?.trim()
-              ? `Cześć Michał, jestem ${imie.trim()}. Zrobiłem diagnostykę na stronie (${plan.problem.name}). Chcę omówić z Tobą mój wynik.`
-              : `Cześć Michał, zrobiłem diagnostykę na stronie (${plan.problem.name}). Chcę omówić z Tobą mój wynik.`;
+            // weakSpot w wiadomosci idzie w 1. osobie (od leada do Michala). Jesli LLM wrzuci 2. osobe
+            // ("na Tobie", "Ci"), fraza celowalaby w Michala, wiec ja wtedy pomijamy (deterministyczny neutralny).
+            const wsSafe = /\b(ci|tobie|twój|twoje|twoim|twoją|cię|ciebie)\b/i.test(plan.weakSpot) ? '' : plan.weakSpot;
+            const dmMsg = `Cześć Michał${imie?.trim() ? `, jestem ${imie.trim()}` : ''}. Zrobiłem diagnostykę (${plan.problem.name}).${wsSafe ? ` Najbardziej siedzi mi ${wsSafe}.` : ''} Chcę to z Tobą przegadać.`;
             const dmUrl = `https://ig.me/m/hantleitalerz?text=${encodeURIComponent(dmMsg)}`;
-            const goldStyle = { background: `linear-gradient(135deg, ${C.gold}, ${C.goldBright})`, color: C.ink, fontWeight: 800 };
-            const softStyle = { background: C.panel2, color: C.paper, border: `1px solid ${C.line2}` };
-            // Złoty (mocny) przycisk tylko dla skwalifikowanego leada. Zimny widzi same miękkie opcje
-            // + swoją Kartę do zapisania: ociepla, nie pcha na najdroższe zanim jest gotów.
-            const dm = (
-              <a key="dm" href={dmUrl} target="_blank" rel="noopener noreferrer" onClick={() => track('diag_dm_click', { qualified })} className="wp-cta" style={softStyle}>
-                Napisz do mnie z tym wynikiem na Instagramie <span aria-hidden>&rarr;</span>
-              </a>
-            );
-            const nabor = (
-              <a key="nabor" href={naborHref} target="_blank" rel="noopener noreferrer" onClick={() => track('diag_nabor_click', { loc: 'result', qualified })} className="wp-cta" style={qualified ? goldStyle : softStyle}>
-                {qualified ? 'Zobacz, jak wygląda współpraca 1:1' : 'Zobacz, jak pracuję z innymi w 1:1'} <span aria-hidden>&rarr;</span>
-              </a>
-            );
             return (
-              <div className="wp-noprint" style={{ display: 'grid', gap: 12 }}>
-                {qualified ? [nabor, dm] : [dm, nabor]}
+              <div className="wp-noprint">
+                <p style={{ fontSize: 15.5, color: C.paper, lineHeight: 1.6, margin: '0 0 16px', maxWidth: 540 }}>
+                  U Ciebie pęka to jedno: <b style={{ color: C.gold }}>{plan.weakSpot}</b>. Z tym do mnie napisz, resztę ułożymy.
+                </p>
+                <a href={dmUrl} target="_blank" rel="noopener noreferrer" onClick={() => track('diag_dm_click', { qualified })} className="wp-cta" style={{ background: `linear-gradient(135deg, ${C.gold}, ${C.goldBright})`, color: C.ink, fontWeight: 800 }}>
+                  Napisz do mnie na Instagramie <span aria-hidden>&rarr;</span>
+                </a>
+                <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', alignItems: 'center', gap: 18, margin: '18px 0 0' }}>
+                  <a href={naborHref} onClick={() => track('diag_nabor_click', { loc: 'result', qualified })} style={{ fontSize: 13.5, color: C.mute, textDecoration: 'underline', textUnderlineOffset: 3 }}>
+                    {qualified ? 'albo zobacz, jak wygląda współpraca 1:1' : 'albo zobacz, jak pracuję z innymi'}
+                  </a>
+                  <SaveCardButton label="Zapisz Kartę (PDF)" />
+                </div>
               </div>
             );
           })()}
-          <p className="wp-noprint" style={{ fontSize: 12.5, color: C.faint, textAlign: 'center', margin: '14px 0 0', lineHeight: 1.55 }}>
-            {plan.saveNote} Od 9 lat przeprowadziłem przez to ponad 180 facetów. Napiszesz, odpisuję osobiście w ciągu doby.
+          <p className="wp-noprint" style={{ fontSize: 12.5, color: C.faint, textAlign: 'center', margin: '18px 0 0', lineHeight: 1.55 }}>
+            {plan.saveNote}
           </p>
         </section>
 
@@ -359,4 +538,11 @@ const css = `
 @keyframes wpPulse { 0%,100%{ r:5.5; opacity:1 } 50%{ r:7; opacity:.75 } }
 .wp-signal { transition: box-shadow .35s ease, transform .35s cubic-bezier(.2,.7,.2,1); }
 .wp-signal:hover { transform: translateY(-3px); box-shadow: 0 0 0 1px rgba(200,168,78,0.35), 0 0 64px rgba(200,168,78,0.26), 0 52px 100px -30px rgba(0,0,0,0.9), inset 0 1px 0 rgba(255,255,255,0.09); }
+.wp-shimmer { background: linear-gradient(90deg, ${C.panel2} 0%, ${C.line2} 50%, ${C.panel2} 100%); background-size: 200% 100%; border-radius: 6px; }
+@keyframes wpShine { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+@keyframes wpDot { 0%,100% { opacity: 1; transform: scale(1); } 50% { opacity: .35; transform: scale(.6); } }
+@media (prefers-reduced-motion: no-preference) {
+  .wp-shimmer { animation: wpShine 1.5s ease-in-out infinite; }
+  .wp-dotpulse { animation: wpDot 1.2s ease-in-out infinite; }
+}
 `;

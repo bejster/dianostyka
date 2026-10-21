@@ -59,7 +59,7 @@ export function validAnswer(q: QuestionDef, answers: AnswerBag): boolean {
       return step > 0 && Math.abs((v - (q.min ?? 0)) / step - Math.round((v - (q.min ?? 0)) / step)) < 1e-6;
     }
     case 'multi': {
-      if (!Array.isArray(v) || v.length < 1 || v.length > 3) return false;
+      if (!Array.isArray(v) || v.length < 1 || v.length > (q.maxSelect ?? 3)) return false;
       const allowed = new Set((q.options || []).map(o => o.id));
       return new Set(v).size === v.length && v.every(id => typeof id === 'string' && allowed.has(id));
     }

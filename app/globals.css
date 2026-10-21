@@ -7,6 +7,445 @@
   --orange: #f97316;
   --yellow: #eab308;
   --green: #22c55e;
+
+  /* ── JĘZYK PRZYRZĄDU ────────────────────────────────────────────────
+     Jeden system zamiast szerokości i promieni wymyślanych per komponent.
+     Zimny błękit to godziny jeszcze niezmierzone. Złoto to pomiar. */
+  --measure-cold: #1b2027;
+  --measure-rule: rgba(200, 168, 78, 0.16);
+  --measure-rule-strong: rgba(200, 168, 78, 0.42);
+  --surface-0: #0a0a0a;
+  --surface-1: #101216;
+  --surface-2: #161920;
+
+  /* Skala typograficzna, stosunek 1.25 */
+  --t-mono: 11px;
+  --t-body: 16px;
+  --t-lead: 20px;
+  --t-q: clamp(28px, 3.6vw, 46px);
+  --t-display: clamp(40px, 6vw, 76px);
+
+  /* Skala odstępów, krok 4 */
+  --s-1: 4px;
+  --s-2: 8px;
+  --s-3: 12px;
+  --s-4: 20px;
+  --s-5: 32px;
+  --s-6: 52px;
+  --s-7: 84px;
+
+  /* Kontenery. 520 było wpisane inline w dwóch miejscach i to trzymało
+     desktop na 37% ekranu. */
+  --w-read: 620px;
+  --w-shell: 1180px;
+  --rail: 300px;
+
+  /* Ruch. Jedna krzywa dla całego produktu. */
+  --ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --dur-fast: 180ms;
+  --dur: 420ms;
+  --dur-slow: 900ms;
+}
+
+/* ================================
+   PRZYRZĄD 168
+   ================================ */
+.wi-panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-3);
+  width: var(--rail);
+  flex-shrink: 0;
+  padding: var(--s-4);
+  border-left: 1px solid var(--measure-rule);
+  align-self: stretch;
+  justify-content: center;
+  /* Obudowa przyrządu: płyta odrobinę ciemniejsza niż kadr, żeby siatka nie
+     pływała w tle, tylko siedziała na czymś. */
+  background: linear-gradient(180deg, rgba(8, 10, 13, 0.55), rgba(8, 10, 13, 0.25));
+}
+.wi-label {
+  font-family: var(--font-mono), monospace;
+  font-size: var(--t-mono);
+  letter-spacing: 0.22em;
+  color: var(--gold);
+  opacity: 0.75;
+}
+.wi-svg { width: 100%; height: auto; display: block; overflow: visible; }
+.wi-daylabel,
+.wi-hourlabel {
+  font-family: var(--font-mono), monospace;
+  font-size: 7px;
+  letter-spacing: 0.1em;
+  fill: rgba(255, 255, 255, 0.34);
+}
+.wi-cell { transition: fill var(--dur) var(--ease), opacity var(--dur) var(--ease); }
+/* Wejscie w sekcje: jeden przebieg skanu wiersz po wierszu, dopiero potem ping. */
+.wi-cell-active {
+  animation:
+    wi-scan 0.46s var(--ease) calc(var(--r, 0) * 38ms) both,
+    wi-ping 1.9s var(--ease) 1s infinite; /* wspolny start: fala tylko przy wejsciu */
+}
+@keyframes wi-scan {
+  0% { opacity: 0.12; }
+  45% { opacity: 1; }
+  100% { opacity: 0.45; }
+}
+@keyframes wi-ping {
+  0%, 100% { opacity: 0.45; }
+  50% { opacity: 1; }
+}
+.wi-readout {
+  font-family: var(--font-mono), monospace;
+  display: flex;
+  align-items: baseline;
+  gap: 1px;
+  color: rgba(255, 255, 255, 0.42);
+  font-size: 13px;
+  letter-spacing: 0.04em;
+  margin-top: var(--s-2);
+}
+.wi-num {
+  font-size: 30px;
+  color: var(--gold);
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+.wi-caption {
+  font-family: var(--font-mono), monospace;
+  font-size: 8px;
+  letter-spacing: 0.24em;
+  color: rgba(255, 255, 255, 0.3);
+  margin-top: 6px;
+}
+.wi-strip { display: none; }
+.wi-strip-svg { width: 100%; height: 12px; display: block; }
+.wi-readout-strip { justify-content: center; margin-top: var(--s-2); gap: 1px; }
+.wi-readout-strip .wi-num { font-size: 17px; }
+.wi-caption-strip { margin-top: 0; margin-left: var(--s-2); align-self: baseline; }
+
+/* ================================
+   POWŁOKA DWUKOLUMNOWA
+   ================================ */
+.dx-shell {
+  display: flex;
+  gap: var(--s-6);
+  align-items: stretch;
+  width: 100%;
+  max-width: var(--w-shell);
+  margin: 0 auto;
+}
+.dx-main { flex: 1; min-width: 0; max-width: var(--w-read); }
+
+@media (max-width: 899px) {
+  .wi-panel { display: none; }
+  .wi-strip { display: block; }
+  .dx-shell { gap: 0; }
+  .dx-main { max-width: none; }
+}
+
+/* ================================
+   WIERSZE POMIAROWE (odpowiedzi)
+   ================================ */
+.mrow {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  width: 100%;
+  min-height: 58px;
+  padding: var(--s-3) var(--s-4) var(--s-3) 0;
+  background: none;
+  border: none;
+  border-bottom: 1px solid var(--measure-rule);
+  color: rgba(255, 255, 255, 0.82);
+  font-size: var(--t-body);
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: color var(--dur-fast) var(--ease), padding-left var(--dur-fast) var(--ease);
+}
+.mrow:first-child { border-top: 1px solid var(--measure-rule); }
+.mrow-tick {
+  width: 2px;
+  height: 22px;
+  flex-shrink: 0;
+  background: var(--measure-rule-strong);
+  transition: height var(--dur) var(--ease), background var(--dur-fast) var(--ease);
+}
+.mrow-idx {
+  font-family: var(--font-mono), monospace;
+  font-size: var(--t-mono);
+  color: rgba(255, 255, 255, 0.28);
+  flex-shrink: 0;
+  font-variant-numeric: tabular-nums;
+  transition: color var(--dur-fast) var(--ease);
+}
+.mrow-label { flex: 1; line-height: 1.4; }
+.mrow:hover { color: #fff; padding-left: var(--s-2); }
+.mrow:hover .mrow-tick { height: 34px; background: var(--gold); }
+.mrow:hover .mrow-idx { color: var(--gold); }
+.mrow[data-on='1'] { color: #fff; }
+.mrow[data-on='1'] .mrow-tick { height: 40px; background: var(--gold); box-shadow: 0 0 14px rgba(200, 168, 78, 0.55); }
+.mrow[data-on='1'] .mrow-idx { color: var(--gold); }
+.mrow:focus-visible { outline: 1px solid var(--gold); outline-offset: 3px; }
+
+/* Wielokrotny wybór korzysta z tego samego wiersza, tylko z polem stanu po prawej.
+   Osobny komponent chipa dawał drugi język wizualny w środku tego samego quizu. */
+.mrow-box {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+  border: 1px solid var(--measure-rule-strong);
+  transition: background var(--dur-fast) var(--ease), border-color var(--dur-fast) var(--ease);
+}
+.mrow[data-on='1'] .mrow-box {
+  background: var(--gold);
+  border-color: var(--gold);
+  box-shadow: 0 0 12px rgba(200, 168, 78, 0.5);
+}
+.mrow:disabled { opacity: 0.34; cursor: not-allowed; }
+.mrow:disabled:hover { color: rgba(255, 255, 255, 0.82); padding-left: 0; }
+.mrow:disabled:hover .mrow-tick { height: 22px; background: var(--measure-rule-strong); }
+
+/* ================================
+   AKCJA
+   ================================ */
+/* Złoty gradientowy przycisk z zaokrągleniem 14 px to domyślny komponent
+   biblioteki. Tutaj akcja jest prostokątna, monospace i wypełnia się od lewej,
+   czyli zachowuje się jak przełącznik w aparaturze, nie jak guzik w sklepie. */
+.dx-go {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s-3);
+  width: 100%;
+  min-height: 58px;
+  margin-top: var(--s-5);
+  padding: 0 var(--s-4);
+  background: none;
+  border: 1px solid var(--measure-rule-strong);
+  color: var(--gold);
+  font-family: var(--font-mono), monospace;
+  font-size: 12px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  cursor: pointer;
+  overflow: hidden;
+  transition: color var(--dur-fast) var(--ease), border-color var(--dur-fast) var(--ease);
+}
+.dx-go::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: var(--gold);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform var(--dur) var(--ease);
+}
+.dx-go > span { position: relative; }
+.dx-go:hover:not(:disabled) { color: #08080a; border-color: var(--gold); }
+.dx-go:hover:not(:disabled)::before { transform: scaleX(1); }
+.dx-go:disabled { opacity: 0.3; cursor: not-allowed; }
+.dx-go:focus-visible { outline: 1px solid var(--gold); outline-offset: 3px; }
+/* Nacisk: wypelnienie dojezdza szybciej niz na hover i przycisk siada o piksel.
+   Na telefonie hover nie istnieje, wiec bez tego tap nie dawal zadnej odpowiedzi. */
+.dx-go:active:not(:disabled) { color: #08080a; border-color: var(--gold); transform: translateY(1px); }
+.dx-go:active:not(:disabled)::before { transform: scaleX(1); transition-duration: 90ms; }
+@media (hover: none) {
+  /* Dotyk zostawia :hover przyklejony po tapnieciu. Stan zostaje tylko na :active. */
+  .dx-go:hover:not(:disabled):not(:active) { color: var(--gold); border-color: var(--measure-rule-strong); }
+  .dx-go:hover:not(:disabled):not(:active)::before { transform: scaleX(0); }
+  .mrow:hover { padding-left: 0; }
+  .mrow:hover:not([data-on='1']) .mrow-tick { height: 22px; background: var(--measure-rule-strong); }
+  .mrow:active .mrow-tick { height: 40px; background: var(--gold); }
+}
+
+/* ================================
+   WEJSCIE PYTANIA
+   ================================ */
+/* Scena jest montowana od nowa per pytanie (key), wiec wejscie gra za kazdym razem.
+   Kolejnosc: pytanie, dopowiedzenie, potem odczyty jeden po drugim. Wiersze wchodza
+   od lewej, bo tak czyta sie skala. */
+.dx-stage > * { animation: dx-in 620ms var(--ease) both; }
+.dx-stage > *:nth-child(2) { animation-delay: 70ms; }
+.dx-stage > *:nth-child(3) { animation-delay: 140ms; }
+.dx-stage .mrow { animation: dx-row 520ms var(--ease) both; animation-delay: calc(160ms + var(--i, 0) * 45ms); }
+@keyframes dx-in { from { opacity: 0; transform: translateY(10px); filter: blur(3px); } to { opacity: 1; transform: none; filter: none; } }
+@keyframes dx-row { from { opacity: 0; transform: translateX(-10px); } to { opacity: 1; transform: none; } }
+
+/* ================================
+   GÓRNY PASEK
+   ================================ */
+.dx-topbar {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  background: rgba(8, 8, 10, 0.82);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--measure-rule);
+}
+.dx-progress {
+  position: relative;
+  height: 6px;
+  background-image: repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.14) 0 1px, transparent 1px 9px);
+}
+.dx-progress-fill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  background-image: repeating-linear-gradient(90deg, var(--gold) 0 1px, transparent 1px 9px);
+  border-right: 1px solid var(--gold);
+  transition: width var(--dur) var(--ease);
+}
+.dx-back {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 0;
+  background: none;
+  border: none;
+  color: var(--gold);
+  font-family: var(--font-mono), monospace;
+  font-size: var(--t-mono);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  cursor: pointer;
+  opacity: 0.72;
+  transition: opacity var(--dur-fast) var(--ease);
+}
+.dx-back:hover, .dx-back:focus-visible { opacity: 1; }
+.dx-topbar .dx-topbar-section { color: var(--gold); text-transform: uppercase; letter-spacing: 0.22em; }
+.dx-skip {
+  width: 100%;
+  margin-top: var(--s-3);
+  padding: var(--s-3) 0;
+  background: none;
+  border: none;
+  color: rgba(255, 255, 255, 0.34);
+  font-family: var(--font-mono), monospace;
+  font-size: var(--t-mono);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: color var(--dur-fast) var(--ease);
+}
+.dx-skip:hover { color: rgba(255, 255, 255, 0.6); }
+
+/* ================================
+   POLA
+   ================================ */
+/* Pola sa samowystarczalne. Stara biblioteka `input[type=text]` / `textarea`
+   zostala wycieta 2026-09-25: miala wyzsza specyficznosc niz klasa i po cichu
+   przywracala pudelko z promieniem 12 px. Nie dopisuj globalnych regul na
+   elementy formularza, stylujemy wylacznie klasa. */
+.dx-field {
+  width: 100%;
+  padding: var(--s-3) 0;
+  background: none;
+  border: none;
+  border-bottom: 1px solid var(--measure-rule-strong);
+  border-radius: 0;
+  color: #fff;
+  font-family: inherit;
+  font-size: var(--t-body);
+  font-weight: 500;
+  outline: none;
+  box-sizing: border-box;
+  transition: border-color var(--dur-fast) var(--ease);
+}
+.dx-field::placeholder { color: rgba(255, 255, 255, 0.24); }
+.dx-field:focus { border-bottom-color: var(--gold); box-shadow: none; }
+.dx-field-mono {
+  font-family: var(--font-mono), monospace;
+  font-size: 30px;
+  font-variant-numeric: tabular-nums;
+  color: var(--gold);
+  letter-spacing: 0.02em;
+}
+.dx-area { min-height: 128px; line-height: 1.6; resize: vertical; }
+.dx-meta {
+  font-family: var(--font-mono), monospace;
+  font-size: var(--t-mono);
+  letter-spacing: 0.14em;
+  color: rgba(255, 255, 255, 0.3);
+}
+.dx-prefix {
+  font-family: var(--font-mono), monospace;
+  font-size: 20px;
+  color: var(--gold);
+  padding-bottom: var(--s-1);
+  flex-shrink: 0;
+}
+.dx-note {
+  margin-top: var(--s-4);
+  padding-left: var(--s-3);
+  border-left: 2px solid var(--measure-rule-strong);
+  color: rgba(255, 255, 255, 0.62);
+  font-size: 14.5px;
+  line-height: 1.55;
+}
+
+/* ================================
+   SUWAK JAKO PODZIAŁKA
+   ================================ */
+/* Okrągła złota gałka na grubym torze to kontrolka z telefonu. Podziałka z
+   kreskami i igłą pokazuje, że człowiek ustawia wartość na skali pomiarowej. */
+.dx-gauge {
+  position: relative;
+  height: 60px;
+  margin-top: var(--s-4);
+  touch-action: pan-y;
+  user-select: none;
+  -webkit-user-select: none;
+  cursor: ew-resize;
+  outline: none;
+}
+.dx-gauge-ticks,
+.dx-gauge-fill {
+  position: absolute;
+  top: 24px;
+  height: 14px;
+  background-image: repeating-linear-gradient(90deg, currentColor 0 1px, transparent 1px 7px);
+}
+.dx-gauge-ticks { left: 0; right: 0; color: rgba(255, 255, 255, 0.2); }
+.dx-gauge-fill { left: 0; color: var(--gold); }
+.dx-gauge-rule { position: absolute; left: 0; right: 0; top: 38px; height: 1px; background: var(--measure-rule); }
+.dx-gauge-needle {
+  position: absolute;
+  top: 12px;
+  width: 2px;
+  height: 38px;
+  background: var(--gold);
+  transform: translateX(-50%);
+  box-shadow: 0 0 14px rgba(200, 168, 78, 0.85);
+  pointer-events: none;
+}
+.dx-gauge-needle::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: -6px;
+  width: 8px;
+  height: 8px;
+  background: var(--gold);
+  transform: translateX(-50%) rotate(45deg);
+}
+.dx-gauge:focus-visible .dx-gauge-needle { box-shadow: 0 0 0 3px rgba(200, 168, 78, 0.35), 0 0 14px rgba(200, 168, 78, 0.85); }
+.dx-readval {
+  font-family: var(--font-mono), monospace;
+  font-size: clamp(42px, 6.4vw, 62px);
+  line-height: 1;
+  color: var(--gold);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wi-cell-active { animation: none; }
+  .mrow, .mrow-tick, .wi-cell, .dx-go::before, .dx-progress-fill { transition: none; }
+  .dx-stage > *, .dx-stage .mrow { animation: none; }
 }
 
 @theme inline {
@@ -35,144 +474,6 @@ body {
 /* editorial: text-wrap balance + tabular nums dla data display */
 h1, h2, h3, h4 { text-wrap: balance; }
 .tabnum, [data-mono] { font-variant-numeric: tabular-nums; font-feature-settings: 'tnum'; }
-
-/* ================================
-   PARTICLE BACKGROUND
-   ================================ */
-/* particle layer killed - user req */
-
-/* ================================
-   PREMIUM SLIDER STYLES
-   ================================ */
-input[type=range] {
-  -webkit-appearance: none;
-  appearance: none;
-  width: 100%;
-  height: 32px;
-  background: transparent;
-  cursor: pointer;
-  position: relative;
-}
-
-/* Track: rysuje go komponent (hairline + zloty fill). CSS track = przezroczysty. */
-input[type=range]::-webkit-slider-runnable-track {
-  height: 2px;
-  background: transparent;
-}
-
-input[type=range]::-moz-range-track {
-  height: 2px;
-  background: transparent;
-}
-
-/* Thumb: precyzyjny instrument, nie swiecaca kula.
-   Zloty rdzen, ciemny pierscien, cien zamiast neonu. */
-input[type=range]::-webkit-slider-thumb {
-  -webkit-appearance: none;
-  width: 18px;
-  height: 18px;
-  margin-top: -8px;
-  background: linear-gradient(160deg, #d8b85e, #b8983e);
-  border: 2.5px solid #0a0a0a;
-  border-radius: 50%;
-  cursor: grab;
-  box-shadow:
-    0 0 0 1px rgba(200, 168, 78, 0.55),
-    0 3px 10px rgba(0, 0, 0, 0.55);
-  transition: box-shadow 0.18s ease, transform 0.18s ease;
-  position: relative;
-  z-index: 3;
-}
-
-input[type=range]::-moz-range-thumb {
-  width: 18px;
-  height: 18px;
-  background: linear-gradient(160deg, #d8b85e, #b8983e);
-  border: 2.5px solid #0a0a0a;
-  border-radius: 50%;
-  cursor: grab;
-  box-shadow:
-    0 0 0 1px rgba(200, 168, 78, 0.55),
-    0 3px 10px rgba(0, 0, 0, 0.55);
-  transition: box-shadow 0.18s ease, transform 0.18s ease;
-}
-
-input[type=range]::-webkit-slider-thumb:hover,
-input[type=range]::-webkit-slider-thumb:active {
-  transform: scale(1.12);
-  box-shadow:
-    0 0 0 1px rgba(200, 168, 78, 0.9),
-    0 0 0 7px rgba(200, 168, 78, 0.1),
-    0 3px 12px rgba(0, 0, 0, 0.55);
-}
-
-input[type=range]::-moz-range-thumb:hover,
-input[type=range]::-moz-range-thumb:active {
-  transform: scale(1.12);
-  box-shadow:
-    0 0 0 1px rgba(200, 168, 78, 0.9),
-    0 0 0 7px rgba(200, 168, 78, 0.1),
-    0 3px 12px rgba(0, 0, 0, 0.55);
-}
-
-input[type=range]:focus-visible::-webkit-slider-thumb {
-  box-shadow:
-    0 0 0 2px rgba(200, 168, 78, 1),
-    0 0 0 8px rgba(200, 168, 78, 0.15);
-}
-
-/* ================================
-   ANIMATED CHIP/TAG SELECTION
-   ================================ */
-@keyframes chip-select {
-  0% { transform: scale(1); }
-  50% { transform: scale(1.05); }
-  100% { transform: scale(1); }
-}
-
-.chip-selected {
-  animation: chip-select 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-}
-
-/* ================================
-   PREMIUM INPUT STYLES
-   ================================ */
-input[type=email],
-input[type=text],
-textarea {
-  width: 100%;
-  padding: 15px 16px;
-  background: #111111;
-  border: 1px solid #2a2a2a;
-  color: #f0f0f3;
-  font-size: 16px;
-  font-weight: 500;
-  font-family: 'Inter', system-ui, -apple-system, sans-serif;
-  outline: none;
-  border-radius: 12px;
-  transition: border-color 0.25s ease, box-shadow 0.25s ease;
-}
-
-textarea {
-  resize: vertical;
-  min-height: 84px;
-  line-height: 1.55;
-}
-
-input[type=email]:focus,
-input[type=text]:focus,
-textarea:focus {
-  border-color: rgba(200, 168, 78, 0.55);
-  box-shadow:
-    0 0 0 3px rgba(200, 168, 78, 0.08),
-    inset 0 1px 3px rgba(0, 0, 0, 0.25);
-}
-
-input[type=email]::placeholder,
-input[type=text]::placeholder,
-textarea::placeholder {
-  color: rgba(240, 240, 243, 0.28);
-}
 
 /* ================================
    BUTTON MICRO-INTERACTIONS
@@ -493,4 +794,37 @@ button[style*="C8A84E"] {
   background-size: 200% 100%;
   animation: premium-sheen 7s ease-in-out infinite;
   pointer-events: none;
+}
+
+/* Hero /diagnoza: desktop wysrodkowany, telefon od gory (wysrodkowanie zostawialo ~45% pustego ekranu nad kickerem). */
+.dx-intro {
+  justify-content: center;
+}
+
+@media (max-width: 640px) {
+  .dx-intro {
+    justify-content: flex-start;
+    padding-top: max(48px, 9svh) !important;
+  }
+}
+
+/* Hero /diagnoza: kicker i tekst pod naglowkiem; na desktopie wieksze, bo przy 58 px naglowka 15.8 px ginelo. */
+.dx-kicker {
+  font-size: 10.2px;
+}
+
+.dx-lede {
+  font-size: 15.8px;
+  max-width: 438px;
+}
+
+@media (min-width: 900px) {
+  .dx-kicker {
+    font-size: 12.5px;
+  }
+
+  .dx-lede {
+    font-size: 18.5px;
+    max-width: 480px;
+  }
 }

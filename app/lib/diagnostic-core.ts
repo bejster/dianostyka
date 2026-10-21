@@ -198,7 +198,7 @@ export function pickArchetype(D: FD, worstLabel: string): Archetype {
     return {
       key: 'wieczorny_odpad',
       label: 'Dzień na kredycie',
-      tagline: 'W dzień masz kontrolę. Wieczorem organizm odbiera dług.',
+      tagline: 'W dzień masz kontrolę. Wieczorem ciało odbiera dług.',
       mirror: 'Do osiemnastej jesteś ogarnięty. Potem leci telefon, lodówka i sen po pierwszej. Wieczorem spłacasz rachunek za cały dzień na kawie i stresie. Silna wola nie ma tu nic do gadania.',
     };
   }
@@ -224,3 +224,13 @@ export function hourRange(D: FD): string {
     default: return 'wieczorem';
   }
 }
+
+// ── SIŁA WZORCA: jawny mapper ze score (0-100 severity) na etykiete UI. Progi centralnie, nie w komponencie. ──
+export type PatternStrength = 'low' | 'clear' | 'high';
+export const PATTERN_STRENGTH_CUT = { clear: 40, high: 60 }; // score>=60 wysoka, >=40 wyrazna, ponizej niska
+export function patternStrength(score: number): PatternStrength {
+  if (score >= PATTERN_STRENGTH_CUT.high) return 'high';
+  if (score >= PATTERN_STRENGTH_CUT.clear) return 'clear';
+  return 'low';
+}
+export const PATTERN_STRENGTH_LABEL: Record<PatternStrength, string> = { low: 'niska', clear: 'wyraźna', high: 'wysoka' };

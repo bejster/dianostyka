@@ -40,6 +40,10 @@ export interface RawAnswers {
   defer_count?: string;
   retreat_when?: string;
   user_pain?: string;
+  // samoocena (v2.9) — czytane wylacznie przez awareness-gap.ts, poza scoringiem i poza FD
+  self_energy?: number;
+  self_drive?: number;
+  stagnation_12m?: string;
   [key: string]: unknown;
 }
 

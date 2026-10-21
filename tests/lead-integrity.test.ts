@@ -52,9 +52,9 @@ test('warunkowe pytania: treningi i weekend wymagane tylko wtedy, gdy dotyczy', 
   assert.ok(invalidDiagnosticFields(a).includes('missed_trainings'));
   a.missed_trainings = 0;
   assert.ok(!invalidDiagnosticFields(a).includes('missed_trainings'));
+  // weekend_cash wycięte w linii release 2026-08-26 (condition: () => false): nie może bramkować leada.
   a.weekend_pattern = 'wp_reset';
-  assert.ok(invalidDiagnosticFields(a).includes('weekend_cash'));
-  a.weekend_cash = 0;
+  assert.ok(!invalidDiagnosticFields(a).includes('weekend_cash'));
   assert.deepEqual(invalidDiagnosticFields(a), []);
 });
 test('zakresy, stopnie suwaka i brak zawyżania przy zerze', () => {

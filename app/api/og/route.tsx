@@ -2,12 +2,79 @@ import { ImageResponse } from 'next/og';
 
 export const runtime = 'edge';
 
-// Dynamiczny OG: link /w?g=..&t=..&s=.. pokazuje w podglądzie (Messenger/IG/WhatsApp) godzinę pęknięcia usera.
+// Bez parametru g route jest publicznym OG Diagnostyki. Gdy /w poda g, zachowujemy
+// personalizowany podgląd godziny pęknięcia bez wymyślania jej dla zimnego ruchu.
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
-  const g = (searchParams.get('g') || '22:47').slice(0, 24);
+  const rawG = searchParams.get('g');
+  const g = rawG ? rawG.slice(0, 24) : '';
   const t = (searchParams.get('t') || '').slice(0, 48);
   const s = (searchParams.get('s') || '').slice(0, 3);
+  // v=th2: podgląd linku /rozjazd (TH2). Obraz niesie jedno pytanie, og:title dokłada drugie.
+  // 2026-10-14: z obrazu wyleciały oś kroków, podpis i badge. Za dużo tekstu w karcie FB.
+  const th2 = searchParams.get('v') === 'th2';
+
+  if (!g) {
+    const brand = (
+      <div style={{ display: 'flex', position: 'absolute', top: 54, left: 74, fontSize: 18, letterSpacing: 8, color: '#8a7535', fontWeight: 800 }}>
+        DIAGNOSTYKA 168
+      </div>
+    );
+    // Obietnica = to, co realnie stoi na ekranie wyniku: "Gdzie zaczynasz" + "Pierwszy ruch 72h" (/pp §14A).
+    const payoff = (
+      <div style={{ display: 'flex', position: 'absolute', bottom: 50, left: 0, right: 0, justifyContent: 'center', fontSize: 32, color: '#c2ab6c' }}>
+        Na końcu: gdzie to się u Ciebie zaczyna i co zrobić przez 3 dni
+      </div>
+    );
+    const frame = {
+      width: '100%',
+      height: '100%',
+      display: 'flex',
+      position: 'relative' as const,
+      alignItems: 'center',
+      justifyContent: 'center',
+      background: 'radial-gradient(circle at 50% 5%, #1b170d 0%, #09090a 48%, #050506 100%)',
+      color: '#ece7db',
+      fontFamily: 'Arial, sans-serif',
+    };
+
+    if (th2) {
+      return new ImageResponse(
+        (
+          <div style={{ ...frame, flexDirection: 'column' }}>
+            {brand}
+            <div style={{ display: 'flex', fontFamily: 'Georgia, serif', fontSize: 84, lineHeight: 1.02, textAlign: 'center' }}>
+              Gdzie pęka Twój tydzień?
+            </div>
+            <div style={{ display: 'flex', width: 120, height: 3, marginTop: 40, background: '#c8a84e' }} />
+            {payoff}
+          </div>
+        ),
+        { width: 1200, height: 630 }
+      );
+    }
+
+    // General: zakład kontra tydzień. Puste pole i znak zapytania zostają otwarte do wyniku.
+    const card = { display: 'flex', flexDirection: 'column' as const, justifyContent: 'space-between', width: 460, height: 320, padding: '36px 40px', borderRadius: 18 };
+    return new ImageResponse(
+      (
+        <div style={frame}>
+          {brand}
+          <div style={{ ...card, border: '2px solid #2d2a22', background: '#0e0d0a' }}>
+            <div style={{ display: 'flex', fontSize: 28, letterSpacing: 5, color: '#a49e92', fontWeight: 800 }}>TY OBSTAWIASZ</div>
+            <div style={{ display: 'flex', width: '100%', height: 3, marginBottom: 46, background: '#5b5242' }} />
+          </div>
+          <div style={{ display: 'flex', fontFamily: 'Georgia, serif', fontSize: 40, color: '#6f6858', margin: '0 34px' }}>vs</div>
+          <div style={{ ...card, border: '2px solid #b99a4a', background: '#15130e', boxShadow: '0 0 60px rgba(200,168,78,.18)' }}>
+            <div style={{ display: 'flex', fontSize: 28, letterSpacing: 5, color: '#c8a84e', fontWeight: 800 }}>TWÓJ TYDZIEŃ MÓWI</div>
+            <div style={{ display: 'flex', fontFamily: 'Georgia, serif', fontSize: 170, lineHeight: 0.9, color: '#f2d98f' }}>?</div>
+          </div>
+          {payoff}
+        </div>
+      ),
+      { width: 1200, height: 630 }
+    );
+  }
 
   return new ImageResponse(
     (
@@ -40,7 +107,7 @@ export async function GET(req: Request) {
           </div>
         ) : null}
         <div style={{ display: 'flex', fontSize: 26, color: '#8a857a', marginTop: 48 }}>
-          Sprawdź swoją godzinę:
+          Sprawdź swój pierwszy punkt:
         </div>
         <div style={{ display: 'flex', fontSize: 30, color: '#c8a84e', fontWeight: 700, marginTop: 6 }}>
           diagnostyka.talerzihantle.com

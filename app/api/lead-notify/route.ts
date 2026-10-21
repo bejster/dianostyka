@@ -1,106 +1,235 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { answersToFD } from '../../lib/answers-to-fd';
-import { score, pickArchetype, hourRange, tagScoreWeighted } from '../../lib/diagnostic-core';
-import { cleanInstagram, invalidDiagnosticFields } from '../../lib/lead-integrity';
-import type { RawAnswers } from '../../lib/scoring-engine';
+import { buildLeadOperatorDecision } from '../../lib/lead-operator-decision';
+import { invalidDiagnosticFields, validInstagram } from '../../lib/lead-integrity';
 
-const INTENTS: Record<string, string> = {
-  in_sam: 'samodzielnie — bez oferty',
-  in_zobacz: 'chce zobaczyć prowadzenie',
-  in_prowadz: 'chce prowadzenia',
-  in_niewiem: 'jeszcze nie zdecydował',
-};
-const STARTS: Record<string, string> = {
-  sw_7dni: 'w tym tygodniu',
-  sw_30dni: 'w tym miesiącu',
-  sw_kwartal: 'za 2–3 miesiące',
-  sw_sprawdzam: 'na razie sprawdza',
-};
-const s = (v: unknown, max = 100) => String(v ?? '').replace(/\s+/g, ' ').trim().slice(0, max);
+const NOTION_CHUNK = 1900;
 
-function worstCategory(D: ReturnType<typeof answersToFD>): string {
-  const categories = [
-    { label: 'Sen', pct: Math.max(100 - Math.round(((D.sleepQ + D.screenBed) / 6 + (7.5 - Math.min(D.sleep, 7.5)) / 1.5) * 55), 5) },
-    { label: 'Stres', pct: Math.max(100 - Math.round(((D.stress + D.energy + (D.workHours > 9 ? 1 : 0)) / 7) * 100), 5) },
-    { label: 'Żywienie', pct: Math.max(100 - Math.round((D.binge / 4) * 70 + (D.veggies + D.protein) * 7), 5) },
-    { label: 'Weekend', pct: Math.max(100 - Math.round((D.drinks / 12) * 40 + D.wknd * 10 + D.mondayFeel * 8), 5) },
-    { label: 'Trening', pct: Math.max(100 - Math.round(((D.miss * 1.5 + (D.trainHappy >= 1 && D.trainHappy <= 2 ? 1 : 0)) / 4) * 100), 5) },
-    { label: 'Głowa', pct: Math.max(100 - Math.round((tagScoreWeighted(D.tags) / 10) * 60 + D.defer * 8 + D.dopamine * 6 + (D.triedBefore >= 2 ? 10 : 0)), 5) },
-  ];
-  return categories.reduce((a, b) => a.pct < b.pct ? a : b).label;
+function chunkForNotion(value: unknown, parts: number): string[] {
+  const text = typeof value === 'string' ? value : JSON.stringify(value ?? {});
+  const limit = NOTION_CHUNK * parts;
+  const safe = text.length <= limit ? text : text.slice(0, limit);
+  return Array.from({ length: parts }, (_, i) => safe.slice(i * NOTION_CHUNK, (i + 1) * NOTION_CHUNK));
 }
 
-// Wyłącznie kontaktowalne, KOMPLETNE leady. Nie przyjmujemy scoringu/budżetu od przeglądarki.
-// Anonimowe wyniki są analityką, nie kandydatami do DM.
-export async function POST(req: NextRequest) {
-  const rawBody: unknown = await req.json().catch(() => null);
-  const b = rawBody && typeof rawBody === 'object' && !Array.isArray(rawBody)
-    ? rawBody as Record<string, unknown> : null;
-  const invalid = invalidDiagnosticFields(b?.answers);
-  if (invalid.length) {
-    return NextResponse.json(
-      { ok: false, error: 'incomplete_lead', invalid_fields: invalid },
-      { status: 422 },
-    );
-  }
+function jsonLiteral(value: unknown): string {
+  return JSON.stringify(String(value ?? ''));
+}
 
-  const raw = b!.answers as RawAnswers;
-  const ig = cleanInstagram(raw.instagram);
-  const D = answersToFD(raw);
-  const sc = score(D);
-  const worst = worstCategory(D);
-  const archetype = pickArchetype(D, worst);
-  const intent = String(raw.intent);
-  const start = String(raw.start_when);
-  const wantsHelp = intent === 'in_prowadz' || intent === 'in_zobacz';
-  const soon = start === 'sw_7dni' || start === 'sw_30dni';
-  // Priorytet ≠ duży problem. Nie udajemy, że wydatki na weekend = budżet na opiekę.
-  const priority = wantsHelp && soon && sc >= 40;
-  const name = s(raw.imie ?? raw.name, 40);
-  const label = name ? `${name} · @${ig}` : `@${ig}`;
-  const point = hourRange(D);
-  const statedProblem = s(raw.user_pain, 200); // własne słowa z wymaganego pola, bez dopisywania interpretacji
-
-  const followUp =
-    intent === 'in_prowadz'
-      ? `DM: „Cześć${name ? ' ' + name : ''}, widzę, że chcesz, żeby ktoś Cię poprowadził. Zaznaczyłeś, że tydzień zaczyna Ci się psuć: ${point}. Co dokładnie dzieje się wtedy, zanim odpuścisz plan?”`
-      : intent === 'in_zobacz'
-      ? `DM: „Cześć${name ? ' ' + name : ''}, widzę, że chcesz sprawdzić, jak wygląda prowadzenie. Zanim coś podeślę: gdy zaczyna się u Ciebie ${point}, co najczęściej wypada jako pierwsze?”`
-      : intent === 'in_sam'
-      ? 'Następny ruch: deklaruje samodzielne działanie. Nie wysyłaj oferty bez nowego sygnału zainteresowania.'
-      : 'Następny ruch: nie zdecydował. Bez presji i przypisywania pilności; poczekaj na nowy sygnał.';
-
-  const lines = [
-    `${priority ? '🔥' : '📩'} NOWY LEAD — DIAGNOSTYKA`,
-    `👤 ${label} → instagram.com/${ig}`,
-    `Natężenie problemu: ${sc}/100 · ${archetype.label}`,
-    `Punkt pęknięcia: ${point} · obszar: ${worst}`,
-    `Jego słowa: „${statedProblem}”`,
-    `Intencja: ${INTENTS[intent]} · start: ${STARTS[start]}`,
-    `Priorytet kontaktu: ${priority ? 'P1 — prosi o pomoc i wskazał termin' : 'standardowy — bez potwierdzenia pilnej decyzji'}`,
-    '',
-    followUp,
-  ];
-
-  const token = process.env.TELEGRAM_LEADS_BOT_TOKEN || process.env.TELEGRAM_BOT_TOKEN;
-  const chat = process.env.TELEGRAM_LEADS_CHAT_ID || '-1004328603395';
-  if (!token || !chat) {
-    console.error('diagnostic lead delivery unavailable: missing configuration');
-    return NextResponse.json({ ok: false, error: 'telegram_unavailable' }, { status: 503 });
-  }
+async function postJson(url: string, body: unknown): Promise<{ ok: boolean; status: number | null }> {
   try {
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify(body),
+      signal: AbortSignal.timeout(8_000),
+    });
+    return { ok: response.ok, status: response.status };
+  } catch {
+    return { ok: false, status: null };
+  }
+}
+
+// ── Powiadomienie o leadzie z diagnostyki -> dedykowany kanal Telegram (np. "HiT Leady") ──
+// Odpala sie ZAWSZE, gdy ktos skonczy quiz (nie wymaga maila). Kwalifikacja jest liczona po stronie
+// klienta (page.tsx qualify()) i przekazana tutaj tylko do sformatowania wiadomosci.
+// Kanal: TELEGRAM_LEADS_CHAT_ID; gdy nieustawiony, spada na TELEGRAM_CHAT_ID, zeby nic sie nie gubilo.
+export async function POST(req: NextRequest) {
+  try {
+    const b = (await req.json().catch(() => ({}))) as Record<string, unknown>;
+
+    // Wyłącznie kompletne sesje: pusta albo przywrócona sesja nie trafia ani do CRM, ani na Telegram.
+    // Kontakt jest w tej linii opcjonalny, więc brak @ nie bramkuje zapisu; resztę sprawdzamy tak jak UI.
+    const invalid = invalidDiagnosticFields(b.raw_answers).filter((id) => id !== 'instagram');
+    if (invalid.length) {
+      return NextResponse.json({ ok: false, error: 'incomplete_lead', invalid_fields: invalid }, { status: 422 });
+    }
+
+    // ── CRM PERSISTENCE: Make zapisuje pełny output, n8n jest tylko fallbackiem minimalnym. ──
+    // Make ma idempotentny router Lead Ref -> UPDATE/CREATE i aktywne canonical Notion credentials.
+    // Raw answers nigdy nie trafiają do PostHoga; ten payload idzie wyłącznie prywatną ścieżką CRM.
+    const makeUrl = (process.env.MAKE_DIAGNOSTYKA_WEBHOOK || '').trim();
+    const leadRef = String(b.lead_ref ?? '').trim();
+    const instagram = String(b.instagram ?? '').replace(/^@/, '').trim();
+    const imie = String(b.imie ?? '').trim();
+    const rawChunks = chunkForNotion(b.raw_answers ?? {}, 4);
+    const derivedChunks = chunkForNotion(b.derived_signals ?? {}, 2);
+    const briefChunks = chunkForNotion(b.diagnostyka_brief ?? '', 3);
+    const qaSynthetic = b.qa_synthetic === true;
+    const displayName = imie || instagram || (leadRef ? `Diagnostyka ${leadRef.slice(-8)}` : 'Diagnostyka lead');
+
+    let makeOk: boolean | null = null;
+    let makeStatus: number | null = null;
+    if (makeUrl) {
+      const makeBody = {
+        event: 'diagnostyka_complete',
+        lead_ref: leadRef,
+        instagram,
+        qa_synthetic: qaSynthetic,
+        score: Number(b.score) || 0,
+        severity_band: String(b.severity_band ?? ''),
+        archetyp: String(b.archetyp ?? ''),
+        archetypKey: String(b.archetypKey ?? ''),
+        followup_priority: b.followup_priority === true,
+        wants_help: b.wants_help === true,
+        intencja: String(b.intencja ?? ''),
+        kiedy_start: String(b.kiedy_start ?? ''),
+        entry_door: String(b.entry_door ?? ''),
+        entry_topic: String(b.entry_topic ?? ''),
+        entry_variant: String(b.entry_variant ?? ''),
+        acquisition_channel_json: jsonLiteral(
+          String(b.entry_door ?? '') === 'th2'
+            ? 'TH2 → HiT'
+            : String(b.entry_door ?? '') === 'hit'
+              ? 'HiT Organic'
+              : 'Diagnostyka 168'
+        ),
+        acquisition_detail_json: jsonLiteral(String(b.entry_variant ?? '')),
+        lead_ref_json: jsonLiteral(leadRef),
+        instagram_json: jsonLiteral(instagram),
+        name_json: jsonLiteral(displayName),
+        raw_1_json: jsonLiteral(rawChunks[0]),
+        raw_2_json: jsonLiteral(rawChunks[1]),
+        raw_3_json: jsonLiteral(rawChunks[2]),
+        raw_4_json: jsonLiteral(rawChunks[3]),
+        derived_1_json: jsonLiteral(derivedChunks[0]),
+        derived_2_json: jsonLiteral(derivedChunks[1]),
+        brief_1_json: jsonLiteral(briefChunks[0]),
+        brief_2_json: jsonLiteral(briefChunks[1]),
+        brief_3_json: jsonLiteral(briefChunks[2]),
+        pain_json: jsonLiteral(String(b.pain ?? '')),
+        record_type_json: jsonLiteral(qaSynthetic ? 'TEST' : 'REAL'),
+        exclude_kpi_json: qaSynthetic ? 'true' : 'false',
+        do_not_contact_json: qaSynthetic ? 'true' : 'false',
+      };
+      const makeResult = await postJson(makeUrl, makeBody);
+      makeOk = makeResult.ok;
+      makeStatus = makeResult.status;
+    }
+
+    // n8n zostaje jako bezpieczny minimalny fallback, ale nie może ścigać się z udanym zapisem Make.
+    // 409 z Make oznacza konflikt tożsamości wymagający review, więc nie obchodzimy go innym writerem.
+    const n8nUrl = (process.env.N8N_DIAGNOSTYKA_WEBHOOK || '').trim();
+    let n8nOk: boolean | null = null;
+    const allowN8nFallback = makeOk !== true && makeStatus !== 409;
+    if (allowN8nFallback && n8nUrl) {
+      const n8nBody = {
+        event: 'diagnostyka_complete',
+        ...b,
+        priority_lead: b.followup_priority,
+        segment: b.severity_band,
+        received_at: new Date().toISOString(),
+      };
+      n8nOk = (await postJson(n8nUrl, n8nBody)).ok;
+    }
+
+    if (qaSynthetic) {
+      return NextResponse.json({ ok: makeOk === true || n8nOk === true, qa: true, telegram: false, make: makeOk, makeStatus, n8n: n8nOk });
+    }
+
+    // Anonimowy wynik to analityka, nie kandydat do DM: zapis w CRM zostaje, alert sprzedażowy nie idzie.
+    if (!validInstagram(b.instagram)) {
+      return NextResponse.json({ ok: makeOk === true || n8nOk === true, reason: 'anonymous', telegram: false, make: makeOk, makeStatus, n8n: n8nOk });
+    }
+
+    // Osobny bot dla leadow (Nocna Zmiana, admin w HiT Leady). Fallback na wspolny, gdy nieustawiony.
+    const token = process.env.TELEGRAM_LEADS_BOT_TOKEN || process.env.TELEGRAM_BOT_TOKEN;
+    // Domyslnie kanal "HiT Leady" (chat_id z t.me/c/4328603395). Env moze nadpisac.
+    const chat = process.env.TELEGRAM_LEADS_CHAT_ID || '-1004328603395';
+    if (!token || !chat) {
+      // Notion juz dostal swoje wyzej. Lead nie ginie, brakuje tylko powiadomienia.
+      return NextResponse.json({ ok: makeOk === true || n8nOk === true, reason: 'no_telegram_config', telegram: false, make: makeOk, makeStatus, n8n: n8nOk });
+    }
+
+    const s = (v: unknown, max = 200) => String(v ?? '').replace(/\s+/g, ' ').trim().slice(0, max);
+    // Handle IG = jedyny kontakt do leada. Bez niego nie ma jak sie odezwac.
+    const ig = s(b.instagram, 60).replace(/[@\s]/g, '');
+    const score = Number(b.score) || 0;
+    const priority = b.followup_priority === true;
+    const intent = s(b.intencja, 20);
+    const startWhen = s(b.kiedy_start, 20);
+    const premiumFit = s(b.premium_fit, 20);
+    const decision = buildLeadOperatorDecision({
+      hasInstagram: Boolean(ig),
+      intent,
+      startWhen,
+      premiumFit,
+      wantsHelp: b.wants_help === true,
+      followupPriority: priority,
+    });
+
+    // ── Gotowy opener DM (per archetyp, w glosie Michala) + wskazowka jak grac ──
+    const im = s(b.imie, 40);
+    const greet = im ? `Cześć ${im}` : 'Cześć';
+    const OPENERS: Record<string, string> = {
+      weekend_reset: `${greet}, widziałem Twój wynik. Piątkę dni budujesz, a weekend kasuje Ci to w dwa i w poniedziałek startujesz od minusa. Powiedz mi szczerze: ile z ostatnich czterech poniedziałków ruszyłeś z pełną głową?`,
+      wieczorny_odpad: `${greet}, Twój wynik to klasyk. W dzień ogarniasz, a wieczorem lodówka i telefon do późna przejmują stery. Ciekawi mnie jedno: ten wieczór bardziej ucieka Ci na jedzeniu czy na scrollowaniu do pierwszej?`,
+      glowa_zajezdza: `${greet}, u Ciebie ciało dostaje resztki, bo głowa po robocie nie schodzi z obrotów. Powiedz mi: o której odpuszczasz myślenie o robocie wieczorem?`,
+      wiedza_bez_wdrozenia: `${greet}, Twój wynik mówi wprost: wiedzy masz aż nadto, a tydzień wykłada Ci się na wykonaniu. Ile razy w tym roku odpaliłeś plan, który padł przed miesiącem?`,
+      silnik_bez_paliwa: `${greet}, robisz swoje, a i tak lecisz na pół mocy i coś pod spodem nie gra. Od jak dawna masz tak, że niby wszystko ok, a energii zero?`,
+    };
+    const opener = OPENERS[s(b.archetypKey, 40)] || `${greet}, widziałem Twój wynik z diagnostyki. Powiedz mi, co Cię w tym tygodniu najbardziej wkurza?`;
+
+    // ── 1 TAP OUTBOUND: deep link z Telegrama prosto do DM leada z gotowym openerem ──
+    // Skraca first-touch do sekund (bez szukania profilu i przepisywania). Ten sam mechanizm
+    // ig.me/m/<handle>?text=, ktorego uzywa Karta (lead -> Michal). Fallback: przycisk Profil.
+    const openerForLink = opener.slice(0, 900); // bezpieczny limit dlugosci URL w przycisku Telegrama
+    const dmLink = ig ? `https://ig.me/m/${ig}?text=${encodeURIComponent(openerForLink)}` : '';
+    const profileLink = ig ? `https://instagram.com/${ig}` : '';
+    const entryDoor = s(b.entry_door, 12);
+    const entryVariant = s(b.entry_variant, 40);
+    const sourceLabel = entryDoor === 'th2'
+      ? 'TH2 · Talerz i Hantle'
+      : entryDoor === 'hit'
+        ? 'HiT · Hantle i Talerz'
+        : 'Diagnostyka 168';
+    const severity = s(b.severity_band, 20) || '—';
+    const archetype = s(b.archetyp, 60);
+    const who = ig
+      ? `👤 ${im ? `${im} · ` : ''}@${ig}`
+      : '👤 lead anonimowy';
+
+    const lines = [
+      `${decision.icon} ${decision.headline}`,
+      who,
+      `Źródło: ${sourceLabel}${entryVariant && entryVariant !== entryDoor ? ` · ${entryVariant}` : ''}`,
+      '',
+      `KANDYDAT: ${decision.offerLabel}`,
+      `FIT: ${decision.fitLabel}`,
+      `INTENT: ${decision.intentLabel}`,
+      `URGENCY: ${decision.urgencyLabel}`,
+      'FINANSE: ? · nie pytaliśmy',
+      '',
+      `PROBLEM: ${score}/100 ${severity}${archetype ? ` · ${archetype}` : ''}`,
+      `PUNKT PĘKNIĘCIA: ${s(b.godzina, 40) || '—'} · obszar: ${s(b.worstCat, 30) || '—'}`,
+      '',
+      `BLOCKER: ${decision.blocker}`,
+      `NEXT MOVE: ${decision.nextMove}`,
+      ...(decision.lane === 'NO_CONTACT' ? [] : ['', 'DM NOW:', opener]),
+    ];
+
     const res = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ chat_id: chat, text: lines.join('\n'), disable_web_page_preview: true }),
+      body: JSON.stringify({
+        chat_id: chat,
+        text: lines.join('\n'),
+        disable_web_page_preview: true,
+        // Inline button: 1 tap -> DM leada z gotowym openerem. Tylko gdy jest handle IG.
+        ...(dmLink ? {
+          reply_markup: {
+            inline_keyboard: [[
+              { text: '💬 DM teraz', url: dmLink },
+              { text: '👤 Profil', url: profileLink },
+            ]],
+          },
+        } : {}),
+      }),
     });
-    if (!res.ok) {
-      console.error('diagnostic lead delivery failed', res.status);
-      return NextResponse.json({ ok: false, error: 'telegram_failed' }, { status: 502 });
-    }
-    return NextResponse.json({ ok: true });
+    // Oba kanaly raportowane osobno, zeby dalo sie odroznic cichy brak wiersza w Notion
+    // od braku powiadomienia na Telegramie. Wywolanie z page.tsx jest fire-and-forget,
+    // wiec to widac dopiero w logach Vercela, ale tam widac dokladnie ktora rura padla.
+    return NextResponse.json({ ok: (makeOk === true || n8nOk === true) && res.ok, telegram: res.ok, make: makeOk, makeStatus, n8n: n8nOk });
   } catch {
-    console.error('diagnostic lead delivery exception');
-    return NextResponse.json({ ok: false, error: 'telegram_failed' }, { status: 502 });
+    return NextResponse.json({ ok: false, reason: 'error' });
   }
 }

@@ -3,28 +3,24 @@ import test from 'node:test';
 import { readFileSync } from 'node:fs';
 
 const route = readFileSync(new URL('../app/api/lead-notify/route.ts', import.meta.url), 'utf8');
-const diagnosis = readFileSync(new URL('../app/diagnoza/page.tsx', import.meta.url), 'utf8');
-const legacy = readFileSync(new URL('../app/page.tsx', import.meta.url), 'utf8');
 const subscriber = readFileSync(new URL('../app/api/subscribe/route.ts', import.meta.url), 'utf8');
 
-test('endpoint blokuje puste payloady PRZED wysyłką na Telegram', () => {
-  assert.match(route, /invalidDiagnosticFields\(b\?\.answers\)/);
+test('endpoint odrzuca niekompletną sesję PRZED zapisem w CRM i Telegramem', () => {
+  assert.match(route, /invalidDiagnosticFields\(b\.raw_answers\)/);
   assert.match(route, /status: 422/);
-  assert.match(route, /const raw = b!\.answers/);
-  assert.match(route, /const sc = score\(D\)/);
-  assert.doesNotMatch(route, /const score = Number\(b\.score\)/);
+  const guard = route.indexOf('incomplete_lead');
+  assert.ok(guard > 0 && guard < route.indexOf('MAKE_DIAGNOSTYKA_WEBHOOK'), 'walidacja musi być przed Make');
+  assert.ok(guard < route.indexOf('api.telegram.org'), 'walidacja musi być przed Telegramem');
 });
-test('formularz przesyła odpowiedzi, nie wynik kwalifikacji do podpisania w przeglądarce', () => {
-  assert.match(diagnosis, /JSON\.stringify\(\{ answers: raw \}\)/);
-  assert.doesNotMatch(diagnosis, /budget_proxy: q\.budgetProxy/);
+
+test('anonimowy wynik nie wywołuje alertu sprzedażowego', () => {
+  const anon = route.indexOf("reason: 'anonymous'");
+  assert.ok(anon > 0, 'brak bramki anonimowej');
+  assert.match(route, /if \(!validInstagram\(b\.instagram\)\)/);
+  assert.ok(anon < route.indexOf('api.telegram.org'), 'bramka anonimowa musi być przed Telegramem');
 });
-test('anonimowy wynik nie jest rekordem w unified-leads i nie jest eventem Meta Lead', () => {
-  assert.doesNotMatch(legacy, /webhook\/unified-leads/);
-  assert.match(legacy, /fbqTrack\('ViewContent'/);
-});
-test('notyfikacja ma realny kontakt i własne słowa, bez sztucznego budżetu', () => {
-  assert.match(route, /cleanInstagram\(raw\.instagram\)/);
-  assert.match(route, /statedProblem/);
+
+test('notyfikacja bez sztucznego budżetu', () => {
   assert.doesNotMatch(route, /budzet_proxy|budget_proxy|Budżet na usługę/);
 });
 

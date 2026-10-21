@@ -14,6 +14,7 @@ export function Atmosphere({ variant = 'stars' }: { variant?: 'stars' | 'smoke' 
   return (
     <div className="dx-atmo" aria-hidden>
       <style>{DX_CSS}</style>
+      <div className="dx-key" />
       {variant === 'stars' ? (
         <div className="dx-stars">
           {stars.map((s, i) => <span key={i} style={{ left: `${s.x}%`, top: `${s.y}%`, width: s.s, height: s.s, animationDelay: `${s.d}s` }} />)}
@@ -40,7 +41,16 @@ const DX_CSS = `
 @keyframes dxd2 { 0%,100% { transform: translate(0,0) scale(1.1); } 50% { transform: translate(-7vw,-5vh) scale(0.92); } }
 @keyframes dxd3 { 0%,100% { transform: translate(0,0) scale(0.95); } 50% { transform: translate(-6vw,-8vh) scale(1.15); } }
 .dx-vig { position: fixed; inset: 0; z-index: 0; background: radial-gradient(120% 90% at 50% 8%, transparent 40%, rgba(0,0,0,0.6) 100%); }
-.dx-grain { position: fixed; inset: -50%; z-index: 0; opacity: 0.08; mix-blend-mode: overlay;
+/* Światło kluczowe: ciepły key z górnego lewego + zimniejszy odbłysk z prawego dołu.
+   Bez tego czerń jest płaska i strona czyta się jak szablon, nie jak kadr. */
+.dx-key { position: fixed; inset: 0; z-index: 0;
+  background:
+    radial-gradient(64% 52% at 16% -6%, rgba(214,180,96,0.155), transparent 63%),
+    radial-gradient(52% 44% at 96% 104%, rgba(224,85,46,0.075), transparent 60%),
+    radial-gradient(120% 120% at 50% 50%, rgba(28,34,44,0.5), transparent 70%); }
+/* Ziarno musi ROZJAŚNIAĆ czerń, więc screen. Na overlay czarny piksel zostaje czarny
+   i cała warstwa nie robi nic — tak było wcześniej. */
+.dx-grain { position: fixed; inset: -50%; z-index: 0; opacity: 0.085; mix-blend-mode: screen;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
   animation: dxgr 0.5s steps(2) infinite; }
 @keyframes dxgr { 0% { transform: translate(0,0); } 50% { transform: translate(-3%,2%); } 100% { transform: translate(2%,-3%); } }
