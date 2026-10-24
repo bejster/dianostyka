@@ -8,17 +8,17 @@ const DESCRIPTION = 'Sen, energia, apetyt, stres, trening i powrót po weekendzi
 // Karta linku: obraz zadaje pytanie, og:title nie może go powtarzać.
 const OG_TITLE = 'Pilnujesz się cały tydzień, a w weekend wszystko się sypie?';
 const OG_DESCRIPTION = 'Sen, apetyt czy stres? Wynik pokaże, od czego to się zaczyna.';
-const OG_IMAGE = 'https://diagnostyka.talerzihantle.com/api/og?v=th2';
+const OG_IMAGE = 'https://168.talerzihantle.com/api/og?v=th2';
 
 export const metadata: Metadata = {
-  title: `${TITLE} | Diagnostyka 168`,
+  title: `${TITLE} | Mapa 168`,
   description: DESCRIPTION,
-  alternates: { canonical: 'https://diagnostyka.talerzihantle.com/rozjazd' },
+  alternates: { canonical: 'https://168.talerzihantle.com/rozjazd' },
   openGraph: {
     title: OG_TITLE,
     description: OG_DESCRIPTION,
-    url: 'https://diagnostyka.talerzihantle.com/rozjazd',
-    siteName: 'Diagnostyka 168 | Hantle i Talerz',
+    url: 'https://168.talerzihantle.com/rozjazd',
+    siteName: 'Mapa 168 | Talerz i Hantle',
     images: [{ url: OG_IMAGE, width: 1200, height: 630 }],
     locale: 'pl_PL',
     type: 'website',
