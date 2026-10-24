@@ -26,9 +26,9 @@ test('obraz OG obiecuje to, co jest na ostatnim ekranie', () => {
 });
 
 test('og:title nie dubluje obrazu, opis krótki', () => {
-  assert.match(LAYOUT, /const OG_TITLE = 'Cały dzień się pilnujesz, a wieczorem i tak pękasz\?';/);
+  assert.match(LAYOUT, /const OG_TITLE = 'W pracy ogarniasz\. A kiedy zaczyna się sypać Twój tydzień\?';/);
   assert.match(ROZJAZD, /const OG_TITLE = 'Pilnujesz się cały tydzień, a w weekend wszystko się sypie\?';/);
-  assert.match(LAYOUT, /const OG_DESCRIPTION = 'Obstaw przyczynę\. Wynik pokaże, czy to w ogóle zaczyna się wieczorem\.';/);
+  assert.match(LAYOUT, /const OG_DESCRIPTION = 'Obstaw przyczynę\. Mapa 168 daje trop i test na 72 godziny\.';/);
   assert.match(ROZJAZD, /const OG_DESCRIPTION = 'Sen, apetyt czy stres\? Wynik pokaże, od czego to się zaczyna\.';/);
   for (const src of [LAYOUT, ROZJAZD]) {
     const desc = src.match(/const OG_DESCRIPTION = '([^']+)'/);

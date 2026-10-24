@@ -110,7 +110,7 @@ export function computeLoop(breakPhrase: string, evidence: string[], answers: Ra
     { label: 'Powrót po weekendzie', text: returnSignal(answers) },
     { label: 'Wniosek', text: uncertain
       ? `Odpowiedzi pokazują kilka różnych momentów, więc nie ustawiam przyczyny na siłę. Roboczo bierzemy ${cause} jako pierwszy podejrzany. Test 72h ma go potwierdzić albo wykluczyć.`
-      : `Roboczo ustawiam to tak: przyczyną jest ${cause}. Wszystko, co widać dalej w tygodniu i w poniedziałek, jest już skutkiem. Dlatego test 72h wchodzi w przyczynę zamiast poprawiać skutki, bo skutki trzeba poprawiać co tydzień od nowa.` },
+      : `Roboczo biorę ${cause} jako najwcześniejszy trop. To może uruchamiać część rzeczy, które widzisz później, ale same odpowiedzi jeszcze tego nie dowodzą. Dlatego test 72h ma sprawdzić, czy zmiana w tym miejscu rusza coś dalej. Jeśli nie, szukamy gdzie indziej.` },
   ] };
 }
 

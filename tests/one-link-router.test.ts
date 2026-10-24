@@ -10,7 +10,7 @@ const nextConfig = fs.readFileSync(new URL('../next.config.ts', import.meta.url)
 
 test('root is the one canonical public entry and renders Diagnostyka', () => {
   assert.match(home, /export \{ default \} from '.\/diagnoza\/page'/);
-  assert.match(layout, /alternates:\s*\{ canonical: 'https:\/\/diagnostyka\.talerzihantle\.com\/' \}/);
+  assert.match(layout, /alternates:\s*\{ canonical: 'https:\/\/168\.talerzihantle\.com\/' \}/);
   // [\s\S]* zamiast .* z flaga /s: identyczne dopasowanie, ale bez flagi dotAll, ktorej
   // tsconfig z targetem ES2017 nie przepuszcza. Asercja zostaje dokladnie tak samo mocna.
   assert.doesNotMatch(nextConfig, /source:\s*['"]\/['"][\s\S]*destination:\s*['"]\/diagnoza['"]/);
@@ -22,7 +22,7 @@ test('public entry stays diagnostic while hot lane remains available by explicit
   assert.match(page, /fast_fit_to_nabor/);
   assert.match(page, /route: 'diagnostic'/);
   assert.doesNotMatch(page, /Wiem, że chcę działać\. Sprawdźmy, czy zakres pasuje/);
-  assert.match(fs.readFileSync('app/lib/entry-copy.ts', 'utf8'), /headline: 'Cały dzień się pilnujesz, a\u00a0wieczorem i\u00a0tak pękasz\?'/);
+  assert.match(fs.readFileSync('app/lib/entry-copy.ts', 'utf8'), /headline: 'W robocie dowozisz\. A po pracy nie masz już siły na siebie\?'/);
   assert.match(page, /ENTRY_COPY/);
   assert.doesNotMatch(page, /michal-portrait\.jpg/);
 });

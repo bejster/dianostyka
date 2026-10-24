@@ -12,7 +12,7 @@ export async function generateMetadata({ searchParams }: { searchParams: SP }): 
   const g = pick(sp.g, 24) || '22:47';
   const t = pick(sp.t, 48);
   const s = pick(sp.s, 3);
-  const img = `https://diagnostyka.talerzihantle.com/api/og?g=${encodeURIComponent(g)}&t=${encodeURIComponent(t)}&s=${encodeURIComponent(s)}`;
+  const img = `https://168.talerzihantle.com/api/og?g=${encodeURIComponent(g)}&t=${encodeURIComponent(t)}&s=${encodeURIComponent(s)}`;
   const title = `Moje ${g} · o tej godzinie pęka mój tydzień`;
   const description = 'Godzina, typ i rachunek w złotówkach. Sprawdź swoje w 5 minut.';
   return {

@@ -30,15 +30,15 @@ type Phase = 'intro' | 'intake' | 'teaser';
 
 // Front doors share one engine. Profile changes entry copy and analytics only.
 const DOOR_KICKER: Record<string, string> = {
-  general: 'Diagnostyka 168 · 5 min',
-  hit: 'Diagnostyka 168 · praca, dom i forma · 5 min',
-  th2: 'Talerz i Hantle · 5 min · wynik od razu',
+  general: 'Mapa 168 · Hantle i Talerz',
+  hit: 'Mapa 168 · Hantle i Talerz',
+  th2: 'Mapa 168 · Talerz i Hantle',
 };
 const TOPIC_LABEL: Record<string, string> = { sen: 'sen', energia: 'energia', glowa: 'głowa', jedzenie: 'jedzenie', trening: 'trening', weekend: 'weekend' };
 const RETURN_LINE: Record<HypothesisState, (l: string) => string> = {
   wzmocniona: (l) => `To wzmacnia trop: ${l}. Zostań przy tym jednym ruchu jeszcze tydzień, zanim dołożysz cokolwiek nowego.`,
   nierozstrzygnieta: (l) => `Trop „${l}” zostaje otwarty. Daj testowi jeszcze trzy dni i patrz na ten sam sygnał. Jedna zmienna naraz.`,
-  oslabiona: (l) => `To osłabia trop: ${l}. Dobrze to wiedzieć. Przejdź diagnostykę jeszcze raz i sprawdź, które ogniwo wyjdzie teraz.`,
+  oslabiona: (l) => `To osłabia trop: ${l}. Dobrze to wiedzieć. Przejdź Mapę 168 jeszcze raz i sprawdź, które ogniwo wyjdzie teraz.`,
 };
 
 // ── Sygnały leada dla operatora (niewidoczne dla usera) — WYŁĄCZNIE z jawnych sygnałów kupna/startu ──
@@ -260,7 +260,7 @@ export default function DiagnozaPage() {
         <Atmosphere />
         <div style={{ maxWidth: 480, margin: '0 auto', alignSelf: 'stretch', position: 'relative', zIndex: 1 }}>
           <div style={{ fontFamily: "'JetBrains Mono', ui-monospace, monospace", fontSize: 11, letterSpacing: 3, textTransform: 'uppercase', color: GOLD, fontWeight: 700, marginBottom: 22 }}>
-            Diagnostyka 168 · szybka ścieżka
+            Mapa 168 · szybka ścieżka
           </div>
           <h1 style={{ fontFamily: "'Instrument Serif', Georgia, serif", fontSize: 'clamp(30px, 7.5vw, 48px)', lineHeight: 1.08, fontWeight: 400, color: '#fff', margin: '0 0 20px', letterSpacing: '-0.01em' }}>
             Wiesz już, że chcesz działać. Sprawdźmy tylko, czy zakres pasuje.
@@ -281,7 +281,7 @@ export default function DiagnozaPage() {
             onClick={() => { registerContext({ mode: 'diagnostic' }); trackDiag('fast_fit_to_diagnostic'); setMode('diagnostic'); if (typeof window !== 'undefined') window.scrollTo({ top: 0 }); }}
             style={{ marginTop: 14, width: '100%', padding: '13px', background: 'transparent', color: '#8f887c', fontSize: 14, border: '1px solid #26262b', borderRadius: 12, cursor: 'pointer', letterSpacing: 0.3 }}
           >
-            Chcę najpierw przejść pełną diagnostykę
+            Chcę najpierw sprawdzić swój tydzień
           </button>
         </div>
       </div>

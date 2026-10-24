@@ -11,7 +11,7 @@ test('/rozjazd ma wlasny title i OG, nie dziedziczy hero general', () => {
   assert.match(ROUTE, /export const metadata/);
   assert.match(ROUTE, /Gdzie pęka Twój tydzień\?/);
   assert.match(ROUTE, /Zobaczysz, gdzie problem się zaczyna i który jeden ruch/);
-  assert.match(ROUTE, /canonical: 'https:\/\/diagnostyka\.talerzihantle\.com\/rozjazd'/);
+  assert.match(ROUTE, /canonical: 'https:\/\/168\.talerzihantle\.com\/rozjazd'/);
   assert.match(ROUTE, /\/api\/og\?v=th2/);
   assert.doesNotMatch(ROUTE, /Ile dni w tygodniu|Wiesz, co Ci psuje formę|naprawdę/);
 });

@@ -15,6 +15,7 @@ import type { RouteDecision } from '../lib/result-router-v3';
 import { BREAK_PHRASE, type LoopNode } from '../lib/fracture-engine';
 import type { AwarenessGap } from '../lib/awareness-gap';
 import { RETURN_KEY, sentenceCase, bridgeLine, MEDICAL_BOUNDARY, type DecisionResult, type ReturnRecord } from '../lib/decision-engine';
+import { buildResultHero } from '../lib/result-hero';
 
 const C = {
   ink: '#08080a', pan: '#141416', pan2: '#1a1a1d', line: '#26262b', line2: '#33333a',
@@ -282,7 +283,7 @@ export default function ResultExperience({
     const url = `${typeof window !== 'undefined' ? window.location.origin + window.location.pathname : ''}?${params.toString()}`;
     try {
       if (typeof navigator !== 'undefined' && navigator.share) {
-        navigator.share({ title: 'Diagnostyka 168', text: `Mój Punkt Pęknięcia: ${archLabel}`, url }).catch(() => {});
+        navigator.share({ title: 'Mapa 168', text: `Mój Punkt Pęknięcia: ${archLabel}`, url }).catch(() => {});
       } else if (typeof navigator !== 'undefined' && navigator.clipboard) {
         navigator.clipboard.writeText(url).catch(() => {});
       }
@@ -300,6 +301,7 @@ export default function ResultExperience({
   // wyniku nie przewijala sie w dol. 'clip' przycina poziom bez robienia scrollportu. Ten sam fix co w naborze.
   // Kicker bierze tylko pierwsze slowo imienia i tnie je do 20 znakow: dluzszy wpis lamal linie nad h1.
   const kickName = (imie || '').trim().split(/\s+/)[0]?.slice(0, 20) || '';
+  const opening = buildResultHero(decision, weakestStatus, hasCeilingRoom);
 
   return (
     <div className="rx" style={{ background: C.ink, color: C.paper, fontFamily: C.sans, minHeight: '100vh', overflowX: 'clip', position: 'relative' }}>
@@ -312,10 +314,11 @@ export default function ResultExperience({
         {/* BEAT 1 (V2.8) — GDZIE JESTEŚ TERAZ + GDZIE MASZ ZAPAS. Awareness-first: stan i pojemność
             przed nazwaniem Punktu Pęknięcia. Zero procentu potencjału, zero wymyślonych zysków. */}
         <section className="rx-beat rx-hero" data-beat="1">
-          <div className="rx-kick rx-kick-c">Twój wynik{kickName ? ` · ${kickName}` : ''}</div>
+          <div className="rx-kick rx-kick-c">Dobra{kickName ? `, ${kickName}` : ''}. Tu robi się ciekawie.</div>
           <div className="rx-hero-panel">
             <div className="rx-hero-signature" aria-hidden="true"><span/><span/><span/></div>
-            <h1 className="rx-arch">{hasCeilingRoom ? 'Poziom, na którym dziś jedziesz, nie jest jeszcze Twoim sufitem.' : 'Twój tydzień trzyma się dziś równo w pięciu obszarach.'}</h1>
+            <h1 className="rx-arch">{opening.headline}</h1>
+            <p className="rx-hero-lede">{opening.explanation}</p>
             {/* Linia zapasu (reserveLine) zeszla z hero w 3.0: pierwszy kadr niesie odczyt decyzji,
                 a liczba obszarow z zapasem stoi i tak przy mapie ponizej. */}
             {/* FLAGSHIP 3.0 ODCZYT DECYZJI: pierwszy kadr mowi, co chcial poprawic, co obstawil, gdzie jest
@@ -442,7 +445,7 @@ export default function ResultExperience({
             <p>{reserveLine}</p>
             <p>Tego na razie nie ruszaj: <strong>{strongestStatus?.label}</strong>. Trzyma się dziś najmocniej, bo {strongestStatus?.reason}.</p>
             <p>Ta liczba porównuje pięć obszarów wyłącznie między sobą. Nie jest procentem Twojej formy, procentem wykorzystanego potencjału ani wynikiem medycznym. Pod każdą osią masz odpowiedź, która najmocniej przesunęła liczbę.</p>
-            {flagDriveCheck && <p className="rx-medical">Napęd i libido siedzą u Ciebie nisko. Jeśli trwa to dłużej niż kilka tygodni, warto zrobić badania i omówić wyniki z lekarzem. Ta diagnostyka opiera się na Twoich odpowiedziach i tego nie zastąpi.</p>}
+            {flagDriveCheck && <p className="rx-medical">Napęd i libido siedzą u Ciebie nisko. Jeśli trwa to dłużej niż kilka tygodni, warto zrobić badania i omówić wyniki z lekarzem. Ta mapa opiera się na Twoich odpowiedziach i tego nie zastąpi.</p>}
           </div>
         </section>
 
@@ -510,7 +513,7 @@ export default function ResultExperience({
         {/* BEAT 5 — JEDEN eksperyment 72h z banku 20. Zero LLM. Commit -> reveal osobistego momentu obserwacji. */}
         <section className="rx-beat" data-beat="5" id="test-72h">
           <div className="rx-kick">Test na 72 godziny</div>
-          <h2 className="rx-h2" style={{ fontSize: 'clamp(24px,5vw,38px)' }}>Sprawdźmy, czy to się potwierdza w Twoim tygodniu.</h2>
+          <h2 className="rx-h2" style={{ fontSize: 'clamp(24px,5vw,38px)' }}>Nie wierz mi na słowo. Zrób jeden test i zobacz, czy ten trop w ogóle ma sens.</h2>
           <div className="rx-72line" aria-hidden="true"><span>0 h</span><i/><span>24 h</span><i/><span>48 h</span><i/><span>72 h</span></div>
           <div className="rx-exp">
             {/* Cztery identyczne karty czytaly sie jak lista rownorzednych polecen. Samo zadanie prowadzi,
@@ -627,7 +630,7 @@ export default function ResultExperience({
             </div>
           </details>
 
-          <div className="rx-expectation"><p>Jeśli myślisz o prowadzeniu, niżej masz następny krok.</p><p>Nie każę Ci opisywać od nowa tego, co przed chwilą wypełniłeś. Ta diagnostyka jest już punktem wyjścia.</p></div>
+          <div className="rx-expectation"><p>Jeśli myślisz o prowadzeniu, niżej masz następny krok.</p><p>Nie każę Ci opisywać od nowa tego, co przed chwilą wypełniłeś. Ten wynik jest już punktem wyjścia.</p></div>
 
           <div className="rx-final-action" data-compact="true">
             <h3>{route.primaryKicker}</h3>
@@ -692,6 +695,7 @@ const css = `
 .rx-pull{font-family:${C.serif};font-style:italic;color:${C.gold};border-left:2px solid ${C.goldD};padding-left:18px;line-height:1.4;font-size:clamp(19px,4vw,24px);margin:0}
 .rx-hero{position:relative;min-height:100svh;opacity:1;transform:none;display:flex;flex-direction:column;justify-content:center;text-align:center;align-items:center;padding:40px 0 max(112px,calc(env(safe-area-inset-bottom) + 92px))}
 .rx-arch{font-family:${C.serif};font-weight:400;line-height:1.1;font-size:clamp(30px,7.4vw,52px);color:${C.gold};margin:0 0 16px;letter-spacing:-.01em;max-width:18ch}
+.rx-hero-lede{color:${C.paper};font-size:clamp(14px,3.5vw,16px);line-height:1.58;max-width:44ch;margin:0 0 18px;text-wrap:pretty}
 /* To zdanie niesie caly wniosek otwarcia. W wersji mono 12px bylo najslabszym elementem bloku,
    czyli dowod czytal sie jak systemowa etykieta pod naglowkiem. Ma wage zdania, nie labelki. */
 .rx-redline{font-family:${C.sans};font-size:clamp(15px,4.1vw,17px);line-height:1.5;color:${C.paper};margin:0 auto 22px;max-width:34ch}
@@ -809,7 +813,7 @@ const css = `
    hero dostaje wysokosc od wlasnej tresci, a strzalka wraca do normalnego przeplywu. Mobile bez zmian. */
 @media(min-width:721px){.rx-hero{min-height:auto;padding-bottom:72px}.rx-cue{position:static;transform:none;margin-top:34px}}
 /* 3.1 desktop: od 1100 px hero wychodzi poza kolumne 620 i dzieli sie na teze (lewo) i odczyt (prawo). Flex center w .rx-hero centruje panel szerszy od rodzica. */
-@media(min-width:1100px){.rx-wrap{max-width:1040px}.rx-beat:not(.rx-hero){display:grid;grid-template-columns:280px minmax(0,680px);column-gap:60px}.rx-beat:not(.rx-hero)>*{grid-column:2}.rx-beat:not(.rx-hero)>.rx-kick{grid-column:1;grid-row:1 / span 24;align-self:start;position:sticky;top:88px;margin:8px 0 0;line-height:1.6}.rx-hero{padding-top:64px;align-items:stretch}.rx-hero>.rx-kick{justify-content:flex-start}.rx-hero-panel{width:100%;max-width:none;display:grid;grid-template-columns:minmax(0,5fr) minmax(0,6fr);column-gap:56px;align-content:start;text-align:left;padding:44px 48px 40px}.rx-hero-panel>*{grid-column:1}.rx-hero-signature{justify-content:flex-start;margin:0 0 22px}.rx-arch{max-width:13ch;font-size:clamp(40px,3.6vw,54px)}.rx-hero-panel>.rx-readout{grid-column:2;grid-row:1 / span 8;margin:0;align-self:start}.rx-hero-panel>.rx-ro-note{margin-top:22px}.rx-hero-signature,.rx-arch,.rx-ro-note{align-self:start}}
+@media(min-width:1100px){.rx-wrap{max-width:1040px}.rx-beat:not(.rx-hero){display:grid;grid-template-columns:280px minmax(0,680px);column-gap:60px}.rx-beat:not(.rx-hero)>*{grid-column:2}.rx-beat:not(.rx-hero)>.rx-kick{grid-column:1;grid-row:1 / span 24;align-self:start;position:sticky;top:88px;margin:8px 0 0;line-height:1.6}.rx-hero{padding-top:64px;align-items:stretch}.rx-hero>.rx-kick{justify-content:flex-start}.rx-hero-panel{width:100%;max-width:none;display:grid;grid-template-columns:minmax(0,5fr) minmax(0,6fr);column-gap:56px;align-content:start;text-align:left;padding:44px 48px 40px}.rx-hero-panel>*{grid-column:1}.rx-hero-signature{justify-content:flex-start;margin:0 0 22px}.rx-arch{max-width:18ch;font-size:clamp(37px,3.25vw,49px)}.rx-hero-panel>.rx-readout{grid-column:2;grid-row:1 / span 9;margin:0;align-self:start}.rx-hero-panel>.rx-ro-note{margin-top:22px}.rx-hero-panel>.rx-hero-lede{max-width:37ch;margin-bottom:22px}.rx-hero-signature,.rx-arch,.rx-ro-note{align-self:start}}
 .rx-hero-plan{display:inline-flex;align-items:center;gap:8px;margin-top:18px;padding:11px 16px;border:1px solid ${C.ruleS};border-radius:999px;color:${C.goldB};text-decoration:none;font-size:13.5px;font-weight:650;background:rgba(200,168,78,.06);transition:background .2s,border-color .2s,transform .2s}.rx-hero-plan:hover{background:rgba(200,168,78,.12);border-color:${C.gold};transform:translateY(-1px)}.rx-hero-plan span{display:inline-block;animation:rxbob 2.4s ease-in-out infinite}
 .rx-coach{scroll-margin-top:24px}
 .rx-plan{position:relative;margin:4px 0 18px;padding:22px 20px 6px;border:1px solid ${C.line2};border-radius:18px;background:radial-gradient(120% 80% at 0% 0%,rgba(200,168,78,.10),transparent 55%),linear-gradient(180deg,${C.pan2},${C.pan});box-shadow:0 1px 0 rgba(255,255,255,.04) inset,0 30px 80px -40px rgba(0,0,0,.9),0 0 0 1px rgba(200,168,78,.05);overflow:hidden}

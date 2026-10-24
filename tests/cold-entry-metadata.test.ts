@@ -6,9 +6,9 @@ const layout = fs.readFileSync('app/layout.tsx', 'utf8');
 const og = fs.readFileSync('app/api/og/route.tsx', 'utf8');
 
 test('cold social metadata carries the same curiosity loop as the public hero', () => {
-  assert.match(layout, /Cały dzień się pilnujesz, a wieczorem i tak pękasz\? \| Diagnostyka 168/);
-  assert.match(layout, /Zobacz, gdzie to się u Ciebie zaczyna i jaki ruch sprawdzić w najbliższe 3 dni/);
-  assert.match(layout, /https:\/\/diagnostyka\.talerzihantle\.com\/api\/og/);
+  assert.match(layout, /Mapa 168\. Sprawdź, gdzie zaczyna się sypać Twój tydzień/);
+  assert.match(layout, /Obstaw przyczynę\. Mapa 168 daje trop i test na 72 godziny/);
+  assert.match(layout, /https:\/\/168\.talerzihantle\.com\/api\/og/);
   assert.doesNotMatch(layout, /\/og\.png/);
 });
 
