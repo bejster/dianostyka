@@ -17,7 +17,7 @@ export async function GET(req: Request) {
   if (!g) {
     const brand = (
       <div style={{ display: 'flex', position: 'absolute', top: 54, left: 74, fontSize: 18, letterSpacing: 8, color: '#8a7535', fontWeight: 800 }}>
-        DIAGNOSTYKA 168
+        MAPA 168
       </div>
     );
     // Obietnica = to, co realnie stoi na ekranie wyniku: "Gdzie zaczynasz" + "Pierwszy ruch 72h" (/pp §14A).
@@ -110,7 +110,7 @@ export async function GET(req: Request) {
           Sprawdź swój pierwszy punkt:
         </div>
         <div style={{ display: 'flex', fontSize: 30, color: '#c8a84e', fontWeight: 700, marginTop: 6 }}>
-          diagnostyka.talerzihantle.com
+          168.talerzihantle.com
         </div>
       </div>
     ),
