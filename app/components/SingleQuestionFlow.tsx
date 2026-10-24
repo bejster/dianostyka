@@ -478,8 +478,8 @@ export default function SingleQuestionFlow({ onComplete, initialAnswers }: Props
           <p style={{ fontSize: 14.5, color: '#999999', lineHeight: 1.55, marginBottom: 28 }}>
             {currentQ.type === 'contact' && contactRequired
               ? (intentId === 'in_prowadz'
-                ? 'Wybrałeś prowadzenie. Wynik dostajesz od razu. @ pozwala mi przypisać tę diagnostykę do właściwej rozmowy.'
-                : 'Chcesz zobaczyć, jak wygląda praca ze mną. Wynik dostajesz od razu. @ pozwala mi przypisać tę diagnostykę do właściwej rozmowy.')
+                ? 'Wybrałeś prowadzenie. Wynik dostajesz od razu. @ pozwala mi przypisać ten wynik do właściwej rozmowy.'
+                : 'Chcesz zobaczyć, jak wygląda praca ze mną. Wynik dostajesz od razu. @ pozwala mi przypisać ten wynik do właściwej rozmowy.')
               : currentQ.subtitle}
           </p>
         )}
