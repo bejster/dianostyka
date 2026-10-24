@@ -2,11 +2,11 @@ import type { Metadata } from 'next';
 import './globals.css';
 
 // Karta linku (/pp §14A): tytuł niesie tożsamość i stawkę, opis zakład, obraz obietnicę z ekranu wyniku.
-const OG_TITLE = 'Wiesz, co chcesz zmienić. A wiesz, gdzie to naprawdę się sypie?';
-const OG_DESCRIPTION = 'Sam obstawiasz przyczynę. Mapa 168 zestawia to z Twoim tygodniem i daje jeden test na 72 godziny.';
+const OG_TITLE = 'W pracy ogarniasz. A kiedy zaczyna się sypać Twój tydzień?';
+const OG_DESCRIPTION = 'Obstaw przyczynę. Mapa 168 daje trop i test na 72 godziny.';
 
 export const metadata: Metadata = {
-  title: 'Mapa 168 — gdzie naprawdę pęka Twój tydzień? | Hantle i Talerz',
+  title: 'Mapa 168. Sprawdź, gdzie zaczyna się sypać Twój tydzień | Hantle i Talerz',
   description: 'Siemano :D Masz plan na formę, ale co robi z nim Twój tydzień? Obstaw przyczynę, zobacz pierwszy trop i sprawdź go przez 72 godziny. 5 minut, bez maila.',
   alternates: { canonical: 'https://168.talerzihantle.com/' },
   openGraph: {
