@@ -2,21 +2,21 @@ import type { Metadata } from 'next';
 import './globals.css';
 
 // Karta linku (/pp §14A): tytuł niesie tożsamość i stawkę, opis zakład, obraz obietnicę z ekranu wyniku.
-const OG_TITLE = 'Cały dzień się pilnujesz, a wieczorem i tak pękasz?';
-const OG_DESCRIPTION = 'Obstaw przyczynę. Wynik pokaże, czy to w ogóle zaczyna się wieczorem.';
+const OG_TITLE = 'Wiesz, co chcesz zmienić. A wiesz, gdzie to naprawdę się sypie?';
+const OG_DESCRIPTION = 'Sam obstawiasz przyczynę. Mapa 168 zestawia to z Twoim tygodniem i daje jeden test na 72 godziny.';
 
 export const metadata: Metadata = {
-  title: 'Cały dzień się pilnujesz, a wieczorem i tak pękasz? | Diagnostyka 168',
-  description: 'Zobacz, gdzie to się u Ciebie zaczyna i jaki ruch sprawdzić w najbliższe 3 dni. 5 minut, bez maila, wynik od razu.',
-  alternates: { canonical: 'https://diagnostyka.talerzihantle.com/' },
+  title: 'Mapa 168 — gdzie naprawdę pęka Twój tydzień? | Hantle i Talerz',
+  description: 'Siemano :D Masz plan na formę, ale co robi z nim Twój tydzień? Obstaw przyczynę, zobacz pierwszy trop i sprawdź go przez 72 godziny. 5 minut, bez maila.',
+  alternates: { canonical: 'https://168.talerzihantle.com/' },
   openGraph: {
     title: OG_TITLE,
     description: OG_DESCRIPTION,
-    url: 'https://diagnostyka.talerzihantle.com',
-    siteName: 'Diagnostyka 168 | Hantle i Talerz',
+    url: 'https://168.talerzihantle.com',
+    siteName: 'Mapa 168 | Hantle i Talerz',
     images: [
       {
-        url: 'https://diagnostyka.talerzihantle.com/api/og',
+        url: 'https://168.talerzihantle.com/api/og',
         width: 1200,
         height: 630,
       },
@@ -28,7 +28,7 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: OG_TITLE,
     description: OG_DESCRIPTION,
-    images: ['https://diagnostyka.talerzihantle.com/api/og'],
+    images: ['https://168.talerzihantle.com/api/og'],
   },
   icons: {
     icon: '/icon.png',
