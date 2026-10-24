@@ -38,7 +38,7 @@ const TOPIC_LABEL: Record<string, string> = { sen: 'sen', energia: 'energia', gl
 const RETURN_LINE: Record<HypothesisState, (l: string) => string> = {
   wzmocniona: (l) => `To wzmacnia trop: ${l}. Zostań przy tym jednym ruchu jeszcze tydzień, zanim dołożysz cokolwiek nowego.`,
   nierozstrzygnieta: (l) => `Trop „${l}” zostaje otwarty. Daj testowi jeszcze trzy dni i patrz na ten sam sygnał. Jedna zmienna naraz.`,
-  oslabiona: (l) => `To osłabia trop: ${l}. Dobrze to wiedzieć. Przejdź diagnostykę jeszcze raz i sprawdź, które ogniwo wyjdzie teraz.`,
+  oslabiona: (l) => `To osłabia trop: ${l}. Dobrze to wiedzieć. Przejdź Mapę 168 jeszcze raz i sprawdź, które ogniwo wyjdzie teraz.`,
 };
 
 // ── Sygnały leada dla operatora (niewidoczne dla usera) — WYŁĄCZNIE z jawnych sygnałów kupna/startu ──
@@ -281,7 +281,7 @@ export default function DiagnozaPage() {
             onClick={() => { registerContext({ mode: 'diagnostic' }); trackDiag('fast_fit_to_diagnostic'); setMode('diagnostic'); if (typeof window !== 'undefined') window.scrollTo({ top: 0 }); }}
             style={{ marginTop: 14, width: '100%', padding: '13px', background: 'transparent', color: '#8f887c', fontSize: 14, border: '1px solid #26262b', borderRadius: 12, cursor: 'pointer', letterSpacing: 0.3 }}
           >
-            Chcę najpierw przejść pełną diagnostykę
+            Chcę najpierw sprawdzić swój tydzień
           </button>
         </div>
       </div>
