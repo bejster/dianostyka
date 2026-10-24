@@ -25,10 +25,10 @@ test('cold entry uses profile framing while general visitors get a neutral quest
   assert.match(coldEntry, /ENTRY_COPY/);
   const copy = fs.readFileSync(path.join(root, 'app/lib/entry-copy.ts'), 'utf8');
   const general = copy.match(/general: \{([\s\S]*?)\n  \}/)?.[1] ?? '';
-  assert.match(general, /Cały dzień się pilnujesz, a\u00a0wieczorem i\u00a0tak pękasz/);
+  assert.match(general, /W robocie dowozisz\. A po pracy nie masz już siły na siebie/);
   assert.doesNotMatch(general, /weekend|impreza|jebać|znowu/i);
   assert.doesNotMatch(copy, /hormon|testosteron|kortyzol|wellness|dobrostan/i);
-  assert.match(copy, /Porównasz swoje podejrzenie z resztą odpowiedzi/);
+  assert.match(copy, /Zestawię ją z odpowiedziami/);
   assert.match(coldEntry, /entry\.proof/);
 });
 
@@ -54,7 +54,7 @@ test('result opens with current state and reserve, and names the fracture only a
   assert.ok(at('horizon') > at('5'), 'horizon must follow the 72h experiment');
   assert.ok(at('6') > at('horizon'), 'the 1:1 demonstration must follow the horizon');
   // hero mowi o zapasie, a nie o czerwonej linii/deficycie
-  assert.match(result, /Poziom, na którym dziś jedziesz, nie jest jeszcze Twoim sufitem\./);
+  assert.match(result, /const opening = buildResultHero\(decision, weakestStatus, hasCeilingRoom\)/);
   // 3.0: pierwszy kadr = odczyt decyzji (os najslabsza jako najwiecej zapasu, ogniwo 168 jako miejsce startu)
   assert.match(result, /<dt>Najwięcej zapasu<\/dt>/);
   assert.match(result, /<dt>Gdzie zaczynasz<\/dt>/);
