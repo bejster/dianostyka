@@ -9,8 +9,8 @@ const css = fs.readFileSync('app/globals.css', 'utf8');
 
 test('general kicker fits one line on mobile ("wynik od razu" stays under the CTA)', () => {
   const general = page.match(/general: '([^']+)',/)?.[1];
-  assert.equal(general, 'Diagnostyka 168 · 5 min');
-  assert.match(page, /th2: 'Talerz i Hantle · 5 min · wynik od razu'/);
+  assert.equal(general, 'Mapa 168 · Hantle i Talerz');
+  assert.match(page, /th2: 'Mapa 168 · Talerz i Hantle'/);
   assert.match(page, /5 minut · bez maila · wynik od razu/);
 });
 
