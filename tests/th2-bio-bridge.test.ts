@@ -7,7 +7,7 @@ const ROUTE = fs.readFileSync('app/api/lead-notify/route.ts', 'utf8');
 const CLEAN_ROUTE = fs.readFileSync('app/rozjazd/page.tsx', 'utf8');
 
 test('TH2 ma osobny front door, ale ten sam silnik diagnostyki', () => {
-  assert.match(PAGE, /th2: 'Talerz i Hantle · 5 min · wynik od razu'/);
+  assert.match(PAGE, /th2: 'Mapa 168 · Talerz i Hantle'/);
   assert.match(PAGE, /resolveEntryDoor/);
   assert.match(PAGE, /ENTRY_COPY/);
   assert.match(PAGE, /<SingleQuestionFlow onComplete=\{handleComplete\} \/>/);
