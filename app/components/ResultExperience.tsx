@@ -314,7 +314,7 @@ export default function ResultExperience({
         {/* BEAT 1 (V2.8) — GDZIE JESTEŚ TERAZ + GDZIE MASZ ZAPAS. Awareness-first: stan i pojemność
             przed nazwaniem Punktu Pęknięcia. Zero procentu potencjału, zero wymyślonych zysków. */}
         <section className="rx-beat rx-hero" data-beat="1">
-          <div className="rx-kick rx-kick-c">Dobra{kickName ? `, ${kickName}` : ''}. Obadałem Twój tydzień.</div>
+          <div className="rx-kick rx-kick-c">Dobra{kickName ? `, ${kickName}` : ''}. Tu robi się ciekawie.</div>
           <div className="rx-hero-panel">
             <div className="rx-hero-signature" aria-hidden="true"><span/><span/><span/></div>
             <h1 className="rx-arch">{opening.headline}</h1>
@@ -445,7 +445,7 @@ export default function ResultExperience({
             <p>{reserveLine}</p>
             <p>Tego na razie nie ruszaj: <strong>{strongestStatus?.label}</strong>. Trzyma się dziś najmocniej, bo {strongestStatus?.reason}.</p>
             <p>Ta liczba porównuje pięć obszarów wyłącznie między sobą. Nie jest procentem Twojej formy, procentem wykorzystanego potencjału ani wynikiem medycznym. Pod każdą osią masz odpowiedź, która najmocniej przesunęła liczbę.</p>
-            {flagDriveCheck && <p className="rx-medical">Napęd i libido siedzą u Ciebie nisko. Jeśli trwa to dłużej niż kilka tygodni, warto zrobić badania i omówić wyniki z lekarzem. Ta diagnostyka opiera się na Twoich odpowiedziach i tego nie zastąpi.</p>}
+            {flagDriveCheck && <p className="rx-medical">Napęd i libido siedzą u Ciebie nisko. Jeśli trwa to dłużej niż kilka tygodni, warto zrobić badania i omówić wyniki z lekarzem. Ta mapa opiera się na Twoich odpowiedziach i tego nie zastąpi.</p>}
           </div>
         </section>
 
