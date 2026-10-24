@@ -30,9 +30,9 @@ type Phase = 'intro' | 'intake' | 'teaser';
 
 // Front doors share one engine. Profile changes entry copy and analytics only.
 const DOOR_KICKER: Record<string, string> = {
-  general: 'Diagnostyka 168 · 5 min',
-  hit: 'Diagnostyka 168 · praca, dom i forma · 5 min',
-  th2: 'Talerz i Hantle · 5 min · wynik od razu',
+  general: 'Mapa 168 · Hantle i Talerz',
+  hit: 'Mapa 168 · Hantle i Talerz',
+  th2: 'Mapa 168 · Talerz i Hantle',
 };
 const TOPIC_LABEL: Record<string, string> = { sen: 'sen', energia: 'energia', glowa: 'głowa', jedzenie: 'jedzenie', trening: 'trening', weekend: 'weekend' };
 const RETURN_LINE: Record<HypothesisState, (l: string) => string> = {
@@ -260,7 +260,7 @@ export default function DiagnozaPage() {
         <Atmosphere />
         <div style={{ maxWidth: 480, margin: '0 auto', alignSelf: 'stretch', position: 'relative', zIndex: 1 }}>
           <div style={{ fontFamily: "'JetBrains Mono', ui-monospace, monospace", fontSize: 11, letterSpacing: 3, textTransform: 'uppercase', color: GOLD, fontWeight: 700, marginBottom: 22 }}>
-            Diagnostyka 168 · szybka ścieżka
+            Mapa 168 · szybka ścieżka
           </div>
           <h1 style={{ fontFamily: "'Instrument Serif', Georgia, serif", fontSize: 'clamp(30px, 7.5vw, 48px)', lineHeight: 1.08, fontWeight: 400, color: '#fff', margin: '0 0 20px', letterSpacing: '-0.01em' }}>
             Wiesz już, że chcesz działać. Sprawdźmy tylko, czy zakres pasuje.
