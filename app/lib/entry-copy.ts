@@ -21,24 +21,23 @@ type EntryCopy = {
 };
 
 export const ENTRY_COPY: Record<EntryDoor, EntryCopy> = {
-  "general": {
-    "headline": "Umiesz dowieźć robotę. To czemu własny tydzień ciągle Ci się sypie?",
-    "accent": "Może winisz nie ten moment.",
-    "body": "Siemano :D Zrobiłem Mapę 168, bo ciągle widzę ten sam numer: plan na trening jest, o jedzeniu wiesz sporo, a potem wpada zwykły cięższy dzień i wszystko się rozjeżdża. I znowu obwiniasz dyscyplinę. Tylko skąd wiesz, że właśnie tam zaczyna się problem?",
-    "proof": "Najpierw sam obstawisz przyczynę. Ja zestawię to z Twoimi odpowiedziami, pokażę pierwszy trop i jeden test na 72 godziny. Bez udawania, że ankieta wie o Tobie wszystko.",
-    "cta": "Dobra, sprawdzam swój tydzień"
+  general: {
+    headline: 'W robocie dowozisz. A po pracy nie masz już siły na siebie?',
+    accent: 'A jeśli sypie się dużo wcześniej?',
+    body: 'Siemano :D Zrobiłem Mapę 168, bo możesz od miesięcy naprawiać nie ten moment.',
+    proof: 'Obstaw przyczynę. Zestawię ją z odpowiedziami i dam test na 72 godziny.',
+    cta: 'Dobra, sprawdzam swój tydzień',
   },
-  "hit": {
-    "headline": "Nie masz siły na trening po pracy. A kto powiedział, że problemem jest trening?",
-    "accent": "Sprawdźmy, co sypie się wcześniej.",
-    "body": "Siemano :D Zrobiłem Mapę 168 dla gościa, który w robocie ogarnia trudniejsze rzeczy niż dieta. A potem wraca bez siły, przekłada trening, je byle co i kolejny raz obiecuje sobie poniedziałek od zera. Chcę sprawdzić, co naprawdę odpala ten schemat.",
-    "proof": "Obstawisz, co Cię blokuje. Porównam to z odpowiedziami z Twojego zwykłego tygodnia i pokażę jeden trop oraz test na 72 godziny. Bez maila, bez kolejnego idealnego planu.",
-    "cta": "Sprawdźmy, gdzie pęka mój tydzień"
+  hit: {
+    headline: 'Nie masz siły na trening po pracy. A kto powiedział, że problemem jest trening?',
+    body: 'Siemano :D Zrobiłem to dla gościa, który wszystko ogarnia w robocie, a wieczorem znów odpuszcza trening i jedzenie. Może problem zaczął się wcześniej, niż myślisz.',
+    proof: 'Obstaw przyczynę. Ja pokażę pierwszy trop i test na 72 godziny.',
+    cta: 'Sprawdźmy, gdzie pęka mój tydzień',
   },
-  "th2": {
-    "headline": "Impreza się skończyła. Czemu reszta tygodnia dalej idzie się jebać?",
-    "body": "Siemano :D Zrobiłem Mapę 168, bo ten numer wraca bez przerwy: impreza była w sobotę, a we wtorek dalej brakuje Ci energii, trening wypada i apetyt robi swoje. Chcę, żebyś zobaczył, co dzieje się z resztą tygodnia — i czy sam weekend na pewno tłumaczy cały rozjazd.",
-    "proof": "Najpierw obstawisz przyczynę. Potem porównamy to z Twoimi odpowiedziami i wybierzemy jeden trop do sprawdzenia przez 72 godziny. Ankieta nie zmierzy hormonów ani nie zastąpi badań.",
-    "cta": "Sprawdzam, gdzie mi pęka tydzień"
-  }
+  th2: {
+    headline: 'Impreza się skończyła. Czemu reszta tygodnia dalej idzie się jebać?',
+    body: 'Siemano :D Impreza była w sobotę, a we wtorek dalej jesteś bez siły. Zrobiłem Mapę 168, żebyś nie musiał zgadywać, co się posypało.',
+    proof: 'Zobacz, co mówią Twoje odpowiedzi. Masz jeden test na 72 godziny.',
+    cta: 'Sprawdzam, gdzie mi pęka tydzień',
+  },
 };
