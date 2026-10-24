@@ -23,7 +23,7 @@ test('required expectation-reset copy is present verbatim in Beat 6', () => {
   // v2.8.1 pass jezykowy: "rozwazasz" -> "myslisz o". Ta sama funkcja (reset oczekiwan przed CTA),
   // ten sam poziom asercji: fraza musi stac w Beacie 6 doslownie, inaczej test pada.
   assert.match(result, /Jeśli myślisz o prowadzeniu, niżej masz następny krok\./);
-  assert.match(result, /Ta diagnostyka jest już punktem wyjścia\./);
+  assert.match(result, /Ten wynik jest już punktem wyjścia\./);
 });
 
 test('analytics events use only the safe frozen event names', () => {
