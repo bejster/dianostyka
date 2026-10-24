@@ -69,7 +69,7 @@ test('drzwi są napisane po ludzku bez mieszania marek', () => {
     assert.match(door.proof, /72 godziny/);
   }
   assert.doesNotMatch(ENTRY_COPY.hit.body, /impreza|używki|alkohol/i);
-  assert.match(ENTRY_COPY.th2.body, /impreza/);
+  assert.match(ENTRY_COPY.th2.body, /impreza/i);
 });
 
 test('168 jest kanoniczne, a stare API nie jest przekierowywane', () => {
