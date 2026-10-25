@@ -14,12 +14,12 @@ test('general door opens a bet loop the result can close', () => {
   // 2026-10-14 hero B (/pp 14A 4/4): tozsamosc + emocja (pilnujesz sie / pekasz),
   // ciekawosc (zaczyna sie wczesniej), stawka (miesiace naprawiania nie tego miejsca),
   // obietnica = ekran wyniku (Gdzie zaczynasz + Pierwszy ruch 72h).
-  assert.match(general, /headline: 'W robocie dowozisz\. A po pracy nie masz już siły na siebie\?'/);
-  assert.match(general, /accent: 'A jeśli sypie się dużo wcześniej\?'/);
-  assert.match(general, /Siemano :D Zrobiłem Mapę 168/);
-  assert.match(general, /możesz od miesięcy naprawiać nie ten moment/);
-  assert.match(general, /proof: 'Obstaw przyczynę\. Zestawię ją z odpowiedziami i dam test na 72 godziny\.'/);
-  assert.match(general, /cta: 'Dobra, sprawdzam swój tydzień'/);
+  assert.match(general, /headline: 'Twój plan działa\. Do pierwszego gorszego czwartku\.'/);
+  assert.match(general, /accent: 'I znowu „od poniedziałku”\?'/);
+  assert.match(general, /Robota się przeciąga\. Trening wypada/);
+  assert.match(general, /Jakby kolejny czwartek miał zniknąć/);
+  assert.match(general, /proof: 'Obstaw, co zawiodło\. Zobacz, czy odpowiedzi się zgadzają\. Potem test na 72 godziny\.'/);
+  assert.match(general, /cta: 'Sprawdzam, co mi rozwala tydzień'/);
   assert.doesNotMatch(general, /Wiesz, co Ci psuje formę/);
   assert.doesNotMatch(general, /headline: '[^']*\s(a|i|w|z) [^']*'/);
   assert.doesNotMatch(general, /Ile dni w tygodniu jesteś w formie/);
@@ -41,7 +41,7 @@ test('the promised bet exists in the product before behavioural questions', () =
 test('hit and th2 keep their own proof line, page renders accent and proof from copy', () => {
   for (const door of ['hit', 'th2']) {
     const block = copy.match(new RegExp(`${door}: \\{([\\s\\S]*?)\\n  \\}`))?.[1] ?? '';
-    assert.match(block, /proof: '[^']+test na 72 godziny\.'|proof: '[^']+jeden test na 72 godziny\.'/);
+    assert.match(block, /proof: '[^']+(?:[Jj]eden )?test na 72 godziny\.'/);
     assert.doesNotMatch(block, /accent:/);
   }
   assert.match(page, /entry\.accent/);
