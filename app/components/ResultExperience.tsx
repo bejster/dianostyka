@@ -88,6 +88,7 @@ export default function ResultExperience({
   const [calib, setCalib] = useState<string>('');
   const [committed, setCommitted] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [copyFallback, setCopyFallback] = useState('');
   const [experimentReaction, setExperimentReaction] = useState<string>('');
   const [resultReaction, setResultReaction] = useState<'new' | 'known' | 'off' | ''>('');
   const CALIB = [
@@ -151,11 +152,6 @@ export default function ResultExperience({
       if (decision.route === 'help') trackDiag('help_route', { route_primary: route.primary });
       else if (decision.route === 'data_needed') trackDiag('data_needed_route', { route_primary: route.primary });
       else trackDiag('self_serve_route', { route_primary: route.primary });
-      // 7-dniowa petla powrotu: localStorage, tylko kategorie. Nadpisuje wylacznie starszy rekord.
-      try {
-        const rec: ReturnRecord = { v: '3.0.0', at: Date.now(), upstream: decision.upstream_candidate.lever, experimentId: experiment.id, prediction: decision.prediction.id };
-        localStorage.setItem(RETURN_KEY, JSON.stringify(rec));
-      } catch { /* brak storage nie wywraca wyniku */ }
     }
     const io = new IntersectionObserver((es) => es.forEach((e) => {
       if (!e.isIntersecting) return;
@@ -279,24 +275,40 @@ export default function ResultExperience({
   const naborInviteSoft = 'A jeśli wolisz, żeby ktoś poukładał Ci to z zewnątrz, obadaj stronę prowadzenia. W środku jest formularz, wypełnij go śmiało. Przeczytam go osobiście.';
 
   const commitExperiment = () => {
+    if (committed) return;
     setCommitted(true);
+    // Zapis STARTU testu tylko po świadomym kliknięciu, nie po samym obejrzeniu wyniku.
+    if (decision) {
+      try {
+        const rec: ReturnRecord = { v: '3.0.0', at: Date.now(), upstream: decision.upstream_candidate.lever, experimentId: experiment.id, prediction: decision.prediction.id };
+        localStorage.setItem(RETURN_KEY, JSON.stringify(rec));
+      } catch { /* brak storage nie wywraca wyniku */ }
+    }
     trackDiag('experiment_committed', { experiment_id: experiment.id, confidence: experimentConfidence, arch: archKey });
     trackDiag('experiment_accepted', { experiment_id: experiment.id, confidence_state: decision?.confidence.state || 'unknown' });
   };
 
-  // Zapisz/Udostepnij: WYLACZNIE bezpieczne pola (etykieta archetypu, experiment id, anonimowy submission ref).
+  // Zapisujemy faktyczną instrukcję testu do schowka, nigdy URL udający prywatny wynik.
+  // W udostępnianym tekście nie ma danych kontaktowych ani prywatnego submission_ref.
   const shareSafe = () => {
-    const params = new URLSearchParams({ arch: archKey, exp: experiment.id, ...(submissionId ? { ref: submissionId.slice(0, 24) } : {}) });
-    const url = `${typeof window !== 'undefined' ? window.location.origin + window.location.pathname : ''}?${params.toString()}`;
+    const plan = [
+      'MAPA 168 · MÓJ TEST NA 72 GODZINY',
+      'Jeden ruch: ' + experiment.action,
+      'Kiedy: ' + experiment.moment,
+      'Sprawdzam: ' + experiment.observe,
+      'Tego na razie nie zmieniam: ' + experiment.doNotChange,
+      'To wskazówka do sprawdzenia, nie diagnoza ani obietnica wyniku.',
+    ].join('\\n');
     try {
-      if (typeof navigator !== 'undefined' && navigator.share) {
-        navigator.share({ title: 'Mapa 168', text: `Mój Punkt Pęknięcia: ${archLabel}`, url }).catch(() => {});
-      } else if (typeof navigator !== 'undefined' && navigator.clipboard) {
-        navigator.clipboard.writeText(url).catch(() => {});
-      }
-    } catch { /* share/clipboard opcjonalne, nigdy nie wywraca flow */ }
-    setSaved(true);
-    trackDiag('result_saved', { arch: archKey, experiment_id: experiment.id });
+      if (typeof navigator !== 'undefined' && navigator.clipboard?.writeText) {
+        void navigator.clipboard.writeText(plan).then(() => {
+          setSaved(true);
+          trackDiag('result_saved', { arch: archKey, experiment_id: experiment.id });
+        }).catch(() => setCopyFallback(plan));
+      } else setCopyFallback(plan);
+    } catch {
+      setCopyFallback(plan);
+    }
   };
 
   const onNaborClick = () => trackDiag('cta_nabor_clicked', { arch: archKey, route: route.primary });
@@ -712,8 +724,15 @@ export default function ResultExperience({
             ) : (
               <>
                 {!committed ? <button className="rx-next rx-next-strong" type="button" onClick={commitExperiment}>{route.primaryLabel}</button> : <div className="rx-action-confirm">Test 72h zapisany ✓</div>}
-                {committed && !saved && <button className="rx-next rx-next-medium" type="button" onClick={shareSafe}>Zapisz wynik na te 72 godziny</button>}
-                {committed && saved && <div className="rx-action-done">Wynik zapisany. Zostaje Ci jeden test.</div>}
+                {committed && !saved && <button className="rx-next rx-next-medium" type="button" onClick={shareSafe}>Skopiuj swój test na 72 godziny</button>}
+                {committed && copyFallback && !saved && (
+                  <div className="rx-action-done">
+                    Schowek jest niedostępny. Zaznacz i skopiuj poniższy plan.
+                    <textarea readOnly aria-label="Plan na 72 godziny do skopiowania" value={copyFallback}
+                      onFocus={(e) => e.currentTarget.select()} style={{ width: '100%', minHeight: 180, marginTop: 12, padding: 12, background: '#101012', border: '1px solid #8a7535', borderRadius: 8, color: '#ece7db', fontSize: 13, lineHeight: 1.5 }}/>
+                  </div>
+                )}
+                {committed && saved && <div className="rx-action-done">Plan testu skopiowany. Możesz go wkleić do notatek.</div>}
                 {route.secondaryNabor && <a className="rx-route-alt" href={naborHref} target="_blank" rel="noopener noreferrer" onClick={onNaborClick}>{route.secondaryNabor.label} →</a>}
               </>
             )}
