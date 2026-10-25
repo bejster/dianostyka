@@ -313,6 +313,25 @@ export default function ResultExperience({
   return (
     <div className="rx" style={{ background: C.ink, color: C.paper, fontFamily: C.sans, minHeight: '100vh', overflowX: 'clip', position: 'relative' }}>
       <style>{css}</style>
+      <style>{`
+        .rx-intel-insight{font-size:clamp(16px,3.7vw,19px);line-height:1.65;color:#ece7db;margin:0 0 25px;max-width:54ch}
+        .rx-intel-proof{display:grid;gap:0;border-top:1px solid rgba(200,168,78,.32);border-bottom:1px solid rgba(200,168,78,.20);padding:16px 0;margin:0 0 18px}
+        .rx-intel-proof>span{font:700 10px "JetBrains Mono",monospace;letter-spacing:.09em;text-transform:uppercase;color:#e8cc80;margin-bottom:8px}
+        .rx-intel-proof p{font-size:13.5px;line-height:1.55;color:#c4bdb0;margin:6px 0}
+        .rx-intel-proof strong{color:#ece7db}
+        .rx-intel-note{font-size:12px;line-height:1.55;color:#968f83}
+        .rx-intel-next{display:inline-block;padding:13px 0;border-bottom:1px solid rgba(200,168,78,.45);font-size:13px;color:#e8cc80;text-decoration:none;font-weight:700}
+        .rx-intel-feedback{border:1px solid #2c2924;padding:19px;margin-top:28px;background:rgba(200,168,78,.035)}
+        .rx-intel-feedback>p{color:#ece7db;font-size:14px;line-height:1.5;margin:0 0 14px;font-weight:650}
+        .rx-intel-feedback-options{display:flex;flex-direction:column;gap:8px}
+        .rx-intel-feedback-options button{min-height:43px;text-align:left;cursor:pointer;padding:11px 13px;border:1px solid #3b3831;border-radius:8px;background:#111113;color:#d7d0c2;font:500 13px "Inter",sans-serif}
+        .rx-intel-feedback-options button[aria-pressed="true"]{background:rgba(200,168,78,.13);border-color:#bca057;color:#f3e2b4}
+        .rx-intel-feedback-options button:focus-visible{outline:2px solid #e8cc80;outline-offset:2px}
+        .rx-intel-feedback .rx-intel-feedback-reply{font-weight:400;font-size:12px;color:#c4bdb0;margin:12px 0 0}
+        .rx-test-counter{border-left:2px solid #c8a84e;padding:10px 14px;margin:22px 0 14px;background:rgba(200,168,78,.035)}
+        .rx-test-counter strong{display:block;color:#e8cc80;font-size:12px;letter-spacing:.02em;margin-bottom:7px}
+        .rx-test-counter p{font-size:13.5px;line-height:1.56;color:#c4bdb0;margin:0}
+`}</style>
       <div className="rx-atmo" aria-hidden />
       <div className="rx-prog" ref={progRef} aria-hidden />
 
@@ -481,6 +500,42 @@ export default function ResultExperience({
           </div>
         </section>
 
+
+        {decisionCard && (
+          <section className="rx-beat rx-intel" data-beat="nnv" id="twoj-wniosek">
+            <div className="rx-kick">Tu bym się zatrzymał</div>
+            <h2 className="rx-h2">{decisionCard.title}</h2>
+            <p className="rx-intel-insight">{decisionCard.insight}</p>
+            {decisionCard.receipts.length > 0 && (
+              <div className="rx-intel-proof">
+                <span>Dlaczego akurat taki trop</span>
+                {decisionCard.receipts.map((item) => (
+                  <p key={item.source}><strong>{item.source}:</strong> {item.answer}</p>
+                ))}
+              </div>
+            )}
+            <p className="rx-intel-note">{decisionCard.note}</p>
+            <a href="#test-72h" className="rx-intel-next">Dobra, co konkretnie mam sprawdzić? ↓</a>
+            <div className="rx-intel-feedback">
+              <p>Ten wniosek coś zmienił w tym, jak patrzysz na swój tydzień?</p>
+              <div className="rx-intel-feedback-options">
+                <button type="button" aria-pressed={resultReaction === 'new'} onClick={() => reactToInsight('new')}>tego nie brałem pod uwagę</button>
+                <button type="button" aria-pressed={resultReaction === 'known'} onClick={() => reactToInsight('known')}>to akurat wiedziałem</button>
+                <button type="button" aria-pressed={resultReaction === 'off'} onClick={() => reactToInsight('off')}>nie pasuje do mnie</button>
+              </div>
+              {resultReaction && (
+                <p className="rx-intel-feedback-reply" role="status">
+                  {resultReaction === 'off'
+                    ? 'Okej. Nie chcę dopasowywać Cię na siłę do opisu. Niżej jest możliwość wskazania, co dokładnie się nie zgadza.'
+                    : resultReaction === 'known'
+                      ? 'To dobrze. W takim razie liczy się, czy test da Ci coś nowego, a nie czy brzmi mądrze.'
+                      : 'To jest właśnie rzecz do zweryfikowania w zwykłym tygodniu, nie do przyjęcia na wiarę.'}
+                </p>
+              )}
+            </div>
+          </section>
+        )}
+
         {/* BEAT 2 — PĘTLA 168: deterministyczny łańcuch z realnych odpowiedzi + istniejącej, zatwierdzonej treści archetypu */}
         <section className="rx-beat" data-beat="2">
           <div className="rx-kick">Pętla 168</div>
@@ -526,11 +581,17 @@ export default function ResultExperience({
             {/* Cztery identyczne karty czytaly sie jak lista rownorzednych polecen. Samo zadanie prowadzi,
                 trzy parametry sa doprecyzowaniem i dostaja lzejszy, cichszy wiersz. */}
             <div className="rx-exp-row rx-exp-lead"><span className="rx-exp-k">{experiment.name}</span><p>{experiment.action}</p></div>
-            <div className="rx-exp-row rx-exp-why"><span className="rx-exp-k">Dlaczego to ma sens</span><p>{experiment.why}</p></div>
+            <div className="rx-exp-row rx-exp-why"><span className="rx-exp-k">Możliwy mechanizm, nie pewnik</span><p>{experiment.why}</p></div>
             <div className="rx-exp-row rx-exp-meta"><span className="rx-exp-k">Kiedy</span><p>{experiment.moment}</p></div>
             <div className="rx-exp-row rx-exp-meta"><span className="rx-exp-k">Obserwuj</span><p>{experiment.observe}</p></div>
             <div className="rx-exp-row rx-exp-meta"><span className="rx-exp-k">Przez te 3 dni nie ruszaj</span><p>{experiment.doNotChange}</p></div>
           </div>
+          {decisionCard && (
+            <div className="rx-test-counter">
+              <strong>Jeśli się mylę</strong>
+              <p>{decisionCard.alternativeIfWrong}</p>
+            </div>
+          )}
           <details className="rx-exp-check">
             <summary>Już robiłeś coś podobnego albo ten test nie pasuje?</summary>
             <div className="rx-exp-reactions">
