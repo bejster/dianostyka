@@ -158,5 +158,5 @@ test('strona wyniku renderuje Lustro przed Mapa 168', () => {
   const map = src.indexOf('data-beat="map"');
   assert.ok(mirror > 0, 'brak sekcji Lustro');
   assert.ok(mirror < map, 'Lustro musi stac przed mapa');
-  assert.ok(src.includes('Nie jest wynikiem medycznym'), 'brak zastrzezenia przy liczbie');
+  assert.ok(src.includes('Nie udaję, że ankieta mierzy fizjologiczną energię'), 'brak prawdziwego ograniczenia liczb na ekranie');
 });
