@@ -65,10 +65,11 @@ test('pusta odpowiedź i stare sesje mają uczciwy fallback', () => {
 
 test('drzwi są napisane po ludzku bez mieszania marek', () => {
   for (const door of Object.values(ENTRY_COPY)) {
-    assert.match(door.body, /Siemano :D/);
+    assert.ok(door.body.length >= 45, 'scena zamiast reklamy narzędzia');
     assert.match(door.proof, /72 godziny/);
   }
   assert.doesNotMatch(ENTRY_COPY.hit.body, /impreza|używki|alkohol/i);
+  assert.doesNotMatch(ENTRY_COPY.general.body, /Zrobiłem Mapę 168, bo/);
   assert.match(ENTRY_COPY.th2.body, /impreza/i);
 });
 
