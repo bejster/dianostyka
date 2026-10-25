@@ -14,6 +14,7 @@ import type { ExperimentDef, Confidence } from '../lib/experiment-bank';
 import type { RouteDecision } from '../lib/result-router-v3';
 import { BREAK_PHRASE, type LoopNode } from '../lib/fracture-engine';
 import type { AwarenessGap } from '../lib/awareness-gap';
+import type { WeekDecisionCard } from '../lib/week-decision-card';
 import { RETURN_KEY, sentenceCase, bridgeLine, MEDICAL_BOUNDARY, type DecisionResult, type ReturnRecord } from '../lib/decision-engine';
 import { buildResultHero } from '../lib/result-hero';
 
@@ -61,7 +62,7 @@ export default function ResultExperience({
   archLabel, archKey, redCount, breakId, domainLabel, statuses,
   evidenceReceipts, loop, whyRepeats, costFacts, userPain,
   experiment, experimentConfidence, route,
-  imie, instagram, naborHref, submissionId, contentSignals, awareness, decision,
+  imie, instagram, naborHref, submissionId, contentSignals, awareness, decision, decisionCard,
 }: {
   archLabel: string; archKey: string; redCount?: number; breakId: string; domainLabel: string;
   statuses: { label: string; score: number; reason: string }[];
@@ -72,6 +73,7 @@ export default function ResultExperience({
   contentSignals?: Record<string, string | boolean>;
   awareness?: AwarenessGap;
   decision?: DecisionResult;
+  decisionCard?: WeekDecisionCard;
 }) {
   void domainLabel;
   const progRef = useRef<HTMLDivElement>(null);
@@ -87,6 +89,7 @@ export default function ResultExperience({
   const [committed, setCommitted] = useState(false);
   const [saved, setSaved] = useState(false);
   const [experimentReaction, setExperimentReaction] = useState<string>('');
+  const [resultReaction, setResultReaction] = useState<'new' | 'known' | 'off' | ''>('');
   const CALIB = [
     { id: 'sen', label: 'Sen' }, { id: 'energia', label: 'Energia i głowa' }, { id: 'jedzenie', label: 'Jedzenie' },
     { id: 'ruch', label: 'Ruch' }, { id: 'weekend', label: 'Weekend' }, { id: 'naped', label: 'Napęd i libido' }, { id: 'ok', label: 'Wszystko pasuje' },
@@ -120,6 +123,10 @@ export default function ResultExperience({
       fetch('/api/diag-event', { method: 'POST', headers: { 'content-type': 'application/json' }, keepalive: true, body: JSON.stringify({ submission_id: submissionId, q_id: 'calibration', value: id, ts: Date.now() }) }).catch(() => {});
     } catch { /* analityka nigdy nie wywraca flow */ }
     trackDiag('calibration_answer', { id });
+  };
+  const reactToInsight = (id: 'new' | 'known' | 'off') => {
+    setResultReaction(id);
+    trackDiag('result_reaction', { reaction: id, decision_pattern: decisionCard?.pattern || 'unknown' });
   };
   const reactToExperiment = (id: string) => {
     setExperimentReaction(id);
