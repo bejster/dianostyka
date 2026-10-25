@@ -298,7 +298,7 @@ export default function ResultExperience({
       'Sprawdzam: ' + experiment.observe,
       'Tego na razie nie zmieniam: ' + experiment.doNotChange,
       'To wskazówka do sprawdzenia, nie diagnoza ani obietnica wyniku.',
-    ].join('\\n');
+    ].join('\n');
     try {
       if (typeof navigator !== 'undefined' && navigator.clipboard?.writeText) {
         void navigator.clipboard.writeText(plan).then(() => {
