@@ -25,7 +25,7 @@ export const ENTRY_COPY: Record<EntryDoor, EntryCopy> = {
     headline: 'Twój plan działa. Do pierwszego gorszego czwartku.',
     accent: 'I znowu „od poniedziałku”?',
     body: 'Robota się przeciąga. Trening wypada. W niedzielę nowy plan. Jakby kolejny czwartek miał zniknąć.',
-    proof: 'Obstaw, co zawiodło. Zobacz, czy odpowiedzi się zgadzają. Potem test na 72 godziny.',
+    proof: 'Obstaw winnego. Zobacz, czy problem zaczął się wcześniej. Jeden test na 72 godziny.',
     cta: 'Sprawdzam, co mi rozwala tydzień',
   },
   hit: {
