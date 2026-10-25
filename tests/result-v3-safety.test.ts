@@ -28,7 +28,7 @@ test('required expectation-reset copy is present verbatim in Beat 6', () => {
 
 test('analytics events use only the safe frozen event names', () => {
   const allowed = new Set([
-    'result_viewed', 'current_state_viewed',
+    'result_viewed', 'current_state_viewed', 'nnv_viewed',
     // v2.9: beat Lustro (samoocena vs zachowanie). Nazwa bez PII, sam fakt obejrzenia sekcji.
     'mirror_viewed',
     'map_viewed', 'evidence_viewed', 'fracture_viewed',
