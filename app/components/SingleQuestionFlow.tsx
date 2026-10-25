@@ -507,11 +507,6 @@ export default function SingleQuestionFlow({ onComplete, initialAnswers }: Props
                 </button>
               );
             })}
-            {currentQ.optional && (
-              <button className="dx-skip" type="button" onClick={() => goToNext({ skipped: true })}>
-                Pomiń to pytanie
-              </button>
-            )}
           </div>
         )}
 
