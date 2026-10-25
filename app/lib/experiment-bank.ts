@@ -39,7 +39,7 @@ export const EXPERIMENT_BANK: Record<ExperimentId, ExperimentDef> = {
     observe: 'który z trzech sygnałów rusza pierwszy i czy powtarza się przez 3 dni',
     doNotChange: 'reszty planu',
     purpose: 'znaleźć najwcześniejszy powtarzalny sygnał',
-    why: 'Wieczorny spadek zaczyna się zwykle dużo wcześniej, tylko wtedy nikt nie patrzy. Jak kontrolka rezerwy w aucie: paliwo kończy się długo przed tym, jak silnik zgaśnie.',
+    why: 'Czasem kilka godzin przed wieczornym odpuszczeniem widać głód, napięcie albo zmęczenie. Sprawdź, który sygnał się powtarza. Jak kontrolka rezerwy: lepiej ją zauważyć, zanim silnik zgaśnie.',
   },
   E3: {
     id: 'E3', name: 'POSIŁEK AWARYJNY',
@@ -66,7 +66,7 @@ export const EXPERIMENT_BANK: Record<ExperimentId, ExperimentDef> = {
     observe: 'ile razy wieczorem wracasz do pracy myślami albo działaniem',
     doNotChange: 'rutyny snu, treningu i jedzenia naraz',
     purpose: 'sprawdzić, czy niedokończona praca zostaje poznawczo otwarta',
-    why: 'Niedokończona sprawa siedzi w głowie, dopóki nie dostanie planu. To ona kradnie wieczór. Jak otwarte karty w przeglądarce. Nie patrzysz na nie, a i tak zjadają pamięć.',
+    why: 'Niedokończona sprawa potrafi wracać po pracy. Zapisanie kolejnego kroku może ułatwić odłożenie jej na jutro. Jak otwarte karty w przeglądarce: nie pracujesz już nad nimi, ale co chwilę zerkasz.',
   },
   G2: {
     id: 'G2', name: 'ODŁÓŻ NA JUTRO',
@@ -165,7 +165,7 @@ export const EXPERIMENT_BANK: Record<ExperimentId, ExperimentDef> = {
     observe: 'pierwszy dzień, w którym wynik wraca do Twojej zwykłej wartości',
     doNotChange: 'kilku rzeczy naraz, żeby szybciej wrócić',
     purpose: 'ustalić realny czas powrotu do formy',
-    why: 'Przesunięty w weekend sen to dla zegara biologicznego lot do innej strefy czasowej. Badacze nazywają to społecznym jet lagiem. Wraca się z niego dzień po dniu, więc pięć nowych rzeczy w poniedziałek tego nie przyspieszy.',
+    why: 'Gdy w weekend przesuwasz sen i pobudkę, poniedziałek może przypominać zmianę strefy czasowej. Nie zakładam, że to Twój jedyny problem. Jak po podróży: najpierw sprawdź, kiedy wraca rytm, zanim zmienisz pięć rzeczy naraz.',
   },
   R1: {
     id: 'R1', name: 'BEZ PONIEDZIAŁKOWEGO STARTU OD NOWA',
