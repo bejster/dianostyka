@@ -161,7 +161,7 @@ export default function ResultExperience({
       if (!e.isIntersecting) return;
       (e.target as HTMLElement).classList.add('in');
       const b = (e.target as HTMLElement).dataset.beat;
-      const EVT: Record<string, string> = { '1': 'current_state_viewed', mirror: 'mirror_viewed', map: 'map_viewed', evidence: 'evidence_viewed', fracture: 'fracture_viewed', '2': 'loop_viewed', '5': 'experiment_viewed', horizon: 'horizon_viewed', '6': 'method_demo_viewed' };
+      const EVT: Record<string, string> = { '1': 'current_state_viewed', nnv: 'nnv_viewed', mirror: 'mirror_viewed', map: 'map_viewed', evidence: 'evidence_viewed', fracture: 'fracture_viewed', '2': 'loop_viewed', '5': 'experiment_viewed', horizon: 'horizon_viewed', '6': 'method_demo_viewed' };
       if (b && EVT[b]) {
         const now = Date.now();
         if (lastBeatRef.current && lastBeatRef.current !== b) trackDiag('result_beat_dwell', { arch: archKey, beat: lastBeatRef.current, dwell_ms: Math.max(0, now - beatSeenAtRef.current - beatHiddenMsRef.current) });
@@ -398,6 +398,41 @@ export default function ResultExperience({
           </div>
         </section>
 
+        {decisionCard && (
+          <section className="rx-beat rx-intel" data-beat="nnv" id="twoj-wniosek">
+            <div className="rx-kick">Tu bym się zatrzymał</div>
+            <h2 className="rx-h2">{decisionCard.title}</h2>
+            <p className="rx-intel-insight">{decisionCard.insight}</p>
+            {decisionCard.receipts.length > 0 && (
+              <div className="rx-intel-proof">
+                <span>Dlaczego akurat taki trop</span>
+                {decisionCard.receipts.map((item) => (
+                  <p key={item.source}><strong>{item.source}:</strong> {item.answer}</p>
+                ))}
+              </div>
+            )}
+            <p className="rx-intel-note">{decisionCard.note}</p>
+            <a href="#test-72h" className="rx-intel-next">Dobra, co konkretnie mam sprawdzić? ↓</a>
+            <div className="rx-intel-feedback">
+              <p>Ten wniosek coś zmienił w tym, jak patrzysz na swój tydzień?</p>
+              <div className="rx-intel-feedback-options">
+                <button type="button" aria-pressed={resultReaction === 'new'} onClick={() => reactToInsight('new')}>tego nie brałem pod uwagę</button>
+                <button type="button" aria-pressed={resultReaction === 'known'} onClick={() => reactToInsight('known')}>to akurat wiedziałem</button>
+                <button type="button" aria-pressed={resultReaction === 'off'} onClick={() => reactToInsight('off')}>nie pasuje do mnie</button>
+              </div>
+              {resultReaction && (
+                <p className="rx-intel-feedback-reply" role="status">
+                  {resultReaction === 'off'
+                    ? 'Okej. Nie chcę dopasowywać Cię na siłę do opisu. Niżej jest możliwość wskazania, co dokładnie się nie zgadza.'
+                    : resultReaction === 'known'
+                      ? 'To dobrze. W takim razie liczy się, czy test da Ci coś nowego, a nie czy brzmi mądrze.'
+                      : 'To jest właśnie rzecz do zweryfikowania w zwykłym tygodniu, nie do przyjęcia na wiarę.'}
+                </p>
+              )}
+            </div>
+          </section>
+        )}
+
         {/* LUSTRO (v2.9) — jedyne miejsce na tej stronie, gdzie czlowiek widzi siebie obok siebie.
             Po lewej liczba, ktora sobie dal na ekranie 2. Po prawej ta sama skala policzona z jego
             zachowan. Pod spodem kazda odpowiedz, ktora zabrala punkt, wiec roznicy nie da sie
@@ -500,41 +535,6 @@ export default function ResultExperience({
           </div>
         </section>
 
-
-        {decisionCard && (
-          <section className="rx-beat rx-intel" data-beat="nnv" id="twoj-wniosek">
-            <div className="rx-kick">Tu bym się zatrzymał</div>
-            <h2 className="rx-h2">{decisionCard.title}</h2>
-            <p className="rx-intel-insight">{decisionCard.insight}</p>
-            {decisionCard.receipts.length > 0 && (
-              <div className="rx-intel-proof">
-                <span>Dlaczego akurat taki trop</span>
-                {decisionCard.receipts.map((item) => (
-                  <p key={item.source}><strong>{item.source}:</strong> {item.answer}</p>
-                ))}
-              </div>
-            )}
-            <p className="rx-intel-note">{decisionCard.note}</p>
-            <a href="#test-72h" className="rx-intel-next">Dobra, co konkretnie mam sprawdzić? ↓</a>
-            <div className="rx-intel-feedback">
-              <p>Ten wniosek coś zmienił w tym, jak patrzysz na swój tydzień?</p>
-              <div className="rx-intel-feedback-options">
-                <button type="button" aria-pressed={resultReaction === 'new'} onClick={() => reactToInsight('new')}>tego nie brałem pod uwagę</button>
-                <button type="button" aria-pressed={resultReaction === 'known'} onClick={() => reactToInsight('known')}>to akurat wiedziałem</button>
-                <button type="button" aria-pressed={resultReaction === 'off'} onClick={() => reactToInsight('off')}>nie pasuje do mnie</button>
-              </div>
-              {resultReaction && (
-                <p className="rx-intel-feedback-reply" role="status">
-                  {resultReaction === 'off'
-                    ? 'Okej. Nie chcę dopasowywać Cię na siłę do opisu. Niżej jest możliwość wskazania, co dokładnie się nie zgadza.'
-                    : resultReaction === 'known'
-                      ? 'To dobrze. W takim razie liczy się, czy test da Ci coś nowego, a nie czy brzmi mądrze.'
-                      : 'To jest właśnie rzecz do zweryfikowania w zwykłym tygodniu, nie do przyjęcia na wiarę.'}
-                </p>
-              )}
-            </div>
-          </section>
-        )}
 
         {/* BEAT 2 — PĘTLA 168: deterministyczny łańcuch z realnych odpowiedzi + istniejącej, zatwierdzonej treści archetypu */}
         <section className="rx-beat" data-beat="2">
