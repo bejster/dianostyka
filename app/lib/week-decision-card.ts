@@ -146,13 +146,19 @@ export function buildWeekDecisionCard(
   } else if (upstream === 'wieczor' && eveningIssue && highStress) {
     pattern = 'evening_and_work';
     title = 'Możesz mieć problem z porą decyzji, a nie z wiedzą o jedzeniu.';
-    insight = 'Masz jednocześnie napięcie wieczorem i jedzenie poza planem. To nie dowodzi, że jedno powoduje drugie. Zamiast ciąć kalorie albo dopisywać zakazy, sprawdziłbym, co się dzieje, kiedy decyzję o posiłku podejmiesz wcześniej.';
+    insight = experiment.id === 'E1' || experiment.id === 'E3'
+      ? 'Masz jednocześnie napięcie wieczorem i jedzenie poza planem. To nie dowodzi, że jedno powoduje drugie. Zamiast ciąć kalorie albo dopisywać zakazy, sprawdziłbym, co się dzieje, kiedy decyzję o posiłku podejmiesz wcześniej.'
+      : 'Wieczorne napięcie i jedzenie poza planem pojawiają się u Ciebie razem. Ten test nie zmienia całej diety. Sprawdza, jak zachowujesz się po pierwszym odstępstwie, zanim uznamy brak dyscypliny za przyczynę.';
     receipts = firstTwo([receipt('Po pracy', stress), receipt('Jedzenie', evening)]);
-    alternativeIfWrong = 'Jeżeli wcześniejsza decyzja niczego nie zmieni, nie uznajemy od razu, że brakuje Ci dyscypliny. Trzeba wtedy sprawdzić m.in. regularność posiłków i rzeczywisty głód, których ta ankieta nie mierzy.';
+    alternativeIfWrong = experiment.id === 'E1' || experiment.id === 'E3'
+      ? 'Jeżeli wcześniejsza decyzja niczego nie zmieni, nie uznajemy od razu, że brakuje Ci dyscypliny. Trzeba wtedy sprawdzić m.in. regularność posiłków i rzeczywisty głód, których ta ankieta nie mierzy.'
+      : 'Jeśli nawet kolejna normalna decyzja po odstępstwie nie zmieni przebiegu wieczoru, trzeba sprawdzić rzeczywisty głód, regularność posiłków i sytuacje, których ta ankieta nie widzi.';
   } else if ((upstream === 'glowa' || upstream === 'trening') && toughWork && heavyTrainingLoss) {
     pattern = 'work_and_training';
     title = 'Plan treningowy trzeba sprawdzać w gorszym tygodniu, nie w idealnym.';
-    insight = 'Masz obciążenie w pracy i regularnie wypada Ci część zaplanowanych treningów. Na razie nie dokładałbym kolejnego dnia treningowego. Sprawdziłbym, czy obecny plan wytrzymuje rzeczywiste ograniczenia czasu.';
+    insight = upstream === 'glowa'
+      ? `Masz obciążenie w pracy i wypada Ci część zaplanowanych treningów. Zanim zmienisz objętość, sprawdziłbym wcześniejszy moment: ${experiment.moment}. Jeśli poprawi się dostępność czasu albo energii na trening, będziemy mieli lepszą wskazówkę.`
+      : 'Masz obciążenie w pracy i wypada Ci część zaplanowanych treningów. Na razie nie dokładałbym kolejnego dnia treningowego. Sprawdziłbym, czy obecny plan wytrzymuje rzeczywiste ograniczenia czasu.';
     receipts = firstTwo([receipt('Praca', work), training]);
     alternativeIfWrong = 'Jeśli test nie pomoże utrzymać choć jednego terminu, to informacja o dopasowaniu planu do kalendarza. Wtedy trzeba zmienić warunki wykonania, nie powtarzać motywacyjnego przemówienia.';
   } else if (upstream === 'glowa' && highStress) {
