@@ -243,12 +243,12 @@ export default function ResultExperience({
     : 'Ten wynik nie daje Ci dziś nic do gaszenia.';
   // Zadnego "wiekszosc osob". To bylaby statystyka, ktorej nikt nie policzyl. Zostaje scena.
   const ceilingBody = hasCeilingRoom
-    ? 'Zwykle wygląda to tak, że nic nie jest złe: robota idzie, trening jakoś leci, weekend się odbywa. I dokładnie dlatego nic się nie rusza. Jest za to poniedziałek, który wygląda tak samo jak dwa lata temu.'
-    : 'To jest ten moment, w którym najłatwiej odpuścić, bo nic nie pali. Jest też jedyny moment, w którym da się spokojnie sprawdzić, na ile Cię stać, bez gaszenia pożaru przy okazji.';
+    ? 'Kilka rzeczy trzyma się u Ciebie lepiej niż reszta. Nie zamierzam rozwalać tego, co działa, tylko sprawdzić jeden słabszy element.'
+    : 'Twoje odpowiedzi nie pokazują teraz jednego dużego problemu. To również jest wynik. Jeśli chcesz coś usprawniać, wybierz mały test zamiast robić rewolucję.';
   // Wczesniej jeden literal dla kazdego. Teraz domkniecie wskazuje realny obszar z jego wlasnego wyniku.
   const ceilingHit = hasCeilingRoom
-    ? `Nie wiesz, ile zapasu siedzi tutaj: ${breakPos.label}. Nigdy nie sprawdziłeś tego przy tygodniu, który trzyma.`
-    : 'Nie wiesz, gdzie jest Twój pułap, bo nie było jeszcze tygodnia, w którym wszystko zagrało naraz.';
+    ? `Najpierw biorę pod lupę: ${breakPos.label}. Dopiero po sprawdzeniu wracam do pozostałych zmian.`
+    : 'Na razie nie widzę argumentu, żeby zmieniać Ci pięć obszarów naraz.';
 
   // ── V2.8.3 BRAKI: zamiast abstrakcyjnego "N z 5 obszarow ma zapas" domkniecie nazywa konkretne
   //    luki z jego wlasnych osi, ale w jezyku, ktorym czlowiek mysli o swoim dniu: sylwetka, glowa,
@@ -658,8 +658,8 @@ export default function ResultExperience({
             <h2 className="rx-plan-h">Ten wynik byłby punktem startu, nie formularzem do wyrzucenia.</h2>
             <ol className="rx-demo">
               <li><span className="rx-demo-n">01</span><div><strong>Na start biorę: {breakPos.label}</strong><p>Tu najczęściej rozjeżdża się Twój tydzień, więc tu stawiamy wersję minimum. Taką, która przeżyje dzień, w którym nic nie idzie po planie.</p></div></li>
-              <li><span className="rx-demo-n">02</span><div><strong>Najniższy wynik: {weakestStatus?.label}. Nie zaczynam od niego</strong><p>Niski wynik to zwykle skutek czegoś, co u Ciebie dzieje się wcześniej, w punkcie z kroku 01. Jak zaciek na suficie, który możesz zamalować, a woda dalej cieknie piętro wyżej. Po 72h patrzymy razem, czy ten wynik ruszy, kiedy naprawimy tamten punkt.</p></div></li>
-              <li><span className="rx-demo-n">03</span><div><strong>Tego na start nie ruszam: {strongestStatus?.label}</strong><p>To Twój punkt odniesienia. Jeśli po zmianie spadnie, wiem, że ruch kosztuje za dużo i trzeba go zmniejszyć. Jak grupa kontrolna w badaniu, tylko na Twoim tygodniu.</p></div></li>
+              <li><span className="rx-demo-n">02</span><div><strong>Najniższy wynik: {weakestStatus?.label}. Nie udaję, że znam jego przyczynę</strong><p>Ta oś ma dziś najwięcej miejsca do poprawy. Najpierw sprawdzamy wcześniejszy trop z Twoich odpowiedzi. Jeśli po jednym ruchu nic się nie zmieni, nie dorabiam do tego teorii.</p></div></li>
+              <li><span className="rx-demo-n">03</span><div><strong>Tego na start nie ruszam: {strongestStatus?.label}</strong><p>To dziś najlepiej trzymający się obszar z Twoich odpowiedzi. Zostawiam go bez zmian, żeby nie poprawiać pięciu rzeczy naraz. To punkt odniesienia, nie grupa kontrolna z badania.</p></div></li>
               <li><span className="rx-demo-n">04</span><div><strong>Dokładam dopiero po dowodzie</strong><p>Kolejny element wchodzi wtedy, gdy pierwszy przeżyje gorszy tydzień. W dobrym tygodniu działa każdy plan. Sprawdzianem jest tydzień z deadlinem, krótszą nocą i imprezą w sobotę. Jeśli ruch go nie przeżyje, zmieniam ruch zamiast dokładać kolejne zasady.</p></div></li>
             </ol>
           </div>
@@ -667,7 +667,7 @@ export default function ResultExperience({
           <div className="rx-proof">
             <a className="rx-badge" href={GOOGLE_AGG.url} target="_blank" rel="noopener noreferrer">
               <span className="rx-g">G</span>
-              <span className="rx-r">{GOOGLE_AGG.rating} <span style={{ color: C.gold }}>★★★★★</span><span style={{ color: C.mute, fontWeight: 400 }}> · {GOOGLE_AGG.count} opinii w Google</span></span>
+              <span className="rx-r">Zobacz opinie klientów w Google <span style={{ color: C.gold }}>↗</span></span>
             </a>
             {GOOGLE_CARDS.slice(0, 1).map((r, i) => (
               <div key={i} className="rx-gcard">
