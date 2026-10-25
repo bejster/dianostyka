@@ -59,7 +59,6 @@ function briefKey(q: QuestionDef): string {
     symptoms_chips: 'Co najbardziej siada',
     morning_wood: 'Poranne wzwody',
     tried_before: 'Plany, które padły w tym roku',
-    past_paid_attempt: 'Za jakie rozwiązanie już płacił (deklaracja)',
     user_pain: 'Co go najbardziej wkurwia (własne słowa)',
     user_trigger: 'Czemu sprawdza to teraz (własne słowa)',
     user_selfdx: 'Co jego zdaniem go trzyma (własne słowa)',
