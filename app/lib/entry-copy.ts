@@ -24,14 +24,14 @@ export const ENTRY_COPY: Record<EntryDoor, EntryCopy> = {
   general: {
     headline: 'Twój plan działa. Do pierwszego gorszego czwartku.',
     accent: 'I znowu „od poniedziałku”?',
-    body: 'Robota się przeciąga. Trening wypada. Wieczorem jesz, co akurat jest. A w niedzielę układasz nowy plan. Jakby następny czwartek miał nie nadejść.',
-    proof: 'Najpierw sam obstawisz, co Cię blokuje. Potem zobaczysz, czy reszta odpowiedzi to potwierdza i co sprawdzić przez 72 godziny.',
+    body: 'Robota się przeciąga. Trening wypada. W niedzielę nowy plan. Jakby kolejny czwartek miał zniknąć.',
+    proof: 'Obstaw, co zawiodło. Zobacz, czy odpowiedzi się zgadzają. Potem test na 72 godziny.',
     cta: 'Sprawdzam, co mi rozwala tydzień',
   },
   hit: {
     headline: 'Trzy treningi w planie. Gorszy tydzień zostawia jeden.',
-    body: 'Ktoś wrzuca pilne zadanie pod koniec pracy, trening wypada. Kolację ogarniasz z doskoku. W niedzielę znowu zmieniasz plan. Jakby w następnym tygodniu miało już nie być roboty.',
-    proof: 'Sprawdź, co najpierw sypie się w Twoim tygodniu. Porównam to z Twoimi odpowiedziami i pokażę jeden ruch na 72 godziny.',
+    body: 'Pilna robota pod koniec dnia. Trening wypada. W niedzielę nowy plan. Jakby za tydzień nie miało być maili.',
+    proof: 'Obstaw, co Cię wykłada. Sprawdź trop w odpowiedziach. Jeden test na 72 godziny.',
     cta: 'Sprawdzam, gdzie to się zaczyna',
   },
   th2: {
