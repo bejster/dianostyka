@@ -13,7 +13,7 @@ test('v2.8.1 moves the human trust anchor out of the cold entry and into the res
   assert.match(questions, /ASSESSMENT_VERSION = '3\.0\.0'/);
   assert.doesNotMatch(page, /src="\/michal-portrait\.jpg"/);
   assert.match(result, /src="\/michal-portrait\.jpg"/);
-  assert.match(entryCopy, /headline: 'W robocie dowozisz\. A po pracy nie masz już siły na siebie\?'/);
+  assert.match(entryCopy, /headline: 'Twój plan działa\. Do pierwszego gorszego czwartku\.'/);
   assert.match(result, /W 1:1 nie zaczynam od nowego planu\./);
   assert.match(page + result, /Michał · Metoda 168|MICHAŁ · METODA 168/);
   assert.doesNotMatch(page + result, /Human Performance Coach/i);
