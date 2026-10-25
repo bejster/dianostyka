@@ -330,9 +330,11 @@ export default function DiagnozaPage() {
             {entry.headline}
             {entry.accent && <>{' '}<em style={{ color: GOLD, fontStyle: 'italic' }}>{entry.accent}</em></>}
           </h1>
-          <p className="dx-lede" style={{ color: '#c4bdb0', lineHeight: 1.55, margin: '0 0 16px' }}>
+          <p className="dx-lede" style={{ color: '#c4bdb0', lineHeight: 1.55, margin: '0 0 12px' }}>
             {topic && <>Sprawdzisz też temat: {TOPIC_LABEL[topic]}. </>}{entry.body}
-            {' '}<strong style={{ color: '#ece7db', fontWeight: 750 }}>{entry.proof}</strong>
+          </p>
+          <p className="dx-lede" style={{ color: '#ece7db', lineHeight: 1.55, margin: '0 0 20px' }}>
+            {entry.proof}
           </p>
           <button
             onClick={() => {
