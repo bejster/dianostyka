@@ -27,20 +27,9 @@ function decisionCard(answers: Record<string, unknown>, experimentId: keyof type
   return buildWeekDecisionCard(answers, decision, experiment);
 }
 
-test('rynek: dobrowolna historia zakupu bez wpływu na scoring', () => {
-  const q = QUESTIONS.find(q => q.id === 'past_paid_attempt');
-  assert.ok(q, 'pytanie nie istnieje');
-  assert.equal(q.type, 'single');
-  assert.equal(q.optional, true);
-  assert.equal(q.condition?.({ tried_before: 'tb_0' }), false);
-  assert.equal(q.condition?.({ tried_before: 'tb_2' }), true);
-  assert.ok(q.options?.every(opt => opt.value === 0));
-  assert.equal(q.upstreamWeight, 0);
-  assert.equal(q.crossDomainImpact, 0);
-  assert.equal(ASSESSMENT_VERSION, '3.1.0');
-  const flow = readFileSync('app/components/SingleQuestionFlow.tsx', 'utf8');
-  assert.match(flow, /currentQ\.optional/);
-  assert.match(flow, /goToNext\(\{ skipped: true \}\)/);
+test('rdzeń pytań jest zamrożony; historię płatnych prób zbiera późniejszy formularz', () => {
+  assert.equal(QUESTIONS.some(q => q.id === 'past_paid_attempt'), false);
+  assert.equal(ASSESSMENT_VERSION, '3.0.0');
 });
 
 test('sygnał rynkowy jest deklaracją, nie scoringiem zamożności', () => {
@@ -86,7 +75,7 @@ test('przy małej pewności nie ma pewnej przyczyny ani nieuzasadnionego claimu'
   const c = decisionCard({ ...base, break_window: 'bw_varies' }, 'R4', 'LOW');
   assert.match(c.title, /nie będę zgadywał/);
   assert.match(c.note, /nie dowód przyczynowości/);
-  assert.match(c.alternativeIfWrong, /nie mamy/);
+  assert.match(c.alternativeIfWrong, /Niczego nie potwierdziliśmy/);
 });
 
 test('publiczny wynik pokazuje dowody i możliwość niezgody, nie pseudopomiar energii', () => {
