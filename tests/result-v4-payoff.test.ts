@@ -59,6 +59,7 @@ test('dead reframe LLM path is not fired from the live diagnostic flow', () => {
 
 test('committing the 72h test still leaves a concrete final action', () => {
   assert.match(result, /committed && !saved/);
-  assert.match(result, /Zapisz wynik na te 72 godziny/);
+  assert.match(result, /Skopiuj swój test na 72 godziny/);
   assert.match(result, /onClick=\{shareSafe\}/);
+  assert.match(result, /localStorage\.setItem\(RETURN_KEY/);
 });
