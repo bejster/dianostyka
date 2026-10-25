@@ -22,17 +22,16 @@ type EntryCopy = {
 
 export const ENTRY_COPY: Record<EntryDoor, EntryCopy> = {
   general: {
-    headline: 'Twój plan działa. Do pierwszego gorszego czwartku.',
-    accent: 'I znowu „od poniedziałku”?',
-    body: 'Robota się przeciąga. Trening wypada. W niedzielę nowy plan. Jakby kolejny czwartek miał zniknąć.',
-    proof: 'Obstaw winnego. Zobacz, czy problem zaczął się wcześniej. Jeden test na 72 godziny.',
-    cta: 'Sprawdzam, co mi rozwala tydzień',
+    headline: 'Siemano :D Zrobiłem coś takiego, żebyś mógł obadać swój tydzień.',
+    body: 'Bo wiesz, jak w czwartek wypada Ci trening, to łatwo powiedzieć, że znowu zabrakło dyscypliny. No dobra, tylko co się działo wcześniej? Jak spałeś, ile miałeś roboty, kiedy pierwszy raz siadła Ci energia? Bo ja bym właśnie od tego zaczął.',
+    proof: 'Przeklikaj kilka pytań o swój tydzień. Na koniec pokażę Ci, co ja bym sprawdził jako pierwsze i dlaczego.',
+    cta: 'Dobra, sprawdzam',
   },
   hit: {
-    headline: 'Trzy treningi w planie. Gorszy tydzień zostawia jeden.',
-    body: 'Pilna robota pod koniec dnia. Trening wypada. W niedzielę nowy plan. Jakby za tydzień nie miało być maili.',
-    proof: 'Obstaw, co Cię wykłada. Sprawdź trop w odpowiedziach. Jeden test na 72 godziny.',
-    cta: 'Sprawdzam, gdzie to się zaczyna',
+    headline: 'Siemano :D Zrobiłem taką Mapę 168, bo ciągle widzę jedną rzecz.',
+    body: 'Ktoś ma w planie trzy treningi, ale wystarczą dwa cięższe dni w pracy i nagle dwa wypadają. No dobra, tylko po co od razu zmieniać trening? Ja bym najpierw chciał zobaczyć, co mu się działo z resztą tygodnia, że w ogóle do tego doszło.',
+    proof: 'Przeklikaj kilka pytań, a pokażę Ci, co z tego wynika i co bym sprawdził na początku.',
+    cta: 'Dobra, sprawdzam',
   },
   th2: {
     headline: 'Impreza się skończyła. Czemu reszta tygodnia dalej idzie się jebać?',
