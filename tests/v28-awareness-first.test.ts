@@ -28,7 +28,7 @@ test('cold entry uses profile framing while general visitors get a neutral quest
   assert.match(general, /Twój plan działa\. Do pierwszego gorszego czwartku/);
   assert.doesNotMatch(general, /weekend|impreza|jebać/i);
   assert.doesNotMatch(copy, /hormon|testosteron|kortyzol|wellness|dobrostan/i);
-  assert.match(copy, /Zobacz, czy odpowiedzi się zgadzają/);
+  assert.match(copy, /Zobacz, czy problem zaczął się wcześniej/);
   assert.match(coldEntry, /entry\.proof/);
 });
 
