@@ -15,8 +15,8 @@ test('contact is required only after explicit help/coaching intent', () => {
 });
 
 test('cold entry preserves curiosity and does not expose the hot sales branch', () => {
-  assert.match(fs.readFileSync('app/lib/entry-copy.ts', 'utf8'), /headline: 'Twój plan działa\. Do pierwszego gorszego czwartku\.'/);
-  assert.match(fs.readFileSync('app/lib/entry-copy.ts', 'utf8'), /Obstaw winnego\. Zobacz, czy problem zaczął się wcześniej/);
+  assert.match(fs.readFileSync('app/lib/entry-copy.ts', 'utf8'), /headline: 'Siemano :D Zrobiłem coś takiego/);
+  assert.match(fs.readFileSync('app/lib/entry-copy.ts', 'utf8'), /Na koniec pokażę Ci, co ja bym sprawdził jako pierwsze i dlaczego/);
   assert.match(page, /entry\.proof/);
   // 2026-10-07: chipy wyciete, kalki (headroom, 72H) i dublowaly podtytul.
   assert.doesNotMatch(page, /NAJWIĘKSZY ZAPAS|PIERWSZY RUCH 72H|GDZIE TRACISZ/);
