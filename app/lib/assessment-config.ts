@@ -724,29 +724,6 @@ export const QUESTIONS: QuestionDef[] = [
     ],
   },
 
-  // MARKET INTELLIGENCE: jawna historia zakupu, a nie proxy dochodu.
-  // JEDEN opcjonalny ekran dopiero po deklaracji intencji i terminu startu.
-  // Zero wpływu na scoring, ocenę premium i routing oferty.
-  {
-    id: 'past_paid_attempt',
-    section: 'Co już przerabiałeś',
-    sectionNum: 'VIII',
-    title: 'Płaciłeś już za coś, co miało rozwiązać ten problem?',
-    subtitle: 'Nie pytam o kwotę. Chcę wiedzieć, czy następne rozwiązanie byłoby Twoim pierwszym, czy już kolejnym. Możesz pominąć.',
-    type: 'single',
-    optional: true,
-    domain: 'chaos',
-    upstreamWeight: 0,
-    crossDomainImpact: 0,
-    condition: (a) => ['tb_1', 'tb_2', 'tb_3'].includes(String(a.tried_before || '')),
-    options: [
-      { id: 'pay_none', label: 'Nie. Sam próbowałem coś poukładać.', value: 0 },
-      { id: 'pay_plan', label: 'Tak. Gotowy plan, kurs albo aplikacja.', value: 0 },
-      { id: 'pay_person', label: 'Tak. Trener, dietetyk albo prowadzenie online.', value: 0 },
-      { id: 'pay_both', label: 'Tak. Przerabiałem już oba podejścia.', value: 0 },
-      { id: 'pay_other', label: 'Coś innego.', value: 0 },
-    ],
-  },
   // ── SEKCJA IX: KONTAKT (ostatni ekran; P0-1: OPCJONALNY, NIE bramkuje wyniku; nie wchodzi do score) ──
   // IG opcjonalne — bez niego lead jest anonimowy, ale wynik i tak sie pokazuje. Imie opcjonalne.
   {
