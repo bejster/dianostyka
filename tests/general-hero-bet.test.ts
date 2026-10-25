@@ -31,8 +31,8 @@ test('mobile: naturalne 2 akapity, bez eseju i pogrubionej reklamy', () => {
   const p = field('general', 'proof');
   const words = (b + ' ' + p).trim().split(/\s+/).length;
   assert.ok(words >= 35 && words <= 70, `pod H1 ${words} słów, oczekiwano 35–70`);
-  assert.match(page, /className="dx-lede"[\s\S]*?\{entry\.body\}<\/p>/);
-  assert.match(page, /className="dx-lede"[\s\S]*?\{entry\.proof\}<\/p>/);
+  assert.match(page, /className="dx-lede"[\s\S]*?\{entry\.body\}\s*<\/p>/);
+  assert.match(page, /className="dx-lede"[\s\S]*?\{entry\.proof\}\s*<\/p>/);
   assert.doesNotMatch(page, /<strong[^>]*>\{entry\.proof\}<\/strong>/);
 });
 
