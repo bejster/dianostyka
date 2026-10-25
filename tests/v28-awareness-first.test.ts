@@ -239,7 +239,7 @@ test('the closing block confronts the ceiling belief without inventing precision
   // Domkniecie nie moze byc jednym literalem dla kazdego. Ma sie rozgalezac na pasmach zapasu
   // i wskazywac konkretny obszar z wyniku tego czlowieka.
   assert.match(src, /const ceilingHit = hasCeilingRoom/);
-  assert.match(src, /Nie wiesz, ile zapasu siedzi tutaj: \$\{breakPos\.label\}/);
+  assert.match(src, /Najpierw biorę pod lupę: \$\{breakPos\.label\}/);
   assert.match(src, /className="rx-ceiling"/);
   // trigger stoi PRZED handlowym CTA, a CTA dalej stoi przed kalibracja
   const ceilingAt = src.indexOf('className="rx-ceiling"');
