@@ -406,20 +406,20 @@ export default function ResultExperience({
         {awareness && awareness.verdict !== 'NONE' && (
           <section className="rx-beat rx-mirror" data-beat="mirror">
             <div className="rx-kick">Lustro</div>
-            <h2 className="rx-h2" style={{ fontSize: 'clamp(22px,4.6vw,32px)' }}>{awareness.headline}</h2>
+            <h2 className="rx-h2" style={{ fontSize: 'clamp(22px,4.6vw,32px)' }}>Dałeś sobie {String(awareness.selfEnergy).replace('.', ',')}/10. A co mówisz o zwykłych dniach?</h2>
             <div className="rx-mirror-pair">
               <div className="rx-mirror-cell">
                 <span>Tak się oceniasz</span>
                 <strong>{String(awareness.selfEnergy).replace('.', ',')}</strong>
                 <em>Twoja odpowiedź z drugiego ekranu</em>
               </div>
-              <div className={`rx-mirror-cell ${awareness.verdict === 'ABOVE' ? 'rx-mirror-hot' : ''}`}>
-                <span>Tak wychodzi z odpowiedzi</span>
-                <SettlingReadout from={awareness.selfEnergy} to={awareness.measuredEnergy} />
-                <em>Policzone z pięciu Twoich kliknięć</em>
+              <div className={`rx-mirror-cell ${awareness.drivers.length > 0 ? 'rx-mirror-hot' : ''}`}>
+                <span>Sygnały do sprawdzenia</span>
+                <strong>{awareness.drivers.length}</strong>
+                <em>Rzeczy, które sam zaznaczyłeś. Nie drugi „pomiar energii”</em>
               </div>
             </div>
-            <p className="rx-sub">{awareness.body}</p>
+            <p className="rx-sub">Nie wyliczę Twojej energii z pięciu kliknięć. Mogę za to pokazać, które deklarowane zachowania warto zestawić z tą oceną.</p>
             {awareness.drivers.length > 0 && (
               <ul className="rx-mirror-drivers">
                 {awareness.drivers.map((d, i) => (<li key={i}>{d}</li>))}
@@ -428,7 +428,7 @@ export default function ResultExperience({
             {awareness.stagnationLine && <p className="rx-mirror-stagnation">{awareness.stagnationLine}</p>}
             {/* Zastrzezenie zostaje, bo pilnuje innej liczby niz to przy mapie. Wycialem tylko czlon
                 o procencie potencjalu, ktory pada slowo w slowo dwa ekrany nizej. */}
-            <p className="rx-mirror-note">Ta liczba porównuje Cię wyłącznie z Twoją własną oceną sprzed kilku minut. Nie jest wynikiem medycznym.</p>
+            <p className="rx-mirror-note">Po lewej jest Twoja własna samoocena. Po prawej liczba wybranych sygnałów. Nie udaję, że ankieta mierzy fizjologiczną energię.</p>
             {awareness.driveLine && <p className="rx-medical">{awareness.driveLine}</p>}
           </section>
         )}
@@ -619,13 +619,13 @@ export default function ResultExperience({
         <details className="rx-beat rx-collapsed" data-beat="horizon">
           <summary><span className="rx-collapsed-k">Co i kiedy da się zobaczyć</span><strong>Jak czytać te 72 godziny?</strong></summary>
           <div className="rx-collapsed-body">
-            <h2 className="rx-h2" style={{ fontSize: 'clamp(24px,4.8vw,36px)' }}>Na każdym z tych odcinków widać co innego.</h2>
+            <h2 className="rx-h2" style={{ fontSize: 'clamp(24px,4.8vw,36px)' }}>Na każdym z tych odcinków sprawdzamy coś innego.</h2>
             <div className="rx-horizon">
             <div className="rx-hz">
               <span className="rx-hz-k">72 godziny</span>
               {/* Trzecie powtorzenie experiment.observe na jednej stronie. Test wyzej mowi to doslownie,
                   demonstracja metody powtarza to w swoim kontekscie. Tutaj liczy sie tylko horyzont. */}
-              <p>Na efekt jest wtedy dużo za wcześnie. Te trzy dni mają rozstrzygnąć jedno: czy trafiliśmy w miejsce.</p>
+              <p>Na efekt jest wtedy dużo za wcześnie. Te trzy dni mogą dać pierwszą wskazówkę, czy trafiliśmy w dobry trop.</p>
             </div>
             <div className="rx-hz">
               <span className="rx-hz-k">Najbliższe tygodnie</span>
