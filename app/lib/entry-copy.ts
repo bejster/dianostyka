@@ -22,17 +22,17 @@ type EntryCopy = {
 
 export const ENTRY_COPY: Record<EntryDoor, EntryCopy> = {
   general: {
-    headline: 'W robocie dowozisz. A po pracy nie masz już siły na siebie?',
-    accent: 'A jeśli sypie się dużo wcześniej?',
-    body: 'Siemano :D Zrobiłem Mapę 168, bo możesz od miesięcy naprawiać nie ten moment.',
-    proof: 'Obstaw przyczynę. Zestawię ją z odpowiedziami i dam test na 72 godziny.',
-    cta: 'Dobra, sprawdzam swój tydzień',
+    headline: 'Twój plan działa. Do pierwszego gorszego czwartku.',
+    accent: 'I znowu „od poniedziałku”?',
+    body: 'Robota się przeciąga. Trening wypada. Wieczorem jesz, co akurat jest. A w niedzielę układasz nowy plan. Jakby następny czwartek miał nie nadejść.',
+    proof: 'Najpierw sam obstawisz, co Cię blokuje. Potem zobaczysz, czy reszta odpowiedzi to potwierdza i co sprawdzić przez 72 godziny.',
+    cta: 'Sprawdzam, co mi rozwala tydzień',
   },
   hit: {
-    headline: 'Nie masz siły na trening po pracy. A kto powiedział, że problemem jest trening?',
-    body: 'Siemano :D Zrobiłem to dla gościa, który wszystko ogarnia w robocie, a wieczorem znów odpuszcza trening i jedzenie. Może problem zaczął się wcześniej, niż myślisz.',
-    proof: 'Obstaw przyczynę. Ja pokażę pierwszy trop i test na 72 godziny.',
-    cta: 'Sprawdźmy, gdzie pęka mój tydzień',
+    headline: 'Trzy treningi w planie. Gorszy tydzień zostawia jeden.',
+    body: 'Ktoś wrzuca pilne zadanie pod koniec pracy, trening wypada. Kolację ogarniasz z doskoku. W niedzielę znowu zmieniasz plan. Jakby w następnym tygodniu miało już nie być roboty.',
+    proof: 'Sprawdź, co najpierw sypie się w Twoim tygodniu. Porównam to z Twoimi odpowiedziami i pokażę jeden ruch na 72 godziny.',
+    cta: 'Sprawdzam, gdzie to się zaczyna',
   },
   th2: {
     headline: 'Impreza się skończyła. Czemu reszta tygodnia dalej idzie się jebać?',
