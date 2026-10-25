@@ -58,13 +58,15 @@ test('analytics calls in the result component never reference raw sensitive fiel
   for (const block of trackBlocks) assert.doesNotMatch(block, forbidden, `analytics call leaks a sensitive field: ${block}`);
 });
 
-test('share payload (result_saved) is built only from safe arch/exp/ref params, never raw answers', () => {
+test('save-plan copies real 72h instructions without public tracking identifiers or raw answers', () => {
   const m = result.match(/const shareSafe = \(\) => \{([\s\S]*?)\n  \};/);
   assert.ok(m, 'shareSafe function not found');
   const body = m![1];
-  assert.match(body, /arch: archKey/);
-  assert.match(body, /exp: experiment\.id/);
-  assert.doesNotMatch(body, /instagram|user_pain|odpowiedzi|answers/i);
+  assert.match(body, /experiment\.action/);
+  assert.match(body, /experiment\.observe/);
+  assert.match(body, /experiment\.doNotChange/);
+  assert.match(body, /navigator\.clipboard\.writeText\(plan\)/);
+  assert.doesNotMatch(body, /submissionId|lead_ref|params\.toString|instagram|user_pain|odpowiedzi|answers/i);
 });
 
 test('result page contains no direct-DM handoff or ig.me CTA', () => {
