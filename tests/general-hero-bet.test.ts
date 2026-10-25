@@ -18,7 +18,7 @@ test('general door opens a bet loop the result can close', () => {
   assert.match(general, /accent: 'I znowu „od poniedziałku”\?'/);
   assert.match(general, /Robota się przeciąga\. Trening wypada/);
   assert.match(general, /Jakby kolejny czwartek miał zniknąć/);
-  assert.match(general, /proof: 'Obstaw, co zawiodło\. Zobacz, czy odpowiedzi się zgadzają\. Potem test na 72 godziny\.'/);
+  assert.match(general, /proof: 'Obstaw winnego\. Zobacz, czy problem zaczął się wcześniej\. Jeden test na 72 godziny\.'/);
   assert.match(general, /cta: 'Sprawdzam, co mi rozwala tydzień'/);
   assert.doesNotMatch(general, /Wiesz, co Ci psuje formę/);
   assert.doesNotMatch(general, /headline: '[^']*\s(a|i|w|z) [^']*'/);
