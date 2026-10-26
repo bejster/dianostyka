@@ -65,11 +65,14 @@ test('pusta odpowiedź i stare sesje mają uczciwy fallback', () => {
 
 test('drzwi są napisane po ludzku bez mieszania marek', () => {
   for (const door of Object.values(ENTRY_COPY)) {
-    assert.match(door.body, /Siemano :D/);
-    assert.match(door.proof, /72 godziny/);
+    assert.ok(door.body.length >= 45, 'scena zamiast reklamy narzędzia');
+    assert.ok(door.proof.length >= 35, 'każde wejście uczciwie zapowiada wynik');
   }
   assert.doesNotMatch(ENTRY_COPY.hit.body, /impreza|używki|alkohol/i);
+  assert.doesNotMatch(ENTRY_COPY.general.body, /Zrobiłem Mapę 168, bo/);
   assert.match(ENTRY_COPY.th2.body, /impreza/i);
+  assert.match(ENTRY_COPY.general.proof, /pokażę, co ja bym sprawdził/);
+  assert.doesNotMatch(ENTRY_COPY.general.headline, /Twój plan działa/);
 });
 
 test('168 jest kanoniczne, a stare API nie jest przekierowywane', () => {

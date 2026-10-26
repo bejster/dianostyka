@@ -25,10 +25,10 @@ test('cold entry uses profile framing while general visitors get a neutral quest
   assert.match(coldEntry, /ENTRY_COPY/);
   const copy = fs.readFileSync(path.join(root, 'app/lib/entry-copy.ts'), 'utf8');
   const general = copy.match(/general: \{([\s\S]*?)\n  \}/)?.[1] ?? '';
-  assert.match(general, /W robocie dowozisz\. A po pracy nie masz już siły na siebie/);
-  assert.doesNotMatch(general, /weekend|impreza|jebać|znowu/i);
+  assert.match(general, /Możesz zamknąć tę stronę/);
+  assert.doesNotMatch(general, /weekend|impreza|jebać/i);
   assert.doesNotMatch(copy, /hormon|testosteron|kortyzol|wellness|dobrostan/i);
-  assert.match(copy, /Zestawię ją z odpowiedziami/);
+  assert.match(copy, /co załatwi kolejna rozpiska/);
   assert.match(coldEntry, /entry\.proof/);
 });
 
@@ -239,7 +239,7 @@ test('the closing block confronts the ceiling belief without inventing precision
   // Domkniecie nie moze byc jednym literalem dla kazdego. Ma sie rozgalezac na pasmach zapasu
   // i wskazywac konkretny obszar z wyniku tego czlowieka.
   assert.match(src, /const ceilingHit = hasCeilingRoom/);
-  assert.match(src, /Nie wiesz, ile zapasu siedzi tutaj: \$\{breakPos\.label\}/);
+  assert.match(src, /Najpierw biorę pod lupę: \$\{breakPos\.label\}/);
   assert.match(src, /className="rx-ceiling"/);
   // trigger stoi PRZED handlowym CTA, a CTA dalej stoi przed kalibracja
   const ceilingAt = src.indexOf('className="rx-ceiling"');

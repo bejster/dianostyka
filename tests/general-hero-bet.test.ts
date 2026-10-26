@@ -2,63 +2,71 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 
-// 2026-10-14 hero A: drzwi general stawiaja zaklad ("czy masz racje?"), ktory zamyka
-// istniejace pytanie `prediction` + prediction_gap w wyniku + test 72h.
 const copy = fs.readFileSync('app/lib/entry-copy.ts', 'utf8');
 const page = fs.readFileSync('app/diagnoza/page.tsx', 'utf8');
 const layout = fs.readFileSync('app/layout.tsx', 'utf8');
 const og = fs.readFileSync('app/api/og/route.tsx', 'utf8');
-const general = copy.match(/general: \{([\s\S]*?)\n  \}/)?.[1] ?? '';
+const doors = Object.fromEntries(
+  ['general', 'hit', 'th2'].map((name) => [
+    name,
+    copy.match(new RegExp(`${name}: \\{([\\s\\S]*?)\\n  \\}`))?.[1] ?? '',
+  ]),
+);
+const field = (door: string, key: string) =>
+  doors[door]?.match(new RegExp(`${key}: '([^']*)'`))?.[1] ?? '';
 
-test('general door opens a bet loop the result can close', () => {
-  // 2026-10-14 hero B (/pp 14A 4/4): tozsamosc + emocja (pilnujesz sie / pekasz),
-  // ciekawosc (zaczyna sie wczesniej), stawka (miesiace naprawiania nie tego miejsca),
-  // obietnica = ekran wyniku (Gdzie zaczynasz + Pierwszy ruch 72h).
-  assert.match(general, /headline: 'W robocie dowozisz\. A po pracy nie masz już siły na siebie\?'/);
-  assert.match(general, /accent: 'A jeśli sypie się dużo wcześniej\?'/);
-  assert.match(general, /Siemano :D Zrobiłem Mapę 168/);
-  assert.match(general, /możesz od miesięcy naprawiać nie ten moment/);
-  assert.match(general, /proof: 'Obstaw przyczynę\. Zestawię ją z odpowiedziami i dam test na 72 godziny\.'/);
-  assert.match(general, /cta: 'Dobra, sprawdzam swój tydzień'/);
-  assert.doesNotMatch(general, /Wiesz, co Ci psuje formę/);
-  assert.doesNotMatch(general, /headline: '[^']*\s(a|i|w|z) [^']*'/);
-  assert.doesNotMatch(general, /Ile dni w tygodniu jesteś w formie/);
+test('general: prowokacja dotyka realnego kosztu, ale zostawia możliwość wyjścia', () => {
+  assert.match(field('general', 'headline'), /Możesz zamknąć tę stronę/);
+  assert.match(field('general', 'accent'), /co tym razem zmienisz od poniedziałku/);
+  assert.match(field('general', 'body'), /Siemano :D/);
+  assert.match(field('general', 'body'), /w czwartek robota wywala Ci trening/);
+  assert.match(field('general', 'body'), /kolejne pół roku/);
+  assert.match(field('general', 'proof'), /co ja bym sprawdził jako pierwsze/);
+  assert.match(field('general', 'proof'), /72 godziny/);
+  assert.match(field('general', 'cta'), /sprawdzam, co mnie trzyma/);
+  assert.doesNotMatch(doors.general, /Obstaw winnego|Twój plan działa|Jakby kolejny czwartek/);
 });
 
-test('general hero body stays short on mobile (max 30 words under the headline)', () => {
-  // 2026-10-14 Michal: 58 slow pod naglowkiem = sciana tekstu na telefonie.
-  const body = general.match(/body: '([^']*)'/)?.[1] ?? '';
-  const proof = general.match(/proof: '([^']*)'/)?.[1] ?? '';
-  const words = (body + ' ' + proof).trim().split(/\s+/).length;
-  assert.ok(words <= 30, `pod naglowkiem ${words} slow`);
+test('mobile: mówiony tekst w 2 akapitach bez sloganów i bez pogrubienia całego wywodu', () => {
+  const b = field('general', 'body');
+  const p = field('general', 'proof');
+  const words = (b + ' ' + p).trim().split(/\s+/).length;
+  assert.ok(words >= 65 && words <= 105, `pod H1 ${words} słów, zakres 65–105`);
+  assert.match(page, /className="dx-lede"[\s\S]*?\{entry\.body\}\s*<\/p>/);
+  assert.match(page, /className="dx-lede"[\s\S]*?\{entry\.proof\}\s*<\/p>/);
+  assert.doesNotMatch(page, /<strong[^>]*>\{entry\.proof\}<\/strong>/);
 });
 
-test('the promised bet exists in the product before behavioural questions', () => {
+test('obietnica jest sprawdzalna i istnieje w aktualnej ankiecie', () => {
   const cfg = fs.readFileSync('app/lib/assessment-config.ts', 'utf8');
   assert.match(cfg, /Obstaw, zanim policzymy/);
-});
-
-test('hit and th2 keep their own proof line, page renders accent and proof from copy', () => {
-  for (const door of ['hit', 'th2']) {
-    const block = copy.match(new RegExp(`${door}: \\{([\\s\\S]*?)\\n  \\}`))?.[1] ?? '';
-    assert.match(block, /proof: '[^']+test na 72 godziny\.'|proof: '[^']+jeden test na 72 godziny\.'/);
-    assert.doesNotMatch(block, /accent:/);
-  }
-  assert.match(page, /entry\.accent/);
+  assert.match(cfg, /break_window/);
   assert.match(page, /entry\.proof/);
-  assert.doesNotMatch(page, /<strong[^>]*>Porównasz swoje podejrzenie/);
+  assert.match(page, /entry\.cta/);
+  assert.doesNotMatch(doors.general, /na pewno|wykryję prawdziwą przyczynę|wyleczę/i);
 });
 
-test('social metadata and OG carry the new general headline', () => {
+test('HiT i TH2 mają osobne sceny i nie mieszają swoich problemów', () => {
+  assert.match(field('hit', 'headline'), /Na kolejnego calla/);
+  assert.match(field('hit', 'body'), /resztki energii/);
+  assert.match(field('hit', 'body'), /co zrobisz, kiedy znowu skończysz pracę późno/);
+  assert.match(field('hit', 'proof'), /72 godziny/);
+  assert.doesNotMatch(doors.hit, /alkohol|używki|narkotyk|impreza/i);
+  assert.match(field('th2', 'body'), /Impreza/);
+  assert.match(field('th2', 'proof'), /72 godziny/);
+  assert.doesNotMatch(doors.hit, /accent:/);
+  assert.doesNotMatch(doors.th2, /accent:/);
+});
+
+test('metadata i OG pozostają zgodne z bezpieczną obietnicą strony', () => {
   assert.match(layout, /title: 'Mapa 168\. Sprawdź, gdzie zaczyna się sypać Twój tydzień/);
-  assert.doesNotMatch(layout, /Ile dni w tygodniu jesteś w formie/);
   assert.match(og, /TY OBSTAWIASZ/);
-  assert.doesNotMatch(og, /Ile dni w tygodniu jesteś w formie/);
+  assert.doesNotMatch(layout + og, /Ile dni w tygodniu jesteś w formie/);
 });
 
-test('hero copy stays inside voice rules', () => {
-  const text = general + (layout.match(/title: '([^']*)'/)?.[1] ?? '');
-  assert.doesNotMatch(text, /—|naprawdę|, i /);
-  assert.doesNotMatch(text, /To nie .*, to /);
-  assert.doesNotMatch(general, /\b(chciałeś|sam |obstawiłeś|miałeś)/i);
+test('głos nie produkuje taniej presji ani fałszywego claimu', () => {
+  const text = doors.general + doors.hit;
+  assert.doesNotMatch(text, /wystarczy ci chcieć|jak ci zależy|przegryw|jesteś leniwy/i);
+  assert.doesNotMatch(text, /uzdrowię|wykryję przyczynę|zmierzę twoje hormony/i);
+  assert.doesNotMatch(text, /Obstaw winnego|Zestawię ją z odpowiedziami/);
 });

@@ -22,17 +22,17 @@ type EntryCopy = {
 
 export const ENTRY_COPY: Record<EntryDoor, EntryCopy> = {
   general: {
-    headline: 'W robocie dowozisz. A po pracy nie masz już siły na siebie?',
-    accent: 'A jeśli sypie się dużo wcześniej?',
-    body: 'Siemano :D Zrobiłem Mapę 168, bo możesz od miesięcy naprawiać nie ten moment.',
-    proof: 'Obstaw przyczynę. Zestawię ją z odpowiedziami i dam test na 72 godziny.',
-    cta: 'Dobra, sprawdzam swój tydzień',
+    headline: 'Możesz zamknąć tę stronę. Serio.',
+    accent: 'Ale co tym razem zmienisz od poniedziałku?',
+    body: 'Siemano :D Jeżeli od miesięcy masz ten sam numer: w niedzielę nowy plan, w czwartek robota wywala Ci trening, a później znowu zaczynasz od zera… to powiedz mi, co załatwi kolejna rozpiska? Pracy Ci nagle ubędzie? Po całym dniu pojawi się więcej siły? I tak potrafi zlecieć kolejne pół roku. Plan za planem, a forma dalej stoi.',
+    proof: 'Właśnie dlatego zrobiłem Mapę 168. Chcę, żebyś najpierw zobaczył, gdzie zaczyna Ci się sypać tydzień. Na koniec pokażę, co ja bym sprawdził jako pierwsze, czego bym nie ruszał i jaki jeden ruch możesz przetestować przez 72 godziny.',
+    cta: 'Dobra, sprawdzam, co mnie trzyma',
   },
   hit: {
-    headline: 'Nie masz siły na trening po pracy. A kto powiedział, że problemem jest trening?',
-    body: 'Siemano :D Zrobiłem to dla gościa, który wszystko ogarnia w robocie, a wieczorem znów odpuszcza trening i jedzenie. Może problem zaczął się wcześniej, niż myślisz.',
-    proof: 'Obstaw przyczynę. Ja pokażę pierwszy trop i test na 72 godziny.',
-    cta: 'Sprawdźmy, gdzie pęka mój tydzień',
+    headline: 'Na kolejnego calla znajdziesz jeszcze siłę. A dla siebie?',
+    body: 'Siemano :D Masz przed sobą kolejne pilne zadanie, więc jakoś wyciągasz resztki energii. Ale trening? Znowu wypada. W niedzielę rozpisujesz wszystko od nowa i liczysz, że następny tydzień będzie spokojniejszy. No dobra, tylko co zrobisz, kiedy znowu skończysz pracę późno? Znowu zmienisz plan, czy w końcu sprawdzisz, gdzie się wykładasz?',
+    proof: 'Po to zrobiłem Mapę 168. Przeklikasz swój rzeczywisty tydzień, zobaczysz, co ja bym sprawdził jako pierwsze i jaki jeden ruch sam bym przetestował przez 72 godziny. Nie musisz wierzyć mi na słowo.',
+    cta: 'Dobra, sprawdzam, gdzie się wykładam',
   },
   th2: {
     headline: 'Impreza się skończyła. Czemu reszta tygodnia dalej idzie się jebać?',

@@ -28,12 +28,12 @@ test('required expectation-reset copy is present verbatim in Beat 6', () => {
 
 test('analytics events use only the safe frozen event names', () => {
   const allowed = new Set([
-    'result_viewed', 'current_state_viewed',
+    'result_viewed', 'current_state_viewed', 'nnv_viewed',
     // v2.9: beat Lustro (samoocena vs zachowanie). Nazwa bez PII, sam fakt obejrzenia sekcji.
     'mirror_viewed',
     'map_viewed', 'evidence_viewed', 'fracture_viewed',
     'loop_viewed', 'experiment_viewed', 'horizon_viewed', 'experiment_committed',
-    'method_demo_viewed', 'result_saved', 'cta_nabor_clicked', 'calibration_answer', 'content_signal',
+    'method_demo_viewed', 'result_saved', 'cta_nabor_clicked', 'calibration_answer', 'content_signal', 'result_reaction',
     'result_beat_dwell', 'result_scroll_depth', 'result_exit_snapshot',
     // 3.0 warstwa decyzyjna: same kategorie (id odpowiedzi, stan, dzwignia), zero PII i tekstu.
     'desire_selected', 'prediction_locked', 'contrast_completed', 'failed_solution', 'constraint_selected',
@@ -58,13 +58,15 @@ test('analytics calls in the result component never reference raw sensitive fiel
   for (const block of trackBlocks) assert.doesNotMatch(block, forbidden, `analytics call leaks a sensitive field: ${block}`);
 });
 
-test('share payload (result_saved) is built only from safe arch/exp/ref params, never raw answers', () => {
+test('save-plan copies real 72h instructions without public tracking identifiers or raw answers', () => {
   const m = result.match(/const shareSafe = \(\) => \{([\s\S]*?)\n  \};/);
   assert.ok(m, 'shareSafe function not found');
   const body = m![1];
-  assert.match(body, /arch: archKey/);
-  assert.match(body, /exp: experiment\.id/);
-  assert.doesNotMatch(body, /instagram|user_pain|odpowiedzi|answers/i);
+  assert.match(body, /experiment\.action/);
+  assert.match(body, /experiment\.observe/);
+  assert.match(body, /experiment\.doNotChange/);
+  assert.match(body, /navigator\.clipboard\.writeText\(plan\)/);
+  assert.doesNotMatch(body, /submissionId|lead_ref|params\.toString|instagram|user_pain|odpowiedzi|answers/i);
 });
 
 test('result page contains no direct-DM handoff or ig.me CTA', () => {

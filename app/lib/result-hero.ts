@@ -24,12 +24,15 @@ export function buildResultHero(
     ? ` W obszarze „${weakest.label}” z Twoich odpowiedzi wychodzi: ${weakest.reason}.`
     : '';
   const check = 'To trop do sprawdzenia przez 72 godziny, nie pewna przyczyna.';
+  // Biernik w prawdziwym zdaniu: "obstawiałeś głowę", nie "obstawiałeś głowa".
+  const predictedAcc = prediction.lever === 'glowa' ? 'głowę i pracę' : prediction.label;
+  const candidateAcc = upstream.lever === 'glowa' ? 'głowę i pracę' : upstream.label;
   const candidate = upstream.label;
 
   if (prediction.lever === 'hormony' || gap.type === 'boundary') {
     return {
       headline: 'Obstawiałeś hormony. Tego z ankiety nie zmierzę.',
-      explanation: `Mogę za to sprawdzić, czy w Twoim tygodniu powtarza się wzorzec związany z ${candidate}. ${firstSignal} ${check}`,
+      explanation: `Mogę za to sprawdzić, czy w Twoim tygodniu powtarza się wzorzec w takim obszarze jak ${candidate}. ${firstSignal} ${check}`,
     };
   }
   if (!upstream.resolved || confidence.state === 'za_malo') {
@@ -46,25 +49,25 @@ export function buildResultHero(
   }
   if (gap.type === 'miss' || gap.type === 'upstream') {
     return {
-      headline: `Obstawiałeś ${prediction.label}. Ja bym najpierw sprawdził ${candidate}.`,
+      headline: `Obstawiałeś ${predictedAcc}. Ja bym najpierw sprawdził ${candidateAcc}.`,
       explanation: `${firstSignal}${evidence} Możliwe, że patrzysz na skutek zamiast na miejsce, w którym tydzień zaczyna się sypać. ${check}`,
     };
   }
   if (gap.type === 'deeper') {
     return {
-      headline: `Obstawiałeś ${prediction.label}. To może być nawet krok wcześniej.`,
-      explanation: `${firstSignal}${evidence} Twoje podejrzenie i wynik nie muszą się wykluczać. Zacznijmy od ${candidate} i sprawdźmy, co ruszy.`,
+      headline: `Obstawiałeś ${predictedAcc}. To może być nawet krok wcześniej.`,
+      explanation: `${firstSignal}${evidence} Twoje podejrzenie i wynik nie muszą się wykluczać. Sprawdźmy najpierw ${candidateAcc} i zobaczmy, czy coś ruszy.`,
     };
   }
   if (gap.type === 'match') {
     return {
-      headline: `Obstawiałeś ${prediction.label}. Odpowiedzi też tam prowadzą.`,
+      headline: `Obstawiałeś ${predictedAcc}. Odpowiedzi też tam prowadzą.`,
       explanation: `${firstSignal}${evidence} Ale zgodność odpowiedzi nie dowodzi przyczyny. Teraz trzeba sprawdzić, czy zmiana w tym miejscu poruszy resztę.`,
     };
   }
 
   return {
-    headline: `Sam nie byłeś pewny. Ja bym sprawdził ${candidate}.`,
+    headline: `Sam nie byłeś pewny. Ja bym sprawdził ${candidateAcc}.`,
     explanation: `${firstSignal}${evidence} Nie ruszałbym pięciu rzeczy naraz. Jeden test na 72 godziny pokaże, czy ten trop w ogóle ma sens.`,
   };
 }

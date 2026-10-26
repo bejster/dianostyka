@@ -22,6 +22,8 @@ import { computeAwarenessGap } from '../lib/awareness-gap';
 import { classifyPremiumFit } from '../lib/premium-fit';
 import { Atmosphere } from './atmosphere';
 import { resolveEntryDoor, ENTRY_COPY } from '../lib/entry-copy';
+import { buildMarketSignal } from '../lib/market-signal';
+import { buildWeekDecisionCard } from '../lib/week-decision-card';
 
 const GOLD = '#c8a84e';
 const BG = '#08080a';
@@ -164,7 +166,8 @@ export default function DiagnozaPage() {
     trackDiag('diag_result_viewed', { score: sc, severity_band: severityBand, worstCat });
 
     const painText = typeof raw.user_pain === 'string' ? raw.user_pain.trim() : '';
-    const leadBrief = buildLeadBrief(raw); // pelny brief + 3 pola wolnego tekstu do personalizacji
+    const leadBrief = buildLeadBrief(raw); // komplet rzeczywiście zebranych odpowiedzi, bez zgadywania brakujących pól
+    const marketSignal = buildMarketSignal(raw);
     const rawImie = raw.imie ?? raw.name;
     // Werdykt 3-tier do Telegrama = TYLKO ciezkosc/potrzeba z domen (P0-2: intencja zakupu NIE podnosi diagnozy).
     const tgRedCount = catScores.filter((c) => c.pct < 45).length;
@@ -204,6 +207,7 @@ export default function DiagnozaPage() {
         agency_mode: typeof raw.agency_mode === 'string' ? raw.agency_mode : '',
         premium_fit: premium.fit,
         premium_signals: premium,
+        market_signal: marketSignal,
         entry_door: door,
         entry_topic: topic || '',
         entry_variant: topic ? `${door}_${topic}` : door,
@@ -226,6 +230,7 @@ export default function DiagnozaPage() {
           entry_topic: topic || '',
           entry_variant: topic ? `${door}_${topic}` : door,
           premium_fit: premium.fit,
+          market_signal: marketSignal,
           agency: premium.agency,
           control_need: premium.controlNeed,
           responsibility: premium.responsibility,
@@ -325,9 +330,11 @@ export default function DiagnozaPage() {
             {entry.headline}
             {entry.accent && <>{' '}<em style={{ color: GOLD, fontStyle: 'italic' }}>{entry.accent}</em></>}
           </h1>
-          <p className="dx-lede" style={{ color: '#c4bdb0', lineHeight: 1.55, margin: '0 0 16px' }}>
+          <p className="dx-lede" style={{ color: '#c4bdb0', lineHeight: 1.55, margin: '0 0 12px' }}>
             {topic && <>Sprawdzisz też temat: {TOPIC_LABEL[topic]}. </>}{entry.body}
-            {' '}<strong style={{ color: '#ece7db', fontWeight: 750 }}>{entry.proof}</strong>
+          </p>
+          <p className="dx-lede" style={{ color: '#ece7db', lineHeight: 1.55, margin: '0 0 20px' }}>
+            {entry.proof}
           </p>
           <button
             onClick={() => {
@@ -465,6 +472,7 @@ export default function DiagnozaPage() {
     const awareness = computeAwarenessGap(answers);
     // FLAGSHIP 3.0: warstwa decyzyjna nad tym samym eksperymentem i confidence. Nic nie liczy od nowa.
     const decision = buildDecision({ answers: answers as Record<string, unknown>, experiment: pickedExperiment, confidence, routePrimary: route.primary });
+    const decisionCard = buildWeekDecisionCard(answers, decision, pickedExperiment);
     // CONTENT SIGNALS: anonimowe kategorie do uczenia contentu. Bez PII, treści otwartych, symptomów, używek, libido.
     const contentSignals: Record<string, string | boolean> = {
       break_window: breakIdStr || 'unknown',
@@ -487,6 +495,7 @@ export default function DiagnozaPage() {
       prediction_gap: decision.prediction_gap.type,
       confidence_state: decision.confidence.state,
       route_category: decision.route,
+      decision_pattern: decisionCard.pattern,
       has_pain_text: typeof answers.user_pain === 'string' && answers.user_pain.trim().length > 0,
       has_trigger_text: typeof answers.user_trigger === 'string' && answers.user_trigger.trim().length > 0,
     };
@@ -515,6 +524,7 @@ export default function DiagnozaPage() {
         contentSignals={contentSignals}
         awareness={awareness}
         decision={decision}
+        decisionCard={decisionCard}
       />
     );
   }

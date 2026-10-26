@@ -14,6 +14,7 @@ import type { ExperimentDef, Confidence } from '../lib/experiment-bank';
 import type { RouteDecision } from '../lib/result-router-v3';
 import { BREAK_PHRASE, type LoopNode } from '../lib/fracture-engine';
 import type { AwarenessGap } from '../lib/awareness-gap';
+import type { WeekDecisionCard } from '../lib/week-decision-card';
 import { RETURN_KEY, sentenceCase, bridgeLine, MEDICAL_BOUNDARY, type DecisionResult, type ReturnRecord } from '../lib/decision-engine';
 import { buildResultHero } from '../lib/result-hero';
 
@@ -61,7 +62,7 @@ export default function ResultExperience({
   archLabel, archKey, redCount, breakId, domainLabel, statuses,
   evidenceReceipts, loop, whyRepeats, costFacts, userPain,
   experiment, experimentConfidence, route,
-  imie, instagram, naborHref, submissionId, contentSignals, awareness, decision,
+  imie, instagram, naborHref, submissionId, contentSignals, awareness, decision, decisionCard,
 }: {
   archLabel: string; archKey: string; redCount?: number; breakId: string; domainLabel: string;
   statuses: { label: string; score: number; reason: string }[];
@@ -72,6 +73,7 @@ export default function ResultExperience({
   contentSignals?: Record<string, string | boolean>;
   awareness?: AwarenessGap;
   decision?: DecisionResult;
+  decisionCard?: WeekDecisionCard;
 }) {
   void domainLabel;
   const progRef = useRef<HTMLDivElement>(null);
@@ -86,7 +88,9 @@ export default function ResultExperience({
   const [calib, setCalib] = useState<string>('');
   const [committed, setCommitted] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [copyFallback, setCopyFallback] = useState('');
   const [experimentReaction, setExperimentReaction] = useState<string>('');
+  const [resultReaction, setResultReaction] = useState<'new' | 'known' | 'off' | ''>('');
   const CALIB = [
     { id: 'sen', label: 'Sen' }, { id: 'energia', label: 'Energia i głowa' }, { id: 'jedzenie', label: 'Jedzenie' },
     { id: 'ruch', label: 'Ruch' }, { id: 'weekend', label: 'Weekend' }, { id: 'naped', label: 'Napęd i libido' }, { id: 'ok', label: 'Wszystko pasuje' },
@@ -121,6 +125,10 @@ export default function ResultExperience({
     } catch { /* analityka nigdy nie wywraca flow */ }
     trackDiag('calibration_answer', { id });
   };
+  const reactToInsight = (id: 'new' | 'known' | 'off') => {
+    setResultReaction(id);
+    trackDiag('result_reaction', { reaction: id, decision_pattern: decisionCard?.pattern || 'unknown' });
+  };
   const reactToExperiment = (id: string) => {
     setExperimentReaction(id);
     setCommitted(false);
@@ -144,17 +152,12 @@ export default function ResultExperience({
       if (decision.route === 'help') trackDiag('help_route', { route_primary: route.primary });
       else if (decision.route === 'data_needed') trackDiag('data_needed_route', { route_primary: route.primary });
       else trackDiag('self_serve_route', { route_primary: route.primary });
-      // 7-dniowa petla powrotu: localStorage, tylko kategorie. Nadpisuje wylacznie starszy rekord.
-      try {
-        const rec: ReturnRecord = { v: '3.0.0', at: Date.now(), upstream: decision.upstream_candidate.lever, experimentId: experiment.id, prediction: decision.prediction.id };
-        localStorage.setItem(RETURN_KEY, JSON.stringify(rec));
-      } catch { /* brak storage nie wywraca wyniku */ }
     }
     const io = new IntersectionObserver((es) => es.forEach((e) => {
       if (!e.isIntersecting) return;
       (e.target as HTMLElement).classList.add('in');
       const b = (e.target as HTMLElement).dataset.beat;
-      const EVT: Record<string, string> = { '1': 'current_state_viewed', mirror: 'mirror_viewed', map: 'map_viewed', evidence: 'evidence_viewed', fracture: 'fracture_viewed', '2': 'loop_viewed', '5': 'experiment_viewed', horizon: 'horizon_viewed', '6': 'method_demo_viewed' };
+      const EVT: Record<string, string> = { '1': 'current_state_viewed', nnv: 'nnv_viewed', mirror: 'mirror_viewed', map: 'map_viewed', evidence: 'evidence_viewed', fracture: 'fracture_viewed', '2': 'loop_viewed', '5': 'experiment_viewed', horizon: 'horizon_viewed', '6': 'method_demo_viewed' };
       if (b && EVT[b]) {
         const now = Date.now();
         if (lastBeatRef.current && lastBeatRef.current !== b) trackDiag('result_beat_dwell', { arch: archKey, beat: lastBeatRef.current, dwell_ms: Math.max(0, now - beatSeenAtRef.current - beatHiddenMsRef.current) });
@@ -236,12 +239,12 @@ export default function ResultExperience({
     : 'Ten wynik nie daje Ci dziś nic do gaszenia.';
   // Zadnego "wiekszosc osob". To bylaby statystyka, ktorej nikt nie policzyl. Zostaje scena.
   const ceilingBody = hasCeilingRoom
-    ? 'Zwykle wygląda to tak, że nic nie jest złe: robota idzie, trening jakoś leci, weekend się odbywa. I dokładnie dlatego nic się nie rusza. Jest za to poniedziałek, który wygląda tak samo jak dwa lata temu.'
-    : 'To jest ten moment, w którym najłatwiej odpuścić, bo nic nie pali. Jest też jedyny moment, w którym da się spokojnie sprawdzić, na ile Cię stać, bez gaszenia pożaru przy okazji.';
+    ? 'Kilka rzeczy trzyma się u Ciebie lepiej niż reszta. Nie zamierzam rozwalać tego, co działa, tylko sprawdzić jeden słabszy element.'
+    : 'Twoje odpowiedzi nie pokazują teraz jednego dużego problemu. To również jest wynik. Jeśli chcesz coś usprawniać, wybierz mały test zamiast robić rewolucję.';
   // Wczesniej jeden literal dla kazdego. Teraz domkniecie wskazuje realny obszar z jego wlasnego wyniku.
   const ceilingHit = hasCeilingRoom
-    ? `Nie wiesz, ile zapasu siedzi tutaj: ${breakPos.label}. Nigdy nie sprawdziłeś tego przy tygodniu, który trzyma.`
-    : 'Nie wiesz, gdzie jest Twój pułap, bo nie było jeszcze tygodnia, w którym wszystko zagrało naraz.';
+    ? `Najpierw biorę pod lupę: ${breakPos.label}. Dopiero po sprawdzeniu wracam do pozostałych zmian.`
+    : 'Na razie nie widzę argumentu, żeby zmieniać Ci pięć obszarów naraz.';
 
   // ── V2.8.3 BRAKI: zamiast abstrakcyjnego "N z 5 obszarow ma zapas" domkniecie nazywa konkretne
   //    luki z jego wlasnych osi, ale w jezyku, ktorym czlowiek mysli o swoim dniu: sylwetka, glowa,
@@ -272,24 +275,40 @@ export default function ResultExperience({
   const naborInviteSoft = 'A jeśli wolisz, żeby ktoś poukładał Ci to z zewnątrz, obadaj stronę prowadzenia. W środku jest formularz, wypełnij go śmiało. Przeczytam go osobiście.';
 
   const commitExperiment = () => {
+    if (committed) return;
     setCommitted(true);
+    // Zapis STARTU testu tylko po świadomym kliknięciu, nie po samym obejrzeniu wyniku.
+    if (decision) {
+      try {
+        const rec: ReturnRecord = { v: '3.0.0', at: Date.now(), upstream: decision.upstream_candidate.lever, experimentId: experiment.id, prediction: decision.prediction.id };
+        localStorage.setItem(RETURN_KEY, JSON.stringify(rec));
+      } catch { /* brak storage nie wywraca wyniku */ }
+    }
     trackDiag('experiment_committed', { experiment_id: experiment.id, confidence: experimentConfidence, arch: archKey });
     trackDiag('experiment_accepted', { experiment_id: experiment.id, confidence_state: decision?.confidence.state || 'unknown' });
   };
 
-  // Zapisz/Udostepnij: WYLACZNIE bezpieczne pola (etykieta archetypu, experiment id, anonimowy submission ref).
+  // Zapisujemy faktyczną instrukcję testu do schowka, nigdy URL udający prywatny wynik.
+  // W udostępnianym tekście nie ma danych kontaktowych ani prywatnego submission_ref.
   const shareSafe = () => {
-    const params = new URLSearchParams({ arch: archKey, exp: experiment.id, ...(submissionId ? { ref: submissionId.slice(0, 24) } : {}) });
-    const url = `${typeof window !== 'undefined' ? window.location.origin + window.location.pathname : ''}?${params.toString()}`;
+    const plan = [
+      'MAPA 168 · MÓJ TEST NA 72 GODZINY',
+      'Jeden ruch: ' + experiment.action,
+      'Kiedy: ' + experiment.moment,
+      'Sprawdzam: ' + experiment.observe,
+      'Tego na razie nie zmieniam: ' + experiment.doNotChange,
+      'To wskazówka do sprawdzenia, nie diagnoza ani obietnica wyniku.',
+    ].join('\n');
     try {
-      if (typeof navigator !== 'undefined' && navigator.share) {
-        navigator.share({ title: 'Mapa 168', text: `Mój Punkt Pęknięcia: ${archLabel}`, url }).catch(() => {});
-      } else if (typeof navigator !== 'undefined' && navigator.clipboard) {
-        navigator.clipboard.writeText(url).catch(() => {});
-      }
-    } catch { /* share/clipboard opcjonalne, nigdy nie wywraca flow */ }
-    setSaved(true);
-    trackDiag('result_saved', { arch: archKey, experiment_id: experiment.id });
+      if (typeof navigator !== 'undefined' && navigator.clipboard?.writeText) {
+        void navigator.clipboard.writeText(plan).then(() => {
+          setSaved(true);
+          trackDiag('result_saved', { arch: archKey, experiment_id: experiment.id });
+        }).catch(() => setCopyFallback(plan));
+      } else setCopyFallback(plan);
+    } catch {
+      setCopyFallback(plan);
+    }
   };
 
   const onNaborClick = () => trackDiag('cta_nabor_clicked', { arch: archKey, route: route.primary });
@@ -306,6 +325,25 @@ export default function ResultExperience({
   return (
     <div className="rx" style={{ background: C.ink, color: C.paper, fontFamily: C.sans, minHeight: '100vh', overflowX: 'clip', position: 'relative' }}>
       <style>{css}</style>
+      <style>{`
+        .rx-intel-insight{font-size:clamp(16px,3.7vw,19px);line-height:1.65;color:#ece7db;margin:0 0 25px;max-width:54ch}
+        .rx-intel-proof{display:grid;gap:0;border-top:1px solid rgba(200,168,78,.32);border-bottom:1px solid rgba(200,168,78,.20);padding:16px 0;margin:0 0 18px}
+        .rx-intel-proof>span{font:700 10px "JetBrains Mono",monospace;letter-spacing:.09em;text-transform:uppercase;color:#e8cc80;margin-bottom:8px}
+        .rx-intel-proof p{font-size:13.5px;line-height:1.55;color:#c4bdb0;margin:6px 0}
+        .rx-intel-proof strong{color:#ece7db}
+        .rx-intel-note{font-size:12px;line-height:1.55;color:#968f83}
+        .rx-intel-next{display:inline-block;padding:13px 0;border-bottom:1px solid rgba(200,168,78,.45);font-size:13px;color:#e8cc80;text-decoration:none;font-weight:700}
+        .rx-intel-feedback{border:1px solid #2c2924;padding:19px;margin-top:28px;background:rgba(200,168,78,.035)}
+        .rx-intel-feedback>p{color:#ece7db;font-size:14px;line-height:1.5;margin:0 0 14px;font-weight:650}
+        .rx-intel-feedback-options{display:flex;flex-direction:column;gap:8px}
+        .rx-intel-feedback-options button{min-height:43px;text-align:left;cursor:pointer;padding:11px 13px;border:1px solid #3b3831;border-radius:8px;background:#111113;color:#d7d0c2;font:500 13px "Inter",sans-serif}
+        .rx-intel-feedback-options button[aria-pressed="true"]{background:rgba(200,168,78,.13);border-color:#bca057;color:#f3e2b4}
+        .rx-intel-feedback-options button:focus-visible{outline:2px solid #e8cc80;outline-offset:2px}
+        .rx-intel-feedback .rx-intel-feedback-reply{font-weight:400;font-size:12px;color:#c4bdb0;margin:12px 0 0}
+        .rx-test-counter{border-left:2px solid #c8a84e;padding:10px 14px;margin:22px 0 14px;background:rgba(200,168,78,.035)}
+        .rx-test-counter strong{display:block;color:#e8cc80;font-size:12px;letter-spacing:.02em;margin-bottom:7px}
+        .rx-test-counter p{font-size:13.5px;line-height:1.56;color:#c4bdb0;margin:0}
+`}</style>
       <div className="rx-atmo" aria-hidden />
       <div className="rx-prog" ref={progRef} aria-hidden />
 
@@ -372,6 +410,41 @@ export default function ResultExperience({
           </div>
         </section>
 
+        {decisionCard && (
+          <section className="rx-beat rx-intel" data-beat="nnv" id="twoj-wniosek">
+            <div className="rx-kick">Tu bym się zatrzymał</div>
+            <h2 className="rx-h2">{decisionCard.title}</h2>
+            <p className="rx-intel-insight">{decisionCard.insight}</p>
+            {decisionCard.receipts.length > 0 && (
+              <div className="rx-intel-proof">
+                <span>Dlaczego akurat taki trop</span>
+                {decisionCard.receipts.map((item) => (
+                  <p key={item.source}><strong>{item.source}:</strong> {item.answer}</p>
+                ))}
+              </div>
+            )}
+            <p className="rx-intel-note">{decisionCard.note}</p>
+            <a href="#test-72h" className="rx-intel-next">Dobra, co konkretnie mam sprawdzić? ↓</a>
+            <div className="rx-intel-feedback">
+              <p>Ten wniosek coś zmienił w tym, jak patrzysz na swój tydzień?</p>
+              <div className="rx-intel-feedback-options">
+                <button type="button" aria-pressed={resultReaction === 'new'} onClick={() => reactToInsight('new')}>tego nie brałem pod uwagę</button>
+                <button type="button" aria-pressed={resultReaction === 'known'} onClick={() => reactToInsight('known')}>to akurat wiedziałem</button>
+                <button type="button" aria-pressed={resultReaction === 'off'} onClick={() => reactToInsight('off')}>nie pasuje do mnie</button>
+              </div>
+              {resultReaction && (
+                <p className="rx-intel-feedback-reply" role="status">
+                  {resultReaction === 'off'
+                    ? 'Okej. Nie chcę dopasowywać Cię na siłę do opisu. Niżej jest możliwość wskazania, co dokładnie się nie zgadza.'
+                    : resultReaction === 'known'
+                      ? 'To dobrze. W takim razie liczy się, czy test da Ci coś nowego, a nie czy brzmi mądrze.'
+                      : 'To jest właśnie rzecz do zweryfikowania w zwykłym tygodniu, nie do przyjęcia na wiarę.'}
+                </p>
+              )}
+            </div>
+          </section>
+        )}
+
         {/* LUSTRO (v2.9) — jedyne miejsce na tej stronie, gdzie czlowiek widzi siebie obok siebie.
             Po lewej liczba, ktora sobie dal na ekranie 2. Po prawej ta sama skala policzona z jego
             zachowan. Pod spodem kazda odpowiedz, ktora zabrala punkt, wiec roznicy nie da sie
@@ -380,20 +453,20 @@ export default function ResultExperience({
         {awareness && awareness.verdict !== 'NONE' && (
           <section className="rx-beat rx-mirror" data-beat="mirror">
             <div className="rx-kick">Lustro</div>
-            <h2 className="rx-h2" style={{ fontSize: 'clamp(22px,4.6vw,32px)' }}>{awareness.headline}</h2>
+            <h2 className="rx-h2" style={{ fontSize: 'clamp(22px,4.6vw,32px)' }}>Dałeś sobie {String(awareness.selfEnergy).replace('.', ',')}/10. A co mówisz o zwykłych dniach?</h2>
             <div className="rx-mirror-pair">
               <div className="rx-mirror-cell">
                 <span>Tak się oceniasz</span>
                 <strong>{String(awareness.selfEnergy).replace('.', ',')}</strong>
                 <em>Twoja odpowiedź z drugiego ekranu</em>
               </div>
-              <div className={`rx-mirror-cell ${awareness.verdict === 'ABOVE' ? 'rx-mirror-hot' : ''}`}>
-                <span>Tak wychodzi z odpowiedzi</span>
-                <SettlingReadout from={awareness.selfEnergy} to={awareness.measuredEnergy} />
-                <em>Policzone z pięciu Twoich kliknięć</em>
+              <div className={`rx-mirror-cell ${awareness.drivers.length > 0 ? 'rx-mirror-hot' : ''}`}>
+                <span>Sygnały do sprawdzenia</span>
+                <strong>{awareness.drivers.length}</strong>
+                <em>Rzeczy, które sam zaznaczyłeś. Nie drugi „pomiar energii”</em>
               </div>
             </div>
-            <p className="rx-sub">{awareness.body}</p>
+            <p className="rx-sub">Nie wyliczę Twojej energii z pięciu kliknięć. Mogę za to pokazać, które deklarowane zachowania warto zestawić z tą oceną.</p>
             {awareness.drivers.length > 0 && (
               <ul className="rx-mirror-drivers">
                 {awareness.drivers.map((d, i) => (<li key={i}>{d}</li>))}
@@ -402,7 +475,7 @@ export default function ResultExperience({
             {awareness.stagnationLine && <p className="rx-mirror-stagnation">{awareness.stagnationLine}</p>}
             {/* Zastrzezenie zostaje, bo pilnuje innej liczby niz to przy mapie. Wycialem tylko czlon
                 o procencie potencjalu, ktory pada slowo w slowo dwa ekrany nizej. */}
-            <p className="rx-mirror-note">Ta liczba porównuje Cię wyłącznie z Twoją własną oceną sprzed kilku minut. Nie jest wynikiem medycznym.</p>
+            <p className="rx-mirror-note">Po lewej jest Twoja własna samoocena. Po prawej liczba wybranych sygnałów. Nie udaję, że ankieta mierzy fizjologiczną energię.</p>
             {awareness.driveLine && <p className="rx-medical">{awareness.driveLine}</p>}
           </section>
         )}
@@ -474,6 +547,7 @@ export default function ResultExperience({
           </div>
         </section>
 
+
         {/* BEAT 2 — PĘTLA 168: deterministyczny łańcuch z realnych odpowiedzi + istniejącej, zatwierdzonej treści archetypu */}
         <section className="rx-beat" data-beat="2">
           <div className="rx-kick">Pętla 168</div>
@@ -519,11 +593,17 @@ export default function ResultExperience({
             {/* Cztery identyczne karty czytaly sie jak lista rownorzednych polecen. Samo zadanie prowadzi,
                 trzy parametry sa doprecyzowaniem i dostaja lzejszy, cichszy wiersz. */}
             <div className="rx-exp-row rx-exp-lead"><span className="rx-exp-k">{experiment.name}</span><p>{experiment.action}</p></div>
-            <div className="rx-exp-row rx-exp-why"><span className="rx-exp-k">Dlaczego to ma sens</span><p>{experiment.why}</p></div>
+            <div className="rx-exp-row rx-exp-why"><span className="rx-exp-k">Możliwy mechanizm, nie pewnik</span><p>{experiment.why}</p></div>
             <div className="rx-exp-row rx-exp-meta"><span className="rx-exp-k">Kiedy</span><p>{experiment.moment}</p></div>
             <div className="rx-exp-row rx-exp-meta"><span className="rx-exp-k">Obserwuj</span><p>{experiment.observe}</p></div>
             <div className="rx-exp-row rx-exp-meta"><span className="rx-exp-k">Przez te 3 dni nie ruszaj</span><p>{experiment.doNotChange}</p></div>
           </div>
+          {decisionCard && (
+            <div className="rx-test-counter">
+              <strong>Jeśli się mylę</strong>
+              <p>{decisionCard.alternativeIfWrong}</p>
+            </div>
+          )}
           <details className="rx-exp-check">
             <summary>Już robiłeś coś podobnego albo ten test nie pasuje?</summary>
             <div className="rx-exp-reactions">
@@ -551,13 +631,13 @@ export default function ResultExperience({
         <details className="rx-beat rx-collapsed" data-beat="horizon">
           <summary><span className="rx-collapsed-k">Co i kiedy da się zobaczyć</span><strong>Jak czytać te 72 godziny?</strong></summary>
           <div className="rx-collapsed-body">
-            <h2 className="rx-h2" style={{ fontSize: 'clamp(24px,4.8vw,36px)' }}>Na każdym z tych odcinków widać co innego.</h2>
+            <h2 className="rx-h2" style={{ fontSize: 'clamp(24px,4.8vw,36px)' }}>Na każdym z tych odcinków sprawdzamy coś innego.</h2>
             <div className="rx-horizon">
             <div className="rx-hz">
               <span className="rx-hz-k">72 godziny</span>
               {/* Trzecie powtorzenie experiment.observe na jednej stronie. Test wyzej mowi to doslownie,
                   demonstracja metody powtarza to w swoim kontekscie. Tutaj liczy sie tylko horyzont. */}
-              <p>Na efekt jest wtedy dużo za wcześnie. Te trzy dni mają rozstrzygnąć jedno: czy trafiliśmy w miejsce.</p>
+              <p>Na efekt jest wtedy dużo za wcześnie. Te trzy dni mogą dać pierwszą wskazówkę, czy trafiliśmy w dobry trop.</p>
             </div>
             <div className="rx-hz">
               <span className="rx-hz-k">Najbliższe tygodnie</span>
@@ -590,8 +670,8 @@ export default function ResultExperience({
             <h2 className="rx-plan-h">Ten wynik byłby punktem startu, nie formularzem do wyrzucenia.</h2>
             <ol className="rx-demo">
               <li><span className="rx-demo-n">01</span><div><strong>Na start biorę: {breakPos.label}</strong><p>Tu najczęściej rozjeżdża się Twój tydzień, więc tu stawiamy wersję minimum. Taką, która przeżyje dzień, w którym nic nie idzie po planie.</p></div></li>
-              <li><span className="rx-demo-n">02</span><div><strong>Najniższy wynik: {weakestStatus?.label}. Nie zaczynam od niego</strong><p>Niski wynik to zwykle skutek czegoś, co u Ciebie dzieje się wcześniej, w punkcie z kroku 01. Jak zaciek na suficie, który możesz zamalować, a woda dalej cieknie piętro wyżej. Po 72h patrzymy razem, czy ten wynik ruszy, kiedy naprawimy tamten punkt.</p></div></li>
-              <li><span className="rx-demo-n">03</span><div><strong>Tego na start nie ruszam: {strongestStatus?.label}</strong><p>To Twój punkt odniesienia. Jeśli po zmianie spadnie, wiem, że ruch kosztuje za dużo i trzeba go zmniejszyć. Jak grupa kontrolna w badaniu, tylko na Twoim tygodniu.</p></div></li>
+              <li><span className="rx-demo-n">02</span><div><strong>Najniższy wynik: {weakestStatus?.label}. Nie udaję, że znam jego przyczynę</strong><p>Ta oś ma dziś najwięcej miejsca do poprawy. Najpierw sprawdzamy wcześniejszy trop z Twoich odpowiedzi. Jeśli po jednym ruchu nic się nie zmieni, nie dorabiam do tego teorii.</p></div></li>
+              <li><span className="rx-demo-n">03</span><div><strong>Tego na start nie ruszam: {strongestStatus?.label}</strong><p>To dziś najlepiej trzymający się obszar z Twoich odpowiedzi. Zostawiam go bez zmian, żeby nie poprawiać pięciu rzeczy naraz. To punkt odniesienia, nie grupa kontrolna z badania.</p></div></li>
               <li><span className="rx-demo-n">04</span><div><strong>Dokładam dopiero po dowodzie</strong><p>Kolejny element wchodzi wtedy, gdy pierwszy przeżyje gorszy tydzień. W dobrym tygodniu działa każdy plan. Sprawdzianem jest tydzień z deadlinem, krótszą nocą i imprezą w sobotę. Jeśli ruch go nie przeżyje, zmieniam ruch zamiast dokładać kolejne zasady.</p></div></li>
             </ol>
           </div>
@@ -599,7 +679,7 @@ export default function ResultExperience({
           <div className="rx-proof">
             <a className="rx-badge" href={GOOGLE_AGG.url} target="_blank" rel="noopener noreferrer">
               <span className="rx-g">G</span>
-              <span className="rx-r">{GOOGLE_AGG.rating} <span style={{ color: C.gold }}>★★★★★</span><span style={{ color: C.mute, fontWeight: 400 }}> · {GOOGLE_AGG.count} opinii w Google</span></span>
+              <span className="rx-r">Zobacz opinie klientów w Google <span style={{ color: C.gold }}>↗</span></span>
             </a>
             {GOOGLE_CARDS.slice(0, 1).map((r, i) => (
               <div key={i} className="rx-gcard">
@@ -644,8 +724,15 @@ export default function ResultExperience({
             ) : (
               <>
                 {!committed ? <button className="rx-next rx-next-strong" type="button" onClick={commitExperiment}>{route.primaryLabel}</button> : <div className="rx-action-confirm">Test 72h zapisany ✓</div>}
-                {committed && !saved && <button className="rx-next rx-next-medium" type="button" onClick={shareSafe}>Zapisz wynik na te 72 godziny</button>}
-                {committed && saved && <div className="rx-action-done">Wynik zapisany. Zostaje Ci jeden test.</div>}
+                {committed && !saved && <button className="rx-next rx-next-medium" type="button" onClick={shareSafe}>Skopiuj swój test na 72 godziny</button>}
+                {committed && copyFallback && !saved && (
+                  <div className="rx-action-done">
+                    Schowek jest niedostępny. Zaznacz i skopiuj poniższy plan.
+                    <textarea readOnly aria-label="Plan na 72 godziny do skopiowania" value={copyFallback}
+                      onFocus={(e) => e.currentTarget.select()} style={{ width: '100%', minHeight: 180, marginTop: 12, padding: 12, background: '#101012', border: '1px solid #8a7535', borderRadius: 8, color: '#ece7db', fontSize: 13, lineHeight: 1.5 }}/>
+                  </div>
+                )}
+                {committed && saved && <div className="rx-action-done">Plan testu skopiowany. Możesz go wkleić do notatek.</div>}
                 {route.secondaryNabor && <a className="rx-route-alt" href={naborHref} target="_blank" rel="noopener noreferrer" onClick={onNaborClick}>{route.secondaryNabor.label} →</a>}
               </>
             )}
