@@ -30,8 +30,8 @@ export const ENTRY_COPY: Record<EntryDoor, EntryCopy> = {
   },
   hit: {
     headline: 'Na kolejnego calla znajdziesz jeszcze siłę. A dla siebie?',
-    body: 'Siemano :D Masz przed sobą kolejne pilne zadanie, więc jakoś wyciągasz resztki energii. Ale trening? Znowu wypada. W niedzielę rozpisujesz wszystko od nowa i liczysz, że następny tydzień będzie spokojniejszy. No dobra, tylko co zrobisz, kiedy znowu skończysz pracę późno? Dalej zmieniał plan, czy w końcu sprawdzisz, gdzie się wykładasz?',
-    proof: 'Po to zrobiłem Mapę 168. Przeklikasz swój rzeczywisty tydzień, zobaczysz, co ja bym sprawdził jako pierwsze i jaki jeden ruch przetestował przez 72 godziny. Nie musisz wierzyć mi na słowo.',
+    body: 'Siemano :D Masz przed sobą kolejne pilne zadanie, więc jakoś wyciągasz resztki energii. Ale trening? Znowu wypada. W niedzielę rozpisujesz wszystko od nowa i liczysz, że następny tydzień będzie spokojniejszy. No dobra, tylko co zrobisz, kiedy znowu skończysz pracę późno? Znowu zmienisz plan, czy w końcu sprawdzisz, gdzie się wykładasz?',
+    proof: 'Po to zrobiłem Mapę 168. Przeklikasz swój rzeczywisty tydzień, zobaczysz, co ja bym sprawdził jako pierwsze i jaki jeden ruch sam bym przetestował przez 72 godziny. Nie musisz wierzyć mi na słowo.',
     cta: 'Dobra, sprawdzam, gdzie się wykładam',
   },
   th2: {
