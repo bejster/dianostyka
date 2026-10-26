@@ -15,22 +15,23 @@ const doors = Object.fromEntries(
 const field = (door: string, key: string) =>
   doors[door]?.match(new RegExp(`${key}: '([^']*)'`))?.[1] ?? '';
 
-test('general mówi pełnym zdaniem, nie ciągiem sloganów', () => {
-  assert.match(field('general', 'headline'), /Siemano :D/);
-  assert.match(field('general', 'body'), /Bo wiesz,/);
-  assert.match(field('general', 'body'), /No dobra, tylko co się działo wcześniej/);
-  assert.match(field('general', 'body'), /Bo ja bym właśnie od tego zaczął/);
-  assert.match(field('general', 'proof'), /Na koniec pokażę Ci, co ja bym sprawdził jako pierwsze i dlaczego/);
-  assert.equal(field('general', 'cta'), 'Dobra, sprawdzam');
-  assert.doesNotMatch(doors.general, /accent:/, 'bez sztucznego sloganu złotą kursywą');
-  assert.doesNotMatch(doors.general, /Twój plan działa|Jakby kolejny czwartek|Obstaw winnego/);
+test('general: prowokacja dotyka realnego kosztu, ale zostawia możliwość wyjścia', () => {
+  assert.match(field('general', 'headline'), /Możesz zamknąć tę stronę/);
+  assert.match(field('general', 'accent'), /co tym razem zmienisz od poniedziałku/);
+  assert.match(field('general', 'body'), /Siemano :D/);
+  assert.match(field('general', 'body'), /w czwartek robota wywala Ci trening/);
+  assert.match(field('general', 'body'), /kolejne pół roku/);
+  assert.match(field('general', 'proof'), /co ja bym sprawdził jako pierwsze/);
+  assert.match(field('general', 'proof'), /72 godziny/);
+  assert.match(field('general', 'cta'), /sprawdzam, co mnie trzyma/);
+  assert.doesNotMatch(doors.general, /Obstaw winnego|Twój plan działa|Jakby kolejny czwartek/);
 });
 
-test('mobile: naturalne 2 akapity, bez eseju i pogrubionej reklamy', () => {
+test('mobile: mówiony tekst w 2 akapitach bez sloganów i bez pogrubienia całego wywodu', () => {
   const b = field('general', 'body');
   const p = field('general', 'proof');
   const words = (b + ' ' + p).trim().split(/\s+/).length;
-  assert.ok(words >= 35 && words <= 70, `pod H1 ${words} słów, oczekiwano 35–70`);
+  assert.ok(words >= 65 && words <= 105, `pod H1 ${words} słów, zakres 65–105`);
   assert.match(page, /className="dx-lede"[\s\S]*?\{entry\.body\}\s*<\/p>/);
   assert.match(page, /className="dx-lede"[\s\S]*?\{entry\.proof\}\s*<\/p>/);
   assert.doesNotMatch(page, /<strong[^>]*>\{entry\.proof\}<\/strong>/);
@@ -45,10 +46,11 @@ test('obietnica jest sprawdzalna i istnieje w aktualnej ankiecie', () => {
   assert.doesNotMatch(doors.general, /na pewno|wykryję prawdziwą przyczynę|wyleczę/i);
 });
 
-test('HiT oraz TH2 nie mieszają języka i celu', () => {
-  assert.match(field('hit', 'headline'), /Siemano :D/);
-  assert.match(field('hit', 'body'), /No dobra, tylko po co od razu zmieniać trening/);
-  assert.match(field('hit', 'proof'), /pokażę Ci/);
+test('HiT i TH2 mają osobne sceny i nie mieszają swoich problemów', () => {
+  assert.match(field('hit', 'headline'), /Na kolejnego calla/);
+  assert.match(field('hit', 'body'), /resztki energii/);
+  assert.match(field('hit', 'body'), /co zrobisz, kiedy znowu skończysz pracę późno/);
+  assert.match(field('hit', 'proof'), /72 godziny/);
   assert.doesNotMatch(doors.hit, /alkohol|używki|narkotyk|impreza/i);
   assert.match(field('th2', 'body'), /Impreza/);
   assert.match(field('th2', 'proof'), /72 godziny/);
@@ -62,9 +64,9 @@ test('metadata i OG pozostają zgodne z bezpieczną obietnicą strony', () => {
   assert.doesNotMatch(layout + og, /Ile dni w tygodniu jesteś w formie/);
 });
 
-test('głos nie powtarza technicznego hasła ani sztucznego przeciwstawienia', () => {
+test('głos nie produkuje taniej presji ani fałszywego claimu', () => {
   const text = doors.general + doors.hit;
-  assert.doesNotMatch(text, /—|naprawdę|, i /);
-  assert.doesNotMatch(text, /To nie .*, to /);
-  assert.doesNotMatch(text, /naprawiasz nie ten moment|Zestawię ją z odpowiedziami/);
+  assert.doesNotMatch(text, /wystarczy ci chcieć|jak ci zależy|przegryw|jesteś leniwy/i);
+  assert.doesNotMatch(text, /uzdrowię|wykryję przyczynę|zmierzę twoje hormony/i);
+  assert.doesNotMatch(text, /Obstaw winnego|Zestawię ją z odpowiedziami/);
 });
