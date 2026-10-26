@@ -22,7 +22,7 @@ test('public entry stays diagnostic while hot lane remains available by explicit
   assert.match(page, /fast_fit_to_nabor/);
   assert.match(page, /route: 'diagnostic'/);
   assert.doesNotMatch(page, /Wiem, że chcę działać\. Sprawdźmy, czy zakres pasuje/);
-  assert.match(fs.readFileSync('app/lib/entry-copy.ts', 'utf8'), /headline: 'Siemano :D Zrobiłem coś takiego/);
+  assert.match(fs.readFileSync('app/lib/entry-copy.ts', 'utf8'), /headline: 'Możesz zamknąć tę stronę\. Serio\.'/);
   assert.match(page, /ENTRY_COPY/);
   assert.doesNotMatch(page, /michal-portrait\.jpg/);
 });
