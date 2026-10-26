@@ -71,7 +71,7 @@ test('drzwi są napisane po ludzku bez mieszania marek', () => {
   assert.doesNotMatch(ENTRY_COPY.hit.body, /impreza|używki|alkohol/i);
   assert.doesNotMatch(ENTRY_COPY.general.body, /Zrobiłem Mapę 168, bo/);
   assert.match(ENTRY_COPY.th2.body, /impreza/i);
-  assert.match(ENTRY_COPY.general.proof, /pokażę Ci, co ja bym sprawdził/);
+  assert.match(ENTRY_COPY.general.proof, /pokażę, co ja bym sprawdził/);
   assert.doesNotMatch(ENTRY_COPY.general.headline, /Twój plan działa/);
 });
 
