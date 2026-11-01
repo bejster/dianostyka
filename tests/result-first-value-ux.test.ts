@@ -29,6 +29,12 @@ test('three real-data micro-insights appear without extra steps or changes to qu
   assert.doesNotMatch(helper,/fetch\(|postEvent\(|localStorage|Math\.random/);
 });
 
+test('UI analytics variant separates this release from prior experience', () => {
+  const analytics = readFileSync('app/lib/analytics.ts','utf8');
+  assert.match(analytics, /UI_VARIANT = 'instrument-2-first-value'/);
+  assert.match(flow, /flow_insight_viewed/);
+});
+
 test('first reward and test action are shown before expandable breakdown', () => {
   const hero = result.indexOf('data-beat="1"');
   const payoff = result.indexOf('className="rx-top-payoff"');
