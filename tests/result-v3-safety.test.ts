@@ -34,6 +34,7 @@ test('analytics events use only the safe frozen event names', () => {
     'map_viewed', 'evidence_viewed', 'fracture_viewed',
     'loop_viewed', 'experiment_viewed', 'horizon_viewed', 'experiment_committed',
     'method_demo_viewed', 'result_saved', 'cta_nabor_clicked', 'calibration_answer', 'content_signal',
+    'result_conversation_clicked', 'result_conversation_copied',
     'result_beat_dwell', 'result_scroll_depth', 'result_exit_snapshot',
     // 3.0 warstwa decyzyjna: same kategorie (id odpowiedzi, stan, dzwignia), zero PII i tekstu.
     'desire_selected', 'prediction_locked', 'contrast_completed', 'failed_solution', 'constraint_selected',
@@ -67,8 +68,13 @@ test('share payload (result_saved) is built only from safe arch/exp/ref params, 
   assert.doesNotMatch(body, /instagram|user_pain|odpowiedzi|answers/i);
 });
 
-test('result page contains no direct-DM handoff or ig.me CTA', () => {
-  assert.doesNotMatch(result + page, /dmHref|ig\.me\/m|cta_dm_clicked/);
+test('DM is an explicit optional handoff, not a replacement for the established nabor routing', () => {
+  const conversation = fs.readFileSync(path.join(root, 'app/components/ResultConversation.tsx'), 'utf8');
+  assert.match(result, /<ResultConversation archKey=\{archKey\} primaryRoute=\{route\.primary\} \/>/);
+  assert.match(conversation, /ig\.me\/m\/hantleitalerz\?text=/);
+  assert.match(conversation, /nigdy-nie-wysylaj-PII|Żadnych danych ankietowych/);
+  assert.doesNotMatch(result + page, /cta_dm_clicked/);
+  assert.match(result, /route\.primary === 'nabor'/);
 });
 
 test('fracture-engine functions never throw and degrade gracefully when user_trigger and other optional answers are missing', () => {

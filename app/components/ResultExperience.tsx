@@ -16,6 +16,7 @@ import { BREAK_PHRASE, type LoopNode } from '../lib/fracture-engine';
 import type { AwarenessGap } from '../lib/awareness-gap';
 import { RETURN_KEY, sentenceCase, bridgeLine, MEDICAL_BOUNDARY, type DecisionResult, type ReturnRecord } from '../lib/decision-engine';
 import { buildResultHero } from '../lib/result-hero';
+import ResultConversation from './ResultConversation';
 
 const C = {
   ink: '#08080a', pan: '#141416', pan2: '#1a1a1d', line: '#26262b', line2: '#33333a',
@@ -299,11 +300,12 @@ export default function ResultExperience({
         {/* BEAT 1 (V2.8) — GDZIE JESTEŚ TERAZ + GDZIE MASZ ZAPAS. Awareness-first: stan i pojemność
             przed nazwaniem Punktu Pęknięcia. Zero procentu potencjału, zero wymyślonych zysków. */}
         <section className="rx-beat rx-hero" data-beat="1">
-          <div className="rx-kick rx-kick-c">Dobra{kickName ? `, ${kickName}` : ''}. Tu robi się ciekawie.</div>
+          <div className="rx-kick rx-kick-c">Dobra{kickName ? `, ${kickName}` : ''}. Oto pierwszy odczyt.</div>
           <div className="rx-hero-panel">
             <div className="rx-hero-signature" aria-hidden="true"><span/><span/><span/></div>
             <h1 className="rx-arch">{opening.headline}</h1>
             <p className="rx-hero-lede">{opening.explanation}</p>
+            <p className="rx-hero-source">Wstępny wynik powstaje automatycznie według mojej Mapy 168. <a href="#porozmawiaj">Nie zgadza Ci się? Możesz mi to powiedzieć.</a></p>
             {/* Linia zapasu (reserveLine) zeszla z hero w 3.0: pierwszy kadr niesie odczyt decyzji,
                 a liczba obszarow z zapasem stoi i tak przy mapie ponizej. */}
             {/* FLAGSHIP 3.0 ODCZYT DECYZJI: pierwszy kadr mowi, co chcial poprawic, co obstawil, gdzie jest
@@ -356,6 +358,8 @@ export default function ResultExperience({
             <span>SKĄD TEN WYNIK</span>
           </div>
         </section>
+
+        <ResultConversation archKey={archKey} primaryRoute={route.primary} />
 
         {/* LUSTRO (v2.9) — jedyne miejsce na tej stronie, gdzie czlowiek widzi siebie obok siebie.
             Po lewej liczba, ktora sobie dal na ekranie 2. Po prawej ta sama skala policzona z jego
@@ -452,6 +456,10 @@ export default function ResultExperience({
           </section>
         )}
 
+        {/* Pełny mechanizm zostaje dla ciekawych. Nie blokuje już testu 72h ani drogi do rozmowy. */}
+        <details className="rx-deep-dive" id="wyjasnienie">
+          <summary><span>PEŁNE WYJAŚNIENIE</span><strong>Dlaczego w ogóle sprawdzamy ten moment?</strong><small>Punkt Pęknięcia, pętla tygodnia i koszt z Twoich odpowiedzi</small></summary>
+
         {/* PUNKT PĘKNIĘCIA — reveal PO dowodzie. Najpierw zjawisko, potem nazwa (V2.8). */}
         <section className="rx-beat" data-beat="fracture">
           <div className="rx-kick">Pierwszy moment do sprawdzenia</div>
@@ -501,6 +509,8 @@ export default function ResultExperience({
             {userPain && <p className="rx-quote">„{userPain}”</p>}
           </section>
         )}
+
+        </details>
 
         {/* BEAT 5 — JEDEN eksperyment 72h z banku 20. Zero LLM. Commit -> reveal osobistego momentu obserwacji. */}
         <section className="rx-beat" data-beat="5" id="test-72h">
@@ -654,6 +664,7 @@ export default function ResultExperience({
               </>
             )}
             {instagram && <p className="rx-fine">Mam ten wynik przypisany do @{instagram}.</p>}
+            <p className="rx-talk-back">Nie zgadza Ci się coś w tej analizie? <a href="#porozmawiaj">Powiedz mi, co.</a></p>
           </div>
         </section>
 
@@ -670,6 +681,7 @@ export default function ResultExperience({
                 ))}
               </div>
               {calib && <p className="rx-calibreply">{CALIB_REPLY[calib] || 'Dzięki. To pokazuje mi, gdzie wynik przestrzelił.'}</p>}
+              {calib && calib !== 'ok' && <a className="rx-calib-talk" href="#porozmawiaj">Możesz mi o tym napisać →</a>}
             </div>
           </details>
           <button className="rx-save rx-save-compact" type="button" onClick={shareSafe}>{saved ? 'Zapisano ✓' : 'Zapisz / udostępnij wynik'}</button>
@@ -700,6 +712,10 @@ const css = `
 .rx-hero{position:relative;min-height:100svh;opacity:1;transform:none;display:flex;flex-direction:column;justify-content:center;text-align:center;align-items:center;padding:40px 0 max(112px,calc(env(safe-area-inset-bottom) + 92px))}
 .rx-arch{font-family:${C.serif};font-weight:400;line-height:1.1;font-size:clamp(30px,7.4vw,52px);color:${C.gold};margin:0 0 16px;letter-spacing:-.01em;max-width:18ch}
 .rx-hero-lede{color:${C.paper};font-size:clamp(14px,3.5vw,16px);line-height:1.58;max-width:44ch;margin:0 0 18px;text-wrap:pretty}
+.rx-hero-source{font-size:12px;line-height:1.5;color:${C.mute};margin:0 auto 10px;max-width:45ch}.rx-hero-source a{color:${C.goldB};text-decoration:underline;text-underline-offset:3px}
+.rx-deep-dive{margin:4px 0 0;border-top:1px solid ${C.ruleS};border-bottom:1px solid ${C.rule};padding:14px 0 8px}.rx-deep-dive>summary{list-style:none;cursor:pointer;padding:17px 4px 18px}.rx-deep-dive>summary::-webkit-details-marker{display:none}.rx-deep-dive>summary span{display:block;color:${C.goldB};font:700 10px/1.4 ${C.mono};letter-spacing:2.2px;margin-bottom:10px}.rx-deep-dive>summary strong{display:block;font:400 clamp(23px,5vw,35px)/1.13 ${C.serif};color:${C.paper};max-width:22ch}.rx-deep-dive>summary small{display:block;font:400 13px/1.5 ${C.sans};color:${C.mute};margin-top:9px}.rx-deep-dive[open]>summary strong{color:${C.goldB}}
+.rx-talk-back{margin:17px 0 0!important;font-size:13px!important}.rx-talk-back a,.rx-calib-talk{color:${C.goldB};text-decoration:underline;text-underline-offset:3px}.rx-calib-talk{display:inline-block;margin-top:14px;font-size:13px}
+
 /* To zdanie niesie caly wniosek otwarcia. W wersji mono 12px bylo najslabszym elementem bloku,
    czyli dowod czytal sie jak systemowa etykieta pod naglowkiem. Ma wage zdania, nie labelki. */
 .rx-redline{font-family:${C.sans};font-size:clamp(15px,4.1vw,17px);line-height:1.5;color:${C.paper};margin:0 auto 22px;max-width:34ch}

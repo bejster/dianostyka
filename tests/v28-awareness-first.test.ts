@@ -166,7 +166,9 @@ test('commercial action stays ahead of calibration and no DM lane is reintroduce
   const calib = result.indexOf('className="rx-calibwrap"');
   assert.ok(action > 0 && calib > 0, 'final action or calibration block missing');
   assert.ok(action < calib, 'calibration must come AFTER the commercial action');
-  assert.doesNotMatch(page + result, /dmHref|ig\.me\/m|cta_dm_clicked|napisz do mnie/i);
+  assert.doesNotMatch(page + result, /dmHref|cta_dm_clicked|napisz do mnie/i);
+  assert.match(result, /ResultConversation/);
+  assert.match(result, /className="rx-final-action"/);
 });
 
 test('routing destination still depends on intent and start_when only', () => {
