@@ -24,8 +24,8 @@ export const ENTRY_COPY: Record<EntryDoor, EntryCopy> = {
   general: {
     headline: 'W robocie masz zapierdol. Wracasz i nie masz już siły nawet na siebie?',
     accent: 'A jeśli problem zaczyna się, zanim w ogóle wyjdziesz z pracy?',
-    body: 'Trening odpada, kolacja byle jaka, potem scroll. Zrobiłem Mapę 168.',
-    proof: 'Obstaw przyczynę. Porównasz ją z odpowiedziami, zobaczysz pierwszy trop i dostaniesz test na 72 godziny.',
+    body: 'Masz już swoje podejrzenie, skąd ten brak siły? Zobaczymy, czy po kilku pytaniach dalej będziesz obstawiał to samo.',
+    proof: 'Zobaczysz, od czego zacząć, i dostaniesz test na 72 godziny.',
     cta: 'Dobra, sprawdzam, gdzie tracę siłę',
   },
   hit: {
