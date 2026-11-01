@@ -78,9 +78,8 @@ test('safety gate: selector never reads morning_wood / libido / substance fields
   }
 });
 
-// 2026-10-14 audyt Michala: testy 72h byly sucha procedura (co, kiedy, obserwuj), bez mechanizmu i analogii.
-// Kazdy eksperyment dostaje pole why: mechanizm + analogia, krotko (mobile), w glosie Michala.
-test('every experiment explains why it works: mechanism plus analogy, short and in voice', () => {
+// 2026-11-01: 20 wyjaśnień ma prowadzić do sprawdzalnego pytania zamiast metafor o baterii, korkach i łódkach.
+test('each of 20 experiments explains what we check and avoids prefab analogies', () => {
   for (const def of Object.values(EXPERIMENT_BANK)) {
     const why = (def as { why?: string }).why ?? '';
     assert.ok(why.length >= 80, `${def.id} has a why line`);
@@ -88,6 +87,7 @@ test('every experiment explains why it works: mechanism plus analogy, short and 
     assert.doesNotMatch(why, /pęknię|PĘKNIĘ/, `${def.id} why avoids internal jargon`);
     assert.doesNotMatch(why, /[\u2013\u2014]|naprawdę/, `${def.id} why passes voice bans`);
     assert.doesNotMatch(why, /, i /, `${def.id} why has no comma before "i"`);
+    assert.doesNotMatch(why, /otwarte karty|korki też|łódka|bateria telefonu|wizyta u dentysty|pilot ustala|nawigacja|przeprowadzka zamiast sprzątania/i, `${def.id} no generic visual metaphors`);
   }
 });
 
@@ -102,7 +102,8 @@ test('plan 1:1 explains the method instead of generic process language', () => {
   assert.doesNotMatch(rxSrc, /Zostawiam to bez zmian, żeby był punkt odniesienia\./);
   // 2026-10-14: "{label}: najpierw przyczyna, potem objaw" bylo haslem doklejonym do etykiety; krok 02 ma wyjasniac mechanizm.
   assert.doesNotMatch(rxSrc, /najpierw przyczyna, potem objaw/);
-  assert.match(rxSrc, /Najniższy wynik: \{weakestStatus\?\.label\}\. Nie zaczynam od niego/);
-  assert.match(rxSrc, /Jak zaciek na suficie, który możesz zamalować/);
-  assert.match(rxSrc, /W dobrym tygodniu działa każdy plan\./);
+  assert.match(rxSrc, /Najsłabszy obszar: \{weakestStatus\?\.label\}\. Nie zgaduję, co go spowodowało/);
+  assert.match(rxSrc, /Nie nazywam tego grupą kontrolną/);
+  assert.match(rxSrc, /Jeśli nie pomaga, zmieniam ruch/);
+  assert.doesNotMatch(rxSrc, /Jak zaciek na suficie|W dobrym tygodniu działa każdy plan|imprezą w sobotę/);
 });

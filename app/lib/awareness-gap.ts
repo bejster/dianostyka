@@ -122,18 +122,18 @@ export function computeAwarenessGap(answers: RawAnswers): AwarenessGap {
     .map((c) => c.line);
 
   const verdict: GapVerdict = gap >= 1.5 ? 'ABOVE' : gap <= -1.5 ? 'BELOW' : 'ALIGNED';
-  const pair = `Dałeś sobie ${pl(selfEnergy)}/10. Z Twoich własnych odpowiedzi wychodzi ${pl(measuredEnergy)}/10.`;
+  const pair = `Dziś dałeś sobie ${pl(selfEnergy)}/10. Roboczy wskaźnik typowego tygodnia z ankiety: ${pl(measuredEnergy)}/10.`;
 
   const body =
     verdict === 'ABOVE'
-      ? 'Ta różnica bierze się z godzin, których przy ocenianiu własnej energii nikt sobie nie liczy. Poniżej masz je wypisane.'
+      ? 'Jedna ocena dotyczy dzisiaj, druga zbiera sygnały z typowego tygodnia. Nie muszą się zgadzać. Zobacz, co zaznaczyłeś przy porankach, pracy i powrocie po weekendzie.'
       : verdict === 'BELOW'
-        ? 'Jesteś dla siebie ostrzejszy niż Twój własny tydzień. Poniżej masz to, co mówią Twoje odpowiedzi.'
-        : 'Widzisz swój tydzień trzeźwo. Poniżej masz odpowiedzi, które złożyły się na tę liczbę.';
+        ? 'Dziś możesz mieć mniej siły niż zwykle. Wynik ankiety tego nie podważa. Poniżej widać, jakie odpowiedzi weszły do roboczej skali.'
+        : 'Dzisiejsza ocena jest blisko umownego wskaźnika tygodnia. To dwa różne okresy, nie potwierdzenie, że wszystko gra. Poniżej konkretne odpowiedzi.';
 
   const headline =
     verdict === 'ABOVE'
-      ? `${pair} Różnica to ${pl(gap)} punktu.`
+      ? `${pair} Różnica tych dwóch liczb: ${pl(gap)} pkt. Nie jest pomiarem Twojej energii.`
       : pair;
 
   return {

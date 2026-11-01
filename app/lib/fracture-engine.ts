@@ -1,6 +1,6 @@
 // ── RESULT PAGE V3 — silnik Beatow 1-4 (Punkt Pekniecia, Petla 168, Dlaczego wraca, Realny koszt) ──
-// Zero runtime LLM. Zero nowej psychologii: Petla i "dlaczego wraca" sklejaja ISTNIEJACA, zatwierdzona
-// tresc per archetyp (result-content.ts) z realnymi odpowiedziami usera. Koszt = wylacznie jawne fakty.
+// Zero runtime LLM. Oddzielamy fakty zadeklarowane przez uzytkownika od hipotezy.
+// Poniedzialkowy powrot nie oznacza automatycznie straconej soboty i niedzieli.
 import type { RawAnswers } from './scoring-engine';
 import type { Confidence } from './experiment-bank';
 
@@ -109,7 +109,7 @@ export function computeLoop(breakPhrase: string, evidence: string[], answers: Ra
     { label: 'Co widać w tygodniu', text: visibleEffect(answers, evidence) },
     { label: 'Powrót po weekendzie', text: returnSignal(answers) },
     { label: 'Wniosek', text: uncertain
-      ? `Odpowiedzi pokazują kilka różnych momentów, więc nie ustawiam przyczyny na siłę. Roboczo bierzemy ${cause} jako pierwszy podejrzany. Test 72h ma go potwierdzić albo wykluczyć.`
+      ? `Odpowiedzi pokazują kilka różnych momentów. Roboczo bierzemy ${cause} jako jeden trop. Trzy dni obserwacji pomogą ustalić, czy warto go dalej sprawdzać.`
       : `Roboczo biorę ${cause} jako najwcześniejszy trop. To może uruchamiać część rzeczy, które widzisz później, ale same odpowiedzi jeszcze tego nie dowodzą. Dlatego test 72h ma sprawdzić, czy zmiana w tym miejscu rusza coś dalej. Jeśli nie, szukamy gdzie indziej.` },
   ] };
 }
@@ -124,18 +124,18 @@ export function computeLoop(breakPhrase: string, evidence: string[], answers: Ra
 // zamiast mechanizmu. Kolejnosc kandydatow idzie od najcichszego sygnalu, bo sen i trening sa tym,
 // czego czlowiek sam nie laczy z momentem odpuszczenia, wiec niosa najwiecej informacji.
 const WORK_ANCHOR: Record<string, string> = {
-  wl_clock: 'grafik, który zaczyna się i kończy o tej samej godzinie',
-  wl_deadline: 'termin, który nad Tobą wisi',
-  wl_firefight: 'gaszenie cudzych pożarów od samego rana',
-  wl_people: 'to, że kilka osób czeka, aż coś powiesz',
-  wl_owner: 'świadomość, że każda niezrobiona rzecz i tak wróci na Twoje biurko',
+  wl_clock: 'grafik, który zwykle kończy się o stałej porze',
+  wl_deadline: 'termin, po którym od razu widać, czy dowiozłeś',
+  wl_firefight: 'gaszenie cudzych pilnych spraw, a swoją pracę po godzinach',
+  wl_people: 'odpowiedzialność za decyzje, na które czekają inni',
+  wl_owner: 'prowadzenie firmy, w której niedokończone sprawy i tak wracają do Ciebie',
 };
-const TRIGGER_LINE: Record<string, string> = {
-  gup_weekend: 'W piątek to trzymanie z zewnątrz się kończy i wszystkie decyzje wracają do Ciebie naraz.',
-  gup_wieczor: 'Po pracy to trzymanie z zewnątrz się kończy i wszystkie decyzje wracają do Ciebie naraz.',
-  gup_stres: 'Kiedy w robocie albo w głowie zaczyna się palić, praca zabiera również to miejsce, które zostawiłeś dla reszty dnia.',
-  gup_czas: 'Kiedy dzień robi się za ciasny, praca zabiera również to miejsce, które zostawiłeś dla reszty dnia.',
-  gup_efekt: 'Kiedy przez kilka tygodni nic nie widać, przestajesz płacić za ten rytm uwagą.',
+const GIVE_UP_MOMENT: Record<string, string> = {
+  gup_weekend: 'kiedy zaczyna się weekend',
+  gup_wieczor: 'wieczorem po pracy',
+  gup_stres: 'kiedy rośnie presja w robocie albo w głowie',
+  gup_czas: 'kiedy nie mieścisz wszystkiego w dniu',
+  gup_efekt: 'kiedy przez jakiś czas nie widzisz efektu',
 };
 const TRIGGER_DOMAIN: Record<string, string> = {
   gup_weekend: 'weekend',
@@ -144,45 +144,56 @@ const TRIGGER_DOMAIN: Record<string, string> = {
   gup_czas: 'praca',
 };
 const EE_CONSEQUENCE: Record<string, string> = {
-  ee_snack: 'kontrola nad podjadaniem wieczorem',
-  ee_binge: 'kontrola nad jedzeniem wieczorem',
-  ee_uncontrolled: 'kontrola nad jedzeniem wieczorem',
-  ee_chaos: 'stały rytm jedzenia',
+  ee_snack: 'przekąskę poza planem',
+  ee_binge: 'wieczory, kiedy jesz więcej, niż chciałeś',
+  ee_uncontrolled: 'wieczory z jedzeniem bez kontroli',
+  ee_chaos: 'nierówny rytm jedzenia pod koniec dnia',
 };
-function crossDomainConsequence(answers: RawAnswers, triggerDomain: string): string {
-  // screen_bed jest wyciety z flow na stale, wiec czytanie go bylo martwym warunkiem. Zostaje sleep_quality.
+function crossDomainConsequence(answers: RawAnswers, triggerDomain: string): string | null {
+  // Wybieramy sygnal z innego obszaru niz deklarowany moment odpuszczenia.
+  // Zadna linia nie dopowiada godziny spania ani skutku, o ktory nie pytalismy.
   const sq = s(answers.sleep_quality);
   const pair = trainingPair(answers);
   const st = s(answers.stress_level), wp = s(answers.weekend_pattern);
   const candidates: Array<{ domain: string; text?: string }> = [
-    { domain: 'sen', text: sq === 'sq_heavy' || sq === 'sq_wrecked' ? 'godzina, o której naprawdę gasisz światło' : undefined },
-    { domain: 'trening', text: pair && pair.missed >= 1 ? 'trening, który miałeś wpisany w tydzień' : undefined },
+    { domain: 'sen', text: sq === 'sq_heavy' || sq === 'sq_wrecked' ? 'poranki, kiedy budzisz się bez gotowości na dzień' : undefined },
+    { domain: 'trening', text: pair && pair.missed >= 1 ? 'trening, który miałeś wpisany w tydzień, a który wypada' : undefined },
     { domain: 'wieczor', text: EE_CONSEQUENCE[s(answers.evening_eating)] },
-    { domain: 'praca', text: st === 'st_high' || st === 'st_max' ? 'spokojne zejście z pracy' : undefined },
-    { domain: 'weekend', text: wp === 'wp_shifted' || wp === 'wp_reset' ? 'stały rytm weekendu' : undefined },
+    { domain: 'praca', text: st === 'st_high' || st === 'st_max' ? 'wieczory, kiedy głowa nadal jest w robocie' : undefined },
+    { domain: 'weekend', text: wp === 'wp_shifted' || wp === 'wp_reset' ? 'weekend, który wyraźnie odbiega od dni roboczych' : undefined },
   ];
-  const hit = candidates.find((c) => c.text && c.domain !== triggerDomain);
-  return hit?.text || 'pierwszy punkt planu';
+  return candidates.find((c) => c.text && c.domain !== triggerDomain)?.text || null;
 }
-// Liczba dni jest jawnie rozpisana, zeby nikt nie musial wierzyc mi na slowo. Zrodlem jest
-// wylacznie monday_recovery, wiec mon_0 nie dostaje zadnego kosztu.
-const RETURN_COST: Record<string, { days: number; span: string }> = {
-  mon_1: { days: 3, span: 'sobota, niedziela i poniedziałkowe przedpołudnie' },
-  mon_2: { days: 4, span: 'sobota, niedziela, poniedziałek i wtorek' },
-  mon_3: { days: 5, span: 'od soboty do środy' },
+const MONDAY_FACT: Record<string, string> = {
+  mon_1: 'W poniedziałek potrzebujesz do południa, żeby wrócić do swojego zwykłego poziomu.',
+  mon_2: 'Zwykły poziom czujesz dopiero we wtorek.',
+  mon_3: 'Zwykły poziom czujesz dopiero w środę albo później.',
 };
 export function computeWhyRepeats(answers: RawAnswers): string {
+  const work = WORK_ANCHOR[s(answers.work_load)];
   const gup = s(answers.give_up_point);
-  const anchor = WORK_ANCHOR[s(answers.work_load)] || 'rytm pracy, w którym z góry wiadomo, co masz robić';
-  const trigger = TRIGGER_LINE[gup] || 'Kiedy w tydzień wchodzi coś nieplanowanego, pierwsze ustępuje to, czego nikt od Ciebie nie rozliczy.';
-  const konkret = crossDomainConsequence(answers, TRIGGER_DOMAIN[gup] || '');
+  const moment = GIVE_UP_MOMENT[gup];
+  const otherSignal = crossDomainConsequence(answers, TRIGGER_DOMAIN[gup] || '');
   const tried = s(answers.tried_before);
-  const restart = tried === 'tb_2' || tried === 'tb_3'
-    ? 'W poniedziałek zaczynasz od nowa, jakby poprzedni tydzień się nie liczył.'
-    : 'W poniedziałek próbujesz wrócić tam, gdzie skończyłeś.';
-  const cost = RETURN_COST[s(answers.monday_recovery)];
-  const costLine = cost ? ` Sam powrót liczy się tak: ${cost.span}. To ${cost.days} dni z siedmiu, w których nie jedziesz na swoim poziomie.` : '';
-  return `Przez pięć dni tydzień trzyma Cię ${anchor}. Tam decyzje są podjęte za Ciebie. ${trigger} Pierwsze, co wtedy wypada, to ${konkret}. ${restart}${costLine}`;
+  const restart = tried === 'tb_2'
+    ? 'W ostatnim roku trzy albo cztery plany nie dożyły miesiąca.'
+    : tried === 'tb_3'
+      ? 'W ostatnim roku co najmniej pięć planów nie dożyło miesiąca.'
+      : '';
+  const facts = [
+    work ? `W pracy wskazałeś: ${work}.` : '',
+    moment ? `Najłatwiej odpuszczasz ${moment}.` : '',
+    otherSignal ? `Osobno zaznaczyłeś też: ${otherSignal}.` : '',
+    MONDAY_FACT[s(answers.monday_recovery)] || '',
+    restart,
+  ].filter(Boolean);
+  // Roznica miedzy danymi i interpretacja: te odpowiedzi nie mierza kierunku przyczynowosci.
+  const hypothesis = gup === 'gup_efekt'
+    ? 'Możliwy trop: oceniasz cały plan po końcowym efekcie, zanim sprawdzisz postęp w jednym zachowaniu.'
+    : work && moment
+      ? 'Możliwy trop: sprawy z jasnym terminem mają swoje miejsce w dniu, a Twoje własne mogą go nie mieć.'
+      : 'Te sygnały mogą się łączyć, ale z samych odpowiedzi nie wiemy jeszcze, w jakiej kolejności.';
+  return [...facts, hypothesis, 'To jest hipoteza do przetestowania, nie gotowa diagnoza.'].join(' ');
 }
 
 // ── BEAT 4: realny koszt, WYLACZNIE jawne fakty z odpowiedzi. Max 3. Zero zmyslonych rocznych kwot. ──
