@@ -14,14 +14,14 @@ test('general door opens a bet loop the result can close', () => {
   // 2026-10-14 hero B (/pp 14A 4/4): tozsamosc + emocja (pilnujesz sie / pekasz),
   // ciekawosc (zaczyna sie wczesniej), stawka (miesiace naprawiania nie tego miejsca),
   // obietnica = ekran wyniku (Gdzie zaczynasz + Pierwszy ruch 72h).
-  assert.match(general, /headline: 'W robocie dowozisz\. A po pracy nie masz już siły na siebie\?'/);
-  assert.match(general, /accent: 'A jeśli sypie się dużo wcześniej\?'/);
-  assert.match(general, /Siemano :D Zrobiłem Mapę 168/);
-  assert.match(general, /możesz od miesięcy naprawiać nie ten moment/);
-  assert.match(general, /proof: 'Obstaw przyczynę\. Zestawię ją z odpowiedziami i dam test na 72 godziny\.'/);
-  assert.match(general, /cta: 'Dobra, sprawdzam swój tydzień'/);
+  assert.match(general, /headline: 'W robocie masz zapierdol\. Wracasz i nie masz już siły nawet na siebie\?'/);
+  assert.match(general, /accent: 'A jeśli problem zaczyna się, zanim w ogóle wyjdziesz z pracy\?'/);
+  assert.match(general, /Zrobiłem Mapę 168/);
+  assert.match(general, /Trening odpada, kolacja byle jaka, potem scroll/);
+  assert.match(general, /proof: 'Obstaw przyczynę\. Porównasz ją z odpowiedziami, zobaczysz pierwszy trop i dostaniesz test na 72 godziny\.'/);
+  assert.match(general, /cta: 'Dobra, sprawdzam, gdzie tracę siłę'/);
   assert.doesNotMatch(general, /Wiesz, co Ci psuje formę/);
-  assert.doesNotMatch(general, /headline: '[^']*\s(a|i|w|z) [^']*'/);
+  assert.doesNotMatch(general, /headline: '[^']*(?:optymalizuj|odblokuj)/i);
   assert.doesNotMatch(general, /Ile dni w tygodniu jesteś w formie/);
 });
 
