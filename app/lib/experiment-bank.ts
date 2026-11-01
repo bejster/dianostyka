@@ -111,7 +111,7 @@ export const EXPERIMENT_BANK: Record<ExperimentId, ExperimentDef> = {
     observe: 'liczba kolejnych przesunięć tego samego treningu',
     doNotChange: 'liczby zaplanowanych treningów',
     purpose: 'sprawdzić, czy to odkładanie, nie brak intencji, jest punktem awarii',
-    why: 'Pierwsze przesunięcie może wynikać z konfliktu terminów. Kolejne przesuwanie tego samego treningu sprawdza już, czy naprawdę masz dla niego miejsce. Wersja minimum rozstrzyga, czy da się uratować termin.',
+    why: 'Pierwsze przesunięcie może wynikać z konfliktu terminów. Kolejne przesuwanie tego samego treningu sprawdza, czy w kalendarzu jest dla niego miejsce. Wersja minimum pomaga ustalić, czy da się uratować termin.',
   },
   T3: {
     id: 'T3', name: 'CHRONIONY TRENING',
