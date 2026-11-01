@@ -12,8 +12,8 @@ test('human handoff comes right after the first result and before the long evide
   const mirror = result.indexOf('data-beat="mirror"');
   assert.ok(hero >= 0 && handoff > hero && mirror > handoff);
   assert.match(result, /Wynik liczy się automatycznie z Twoich odpowiedzi według mojej Mapy 168/);
-  assert.match(talk, /To automatyczny odczyt mojej Mapy 168/);
-  assert.match(talk, /Nie będę udawał, że znam Cię po pięciu minutach/);
+  assert.match(talk, /Nie widziałem całego Twojego tygodnia/);
+  assert.match(talk, /Tego nie wyjaśni żaden gotowy formularz/);
   assert.doesNotMatch(talk, /osobiście przeanalizowałem|ręcznie przeczytałem/);
 });
 
