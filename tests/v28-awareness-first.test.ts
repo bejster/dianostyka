@@ -123,7 +123,7 @@ test('the training numbers in the copy are the same clamped numbers the scoring 
 
 test('every displayed axis number carries the answer that moved it', () => {
   assert.match(result, /className="rx-axis-reason"/);
-  assert.match(result, /Każda liczba powstaje wyłącznie z odpowiedzi/);
+  assert.match(result, /Każda liczba jest wskaźnikiem obliczonym na podstawie odpowiedzi/);
   assert.match(result, /weakestStatus\?\.reason/);
   assert.match(result, /strongestStatus\?\.reason/);
 });
@@ -152,8 +152,8 @@ test('horizon separates what 72h, weeks and longer can each answer, without inve
 });
 
 test('1:1 section demonstrates sequencing and holds escalation until there is proof', () => {
-  assert.match(result, /Dokładam dopiero po dowodzie/);
-  assert.match(result, /Kolejny element wchodzi wtedy, gdy pierwszy przeżyje gorszy tydzień\./);
+  assert.match(result, /Dokładam dopiero po sprawdzeniu/);
+  assert.match(result, /Jeżeli mała zmiana pomaga i daje się powtarzać także w gorszym tygodniu/);
   const demo = result.match(/data-beat="6"([\s\S]*?)<\/section>/)?.[1] ?? '';
   assert.ok(demo, '1:1 beat not found');
   for (const re of [/holistyczn/i, /indywidualny plan/i, /optymalizujemy/i, /odblokuj[ea]?\w* (swój )?potencjał/i]) {
@@ -239,7 +239,7 @@ test('the closing block confronts the ceiling belief without inventing precision
   // Domkniecie nie moze byc jednym literalem dla kazdego. Ma sie rozgalezac na pasmach zapasu
   // i wskazywac konkretny obszar z wyniku tego czlowieka.
   assert.match(src, /const ceilingHit = hasCeilingRoom/);
-  assert.match(src, /Nie wiesz, ile zapasu siedzi tutaj: \$\{breakPos\.label\}/);
+  assert.match(src, /Pierwszy gorszy moment wskazałeś: \$\{breakPos\.label\}/);
   assert.match(src, /className="rx-ceiling"/);
   // trigger stoi PRZED handlowym CTA, a CTA dalej stoi przed kalibracja
   const ceilingAt = src.indexOf('className="rx-ceiling"');
@@ -248,9 +248,9 @@ test('the closing block confronts the ceiling belief without inventing precision
   assert.ok(ceilingAt > 0 && ceilingAt < kickerAt, 'ceiling trigger does not stand above the routed CTA');
   assert.ok(kickerAt < calibAt, 'commercial CTA slipped below calibration');
   // liczba w triggerze pochodzi z pasm zapasu, nie z wymyslonego procentu potencjalu
-  const block = src.slice(src.indexOf('const ceilingCount'), src.indexOf('const commitExperiment'));
+  const block = src.slice(src.indexOf('const ceilingLead'), src.indexOf('const commitExperiment'));
   assert.ok(block.length > 200, 'ceiling copy block not found');
-  assert.match(block, /bigReserve|anyReserve/);
+  assert.match(block, /hasCeilingRoom|reserveBand/);
   assert.doesNotMatch(block, /%|procent/, 'closing trigger invented a potential percentage');
   assert.doesNotMatch(block, /testosteron|kortyzol|hormon/i, 'closing trigger makes a hormonal claim');
   // zakaz sloganowej antytezy X/Y w gotowym copy domkniecia

@@ -14,7 +14,7 @@ test('v2.8.1 moves the human trust anchor out of the cold entry and into the res
   assert.doesNotMatch(page, /src="\/michal-portrait\.jpg"/);
   assert.match(result, /src="\/michal-portrait\.jpg"/);
   assert.match(entryCopy, /headline: 'W robocie masz zapierdol\. Wracasz i nie masz już siły nawet na siebie\?'/);
-  assert.match(result, /W 1:1 nie zaczynam od nowego planu\./);
+  assert.match(result, /W 1:1 nie przepisywałbym Ci od razu jedzenia, snu i treningu\./);
   assert.match(page + result, /Michał · Metoda 168|MICHAŁ · METODA 168/);
   assert.doesNotMatch(page + result, /Human Performance Coach/i);
 });

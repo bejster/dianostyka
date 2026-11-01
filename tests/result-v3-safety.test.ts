@@ -101,52 +101,41 @@ test('evidence receipts (Beat 1) never exceed 2', () => {
   assert.ok(rich.length <= 2, 'Beat 1 must show at most 2 evidence receipts');
 });
 
-// Kontrakt bloku "dlaczego to wraca": trigger i konsekwencja NIGDY nie moga siedziec w tej samej
-// domenie. Poprzednia wersja dobierala konkret pasujacy do triggera, wiec zdanie zjadalo samo
-// siebie ("wchodzi weekend, wiec wypada staly rytm weekendu"). To jest tautologia, nie mechanizm.
-test('konsekwencja w bloku "dlaczego to wraca" jest zawsze z innej domeny niż trigger', () => {
-  // weekend jako trigger nie moze dostac weekendu jako konsekwencji, nawet gdy wp_reset jest zaznaczone
+// Sprawdzamy związki między odpowiedziami, ale nie przypisujemy im niezmierzonej przyczynowości.
+test('mechanizm rozdziela fakt deklarowany przez użytkownika od hipotezy', () => {
   const weekend = computeWhyRepeats({ give_up_point: 'gup_weekend', evening_eating: 'ee_snack', weekend_pattern: 'wp_reset' });
-  assert.doesNotMatch(weekend, /rytm weekendu/);
-  assert.match(weekend, /podjadaniem/);
-
-  // wieczor jako trigger nie moze dostac wieczoru jako konsekwencji
-  const wieczor = computeWhyRepeats({ give_up_point: 'gup_wieczor', evening_eating: 'ee_binge', stress_level: 'st_max' });
-  assert.doesNotMatch(wieczor, /jedzeniem wieczorem/);
-  assert.match(wieczor, /spokojne zejście z pracy/);
-
-  // praca jako trigger nie moze dostac zejscia z pracy jako konsekwencji
-  const stres = computeWhyRepeats({ give_up_point: 'gup_stres', evening_eating: 'ee_clean', stress_level: 'st_max', weekend_pattern: 'wp_reset' });
-  assert.doesNotMatch(stres, /spokojne zejście z pracy/);
-  assert.match(stres, /rytm weekendu/);
-
-  // najcichszy sygnal ma pierwszenstwo: sen bije jedzenie, bo nikt sam go nie laczy z triggerem
-  const sen = computeWhyRepeats({ give_up_point: 'gup_weekend', sleep_quality: 'sq_wrecked', evening_eating: 'ee_binge' });
-  assert.match(sen, /gasisz światło/);
-
-  // wypadajacy trening jest konsekwencja, kiedy sen jest czysty
-  const trening = computeWhyRepeats({ give_up_point: 'gup_wieczor', sleep_quality: 'sq_great', planned_trainings: 3, missed_trainings: 2, evening_eating: 'ee_binge' });
-  assert.match(trening, /trening, który miałeś wpisany w tydzień/);
-
-  // kiedy nic nie jest podniesione, ogolnik jest uczciwy
-  const spokoj = computeWhyRepeats({ give_up_point: 'gup_czas', sleep_quality: 'sq_great', evening_eating: 'ee_clean', stress_level: 'st_low', weekend_pattern: 'wp_same' });
-  assert.match(spokoj, /pierwszy punkt planu/);
+  assert.match(weekend, /Osobno zaznaczyłeś też: przekąskę poza planem/);
+  assert.doesNotMatch(weekend, /Osobno zaznaczyłeś też: weekend/);
+  const evening = computeWhyRepeats({ give_up_point: 'gup_wieczor', evening_eating: 'ee_binge', stress_level: 'st_max' });
+  assert.match(evening, /wieczory, kiedy głowa nadal jest w robocie/);
+  assert.doesNotMatch(evening, /Osobno zaznaczyłeś też: wieczory z jedzeniem/);
+  const stress = computeWhyRepeats({ give_up_point: 'gup_stres', evening_eating: 'ee_clean', stress_level: 'st_max', weekend_pattern: 'wp_reset' });
+  assert.match(stress, /weekend, który wyraźnie odbiega/);
+  const sleep = computeWhyRepeats({ give_up_point: 'gup_weekend', sleep_quality: 'sq_wrecked', evening_eating: 'ee_binge' });
+  assert.match(sleep, /poranki, kiedy budzisz się bez gotowości/);
+  assert.doesNotMatch(sleep, /gasisz światło/);
+  const training = computeWhyRepeats({ give_up_point: 'gup_wieczor', sleep_quality: 'sq_great', planned_trainings: 3, missed_trainings: 2, evening_eating: 'ee_binge' });
+  assert.match(training, /trening, który miałeś wpisany w tydzień/);
+  const noSignal = computeWhyRepeats({ give_up_point: 'gup_czas', sleep_quality: 'sq_great', evening_eating: 'ee_clean', stress_level: 'st_low', weekend_pattern: 'wp_same' });
+  assert.doesNotMatch(noSignal, /Osobno zaznaczyłeś też/);
+  assert.match(noSignal, /hipoteza do przetestowania/i);
 });
 
-// Wczesniejsze ogniwo i policzony koszt powrotu. Bez tego blok tylko powtarzal odpowiedzi.
-test('"dlaczego to wraca" bierze work_load jako wcześniejsze ogniwo i liczy koszt powrotu', () => {
+test('powrót do formy w tygodniu nie oznacza straconego weekendu', () => {
   const owner = computeWhyRepeats({ give_up_point: 'gup_weekend', work_load: 'wl_owner', monday_recovery: 'mon_2' });
-  assert.match(owner, /każda niezrobiona rzecz i tak wróci na Twoje biurko/);
-  assert.match(owner, /sobota, niedziela, poniedziałek i wtorek/);
-  assert.match(owner, /4 dni z siedmiu/);
-
+  assert.match(owner, /prowadzenie firmy/);
+  assert.match(owner, /we wtorek/);
+  assert.doesNotMatch(owner, /4 dni z siedmiu|stracone dni|sobota, niedziela, poniedziałek i wtorek/);
   const firefight = computeWhyRepeats({ give_up_point: 'gup_stres', work_load: 'wl_firefight', monday_recovery: 'mon_3' });
-  assert.match(firefight, /gaszenie cudzych pożarów/);
-  assert.match(firefight, /5 dni z siedmiu/);
-
-  // mon_0 to brak kosztu, wiec zadnej liczby nie wolno wymyslac
-  const zeroCost = computeWhyRepeats({ give_up_point: 'gup_weekend', work_load: 'wl_clock', monday_recovery: 'mon_0' });
-  assert.doesNotMatch(zeroCost, /dni z siedmiu/);
+  assert.match(firefight, /pilnych spraw/);
+  assert.match(firefight, /w środę albo później/);
+  assert.doesNotMatch(firefight, /5 dni z siedmiu|straciłeś tydzień/);
+  const noLoss = computeWhyRepeats({ give_up_point: 'gup_weekend', work_load: 'wl_clock', monday_recovery: 'mon_0' });
+  assert.doesNotMatch(noLoss, /dni z siedmiu|stracone dni/);
+  for(const id of ['mon_0','mon_1','mon_2','mon_3']) {
+    const text = computeWhyRepeats({ monday_recovery: id });
+    assert.doesNotMatch(text, /[345] dni z siedmiu|sobota, niedziela, poniedziałek/);
+  }
 });
 
 test('last result section always ends with a concrete action', () => {

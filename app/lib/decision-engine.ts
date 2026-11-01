@@ -90,8 +90,7 @@ const EARLY_SIGNAL: Record<string, string> = {
   bw_varies: 'różnie, bez jednej godziny',
 };
 
-// Co w 168 zwykle stoi WCZESNIEJ niz dana dzwignia. Sen rzadko psuje sie sam: ustawia go wieczor,
-// glowa i weekend. Trening wypada, bo wczesniej zabraklo glowy albo wieczoru.
+// Heurystyczne powiazania do porownywania tropow, nie dowod kolejnosci przyczynowej.
 const UPSTREAM_OF: Record<Lever, Lever[]> = {
   sen: ['wieczor', 'glowa', 'weekend'],
   wieczor: ['glowa', 'sen'],
@@ -130,14 +129,14 @@ export function predictionGap(pred: Lever | 'hormony' | null, upstream: Lever): 
 
 // Wiersz odczytu ma juz etykiete "Obstawiles" i sam typ. Nikt nie slyszy "trafiles" przed testem.
 const GAP_LINE: Record<PredictionGap, string> = {
-  match: 'Odpowiedzi mówią to samo co Ty. Test 72h pokaże, czy miałeś nosa.',
-  upstream: 'Blisko. Odpowiedzi wskazują miejsce o krok wcześniej.',
-  deeper: 'Obstawiłeś coś, co może stać jeszcze wcześniej. Odpowiedzi pokazują, gdzie to wychodzi w tygodniu.',
-  miss: 'Odpowiedzi wskazują gdzie indziej. Test 72h pokaże, kto ma rację.',
-  none: 'Odpowiedzi same wskazują miejsce startu. Sprawdź, czy pasuje do tego, co widzisz u siebie.',
+  match: 'Twoje podejrzenie zgadza się z wybranym tropem. Sprawdzimy, czy podobny układ pojawia się także w zwykłym tygodniu.',
+  upstream: 'Wybrany trop dotyczy wcześniejszego momentu. Sama kolejność nie dowodzi, że wywołał późniejszy problem.',
+  deeper: 'Twoje podejrzenie może dotyczyć wcześniejszego ogniwa. Zapis z tygodnia pomoże sprawdzić tę kolejność.',
+  miss: 'Wybrany trop różni się od Twojego podejrzenia. Ankieta nie przesądza sprawy, więc warto porównać je z obserwacją.',
+  none: 'Wybraliśmy wstępny punkt startu z Twoich odpowiedzi. Sprawdź, czy w podobnych dniach dzieje się to samo.',
   boundary: 'Hormonów z ankiety nie ocenię. Więcej o tym niżej.',
 };
-const UNRESOLVED_GAP = 'Odpowiedzi nie wskazują jeszcze jednego miejsca. Test 72h ma to rozstrzygnąć.';
+const UNRESOLVED_GAP = 'Odpowiedzi nie wskazują jeszcze jednego miejsca. Na razie zapisujemy, kiedy pojawia się gorszy moment.';
 
 // failed_solution i constraint nie zmieniaja wyboru eksperymentu ani pewnosci (restart jest juz liczony
 // w selektorze, drugi raz bylby podwojnym liczeniem). Zmieniaja rozmiar testu i to, jak o nim mowimy.
@@ -173,9 +172,9 @@ export function bridgeLine(weakLabel: string | undefined, upLever: Lever, hasRoo
   if (!weakLabel) return '';
   // Libido ma tez przyczyny zdrowotne: zadnej tezy przyczynowej o tym jednym facecie.
   if (weakLabel === 'Napęd i libido') return 'Napęd i libido mają wiele przyczyn, także zdrowotnych. Tu sprawdzasz tylko tę część, która zależy od Twojego tygodnia.';
-  if (!hasRoom) return 'To najniższy z pięciu obszarów, choć nic tu nie leży. Test sprawdzi, czy jeden ruch go podniesie.';
-  if ((AXIS_LEVER[weakLabel] || []).includes(upLever)) return 'Start i objaw leżą tu w tym samym miejscu, więc test idzie prosto w nie.';
-  return `${weakLabel} wygląda tu na objaw. Test sprawdza, czy przyczyna siedzi tutaj.`;
+  if (!hasRoom) return 'To najniższy z pięciu obszarów, choć nic tu nie leży. Sprawdzamy, czy wynik trzyma się także w gorszym tygodniu.';
+  if ((AXIS_LEVER[weakLabel] || []).includes(upLever)) return 'Start i słabszy obszar leżą w tym samym miejscu na naszej mapie. Sprawdzamy, czy ta zbieżność się powtarza.';
+  return `${weakLabel} to obszar, w którym zgłaszasz trudność. Obserwacja sprawdzi, czy łączy się z wybranym momentem.`;
 }
 
 // Bank eksperymentow jest zamrozony. W wyniku nazywamy spadek dnia spadkiem, bez zargonu Punktu Pekniecia.
@@ -252,10 +251,10 @@ export function buildDecision({ answers, experiment, confidence, routePrimary }:
   const scene = GD_SCENE[gdId] || '';
   const samePred = !!gdLever && gdLever === predLever;
   const counter = !scene ? null
-    : effect === 'support' ? `Twój najlepszy dzień z ostatnich dwóch tygodni różnił się właśnie ${scene}. To podnosi pewność tego tropu.`
-    : effect === 'neutral' && samePred ? `Twój najlepszy dzień różnił się ${scene}, czyli tym, co sam obstawiłeś. To się łączy z miejscem, od którego zaczynasz, a test pokaże, co rusza pierwsze.`
-    : effect === 'counter' && samePred ? `Twój najlepszy dzień różnił się ${scene}, czyli tym, co sam obstawiłeś. Odpowiedzi wskazują inne miejsce, więc test rozstrzygnie, które z nich rusza resztę.`
-    : effect === 'counter' ? `Twój najlepszy dzień różnił się czymś innym: ${scene}. Dlatego pewność jest niższa, a test ma ten trop potwierdzić albo odrzucić.`
+    : effect === 'support' ? `Twój najlepszy dzień z ostatnich dwóch tygodni różnił się właśnie ${scene}. To powód, żeby ten trop sprawdzić, nie dowód przyczyny.`
+    : effect === 'neutral' && samePred ? `Twój najlepszy dzień różnił się ${scene}, czyli tym, co sam obstawiłeś. Zapis z kolejnych dni pozwoli porównać, czy sygnały pojawiają się razem.`
+    : effect === 'counter' && samePred ? `Twój najlepszy dzień różnił się ${scene}, czyli tym, co sam obstawiłeś. Odpowiedzi wskazują inne miejsce. Zostawiamy oba tropy do sprawdzenia.`
+    : effect === 'counter' ? `Twój najlepszy dzień różnił się czymś innym: ${scene}. To drugi trop do porównania, a trzy dni będą tylko początkiem obserwacji.`
     : null;
 
   const state = confidenceState(confidence, effect);

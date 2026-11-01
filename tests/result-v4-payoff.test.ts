@@ -12,7 +12,7 @@ test('V4 renders a real Mapa 168 visual from existing five-axis data', () => {
   assert.match(result, /className="rx-radar"/);
   assert.match(result, /className="rx-axis-track"/);
   assert.match(result, /Jak czytać te liczby/);
-  assert.match(result, /Każda liczba powstaje wyłącznie z odpowiedzi/);
+  assert.match(result, /Każda liczba jest wskaźnikiem obliczonym na podstawie odpowiedzi/);
   assert.match(result, /Pod każdą osią masz odpowiedź, która najmocniej przesunęła liczbę\./);
   assert.match(result, /className="rx-axis-reason"/);
 });
@@ -36,8 +36,8 @@ test('Mapa 168 uses only answers still collected in the live flow', () => {
 });
 
 test('1:1 bridge is personalized from the actual result rather than generic coaching copy', () => {
-  assert.match(result, /Ten wynik byłby punktem startu, nie formularzem do wyrzucenia/);
-  assert.match(result, /W 1:1 nie zaczynam od nowego planu/);
+  assert.match(result, /Takie decyzje podjąłbym na podstawie Twoich odpowiedzi/);
+  assert.match(result, /W 1:1 nie przepisywałbym Ci od razu jedzenia, snu i treningu/);
   assert.match(result, /breakPos\.label/);
   assert.match(result, /weakestStatus\?\.label/);
   assert.match(result, /strongestStatus\?\.label/);

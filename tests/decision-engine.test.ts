@@ -192,9 +192,16 @@ test('bridgeLine: start == objaw nie mowi "objaw" o innej osi, brak zapasu nie u
   const same = bridgeLine('Weekend i rytm', 'weekend');
   assert.ok(!same.includes('wygląda tu na objaw'));
   assert.ok(same.includes('w tym samym miejscu'));
-  assert.ok(bridgeLine('Forma', 'sen').includes('Forma wygląda tu na objaw'));
+  assert.ok(bridgeLine('Forma', 'sen').includes('Forma to obszar, w którym zgłaszasz trudność'));
   assert.match(bridgeLine('Forma', 'sen', false), /nic tu nie leży/);
   assert.equal(bridgeLine(undefined, 'sen'), '');
   const src = readFileSync('app/lib/decision-engine.ts', 'utf-8');
   assert.ok(!src.includes('zaczynamy wcześniej'));
+});
+
+test('prediction disagreement is an open question, never a causal verdict', () => {
+  const d = buildDecision({ answers: { ...base, prediction: 'pr_trening', good_day: 'gd_sen' }, experiment: EXPERIMENT_BANK.E1, confidence: 'HIGH', routePrimary: 'experiment' });
+  assert.doesNotMatch(d.prediction_gap.line, /test rozstrzygnie|kto ma rację|przyczyna/i);
+  assert.doesNotMatch(d.counterevidence || '', /test rozstrzygnie|potwierdzić albo odrzucić|kto ma rację/i);
+  assert.doesNotMatch(bridgeLine('Forma', 'sen'), /przyczyna siedzi tutaj/i);
 });
