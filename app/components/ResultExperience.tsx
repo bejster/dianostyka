@@ -299,18 +299,31 @@ export default function ResultExperience({
 
         {/* BEAT 1 (V2.8) — GDZIE JESTEŚ TERAZ + GDZIE MASZ ZAPAS. Awareness-first: stan i pojemność
             przed nazwaniem Punktu Pęknięcia. Zero procentu potencjału, zero wymyślonych zysków. */}
-        <section className="rx-beat rx-hero" data-beat="1">
+        <section className="rx-beat rx-hero" data-beat="1" id="wynik">
           <div className="rx-kick rx-kick-c">Dobra{kickName ? `, ${kickName}` : ''}. Oto pierwszy odczyt.</div>
           <div className="rx-hero-panel">
             <div className="rx-hero-signature" aria-hidden="true"><span/><span/><span/></div>
             <h1 className="rx-arch">{opening.headline}</h1>
             <p className="rx-hero-lede">{opening.explanation}</p>
-            <p className="rx-hero-source">Wstępny wynik powstaje automatycznie według mojej Mapy 168. <a href="#porozmawiaj">Nie zgadza Ci się? Możesz mi to powiedzieć.</a></p>
+            <p className="rx-hero-source">Wynik liczy się automatycznie z Twoich odpowiedzi według mojej Mapy 168. <a href="#porozmawiaj">Nie zgadza Ci się? Daj znać, w czym.</a></p>
             {/* Linia zapasu (reserveLine) zeszla z hero w 3.0: pierwszy kadr niesie odczyt decyzji,
                 a liczba obszarow z zapasem stoi i tak przy mapie ponizej. */}
             {/* FLAGSHIP 3.0 ODCZYT DECYZJI: pierwszy kadr mowi, co chcial poprawic, co obstawil, gdzie jest
                 najmocniejszy trop, jakie wczesniejsze ogniwo warto sprawdzic, jaki test i na co patrzec.
                 Pewnosc slowami, bez procentow. Os najslabsza zostaje jako objaw, ogniwo 168 jako przyczyna do sprawdzenia. */}
+            <div className="rx-top-payoff" aria-label="Pierwszy ruch z Twojego wyniku">
+              <span className="rx-payoff-kicker">TWOJE 72 GODZINY</span>
+              <strong>{sentenceCase(decision?.experiment.name ?? experiment.name)}</strong>
+              <p>{decision?.experiment.action ?? experiment.action}</p>
+              <a href="#test-72h" className="rx-payoff-action">Zobacz, jak dokładnie to zrobić <span aria-hidden="true">↓</span></a>
+            </div>
+            <nav className="rx-quicklinks" aria-label="Przejdź do wybranej części wyniku">
+              <a href="#test-72h">Test 72h</a>
+              <a href="#porozmawiaj">Mam pytanie</a>
+              <a href="#wyjasnienie">Mechanizm</a>
+            </nav>
+            <details className="rx-readout-details">
+              <summary>Skąd taki wniosek? <span>Zobacz odczyt Twoich odpowiedzi</span></summary>
             <dl className="rx-readout">
               {decision && (
                 <div className="rx-ro-row">
@@ -349,6 +362,7 @@ export default function ResultExperience({
               )}
             </dl>
             {decision?.counterevidence && <p className="rx-ro-note">{decision.counterevidence}</p>}
+            </details>
             {(decision?.medical_boundary || (decision && weakestStatus?.label === 'Napęd i libido')) && <p className="rx-ro-note rx-ro-med">{decision.medical_boundary || MEDICAL_BOUNDARY}</p>}
             {/* Kto przyszedl po prowadzenie, nie musi przewijac 10 ekranow, zeby zobaczyc, co by dostal. */}
             {route.primary === 'nabor' && <a className="rx-hero-plan" href="#plan-1na1">Od czego zacząłbym z Tobą 1:1 <span aria-hidden="true">↓</span></a>}
@@ -613,7 +627,7 @@ export default function ResultExperience({
           <div className="rx-proof">
             <a className="rx-badge" href={GOOGLE_AGG.url} target="_blank" rel="noopener noreferrer">
               <span className="rx-g">G</span>
-              <span className="rx-r">{GOOGLE_AGG.rating} <span style={{ color: C.gold }}>★★★★★</span><span style={{ color: C.mute, fontWeight: 400 }}> · {GOOGLE_AGG.count} opinii w Google</span></span>
+              <span className="rx-r">Zobacz aktualne opinie o współpracy w Google <span aria-hidden="true">↗</span></span>
             </a>
             {GOOGLE_CARDS.slice(0, 1).map((r, i) => (
               <div key={i} className="rx-gcard">
@@ -841,6 +855,29 @@ const css = `
 @media(min-width:721px){.rx-hero{min-height:auto;padding-bottom:72px}.rx-cue{position:static;transform:none;margin-top:34px}}
 /* 3.1 desktop: od 1100 px hero wychodzi poza kolumne 620 i dzieli sie na teze (lewo) i odczyt (prawo). Flex center w .rx-hero centruje panel szerszy od rodzica. */
 @media(min-width:1100px){.rx-wrap{max-width:1040px}.rx-beat:not(.rx-hero){display:grid;grid-template-columns:280px minmax(0,680px);column-gap:60px}.rx-beat:not(.rx-hero)>*{grid-column:2}.rx-beat:not(.rx-hero)>.rx-kick{grid-column:1;grid-row:1 / span 24;align-self:start;position:sticky;top:88px;margin:8px 0 0;line-height:1.6}.rx-hero{padding-top:64px;align-items:stretch}.rx-hero>.rx-kick{justify-content:flex-start}.rx-hero-panel{width:100%;max-width:none;display:grid;grid-template-columns:minmax(0,5fr) minmax(0,6fr);column-gap:56px;align-content:start;text-align:left;padding:44px 48px 40px}.rx-hero-panel>*{grid-column:1}.rx-hero-signature{justify-content:flex-start;margin:0 0 22px}.rx-arch{max-width:18ch;font-size:clamp(37px,3.25vw,49px)}.rx-hero-panel>.rx-readout{grid-column:2;grid-row:1 / span 9;margin:0;align-self:start}.rx-hero-panel>.rx-ro-note{margin-top:22px}.rx-hero-panel>.rx-hero-lede{max-width:37ch;margin-bottom:22px}.rx-hero-signature,.rx-arch,.rx-ro-note{align-self:start}}
+.rx-top-payoff{margin:18px 0 14px;padding:22px 20px 19px;border:1px solid rgba(200,168,78,.54);border-radius:16px;background:linear-gradient(145deg,rgba(200,168,78,.15),rgba(200,168,78,.035) 48%,rgba(15,14,15,.84));box-shadow:0 18px 45px -30px rgba(200,168,78,.24)}
+.rx-payoff-kicker{display:block;color:${C.goldB};font:800 10px/1.4 ${C.mono};letter-spacing:.16em;margin-bottom:12px}
+.rx-top-payoff>strong{display:block;font:400 clamp(27px,5.6vw,38px)/1.07 ${C.serif};color:${C.paper};margin-bottom:12px}
+.rx-top-payoff>p{font:500 14.5px/1.58 ${C.sans};color:${C.paper};margin:0 0 18px}
+.rx-payoff-action{display:flex;align-items:center;justify-content:space-between;gap:10px;border-radius:10px;padding:14px 15px;text-decoration:none;color:${C.ink};background:${C.goldB};font:750 14.5px/1.4 ${C.sans}}
+.rx-payoff-action:hover{background:#f1da97}.rx-payoff-action:focus-visible,.rx-quicklinks a:focus-visible{outline:2px solid ${C.goldB};outline-offset:4px}
+.rx-quicklinks{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:4px 0 12px}.rx-quicklinks a{display:inline-flex;align-items:center;border:1px solid ${C.ruleS};color:${C.goldB};background:rgba(200,168,78,.04);padding:9px 11px;border-radius:999px;text-decoration:none;font:650 12px/1.35 ${C.sans}}
+.rx-quicklinks a:hover{background:rgba(200,168,78,.14)}
+.rx-readout-details{margin-top:14px;border-top:1px solid ${C.ruleS};padding:6px 0 0}
+.rx-readout-details>summary{cursor:pointer;list-style:none;color:${C.paper};font:700 14px/1.4 ${C.sans};padding:14px 0 12px;display:flex;flex-direction:column;gap:5px}.rx-readout-details>summary::-webkit-details-marker{display:none}.rx-readout-details>summary span{color:${C.mute};font:400 12px/1.45 ${C.sans}}
+.rx-readout-details[open]>summary{color:${C.goldB}}.rx-readout-details .rx-readout{margin:0 0 12px}.rx-readout-details .rx-ro-note{font-size:13px}
+.rx-hero-source{line-height:1.65}.rx-hero-source a{font-weight:700}
+.rx{scroll-behavior:smooth}.rx #porozmawiaj,.rx #test-72h,.rx #wyjasnienie{scroll-margin-top:28px}
+@media(min-width:1100px){.rx-hero-panel>.rx-top-payoff{grid-column:2;grid-row:1 / span 5;align-self:start;margin:0}.rx-hero-panel>.rx-readout-details{grid-column:1 / -1;grid-row:auto;margin-top:28px}.rx-hero-panel>.rx-quicklinks{grid-column:1}.rx-hero-panel>.rx-ro-note{grid-column:1 / -1}.rx-hero-panel>.rx-hero-plan{grid-column:1}}
+@media(max-width:480px){.rx-top-payoff{padding:18px 16px}.rx-top-payoff>strong{font-size:29px}.rx-quicklinks{gap:6px}.rx-quicklinks a{font-size:11.5px;padding:9px 11px}}
+
+.rx .rx-axis-reason{font-size:13px;line-height:1.58;color:#c9c1b2}.rx .rx-map-key{font-size:13.5px;color:#cfc6b7}
+.rx .rx-axis-head span{font-size:15px}.rx .rx-axis-score strong{font-size:16px}
+.rx .rx-receipt{font-size:15px;line-height:1.62}.rx .rx-ro-row dt{font-size:11px}.rx .rx-ro-row dd{font-size:14.5px}
+.rx .rx-demo li p{font-size:14.5px;line-height:1.62}.rx .rx-demo li strong{font-size:15.5px}
+.rx .rx-hero-source{font-size:13.5px}.rx .rx-badge{border-color:${C.ruleS};background:rgba(200,168,78,.045)}
+.rx .rx-gcard .rx-gq{font-size:17px;line-height:1.48}
+@media(max-width:640px){.rx .rx-map-proof p{font-size:13.5px;line-height:1.65}}
 .rx-hero-plan{display:inline-flex;align-items:center;gap:8px;margin-top:18px;padding:11px 16px;border:1px solid ${C.ruleS};border-radius:999px;color:${C.goldB};text-decoration:none;font-size:13.5px;font-weight:650;background:rgba(200,168,78,.06);transition:background .2s,border-color .2s,transform .2s}.rx-hero-plan:hover{background:rgba(200,168,78,.12);border-color:${C.gold};transform:translateY(-1px)}.rx-hero-plan span{display:inline-block;animation:rxbob 2.4s ease-in-out infinite}
 .rx-coach{scroll-margin-top:24px}
 .rx-plan{position:relative;margin:4px 0 18px;padding:22px 20px 6px;border:1px solid ${C.line2};border-radius:18px;background:radial-gradient(120% 80% at 0% 0%,rgba(200,168,78,.10),transparent 55%),linear-gradient(180deg,${C.pan2},${C.pan});box-shadow:0 1px 0 rgba(255,255,255,.04) inset,0 30px 80px -40px rgba(0,0,0,.9),0 0 0 1px rgba(200,168,78,.05);overflow:hidden}
@@ -861,4 +898,9 @@ const css = `
 /* Desktop od 900 px: koncowka (plan, oczekiwania, przycisk) czytala sie jak przypis, 12.5-14.5 px. Teraz rozmiar tekstu glownego. Mobile bez zmian. */
 @media(min-width:900px){.rx-method-lead{font-size:16px}.rx-demo li strong{font-size:16.5px}.rx-demo li p{font-size:16px;line-height:1.6}.rx-expectation p{font-size:16px}.rx-final-action{padding:30px 32px}.rx-final-action>p{font-size:16px;line-height:1.6}.rx-final-action .rx-fine{font-size:14px}}
 @media(prefers-reduced-motion:reduce){.rx-plan::before{transform:scaleX(1);transition:none}.rx-plan .rx-demo li{opacity:1;transform:none;transition:none}.rx-hero-plan span{animation:none}}
-@media(prefers-reduced-motion:reduce){.rx-beat,.rx-beat:not(.rx-hero)>*{opacity:1;transform:none;transition:none}.rx-beat:not(.in) .rx-axis-fill{transform:none}.rx-axis-fill{transition:none}.rx-cue-arrow{animation:none}}`;
+@media(prefers-reduced-motion:reduce){.rx-beat,.rx-beat:not(.rx-hero)>*{opacity:1;transform:none;transition:none}.rx-beat:not(.in) .rx-axis-fill{transform:none}.rx-axis-fill{transition:none}.rx-cue-arrow{animation:none}}
+@media(max-width:640px){.rx .rx-beat:not(.rx-hero){padding:44px 0}
+.rx .rx-cue{font-size:clamp(12px,3.5vw,15px);letter-spacing:.12em;gap:8px;white-space:normal;text-align:center;width:max-content;max-width:calc(100vw - 40px)}
+.rx .rx-cue-arrow{font-size:20px}.rx .rx-map-head{margin-bottom:14px}.rx .rx-map-visual{gap:12px}
+}
+`;
