@@ -50,7 +50,7 @@ export default function ResultConversation({ archKey, primaryRoute }: { archKey:
         <img src="/michal-portrait.jpg" alt="Michał, autor Mapy 168" width={55} height={55} loading="lazy" />
         <div><span>MICHAŁ · HANTLE I TALERZ</span><strong>Ten wynik możesz podważyć.</strong></div>
       </div>
-      <p className="rx-talk-honesty">To automatyczny odczyt mojej Mapy 168 na podstawie Twoich odpowiedzi. Nie będę udawał, że znam Cię po pięciu minutach. Dlatego jeśli coś Ci tutaj nie pasuje, napisz konkretnie co.</p>
+      <p className="rx-talk-honesty">Ten wynik powstał z odpowiedzi, które zaznaczyłeś. Nie widziałem całego Twojego tygodnia. Jeśli coś Ci się tu nie zgadza, powiedz mi konkretnie gdzie. Tego nie wyjaśni żaden gotowy formularz.</p>
       <h2 id="rx-talk-head">Masz jedno pytanie o swój wynik?</h2>
       <div className="rx-talk-options" role="group" aria-label="Wybierz temat rozmowy">
         {TOPICS.map((id) => (
