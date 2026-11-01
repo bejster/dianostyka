@@ -6,6 +6,7 @@ import { computeEvidenceReceipts, computeWhyRepeats, computeCostFacts, computeLo
 
 const root = process.cwd();
 const result = fs.readFileSync(path.join(root, 'app/components/ResultExperience.tsx'), 'utf8');
+const talk = fs.readFileSync(path.join(root, 'app/components/ResultConversation.tsx'), 'utf8');
 const page = fs.readFileSync(path.join(root, 'app/diagnoza/page.tsx'), 'utf8');
 
 test('no free-manual-result-analysis promise remains anywhere in the result flow', () => {
@@ -42,7 +43,7 @@ test('analytics events use only the safe frozen event names', () => {
     'help_route', 'data_needed_route', 'self_serve_route',
   ]);
   // literal trackDiag('x', ...) calls + the beat->event lookup map (dynamic trackDiag(EVT[b], ...))
-  const direct = [...result.matchAll(/trackDiag\('([a-z_]+)'/g)].map((m) => m[1]);
+  const direct = [...(result + talk).matchAll(/trackDiag\('([a-z_]+)'/g)].map((m) => m[1]);
   // czytamy CALY blok EVT, nie tylko klucze numeryczne — inaczej nowy beat moglby przemycic nieautoryzowany event
   const evtBlock = result.match(/const EVT: Record<string, string> = \{([^}]*)\}/)?.[1] ?? '';
   assert.ok(evtBlock, 'beat->event lookup map (EVT) not found');
