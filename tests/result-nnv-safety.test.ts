@@ -57,3 +57,8 @@ test('all twenty explanations provide decisions without generic AI visual metaph
     assert.doesNotMatch(exp.why, /korki też|łódka|otwarte karty w przeglądarce|bateria telefonu|wizyta u dentysty|przeprowadzka zamiast sprzątania/i, exp.id);
   }
 });
+
+test('the prediction readout does not promise a causal verdict from three days', () => {
+  const src = readFileSync('app/lib/decision-engine.ts', 'utf8');
+  assert.doesNotMatch(src, /test rozstrzygnie|test 72h pokaże, kto ma rację|przyczyna siedzi tutaj|test ma ten trop potwierdzić albo odrzucić/i);
+});
