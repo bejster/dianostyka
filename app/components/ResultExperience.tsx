@@ -898,4 +898,9 @@ const css = `
 /* Desktop od 900 px: koncowka (plan, oczekiwania, przycisk) czytala sie jak przypis, 12.5-14.5 px. Teraz rozmiar tekstu glownego. Mobile bez zmian. */
 @media(min-width:900px){.rx-method-lead{font-size:16px}.rx-demo li strong{font-size:16.5px}.rx-demo li p{font-size:16px;line-height:1.6}.rx-expectation p{font-size:16px}.rx-final-action{padding:30px 32px}.rx-final-action>p{font-size:16px;line-height:1.6}.rx-final-action .rx-fine{font-size:14px}}
 @media(prefers-reduced-motion:reduce){.rx-plan::before{transform:scaleX(1);transition:none}.rx-plan .rx-demo li{opacity:1;transform:none;transition:none}.rx-hero-plan span{animation:none}}
-@media(prefers-reduced-motion:reduce){.rx-beat,.rx-beat:not(.rx-hero)>*{opacity:1;transform:none;transition:none}.rx-beat:not(.in) .rx-axis-fill{transform:none}.rx-axis-fill{transition:none}.rx-cue-arrow{animation:none}}`;
+@media(prefers-reduced-motion:reduce){.rx-beat,.rx-beat:not(.rx-hero)>*{opacity:1;transform:none;transition:none}.rx-beat:not(.in) .rx-axis-fill{transform:none}.rx-axis-fill{transition:none}.rx-cue-arrow{animation:none}}
+@media(max-width:640px){.rx .rx-beat:not(.rx-hero){padding:44px 0}
+.rx .rx-cue{font-size:clamp(12px,3.5vw,15px);letter-spacing:.12em;gap:8px;white-space:normal;text-align:center;width:max-content;max-width:calc(100vw - 40px)}
+.rx .rx-cue-arrow{font-size:20px}.rx .rx-map-head{margin-bottom:14px}.rx .rx-map-visual{gap:12px}
+}
+`;
