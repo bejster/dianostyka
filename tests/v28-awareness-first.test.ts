@@ -28,7 +28,7 @@ test('cold entry uses profile framing while general visitors get a neutral quest
   assert.match(general, /W robocie masz zapierdol\. Wracasz i nie masz już siły nawet na siebie/);
   assert.doesNotMatch(general, /weekend|impreza|jebać|znowu/i);
   assert.doesNotMatch(copy, /hormon|testosteron|kortyzol|wellness|dobrostan/i);
-  assert.match(copy, /Porównasz ją z odpowiedziami/);
+  assert.match(copy, /Zobaczymy, czy po kilku pytaniach dalej będziesz obstawiał to samo/);
   assert.match(coldEntry, /entry\.proof/);
 });
 

@@ -67,9 +67,13 @@ test('drzwi są napisane po ludzku bez mieszania marek', () => {
   for (const door of Object.values(ENTRY_COPY)) {
     assert.match(door.proof, /72 godziny/);
   }
-  // General może zaczynać się od konkretnej sceny, bez obowiązkowego przywitania.
-  assert.match(ENTRY_COPY.general.body, /Trening odpada/);
-  assert.match(ENTRY_COPY.general.body, /Zrobiłem Mapę 168/);
+  // Cold hero: nie dopisujemy klientowi generycznej fikcyjnej rutyny z feeda trenerskiego.
+  assert.doesNotMatch(
+    [ENTRY_COPY.general.headline, ENTRY_COPY.general.accent, ENTRY_COPY.general.body, ENTRY_COPY.general.proof].join(' '),
+    /scroll|kolacja byle jaka|Trening odpada|Netflix|kanapa|odblokuj potencjał|zostań najlepszą wersją/i,
+  );
+  assert.match(ENTRY_COPY.general.body, /swoje podejrzenie/);
+  assert.match(ENTRY_COPY.general.proof, /72 godziny/);
   for (const door of [ENTRY_COPY.hit, ENTRY_COPY.th2]) {
     assert.match(door.body, /Siemano :D/);
   }
