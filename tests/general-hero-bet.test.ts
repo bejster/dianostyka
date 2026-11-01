@@ -18,7 +18,7 @@ test('general door opens a bet loop the result can close', () => {
   assert.match(general, /accent: 'A jeśli problem zaczyna się, zanim w ogóle wyjdziesz z pracy\?'/);
   assert.match(general, /Masz już swoje podejrzenie, skąd ten brak siły/);
   assert.match(general, /Zobaczymy, czy po kilku pytaniach dalej będziesz obstawiał to samo/);
-  assert.match(general, /proof: 'Zobaczysz, od czego zacząć, i dostaniesz test na 72 godziny\.'/);
+  assert.match(general, /proof: 'Zobaczysz, od czego zacząć\. Dostaniesz test na 72 godziny\.'/);
   assert.match(general, /cta: 'Dobra, sprawdzam, gdzie tracę siłę'/);
   assert.doesNotMatch(general, /Wiesz, co Ci psuje formę/);
   assert.doesNotMatch(general, /headline: '[^']*(?:optymalizuj|odblokuj)/i);
