@@ -1,4 +1,4 @@
-import { QUESTIONS } from './assessment-config';
+import { QUESTIONS } from './assessment-config.ts';
 
 // Mikro-wyjaśnienia wykorzystują tylko wcześniejsze, jawne odpowiedzi.
 // Nie diagnozują przyczyny, nie zmieniają scoringu ani nie dodają pytań.
