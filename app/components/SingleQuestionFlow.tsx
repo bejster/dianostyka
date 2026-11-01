@@ -6,6 +6,7 @@ import { RawAnswers } from '../lib/scoring-engine';
 import { track, trackDiag } from '../lib/analytics';
 import { Atmosphere } from '../diagnoza/atmosphere';
 import { WeekInstrument, buildWeekState } from './WeekInstrument';
+import { buildFlowInsight } from '../lib/flow-insights';
 
 interface Props {
   onComplete: (answers: RawAnswers) => void;
@@ -152,6 +153,7 @@ export default function SingleQuestionFlow({ onComplete, initialAnswers }: Props
   const visiblePos = Math.max(1, visibleQuestions.findIndex(q => q.id === currentQ.id) + 1);
   const visibleTotal = visibleQuestions.length;
   const progressPct = Math.round((visiblePos / visibleTotal) * 100);
+  const flowInsight = buildFlowInsight(currentQ.id, answers as Record<string, unknown>);
   // Stan przyrządu 168: które godziny tygodnia są już pokryte odpowiedziami.
   const weekState = buildWeekState(
     visibleQuestions as unknown as Parameters<typeof buildWeekState>[0],
@@ -181,6 +183,7 @@ export default function SingleQuestionFlow({ onComplete, initialAnswers }: Props
     const base = { question_id: currentQ.id, index: currentIndex, pos: visiblePos, total: visibleTotal };
     trackDiag('question_view', base);
     trackDiag('diag_step_viewed', { index: currentIndex, id: currentQ.id, pos: visiblePos, total: visibleTotal }); // legacy alias, wspólny schema
+    if (buildFlowInsight(currentQ.id, answers as Record<string, unknown>)) trackDiag('flow_insight_viewed', { question_id: currentQ.id });
     if (currentQ.type === 'contact') trackDiag('contact_view', base);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentIndex]);
@@ -392,7 +395,7 @@ export default function SingleQuestionFlow({ onComplete, initialAnswers }: Props
   const sliderPct = sliderMax > sliderMin ? Math.max(0, Math.min(100, ((sliderValue - sliderMin) / (sliderMax - sliderMin)) * 100)) : 0;
 
   return (
-    <div style={{
+    <div className="dx-experience" style={{
       minHeight: '100svh',
       background: '#08080a',
       color: '#f0f0f0',
@@ -409,7 +412,34 @@ export default function SingleQuestionFlow({ onComplete, initialAnswers }: Props
       <Atmosphere />
       <style>{`
         .diag-slider-shell{overscroll-behavior-y:contain}
-        @media (max-width:640px){.diag-slider-shell{padding-top:12px!important;padding-bottom:12px!important}}
+        .dx-experience .dx-shell .mrow{min-height:65px;padding:13px 15px;margin-bottom:9px;gap:13px;border:1px solid #39342a;border-radius:12px;background:linear-gradient(110deg,#1b1b1b,#111216);color:#eee9df;box-shadow:0 4px 24px rgba(0,0,0,.11);transition:border-color .15s ease,background .15s ease,transform .15s ease}
+        .dx-experience .dx-shell .mrow:first-child{border-top:1px solid #39342a}
+        .dx-experience .dx-shell .mrow:hover{padding-left:15px;border-color:#97814d;background:#25231e}
+        .dx-experience .dx-shell .mrow[data-on='1']{border-color:#d0ae53;background:#2b261a}
+        .dx-experience .dx-shell .mrow:active{transform:scale(.995)}
+        .dx-experience .dx-shell .mrow-idx{font-size:12px;color:#ab9c7b}
+        .dx-experience .dx-shell .mrow-label{font-size:15.5px;line-height:1.45}
+        .dx-experience .dx-shell .mrow-tick{height:25px;background:rgba(200,168,78,.3)}
+        .dx-experience .dx-shell .mrow[data-on='1'] .mrow-tick{height:34px;background:#e8cc80;box-shadow:none}
+        .dx-experience .dx-shell .dx-go{min-height:59px;background:#c8a84e;border:1px solid #c8a84e;color:#111114;border-radius:12px;font:750 16px/1.3 "Inter",sans-serif;letter-spacing:0;text-transform:none;padding:0 19px;box-shadow:0 12px 28px rgba(0,0,0,.18)}
+        .dx-experience .dx-shell .dx-go:before{display:none}
+        .dx-experience .dx-shell .dx-go:hover:not(:disabled){background:#e2c46e;color:#111114}
+        .dx-experience .dx-shell .dx-go:disabled{opacity:.35;cursor:not-allowed}
+        .dx-experience .dx-topbar .dx-meta{color:#c7bdab;letter-spacing:.07em;font-size:11px}
+        .dx-experience .dx-topbar .dx-topbar-section{color:#e8cc80}
+        .dx-experience .dx-stage>*{animation-duration:210ms}
+        .dx-experience .dx-stage .mrow{animation-duration:180ms;animation-delay:0ms}
+        .dx-insight{margin:0 0 22px;padding:17px 19px;border:1px solid rgba(200,168,78,.42);border-left:3px solid #e8cc80;border-radius:12px;background:linear-gradient(110deg,rgba(200,168,78,.10),rgba(20,20,22,.92))}
+        .dx-insight-kicker{display:block;font:800 10px/1.35 "JetBrains Mono",monospace;letter-spacing:.12em;color:#e8cc80;margin-bottom:8px}
+        .dx-insight strong{display:block;font:600 17px/1.34 "Inter",sans-serif;color:#f2ecdc;letter-spacing:-.01em}
+        .dx-insight p{margin:7px 0 0;font:400 13.5px/1.52 "Inter",sans-serif;color:#c6bdae}
+        .dx-insight .dx-insight-evidence{color:#e6d1a3;font-weight:600}
+        @media(max-width:640px){.diag-slider-shell{padding-top:12px!important;padding-bottom:12px!important}
+          .dx-experience .dx-shell .mrow{min-height:62px;padding:12px 13px;margin-bottom:8px}
+          .dx-experience .dx-shell .mrow:hover{padding-left:13px}
+          .dx-insight{padding:13px 15px;margin-bottom:18px}.dx-insight strong{font-size:15px}.dx-insight p{font-size:12.5px}
+        }
+        @media(prefers-reduced-motion:reduce){.dx-experience .dx-stage>*,.dx-experience .dx-stage .mrow{animation:none!important}}
       `}</style>
       {/* ── TOP BAR: PROGRESS BAR + SEKCJA ── */}
       <div className="dx-topbar">
@@ -438,7 +468,7 @@ export default function SingleQuestionFlow({ onComplete, initialAnswers }: Props
           </div>
 
           <div className="dx-meta">
-            KROK {visiblePos}
+            KROK {visiblePos} / {visibleTotal}
           </div>
         </div>
       </div>
@@ -482,6 +512,15 @@ export default function SingleQuestionFlow({ onComplete, initialAnswers }: Props
                 : 'Chcesz zobaczyć, jak wygląda praca ze mną. Wynik dostajesz od razu. @ pozwala mi przypisać ten wynik do właściwej rozmowy.')
               : currentQ.subtitle}
           </p>
+        )}
+
+        {flowInsight && (
+          <aside className="dx-insight" data-insight-id={currentQ.id} aria-label="Wniosek z poprzednich odpowiedzi">
+            <span className="dx-insight-kicker">{flowInsight.kicker}</span>
+            <strong>{flowInsight.title}</strong>
+            <p className="dx-insight-evidence">{flowInsight.evidence}</p>
+            <p>{flowInsight.explanation}</p>
+          </aside>
         )}
 
         {/* TYP 1: SINGLE CHOICE CARDS */}
