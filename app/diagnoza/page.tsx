@@ -342,7 +342,7 @@ export default function DiagnozaPage() {
             {entry.cta} &rarr;
           </button>
           <p style={{ fontFamily: "'JetBrains Mono', ui-monospace, monospace", fontSize: 9.8, letterSpacing: 1.15, color: '#777169', lineHeight: 1.45, margin: '11px 0 0', textAlign: 'center', textTransform: 'uppercase' }}>
-            5 minut · bez maila · wynik od razu
+            Około 5 minut · bez maila · wynik od razu
           </p>
         </div>
       </div>

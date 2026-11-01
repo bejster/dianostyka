@@ -65,8 +65,13 @@ test('pusta odpowiedź i stare sesje mają uczciwy fallback', () => {
 
 test('drzwi są napisane po ludzku bez mieszania marek', () => {
   for (const door of Object.values(ENTRY_COPY)) {
-    assert.match(door.body, /Siemano :D/);
     assert.match(door.proof, /72 godziny/);
+  }
+  // General może zaczynać się od konkretnej sceny, bez obowiązkowego przywitania.
+  assert.match(ENTRY_COPY.general.body, /Trening odpada/);
+  assert.match(ENTRY_COPY.general.body, /Zrobiłem Mapę 168/);
+  for (const door of [ENTRY_COPY.hit, ENTRY_COPY.th2]) {
+    assert.match(door.body, /Siemano :D/);
   }
   assert.doesNotMatch(ENTRY_COPY.hit.body, /impreza|używki|alkohol/i);
   assert.match(ENTRY_COPY.th2.body, /impreza/i);

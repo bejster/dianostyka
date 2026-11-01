@@ -22,11 +22,11 @@ type EntryCopy = {
 
 export const ENTRY_COPY: Record<EntryDoor, EntryCopy> = {
   general: {
-    headline: 'W robocie dowozisz. A po pracy nie masz już siły na siebie?',
-    accent: 'A jeśli sypie się dużo wcześniej?',
-    body: 'Siemano :D Zrobiłem Mapę 168, bo możesz od miesięcy naprawiać nie ten moment.',
-    proof: 'Obstaw przyczynę. Zestawię ją z odpowiedziami i dam test na 72 godziny.',
-    cta: 'Dobra, sprawdzam swój tydzień',
+    headline: 'W robocie masz zapierdol. Wracasz i nie masz już siły nawet na siebie?',
+    accent: 'A jeśli problem zaczyna się, zanim w ogóle wyjdziesz z pracy?',
+    body: 'Trening odpada, kolacja byle jaka, potem scroll. Zrobiłem Mapę 168.',
+    proof: 'Obstaw przyczynę. Porównasz ją z odpowiedziami, zobaczysz pierwszy trop i dostaniesz test na 72 godziny.',
+    cta: 'Dobra, sprawdzam, gdzie tracę siłę',
   },
   hit: {
     headline: 'Nie masz siły na trening po pracy. A kto powiedział, że problemem jest trening?',

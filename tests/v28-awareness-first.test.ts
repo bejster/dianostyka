@@ -25,10 +25,10 @@ test('cold entry uses profile framing while general visitors get a neutral quest
   assert.match(coldEntry, /ENTRY_COPY/);
   const copy = fs.readFileSync(path.join(root, 'app/lib/entry-copy.ts'), 'utf8');
   const general = copy.match(/general: \{([\s\S]*?)\n  \}/)?.[1] ?? '';
-  assert.match(general, /W robocie dowozisz\. A po pracy nie masz już siły na siebie/);
+  assert.match(general, /W robocie masz zapierdol\. Wracasz i nie masz już siły nawet na siebie/);
   assert.doesNotMatch(general, /weekend|impreza|jebać|znowu/i);
   assert.doesNotMatch(copy, /hormon|testosteron|kortyzol|wellness|dobrostan/i);
-  assert.match(copy, /Zestawię ją z odpowiedziami/);
+  assert.match(copy, /Porównasz ją z odpowiedziami/);
   assert.match(coldEntry, /entry\.proof/);
 });
 
