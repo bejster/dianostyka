@@ -21,7 +21,7 @@ import { buildLeadBrief } from '../lib/lead-brief';
 import { computeAwarenessGap } from '../lib/awareness-gap';
 import { classifyPremiumFit } from '../lib/premium-fit';
 import { Atmosphere } from './atmosphere';
-import { resolveEntryDoor, ENTRY_COPY } from '../lib/entry-copy';
+import { resolveEntryDoor, ENTRY_COPY, HIT_FOLLOW_ENTRY_COPY, isHiTFollowEntry } from '../lib/entry-copy';
 
 const GOLD = '#c8a84e';
 const BG = '#08080a';
@@ -67,6 +67,7 @@ export default function DiagnozaPage() {
   const [acquisition, setAcquisition] = useState<AcquisitionAttribution>({});
   const completionHandledRef = useRef(false);
   const [door, setDoor] = useState<string>('general');
+  const [followEntry, setFollowEntry] = useState(false);
   const [topic, setTopic] = useState<string>('');
   const [returning, setReturning] = useState<ReturnRecord | null>(null);
   const [returnState, setReturnState] = useState<HypothesisState | null>(null);
@@ -98,9 +99,10 @@ export default function DiagnozaPage() {
       if (campaign) ctx.campaign = campaign;
       const d = resolveEntryDoor(sp, window.location.pathname);
       const tp = pick('topic', Object.keys(TOPIC_LABEL));
-      ctx.entry_copy = 'jj_entry_v3';
-      ctx.entry_variant = tp ? `${d}_${tp}` : d;
-      queueMicrotask(() => { setDoor(d); if (tp) setTopic(tp); });
+      const isFollow = m !== 'fast_fit' && isHiTFollowEntry(sp, window.location.pathname);
+      ctx.entry_copy = isFollow ? 'hit_follow_v1' : 'jj_entry_v3';
+      ctx.entry_variant = isFollow ? 'hit_follow_dm' : (tp ? `${d}_${tp}` : d);
+      queueMicrotask(() => { setDoor(d); setFollowEntry(isFollow); if (tp) setTopic(tp); });
       // 7-dniowa petla: rekord z poprzedniego wyniku, pokazany najwczesniej po 3 dniach albo z ?return=1.
       try {
         const rec = parseReturnRecord(localStorage.getItem(RETURN_KEY));
@@ -289,7 +291,7 @@ export default function DiagnozaPage() {
   }
 
   if (phase === 'intro') {
-    const entry = ENTRY_COPY[door as keyof typeof ENTRY_COPY] ?? ENTRY_COPY.general;
+    const entry = followEntry ? HIT_FOLLOW_ENTRY_COPY : (ENTRY_COPY[door as keyof typeof ENTRY_COPY] ?? ENTRY_COPY.general);
     return (
       <div className="dx-intro" style={{ minHeight: '100svh', background: BG, color: '#ece7db', fontFamily: '"Inter", sans-serif', display: 'flex', flexDirection: 'column', padding: '28px 22px max(28px, env(safe-area-inset-bottom))', boxSizing: 'border-box', position: 'relative', overflow: 'hidden' }}>
         <Atmosphere />
@@ -344,13 +346,31 @@ export default function DiagnozaPage() {
           <p style={{ fontFamily: "'JetBrains Mono', ui-monospace, monospace", fontSize: 9.8, letterSpacing: 1.15, color: '#777169', lineHeight: 1.45, margin: '11px 0 0', textAlign: 'center', textTransform: 'uppercase' }}>
             Około 5 minut · bez maila · wynik od razu
           </p>
+          {followEntry && (
+            <div aria-label="Co dostaniesz w Mapie 168" style={{
+              marginTop: 25, padding: '18px 18px 16px', border: '1px solid rgba(200,168,78,.34)',
+              borderRadius: 15, background: 'rgba(200,168,78,.055)',
+            }}>
+              <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 10, letterSpacing: 1.75, color: GOLD, fontWeight: 800, marginBottom: 13 }}>CO Z TEGO BĘDZIESZ MIEĆ?</div>
+              {[
+                ['01', 'Zobaczysz wniosek oparty na Twoich odpowiedziach.'],
+                ['02', 'Dostaniesz jeden test na najbliższe 72 godziny.'],
+                ['03', 'Sprawdzisz, czy ten trop w ogóle do Ciebie pasuje.'],
+              ].map(([number, label]) => (
+                <div key={number} style={{ display: 'flex', alignItems: 'baseline', gap: 12, marginTop: 9 }}>
+                  <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 11, fontWeight: 700, color: GOLD }}>{number}</span>
+                  <span style={{ fontSize: 13.5, lineHeight: 1.5, color: '#d1cabc' }}>{label}</span>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
     );
   }
 
   if (phase === 'intake') {
-    return <SingleQuestionFlow onComplete={handleComplete} />;
+    return <SingleQuestionFlow onComplete={handleComplete} showFollowEarlyValue={followEntry} />;
   }
 
   if (phase === 'teaser' && answers) {

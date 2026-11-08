@@ -6,11 +6,12 @@ import { RawAnswers } from '../lib/scoring-engine';
 import { track, trackDiag } from '../lib/analytics';
 import { Atmosphere } from '../diagnoza/atmosphere';
 import { WeekInstrument, buildWeekState } from './WeekInstrument';
-import { buildFlowInsight } from '../lib/flow-insights';
+import { buildFlowInsight, buildFollowEarlyObservation } from '../lib/flow-insights';
 
 interface Props {
   onComplete: (answers: RawAnswers) => void;
   initialAnswers?: RawAnswers;
+  showFollowEarlyValue?: boolean;
 }
 
 const STORAGE_KEY = 'diagnostyka_v2_session_answers';
@@ -71,7 +72,7 @@ function enoughContent(raw: string): boolean {
   return tokens.length >= 3;
 }
 
-export default function SingleQuestionFlow({ onComplete, initialAnswers }: Props) {
+export default function SingleQuestionFlow({ onComplete, initialAnswers, showFollowEarlyValue = false }: Props) {
   const [answers, setAnswers] = useState<RawAnswers>(() => {
     if (initialAnswers && Object.keys(initialAnswers).length > 0) return sanitizeFlowAnswers(initialAnswers);
     if (typeof window !== 'undefined') {
@@ -153,7 +154,8 @@ export default function SingleQuestionFlow({ onComplete, initialAnswers }: Props
   const visiblePos = Math.max(1, visibleQuestions.findIndex(q => q.id === currentQ.id) + 1);
   const visibleTotal = visibleQuestions.length;
   const progressPct = Math.round((visiblePos / visibleTotal) * 100);
-  const flowInsight = buildFlowInsight(currentQ.id, answers as Record<string, unknown>);
+  const followEarly = showFollowEarlyValue && currentQ.id === 'self_energy' ? buildFollowEarlyObservation(answers as Record<string, unknown>) : null;
+  const flowInsight = followEarly ?? buildFlowInsight(currentQ.id, answers as Record<string, unknown>);
   // Stan przyrządu 168: które godziny tygodnia są już pokryte odpowiedziami.
   const weekState = buildWeekState(
     visibleQuestions as unknown as Parameters<typeof buildWeekState>[0],
@@ -183,7 +185,10 @@ export default function SingleQuestionFlow({ onComplete, initialAnswers }: Props
     const base = { question_id: currentQ.id, index: currentIndex, pos: visiblePos, total: visibleTotal };
     trackDiag('question_view', base);
     trackDiag('diag_step_viewed', { index: currentIndex, id: currentQ.id, pos: visiblePos, total: visibleTotal }); // legacy alias, wspólny schema
-    if (buildFlowInsight(currentQ.id, answers as Record<string, unknown>)) trackDiag('flow_insight_viewed', { question_id: currentQ.id });
+    const regularInsight = buildFlowInsight(currentQ.id, answers as Record<string, unknown>);
+    const early = showFollowEarlyValue && currentQ.id === 'self_energy' ? buildFollowEarlyObservation(answers as Record<string, unknown>) : null;
+    if (regularInsight || early) trackDiag('flow_insight_viewed', { question_id: currentQ.id });
+    if (early) trackDiag('hit_follow_first_value_viewed', { route: 'hit_follow_dm' });
     if (currentQ.type === 'contact') trackDiag('contact_view', base);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentIndex]);

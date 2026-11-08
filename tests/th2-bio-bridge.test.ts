@@ -10,7 +10,7 @@ test('TH2 ma osobny front door, ale ten sam silnik diagnostyki', () => {
   assert.match(PAGE, /th2: 'Mapa 168 · Talerz i Hantle'/);
   assert.match(PAGE, /resolveEntryDoor/);
   assert.match(PAGE, /ENTRY_COPY/);
-  assert.match(PAGE, /<SingleQuestionFlow onComplete=\{handleComplete\} \/>/);
+  assert.match(PAGE, /<SingleQuestionFlow\b[^>]*onComplete=\{handleComplete\}[^>]*\/>/);
 });
 
 test('TH2 source idzie do CRM, operatora i dalej do naboru', () => {

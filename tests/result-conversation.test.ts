@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 
-const result = readFileSync('app/components/ResultExperience.tsx', 'utf8');
+const result = readFileSync('app/components/ResultExperience.tsx', 'utf8').replace(/\r\n/g, '\n');
 const talk = readFileSync('app/components/ResultConversation.tsx', 'utf8');
 const router = readFileSync('app/lib/result-router-v3.ts', 'utf8');
 
