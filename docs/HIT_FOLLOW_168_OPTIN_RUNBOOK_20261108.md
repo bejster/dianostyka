@@ -70,7 +70,7 @@ Stosuj link sticker do istniejącej Mapy 168 w Stories lub dobrowolne prośby w 
 - [x] Izolowana kopia repo, bez zmiany obecnego `main` i innych PR-ów.
 - [x] Po dodaniu pierwszego odczytu: TypeScript `tsc --noEmit` i Next.js production build oba PASS.
 - [x] Nowy finalny build: 6 wariantów otwarcia × Chromium/WebKit × 390/430/1440 = 36/36 PASS.
-- [x] 16/16 nowych unit PASS; scoped lint 0 errors (6 zastanych warning w SingleQuestionFlow). Pełny stary suite bazowy 267 PASS / 1 FAIL `result-conversation.test.ts` — nie zaliczać do pełnego PASS.
+- [x] 16/16 nowych unit PASS i pełne `npm test` po korekcie portowalnych testów 274/274 PASS. Scoped lint 0 errors (6 zastanych warning w SingleQuestionFlow). Repo-wide lint nadal FAIL: 5 niezwiązanych błędów, 13 ostrzeżeń; nie korygowano cudzych ekranów.
 - [x] Wyniki E2E bez zapisu do prawdziwego CRM: 6/6 scenariuszy Chromium/WebKit (trening 24Q, jedzenie 24Q, weekend 23Q, plateau 23Q, duplikaty food/plateau WebKit) + widoczna pierwsza obserwacja po 3 Q. Wszystkie POST przechwycono i zablokowano; nie twierdzić, że produkcyjny webhook i CRM są przetestowane.
 - [ ] Preview nowego SHA na Vercel, publiczny GET, mobilny wynik i brak regresji.
 - [ ] ManyChat eligibility, Preview i prawdziwy follow → opt-in → DM → kliknięcie → zakończenie Mapy → ewentualne dobrowolne zapytanie o opiekę; brak konfliktu z istniejącym JAZDA.
