@@ -63,3 +63,34 @@ export function buildFlowInsight(questionId: string, answers: Record<string, unk
 
   return null;
 }
+
+
+// Pierwsza wartość dla wejścia po follow. Wykorzystujemy wyłącznie istniejące ID
+// odpowiedzi. To obserwacja, NIE wynik diagnostyki ani dodatkowy model scoringowy.
+export function buildFollowEarlyObservation(answers: Record<string, unknown>): FlowInsight | null {
+  const weekend = answers.weekend_pattern;
+  const monday = answers.monday_recovery;
+  const goal = answers.primary_goal;
+  const weekendNames: Record<string, string> = {
+    wp_same: 'podobny rytm w weekend', wp_slight: 'trochę luźniejszy weekend',
+    wp_shifted: 'wyraźnie inny weekend', wp_reset: 'weekend zupełnie poza rytmem',
+  };
+  const mondayNames: Record<string, string> = {
+    mon_0: 'zwykły poziom w poniedziałek', mon_1: 'rozruch do południa',
+    mon_2: 'powrót dopiero we wtorek', mon_3: 'powrót w środę lub później',
+  };
+  if (typeof weekend !== 'string' || typeof monday !== 'string' || typeof goal !== 'string') return null;
+  if (!weekendNames[weekend] || !mondayNames[monday] || !answerLabel('primary_goal', goal)) return null;
+  const largeShift = weekend === 'wp_shifted' || weekend === 'wp_reset';
+  const slowReturn = monday === 'mon_2' || monday === 'mon_3';
+  const title = largeShift && slowReturn ? 'Weekend się zmienia, a powrót trwa dłużej.'
+    : largeShift ? 'Weekend wygląda inaczej, ale powrót jest dość szybki.'
+    : slowReturn ? 'Powrót trwa dłużej, chociaż weekend nie zmienia się mocno.'
+    : 'Na razie weekend nie wygląda na główną przeszkodę.';
+  return {
+    kicker: 'PIERWSZY ODCZYT · 3 ODPOWIEDZI',
+    title,
+    evidence: 'Zaznaczyłeś: ' + weekendNames[weekend] + ' oraz ' + mondayNames[monday] + '.',
+    explanation: 'To obserwacja, nie przyczyna. Teraz sprawdzimy jedzenie, sen, pracę i trening. Nie musisz niczego wpisywać drugi raz.',
+  };
+}

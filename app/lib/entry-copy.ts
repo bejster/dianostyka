@@ -41,3 +41,22 @@ export const ENTRY_COPY: Record<EntryDoor, EntryCopy> = {
     cta: 'Sprawdzam, gdzie mi pęka tydzień',
   },
 };
+
+
+// Dedykowane powitanie po dobrowolnym kliknięciu w wiadomości po follow.
+// JEDEN silnik: żadnych dodatkowych pytań, punktacji, formularzy ani ścieżek CRM.
+export function isHiTFollowEntry(params: URLSearchParams, pathname: string): boolean {
+  const pathOk = pathname === '/' || pathname === '/diagnoza';
+  return pathOk &&
+    resolveEntryDoor(params, pathname) === 'hit' &&
+    (params.get('src') || '').toLowerCase() === 'dm' &&
+    (params.get('utm_campaign') || '').toLowerCase() === 'follow_welcome_168';
+}
+
+export const HIT_FOLLOW_ENTRY_COPY: EntryCopy = {
+  headline: 'Pokaż, jak naprawdę wygląda Twój tydzień.',
+  accent: 'Zobaczysz, od czego zacząć z formą.',
+  body: 'Nie chcę Ci wciskać kolejnej rozpiski w ciemno. Odpowiedz na pytania o jedzenie, trening, sen i weekend. Ta Mapa porówna odpowiedzi i pokaże Ci pierwszy trop do sprawdzenia.',
+  proof: 'Na koniec jeden konkretny test na 72 godziny. Bez obietnicy cudów.',
+  cta: 'Sprawdzam swój tydzień',
+};
