@@ -9,7 +9,8 @@
     "lint": "eslint",
     "test": "node --experimental-strip-types --test tests/*.test.ts",
     "test:lead": "node --experimental-strip-types --test tests/lead-operator-decision.test.ts tests/premium-icp-patch-v1.test.ts tests/th2-bio-bridge.test.ts",
-    "check:lead-asset": "npm run test:lead && tsc --noEmit && next build"
+    "export:168": "node --experimental-strip-types scripts/export-168-csv.ts",
+    "check:lead-asset":"npm run test:lead && tsc --noEmit && next build"
   },
   "dependencies": {
     "jose": "^6.2.4",

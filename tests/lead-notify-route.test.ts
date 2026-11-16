@@ -6,7 +6,8 @@ const route = readFileSync(new URL('../app/api/lead-notify/route.ts', import.met
 const subscriber = readFileSync(new URL('../app/api/subscribe/route.ts', import.meta.url), 'utf8');
 
 test('endpoint odrzuca niekompletną sesję PRZED zapisem w CRM i Telegramem', () => {
-  assert.match(route, /invalidDiagnosticFields\(b\.raw_answers\)/);
+  // Ogon 168 tolerowany tylko jako BRAK u starej sesji (tests/mapa-168-tail.test.ts).
+  assert.match(route, /invalidDiagnosticFields\(b\.raw_answers, TAIL_168_IDS\)/);
   assert.match(route, /status: 422/);
   const guard = route.indexOf('incomplete_lead');
   assert.ok(guard > 0 && guard < route.indexOf('MAKE_DIAGNOSTYKA_WEBHOOK'), 'walidacja musi być przed Make');

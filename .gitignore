@@ -41,3 +41,6 @@ yarn-error.log*
 next-env.d.ts
 
 .vercel
+
+# eksport odpowiedzi 168 (dane osobowe)
+mapa168-*.csv
