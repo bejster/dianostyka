@@ -7,7 +7,7 @@ import { calculateScoring, type RawAnswers } from '../app/lib/scoring-engine.ts'
 import { answersToFD } from '../app/lib/answers-to-fd.ts';
 import { score, costs, pickArchetype } from '../app/lib/diagnostic-core.ts';
 import { invalidDiagnosticFields } from '../app/lib/lead-integrity.ts';
-import { buildReplySignals, replyPriorityHeader, REPLY_PRIORITY_LABEL } from '../app/lib/reply-priority.ts';
+import { buildReplySignals, replyPriorityHeader, fitHintLine, REPLY_PRIORITY_LABEL } from '../app/lib/reply-priority.ts';
 import { buildLeadBrief } from '../app/lib/lead-brief.ts';
 import { rowFromNotionPage, toCsv168, csvEscape } from '../app/lib/export-168.ts';
 
@@ -117,7 +117,19 @@ test('PRIORYTET ODPISU: wydatek >= 1000 zł i wypełnione pyt. 3, nic więcej', 
     const s = buildReplySignals({ attempt_status: 'att_unsure', spend_12m: spend, if_nothing_changes: text });
     assert.equal(s.priority_reply, expected, `${spend} / ${String(text)}`);
   }
-  assert.match(replyPriorityHeader(buildReplySignals({ attempt_status: 'att_none', spend_12m: 'spend12_1k_5k', if_nothing_changes: URGENT })), new RegExp(`^${REPLY_PRIORITY_LABEL} · wydatek 12 mies\\.: 1000-5000 zł`));
+  assert.match(replyPriorityHeader(buildReplySignals({ attempt_status: 'att_none', spend_12m: 'spend12_1k_5k', if_nothing_changes: URGENT })), new RegExp(`^${REPLY_PRIORITY_LABEL} \\(kolejność odpisu, nie ocena dopasowania\\) · wydatek 12 mies\\.: 1000-5000 zł`));
+});
+
+test('audyt ICP 18.11: dopasowanie pokazane osobno od wydatku, bez automatycznego werdyktu', () => {
+  assert.equal(
+    fitHintLine({ attempt_status: 'att_past', attempt_result: 'ar_came_back', agency_mode: 'ag_data', spend_12m: 'spend12_5k_plus' }),
+    'DOPASOWANIE (osobno od wydatku): próba: Był efekt, później problem wrócił. · po kierunku: Zrobię, tylko chcę, żeby ktoś patrzył w dane i mówił, co poprawić.',
+  );
+  assert.equal(fitHintLine({ attempt_status: 'att_none', spend_12m: 'spend12_0' }), 'DOPASOWANIE (osobno od wydatku): próba: Jeszcze nie.');
+  assert.equal(fitHintLine({ intent: 'in_sam' }), '', 'stara sesja bez ogona: brak linii');
+  assert.match(route, /REPLY_PRIORITY_NOTE/);
+  assert.match(route, /fitHint \? \[fitHint\]/);
+  assert.match(route, /\[replyHeader, fitHint,/);
 });
 
 test('stany opisu próby są rozróżnione (audyt 23.10: nie zlewać braku, pominięcia i rozmowy)', () => {

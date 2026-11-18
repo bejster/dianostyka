@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { buildLeadOperatorDecision } from '../../lib/lead-operator-decision';
 import { invalidDiagnosticFields, validInstagram } from '../../lib/lead-integrity';
 import { TAIL_168_IDS } from '../../lib/assessment-config';
-import { buildReplySignals, replyPriorityHeader, REPLY_PRIORITY_LABEL } from '../../lib/reply-priority';
+import { buildReplySignals, replyPriorityHeader, fitHintLine, REPLY_PRIORITY_LABEL, REPLY_PRIORITY_NOTE } from '../../lib/reply-priority';
 
 const NOTION_CHUNK = 1900;
 
@@ -55,7 +55,8 @@ export async function POST(req: NextRequest) {
       ...((b.derived_signals && typeof b.derived_signals === 'object' && !Array.isArray(b.derived_signals)) ? b.derived_signals as Record<string, unknown> : {}),
       ...reply,
     };
-    const crmBrief = [replyHeader, String(b.diagnostyka_brief ?? '')].filter(Boolean).join('\n');
+    const fitHint = fitHintLine(b.raw_answers);
+    const crmBrief = [replyHeader, fitHint, String(b.diagnostyka_brief ?? '')].filter(Boolean).join('\n');
 
     // ── CRM PERSISTENCE: Make zapisuje pełny output, n8n jest tylko fallbackiem minimalnym. ──
     // Make ma idempotentny router Lead Ref -> UPDATE/CREATE i aktywne canonical Notion credentials.
@@ -215,7 +216,7 @@ export async function POST(req: NextRequest) {
         : 'FINANSE: ? · brak odpowiedzi';
     const urgencyText = reply.urgency_filled ? s((b.raw_answers as Record<string, unknown>)?.if_nothing_changes, 300) : '';
     const lines = [
-      ...(reply.priority_reply ? [`⭐ ${REPLY_PRIORITY_LABEL}`] : []),
+      ...(reply.priority_reply ? [`⭐ ${REPLY_PRIORITY_LABEL} · ${REPLY_PRIORITY_NOTE}`] : []),
       `${decision.icon} ${decision.headline}`,
       who,
       `Źródło: ${sourceLabel}${entryVariant && entryVariant !== entryDoor ? ` · ${entryVariant}` : ''}`,
@@ -225,6 +226,7 @@ export async function POST(req: NextRequest) {
       `INTENT: ${decision.intentLabel}`,
       `URGENCY: ${decision.urgencyLabel}`,
       finanse,
+      ...(fitHint ? [fitHint] : []),
       ...(urgencyText ? [`JAK DO LATA NIC SIĘ NIE ZMIENI: „${urgencyText}”`] : []),
       '',
       `PROBLEM: ${score}/100 ${severity}${archetype ? ` · ${archetype}` : ''}`,

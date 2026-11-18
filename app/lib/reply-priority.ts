@@ -6,6 +6,9 @@ import { QUESTIONS, TAIL_168_VERSION } from './assessment-config.ts';
 import { enoughContent, isGibberish } from './lead-integrity.ts';
 
 export const REPLY_PRIORITY_LABEL = 'PRIORYTET ODPISU';
+// Audyt ICP 18.11: wyższy wydatek NIE oznacza dobrego dopasowania do współpracy.
+// Flaga ustala tylko kolejność odpisów; dopasowanie pokazujemy osobno (fitHintLine).
+export const REPLY_PRIORITY_NOTE = 'kolejność odpisu, nie ocena dopasowania';
 const SPEND_1K_PLUS = new Set(['spend12_1k_5k', 'spend12_5k_plus']);
 
 type Bag = Record<string, unknown>;
@@ -79,6 +82,21 @@ export function replyPriorityHeader(s: ReplySignals): string {
   const spend = s.spend_12m_label ? `wydatek 12 mies.: ${s.spend_12m_label}` : 'wydatek 12 mies.: brak odpowiedzi';
   const urgency = s.urgency_filled ? 'pilność: wypełniona' : 'pilność: pusta';
   return s.priority_reply
-    ? `${REPLY_PRIORITY_LABEL} · ${spend} · ${urgency}`
+    ? `${REPLY_PRIORITY_LABEL} (${REPLY_PRIORITY_NOTE}) · ${spend} · ${urgency}`
     : `Kolejka zwykła · ${spend} · ${urgency}`;
+}
+
+// Sygnały dopasowania, celowo oddzielone od wydatku: co się stało z próbą i co robi po dostaniu kierunku.
+// To materiał do oceny przez Michała, nie automatyczny werdykt.
+export function fitHintLine(rawInput: unknown): string {
+  const raw = (rawInput && typeof rawInput === 'object' && !Array.isArray(rawInput) ? rawInput : {}) as Bag;
+  const status = str(raw.attempt_status);
+  if (!status && !str(raw.spend_12m)) return '';
+  const tried = status === 'att_active' || status === 'att_past';
+  const attempt = tried
+    ? (optionLabel('attempt_result', str(raw.attempt_result)) || optionLabel('attempt_status', status))
+    : optionLabel('attempt_status', status);
+  const agency = optionLabel('agency_mode', str(raw.agency_mode));
+  const parts = [attempt && `próba: ${attempt}`, agency && `po kierunku: ${agency}`].filter(Boolean);
+  return parts.length ? `DOPASOWANIE (osobno od wydatku): ${parts.join(' · ')}` : '';
 }
