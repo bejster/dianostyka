@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { buildLeadOperatorDecision } from '../../lib/lead-operator-decision';
 import { invalidDiagnosticFields, validInstagram } from '../../lib/lead-integrity';
+import { TAIL_168_IDS } from '../../lib/assessment-config';
+import { buildReplySignals, replyPriorityHeader, fitHintLine, REPLY_PRIORITY_LABEL, REPLY_PRIORITY_NOTE } from '../../lib/reply-priority';
 
 const NOTION_CHUNK = 1900;
 
@@ -39,10 +41,22 @@ export async function POST(req: NextRequest) {
 
     // Wyłącznie kompletne sesje: pusta albo przywrócona sesja nie trafia ani do CRM, ani na Telegram.
     // Kontakt jest w tej linii opcjonalny, więc brak @ nie bramkuje zapisu; resztę sprawdzamy tak jak UI.
-    const invalid = invalidDiagnosticFields(b.raw_answers).filter((id) => id !== 'instagram');
+    // Ogon 168 (próba, wydatek, pilność): sesja sprzed wdrożenia go nie ma i nie może przez to zgubić leada.
+    const invalid = invalidDiagnosticFields(b.raw_answers, TAIL_168_IDS).filter((id) => id !== 'instagram');
     if (invalid.length) {
       return NextResponse.json({ ok: false, error: 'incomplete_lead', invalid_fields: invalid }, { status: 422 });
     }
+
+    // PRIORYTET ODPISU liczony tutaj z raw_answers, nie z flagi przeglądarki. Ląduje w istniejących
+    // kolumnach CRM (Derived Signals JSON + pierwsza linia Diagnostyka Brief), bez zmiany scenariusza Make.
+    const reply = buildReplySignals(b.raw_answers);
+    const replyHeader = replyPriorityHeader(reply);
+    const derivedSignals = {
+      ...((b.derived_signals && typeof b.derived_signals === 'object' && !Array.isArray(b.derived_signals)) ? b.derived_signals as Record<string, unknown> : {}),
+      ...reply,
+    };
+    const fitHint = fitHintLine(b.raw_answers);
+    const crmBrief = [replyHeader, fitHint, String(b.diagnostyka_brief ?? '')].filter(Boolean).join('\n');
 
     // ── CRM PERSISTENCE: Make zapisuje pełny output, n8n jest tylko fallbackiem minimalnym. ──
     // Make ma idempotentny router Lead Ref -> UPDATE/CREATE i aktywne canonical Notion credentials.
@@ -52,8 +66,8 @@ export async function POST(req: NextRequest) {
     const instagram = String(b.instagram ?? '').replace(/^@/, '').trim();
     const imie = String(b.imie ?? '').trim();
     const rawChunks = chunkForNotion(b.raw_answers ?? {}, 4);
-    const derivedChunks = chunkForNotion(b.derived_signals ?? {}, 2);
-    const briefChunks = chunkForNotion(b.diagnostyka_brief ?? '', 3);
+    const derivedChunks = chunkForNotion(derivedSignals, 2);
+    const briefChunks = chunkForNotion(crmBrief, 3);
     const qaSynthetic = b.qa_synthetic === true;
     const displayName = imie || instagram || (leadRef ? `Diagnostyka ${leadRef.slice(-8)}` : 'Diagnostyka lead');
 
@@ -73,6 +87,10 @@ export async function POST(req: NextRequest) {
         wants_help: b.wants_help === true,
         intencja: String(b.intencja ?? ''),
         kiedy_start: String(b.kiedy_start ?? ''),
+        // Nowe pola: scenariusz Make ich dziś nie mapuje (dane są w Derived Signals JSON i Brief).
+        // Gotowe pod osobną kolumnę "Priorytet odpisu", gdy zostanie dodana w CRM.
+        priority_reply: reply.priority_reply,
+        spend_12m: reply.spend_12m,
         entry_door: String(b.entry_door ?? ''),
         entry_topic: String(b.entry_topic ?? ''),
         entry_variant: String(b.entry_variant ?? ''),
@@ -115,6 +133,9 @@ export async function POST(req: NextRequest) {
       const n8nBody = {
         event: 'diagnostyka_complete',
         ...b,
+        derived_signals: derivedSignals,
+        diagnostyka_brief: crmBrief,
+        priority_reply: reply.priority_reply,
         priority_lead: b.followup_priority,
         segment: b.severity_band,
         received_at: new Date().toISOString(),
@@ -188,7 +209,14 @@ export async function POST(req: NextRequest) {
       ? `👤 ${im ? `${im} · ` : ''}@${ig}`
       : '👤 lead anonimowy';
 
+    const finanse = !reply.has_tail
+      ? 'FINANSE: ? · sesja bez pytania o wydatki'
+      : reply.spend_12m_label
+        ? `FINANSE: wydał w 12 mies. ${reply.spend_12m_label}`
+        : 'FINANSE: ? · brak odpowiedzi';
+    const urgencyText = reply.urgency_filled ? s((b.raw_answers as Record<string, unknown>)?.if_nothing_changes, 300) : '';
     const lines = [
+      ...(reply.priority_reply ? [`⭐ ${REPLY_PRIORITY_LABEL} · ${REPLY_PRIORITY_NOTE}`] : []),
       `${decision.icon} ${decision.headline}`,
       who,
       `Źródło: ${sourceLabel}${entryVariant && entryVariant !== entryDoor ? ` · ${entryVariant}` : ''}`,
@@ -197,7 +225,9 @@ export async function POST(req: NextRequest) {
       `FIT: ${decision.fitLabel}`,
       `INTENT: ${decision.intentLabel}`,
       `URGENCY: ${decision.urgencyLabel}`,
-      'FINANSE: ? · nie pytaliśmy',
+      finanse,
+      ...(fitHint ? [fitHint] : []),
+      ...(urgencyText ? [`JAK DO LATA NIC SIĘ NIE ZMIENI: „${urgencyText}”`] : []),
       '',
       `PROBLEM: ${score}/100 ${severity}${archetype ? ` · ${archetype}` : ''}`,
       `PUNKT PĘKNIĘCIA: ${s(b.godzina, 40) || '—'} · obszar: ${s(b.worstCat, 30) || '—'}`,

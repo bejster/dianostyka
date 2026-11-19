@@ -1,6 +1,13 @@
 // assessment-config.ts, Wersjonowana konfiguracja pytań, domen i profili Diagnostyki Tygodnia V2
 
 export const ASSESSMENT_VERSION = '3.0.0';
+// Wersja ogona 168 (proba + wydatek + pilnosc). Osobno od ASSESSMENT_VERSION, bo scoring sie nie zmienia.
+export const TAIL_168_VERSION = 'tail-2026-11-16';
+// Pytania ogona. Stary klient (sesja sprzed wdrozenia) ich nie wysle, wiec serwer nie moze odrzucic
+// takiego leada za ich brak. Obecne, ale bledne wartosci nadal odrzucamy.
+export const TAIL_168_IDS: ReadonlySet<string> = new Set([
+  'attempt_status', 'attempt_desc', 'attempt_result', 'attempt_blocker', 'spend_12m', 'if_nothing_changes',
+]);
 
 export type DomainKey = 'sleep' | 'energy' | 'nutrition' | 'training' | 'weekend' | 'chaos';
 
@@ -77,6 +84,9 @@ export interface QuestionDef {
   placeholder?: string; // podpowiedź w polu tekstowym (per pytanie, nie jeden generyk)
   options?: QuestionOption[];
   maxSelect?: number; // tylko dla 'multi': ile chipow wolno zaznaczyc. Domyslnie 3.
+  // tylko dla 'text': gotowe odpowiedzi jednym tapnieciem. Zapisujemy ich id, zeby
+  // "nie pamietam" i "wole w rozmowie" nie zlewaly sie z pominieciem ani z brakiem proby.
+  quickAnswers?: { id: string; label: string }[];
   condition?: (answers: Record<string, unknown>) => boolean;
   upstreamWeight: number; // jak bardzo ten problem jest przyrodzoną przyczyną
   crossDomainImpact: number; // ile innych domen pogarsza
@@ -722,6 +732,112 @@ export const QUESTIONS: QuestionDef[] = [
       { id: 'sw_kwartal', label: 'Za 2-3 miesiące.', value: 0 },
       { id: 'sw_sprawdzam', label: 'Na razie tylko sprawdzam.', value: 0 },
     ],
+  },
+
+  // ── OGON 168 (2026-11-16): historia jednej proby + pieniadze + pilnosc. POZA SCORINGIEM.
+  //    value 0, upstreamWeight 0, crossDomainImpact 0; scoring-engine i answers-to-fd czytaja tylko
+  //    nazwane klucze, wiec te odpowiedzi nie dotykaja wyniku (test: tests/mapa-168-tail.test.ts).
+  //    Galaz jednej proby wg audytu 23.10 (Notion "Diagnostyka 168"): status, opis, wynik.
+  //    "Jeszcze nie" nie jest porazka i prowadzi tylko do pytania o przeszkode. ──
+  {
+    id: 'attempt_status',
+    section: 'Co dalej',
+    sectionNum: 'VIII',
+    title: 'Czy robiłeś już coś celowo, żeby poprawić formę?',
+    type: 'single',
+    domain: 'chaos',
+    upstreamWeight: 0,
+    crossDomainImpact: 0,
+    options: [
+      { id: 'att_active', label: 'Tak, nadal działam.', value: 0 },
+      { id: 'att_past', label: 'Tak, wcześniej próbowałem.', value: 0 },
+      { id: 'att_none', label: 'Jeszcze nie.', value: 0 },
+      { id: 'att_unsure', label: 'Trudno mi ocenić.', value: 0 },
+    ],
+  },
+  {
+    id: 'attempt_desc',
+    optional: true,
+    section: 'Co dalej',
+    sectionNum: 'VIII',
+    title: 'Opisz jedną próbę, która najlepiej pokazuje Twoją sytuację.',
+    subtitle: 'Co konkretnie robiłeś i mniej więcej jak długo? Np. plan treningowy, liczenie kalorii, konkretna dieta, aplikacja, współpraca z trenerem. Nazwę trenera możesz podać, jeśli chcesz.',
+    type: 'text',
+    domain: 'chaos',
+    placeholder: 'np. pół roku z trenerem online, plan i liczenie kalorii...',
+    upstreamWeight: 0,
+    crossDomainImpact: 0,
+    condition: (a) => a.attempt_status === 'att_active' || a.attempt_status === 'att_past',
+    quickAnswers: [
+      { id: 'ad_nie_pamietam', label: 'Nie pamiętam szczegółów' },
+      { id: 'ad_rozmowa', label: 'Wolę dopowiedzieć w rozmowie' },
+    ],
+  },
+  {
+    id: 'attempt_result',
+    section: 'Co dalej',
+    sectionNum: 'VIII',
+    title: 'Co najlepiej opisuje tę próbę?',
+    type: 'single',
+    domain: 'chaos',
+    upstreamWeight: 0,
+    crossDomainImpact: 0,
+    condition: (a) => a.attempt_status === 'att_active' || a.attempt_status === 'att_past',
+    options: [
+      { id: 'ar_no_progress', label: 'Wykonywałem ustalenia i nie widziałem postępów.', value: 0 },
+      { id: 'ar_hard_to_do', label: 'Trudno było mi wykonywać ustalenia.', value: 0 },
+      { id: 'ar_came_back', label: 'Był efekt, później problem wrócił.', value: 0 },
+      { id: 'ar_kept', label: 'Był efekt i go utrzymałem.', value: 0 },
+      { id: 'ar_too_early', label: 'Nadal działam, za wcześnie na ocenę.', value: 0 },
+      { id: 'ar_unsure', label: 'Trudno mi ocenić.', value: 0 },
+    ],
+  },
+  {
+    id: 'attempt_blocker',
+    optional: true,
+    section: 'Co dalej',
+    sectionNum: 'VIII',
+    title: 'Co dotąd najbardziej zatrzymywało Cię przed rozpoczęciem?',
+    subtitle: 'Własnymi słowami. Możesz pominąć.',
+    type: 'text',
+    domain: 'chaos',
+    placeholder: 'napisz po swojemu...',
+    upstreamWeight: 0,
+    crossDomainImpact: 0,
+    condition: (a) => a.attempt_status === 'att_none',
+    quickAnswers: [
+      { id: 'ab_rozmowa', label: 'Wolę wyjaśnić w rozmowie' },
+    ],
+  },
+  {
+    id: 'spend_12m',
+    section: 'Co dalej',
+    sectionNum: 'VIII',
+    title: 'Ile przez ostatnie 12 miesięcy wydałeś na ogarnięcie formy (trener, plany, suple, karnet)?',
+    type: 'single',
+    domain: 'chaos',
+    upstreamWeight: 0,
+    crossDomainImpact: 0,
+    options: [
+      { id: 'spend12_0', label: '0 zł', value: 0 },
+      { id: 'spend12_lt1k', label: 'Do 1000 zł', value: 0 },
+      { id: 'spend12_1k_5k', label: '1000-5000 zł', value: 0 },
+      { id: 'spend12_5k_plus', label: '5000+ zł', value: 0 },
+      { id: 'spend12_na', label: 'Wolę nie mówić.', value: 0 },
+    ],
+  },
+  {
+    id: 'if_nothing_changes',
+    optional: true,
+    section: 'Co dalej',
+    sectionNum: 'VIII',
+    title: 'Co się stanie, jak do lata nic się nie zmieni?',
+    subtitle: 'Jedno zdanie, po swojemu. Możesz pominąć.',
+    type: 'text',
+    domain: 'chaos',
+    placeholder: 'napisz tak, jak powiedziałbyś to znajomemu...',
+    upstreamWeight: 0,
+    crossDomainImpact: 0,
   },
 
   // ── SEKCJA IX: KONTAKT (ostatni ekran; P0-1: OPCJONALNY, NIE bramkuje wyniku; nie wchodzi do score) ──

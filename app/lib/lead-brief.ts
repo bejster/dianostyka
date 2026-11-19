@@ -3,8 +3,8 @@
 // żeby reframe cytował JEGO tydzień, a nie generował z 6 szablonów archetypu.
 // Zero PII w briefie (bez IG i imienia). Zero score/wag, to nie jest do liczenia.
 
-import { QUESTIONS, type QuestionDef } from './assessment-config';
-import { type RawAnswers } from './scoring-engine';
+import { QUESTIONS, type QuestionDef } from './assessment-config.ts';
+import { type RawAnswers } from './scoring-engine.ts';
 
 // Pytania pominięte w briefie: kontakt (PII) + techniczne. Reszta idzie w całości.
 const SKIP_IN_BRIEF = new Set(['instagram', 'imie', 'name']);
@@ -34,6 +34,8 @@ function answerLabel(q: QuestionDef, raw: RawAnswers): string | null {
 
   if (q.type === 'text') {
     if (typeof val !== 'string' || !val.trim()) return null;
+    const quick = q.quickAnswers?.find(o => o.id === val);
+    if (quick) return `[${quick.label}]`;
     return `„${val.trim()}”`;
   }
 
@@ -64,6 +66,12 @@ function briefKey(q: QuestionDef): string {
     user_selfdx: 'Co jego zdaniem go trzyma (własne słowa)',
     intent: 'Jak woli działać',
     start_when: 'Kiedy chce zacząć',
+    attempt_status: 'Celowa próba poprawy formy',
+    attempt_desc: 'Jedna próba (własne słowa)',
+    attempt_result: 'Wynik tej próby',
+    attempt_blocker: 'Co zatrzymywało przed startem (własne słowa)',
+    spend_12m: 'Wydatek na formę w 12 mies.',
+    if_nothing_changes: 'Co jak do lata nic się nie zmieni (własne słowa)',
   };
   return map[q.id] || q.section;
 }

@@ -64,16 +64,20 @@ export function validAnswer(q: QuestionDef, answers: AnswerBag): boolean {
       return new Set(v).size === v.length && v.every(id => typeof id === 'string' && allowed.has(id));
     }
     case 'text':
+      if (typeof v === 'string' && q.quickAnswers?.some(o => o.id === v)) return true;
       return typeof v === 'string' && v.length <= 500 && enoughContent(v) && !isGibberish(v);
     case 'contact':
       return validInstagram(v);
   }
 }
 
-export function invalidDiagnosticFields(raw: unknown): string[] {
+// tolerateMissing: pytania, ktorych BRAK nie jest bledem (np. ogon 168 u klienta sprzed wdrozenia).
+// Obecna, ale bledna wartosc nadal jest bledem.
+export function invalidDiagnosticFields(raw: unknown, tolerateMissing: ReadonlySet<string> = new Set()): string[] {
   if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return ['answers'];
   const answers = raw as AnswerBag;
   return QUESTIONS.filter(q => !q.condition || q.condition(answers))
+    .filter(q => !(tolerateMissing.has(q.id) && missing(answers[q.id])))
     .filter(q => !validAnswer(q, answers))
     .map(q => q.id);
 }

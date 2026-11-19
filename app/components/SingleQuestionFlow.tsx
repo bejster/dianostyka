@@ -261,7 +261,7 @@ export default function SingleQuestionFlow({ onComplete, initialAnswers }: Props
     else trackDiag('question_answer', ev);
     if (cq.type !== 'single') {
       const v = cq.type === 'contact' ? { instagram: answers.instagram, imie: answers.imie }
-        : answers[cq.id];
+        : ans[cq.id];
       postEvent(cq.id, v);
     }
     let next = currentIndex + 1;
@@ -387,6 +387,24 @@ export default function SingleQuestionFlow({ onComplete, initialAnswers }: Props
 
   const handleTextChange = (text: string) => {
     setAnswers(prev => ({ ...prev, [currentQ.id]: text.slice(0, 500) }));
+  };
+
+  // Gotowa odpowiedz do pola tekstowego ("nie pamietam", "wole w rozmowie"): zapis id i dalej.
+  const handleQuickAnswer = (id: string) => {
+    vibe(10);
+    const fresh = { ...answers, [currentQ.id]: id };
+    setAnswers(fresh);
+    // postEvent idzie w goToNext (typ 'text'), z wartoscia z answersOverride.
+    setTimeout(() => goToNext({ answersOverride: fresh as Record<string, unknown> }), 200);
+  };
+
+  // "Pomin" = brak odpowiedzi. Wczesniej wpisany, niedokonczony tekst zostawal w stanie
+  // i serwer odrzucal caly lead (422) jako niepoprawny tekst. Czyscimy go przed przejsciem dalej.
+  const handleSkip = () => {
+    const fresh = { ...answers } as Record<string, unknown>;
+    delete fresh[currentQ.id];
+    setAnswers(fresh as RawAnswers);
+    goToNext({ skipped: true, answersOverride: fresh });
   };
 
   const sliderMin = Number(currentQ.min ?? 0);
@@ -656,7 +674,7 @@ export default function SingleQuestionFlow({ onComplete, initialAnswers }: Props
               className="dx-field dx-area"
               rows={4}
               placeholder={currentQ.placeholder || 'np. Trenuję regularnie, trzymam miskę w dzień, ale po 21:00 zjadam pół lodówki i w poniedziałki w ogóle nie mam siły...'}
-              value={String(answers[currentQ.id] || '')}
+              value={currentQ.quickAnswers?.some(o => o.id === answers[currentQ.id]) ? '' : String(answers[currentQ.id] || '')}
               onChange={e => handleTextChange(e.target.value)}
             />
             <div className="dx-meta" style={{ textAlign: 'right', marginTop: 'var(--s-2)' }}>
@@ -680,8 +698,28 @@ export default function SingleQuestionFlow({ onComplete, initialAnswers }: Props
               <span>Dalej</span><span>&rarr;</span>
             </button>
             {/* Skip POD polem (secondary/muted) — tylko dla realnie opcjonalnych pytan (np. user_trigger VOC) */}
+            {currentQ.quickAnswers && currentQ.quickAnswers.length > 0 && (
+              <div className="dx-quick" style={{ display: 'flex', flexDirection: 'column', marginTop: 'var(--s-3)' }}>
+                {currentQ.quickAnswers.map((qa, i) => {
+                  const isSelected = answers[currentQ.id] === qa.id;
+                  return (
+                    <button
+                      key={qa.id}
+                      className="mrow"
+                      data-on={isSelected ? '1' : '0'}
+                      aria-pressed={isSelected}
+                      style={{ '--i': i } as React.CSSProperties}
+                      onClick={() => handleQuickAnswer(qa.id)}
+                    >
+                      <span className="mrow-tick" />
+                      <span className="mrow-label">{qa.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
             {currentQ.optional && (
-              <button className="dx-skip" onClick={() => goToNext({ skipped: true })}>
+              <button className="dx-skip" onClick={handleSkip}>
                 Pomiń to pytanie
               </button>
             )}
