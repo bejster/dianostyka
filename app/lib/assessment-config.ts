@@ -8,6 +8,11 @@ export const TAIL_168_VERSION = 'tail-2026-11-16';
 export const TAIL_168_IDS: ReadonlySet<string> = new Set([
   'attempt_status', 'attempt_desc', 'attempt_result', 'attempt_blocker', 'spend_12m', 'if_nothing_changes',
 ]);
+// Pytania, których ekran Mapy celowo NIE pokazuje (zimne wejście). Jedno źródło dla UI i serwera.
+// P0 21.11: serwer wymagał alcohol_intake, więc każda prawdziwa sesja od 21.10 dostawała 422 i nie trafiała do CRM.
+export const UI_SKIPPED_IDS: ReadonlySet<string> = new Set(['alcohol_intake']);
+// Brak tych pól nie blokuje zapisu leada. Błędna obecna wartość nadal jest odrzucana.
+export const LEAD_NOTIFY_TOLERATE_MISSING: ReadonlySet<string> = new Set([...TAIL_168_IDS, ...UI_SKIPPED_IDS]);
 
 export type DomainKey = 'sleep' | 'energy' | 'nutrition' | 'training' | 'weekend' | 'chaos';
 

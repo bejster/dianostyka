@@ -155,7 +155,7 @@ test('brief CRM pokazuje szybką odpowiedź jako etykietę, nie id', () => {
 });
 
 test('lead-notify: flaga liczona z raw_answers i zapisana w istniejących kolumnach CRM', () => {
-  assert.match(route, /invalidDiagnosticFields\(b\.raw_answers, TAIL_168_IDS\)/);
+  assert.match(route, /invalidDiagnosticFields\(b\.raw_answers, LEAD_NOTIFY_TOLERATE_MISSING\)/);
   assert.match(route, /buildReplySignals\(b\.raw_answers\)/);
   assert.match(route, /chunkForNotion\(derivedSignals, 2\)/);
   assert.match(route, /chunkForNotion\(crmBrief, 3\)/);
