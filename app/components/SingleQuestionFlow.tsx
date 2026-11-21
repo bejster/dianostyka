@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { QUESTIONS as CONFIG_QUESTIONS, QuestionDef, QuestionOption } from '../lib/assessment-config';
+import { QUESTIONS as CONFIG_QUESTIONS, QuestionDef, QuestionOption, UI_SKIPPED_IDS } from '../lib/assessment-config';
 import { RawAnswers } from '../lib/scoring-engine';
 import { track, trackDiag } from '../lib/analytics';
 import { Atmosphere } from '../diagnoza/atmosphere';
@@ -19,7 +19,7 @@ const STEP_KEY = 'diagnostyka_v2_session_step_weekend_first';
 // Cold flow zaczyna od konkretu, który każdy potrafi ocenić bez samo-diagnozy.
 // Scoring i ID pytań pozostają bez zmian; zmieniamy wyłącznie kolejność ekspozycji.
 const FIRST_VISIBLE_IDS = ['weekend_pattern', 'monday_recovery', 'primary_goal'];
-const EXCLUDED_COLD_IDS = new Set(['alcohol_intake']);
+const EXCLUDED_COLD_IDS = UI_SKIPPED_IDS; // ta sama lista toleruje serwer (/api/lead-notify)
 function sanitizeFlowAnswers(raw: RawAnswers): RawAnswers {
   const clean = { ...raw } as RawAnswers;
   for (const id of EXCLUDED_COLD_IDS) delete (clean as Record<string, unknown>)[id];

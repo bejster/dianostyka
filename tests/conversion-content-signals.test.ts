@@ -24,7 +24,9 @@ test('cold entry preserves curiosity and does not expose the hot sales branch', 
   assert.match(page, /ENTRY_COPY/);
   assert.doesNotMatch(page, /michal-portrait\.jpg/);
   assert.doesNotMatch(page, /Wiem, że chcę działać/);
-  assert.match(flow, /EXCLUDED_COLD_IDS = new Set\(\['alcohol_intake'\]\)/);
+  // 21.11: lista pomijanych pytań jest wspólna dla ekranu i serwera (UI_SKIPPED_IDS w assessment-config).
+  assert.match(flow, /EXCLUDED_COLD_IDS = UI_SKIPPED_IDS/);
+  assert.match(fs.readFileSync('app/lib/assessment-config.ts', 'utf8'), /UI_SKIPPED_IDS: ReadonlySet<string> = new Set\(\['alcohol_intake'\]\)/);
   assert.doesNotMatch(flow, /\{currentQ\.sectionNum\}\. \{currentQ\.section\}/);
 });
 
