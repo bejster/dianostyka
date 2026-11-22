@@ -17,6 +17,7 @@ import type { AwarenessGap } from '../lib/awareness-gap';
 import { RETURN_KEY, sentenceCase, bridgeLine, MEDICAL_BOUNDARY, type DecisionResult, type ReturnRecord } from '../lib/decision-engine';
 import { buildResultHero } from '../lib/result-hero';
 import ResultConversation from './ResultConversation';
+import { inviteText, buildInviteUrl, presaleHref, resultVideoUrl, PRESALE_COPY } from '../lib/market-layer';
 
 const C = {
   ink: '#08080a', pan: '#141416', pan2: '#1a1a1d', line: '#26262b', line2: '#33333a',
@@ -62,7 +63,7 @@ export default function ResultExperience({
   archLabel, archKey, redCount, breakId, domainLabel, statuses,
   evidenceReceipts, loop, whyRepeats, costFacts, userPain,
   experiment, experimentConfidence, route,
-  imie, instagram, naborHref, submissionId, contentSignals, awareness, decision,
+  imie, instagram, naborHref, submissionId, contentSignals, awareness, decision, selfServe,
 }: {
   archLabel: string; archKey: string; redCount?: number; breakId: string; domainLabel: string;
   statuses: { label: string; score: number; reason: string }[];
@@ -73,6 +74,7 @@ export default function ResultExperience({
   contentSignals?: Record<string, string | boolean>;
   awareness?: AwarenessGap;
   decision?: DecisionResult;
+  selfServe?: boolean;
 }) {
   void domainLabel;
   const progRef = useRef<HTMLDivElement>(null);
@@ -87,6 +89,29 @@ export default function ResultExperience({
   const [calib, setCalib] = useState<string>('');
   const [committed, setCommitted] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [invited, setInvited] = useState(false);
+  const [waitlisted, setWaitlisted] = useState(false);
+  // WARSTWA RYNKU 168: env czytane w buildzie (NEXT_PUBLIC_*). Brak env = brak bloku/wideo, wynik jak dotad.
+  const presaleUrl = selfServe ? presaleHref(process.env.NEXT_PUBLIC_PRESALE_14D_URL, submissionId) : '';
+  const videoUrl = resultVideoUrl(process.env.NEXT_PUBLIC_RESULT_VIDEOS, archKey);
+  const presaleSeen = useRef(false);
+  useEffect(() => {
+    if (presaleUrl && !presaleSeen.current) { presaleSeen.current = true; trackDiag('presale_shown', { arch: archKey, submission_ref: (submissionId || '').slice(0, 24) }); }
+  }, [presaleUrl, archKey, submissionId]);
+  // Zaproszenie: link do STARTU mapy (nie do wlasnego wyniku), z anonimowym ref w utm_content.
+  const inviteFriend = () => {
+    const url = buildInviteUrl(typeof window !== 'undefined' ? window.location.origin : '', submissionId);
+    const text = inviteText(archKey);
+    trackDiag('invite_clicked', { arch: archKey });
+    try {
+      if (typeof navigator !== 'undefined' && navigator.share) {
+        navigator.share({ title: 'Mapa 168', text, url }).catch(() => {});
+      } else if (typeof navigator !== 'undefined' && navigator.clipboard) {
+        navigator.clipboard.writeText(`${text} ${url}`).catch(() => {});
+      }
+    } catch { /* opcjonalne, nigdy nie wywraca wyniku */ }
+    setInvited(true);
+  };
   const [experimentReaction, setExperimentReaction] = useState<string>('');
   const CALIB = [
     { id: 'sen', label: 'Sen' }, { id: 'energia', label: 'Energia i głowa' }, { id: 'jedzenie', label: 'Jedzenie' },
@@ -305,7 +330,8 @@ export default function ResultExperience({
             <div className="rx-hero-signature" aria-hidden="true"><span/><span/><span/></div>
             <h1 className="rx-arch">{opening.headline}</h1>
             <p className="rx-hero-lede">{opening.explanation}</p>
-            <p className="rx-hero-source">Wynik liczy się automatycznie z Twoich odpowiedzi według mojej Mapy 168. <a href="#porozmawiaj">Nie zgadza Ci się? Daj znać, w czym.</a></p>
+            <p className="rx-hero-source">Wynik liczy się automatycznie z Twoich odpowiedzi według mojej Mapy 168. Same odpowiedzi czytam sam. <a href="#porozmawiaj">Nie zgadza Ci się? Daj znać, w czym.</a></p>
+            {videoUrl && <video className="rx-hero-video" src={videoUrl} controls playsInline preload="metadata" />}
             {/* Linia zapasu (reserveLine) zeszla z hero w 3.0: pierwszy kadr niesie odczyt decyzji,
                 a liczba obszarow z zapasem stoi i tak przy mapie ponizej. */}
             {/* FLAGSHIP 3.0 ODCZYT DECYZJI: pierwszy kadr mowi, co chcial poprawic, co obstawil, gdzie jest
@@ -680,6 +706,18 @@ export default function ResultExperience({
             {instagram && <p className="rx-fine">Mam ten wynik przypisany do @{instagram}.</p>}
             <p className="rx-talk-back">Nie zgadza Ci się coś w tej analizie? <a href="#porozmawiaj">Powiedz mi, co.</a></p>
           </div>
+
+          {presaleUrl && (
+            <div className="rx-final-action rx-presale" data-compact="true">
+              <div className="rx-kick">{PRESALE_COPY.kicker}</div>
+              <h3>{PRESALE_COPY.title}</h3>
+              <p>{PRESALE_COPY.body}</p>
+              <a className="rx-next rx-next-medium" href={presaleUrl} target="_blank" rel="noopener noreferrer" onClick={() => trackDiag('presale_click', { arch: archKey, submission_ref: (submissionId || '').slice(0, 24) })}>{PRESALE_COPY.pay} →</a>
+              {instagram && (waitlisted
+                ? <div className="rx-action-confirm">{PRESALE_COPY.waitlistDone}</div>
+                : <button className="rx-route-alt" type="button" onClick={() => { setWaitlisted(true); trackDiag('presale_waitlist', { arch: archKey, submission_ref: (submissionId || '').slice(0, 24) }); }}>{PRESALE_COPY.waitlist}</button>)}
+            </div>
+          )}
         </section>
 
 
@@ -699,6 +737,7 @@ export default function ResultExperience({
             </div>
           </details>
           <button className="rx-save rx-save-compact" type="button" onClick={shareSafe}>{saved ? 'Zapisano ✓' : 'Zapisz / udostępnij wynik'}</button>
+          <button className="rx-save rx-save-compact rx-invite-btn" type="button" onClick={inviteFriend}>{invited ? 'Wysłane ✓' : 'Wyślij komuś, kto ma gorzej'}</button>
         </section>
 
       </div>
@@ -867,6 +906,9 @@ const css = `
 .rx-readout-details>summary{cursor:pointer;list-style:none;color:${C.paper};font:700 14px/1.4 ${C.sans};padding:14px 0 12px;display:flex;flex-direction:column;gap:5px}.rx-readout-details>summary::-webkit-details-marker{display:none}.rx-readout-details>summary span{color:${C.mute};font:400 12px/1.45 ${C.sans}}
 .rx-readout-details[open]>summary{color:${C.goldB}}.rx-readout-details .rx-readout{margin:0 0 12px}.rx-readout-details .rx-ro-note{font-size:13px}
 .rx-hero-source{line-height:1.65}.rx-hero-source a{font-weight:700}
+.rx-hero-video{display:block;width:100%;max-width:360px;margin:16px auto 0;border-radius:14px;background:#000}
+.rx-invite-btn{margin-top:10px}
+.rx-presale{margin-top:28px}
 .rx{scroll-behavior:smooth}.rx #porozmawiaj,.rx #test-72h,.rx #wyjasnienie{scroll-margin-top:28px}
 @media(min-width:1100px){.rx-hero-panel>.rx-top-payoff{grid-column:2;grid-row:1 / span 5;align-self:start;margin:0}.rx-hero-panel>.rx-readout-details{grid-column:1 / -1;grid-row:auto;margin-top:28px}.rx-hero-panel>.rx-quicklinks{grid-column:1}.rx-hero-panel>.rx-ro-note{grid-column:1 / -1}.rx-hero-panel>.rx-hero-plan{grid-column:1}}
 @media(max-width:480px){.rx-top-payoff{padding:18px 16px}.rx-top-payoff>strong{font-size:29px}.rx-quicklinks{gap:6px}.rx-quicklinks a{font-size:11.5px;padding:9px 11px}}

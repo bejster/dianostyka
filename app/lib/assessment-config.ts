@@ -237,6 +237,32 @@ export const QUESTIONS: QuestionDef[] = [
       { id: 'wl_firefight', label: 'Cudze. Cały dzień gaszę pożary, a swoją robotę odrabiam po nocy.', value: 0 },
       { id: 'wl_people', label: 'Ludzie czekają, aż coś powiem. Jak ja stoję, stoi kilka osób.', value: 0 },
       { id: 'wl_owner', label: 'Wszystko. To moja firma, więc każda niezrobiona rzecz i tak wraca do mnie.', value: 0 },
+      // 2026-11-22 WARSTWA RYNKU: praca fizyczna jako osobny segment do researchu. Poza scoringiem (value 0),
+      // w premium-fit i spillover traktowana jak wl_clock (brak odpowiedzialnosci za cudze decyzje).
+      { id: 'wl_physical', label: 'Fizyczne. Po robocie jestem zajechany, zanim pomyślę o treningu.', value: 0 },
+    ],
+  },
+  // 2026-11-22 WARSTWA RYNKU: branza do segmentacji researchu i targetowania reklam. Jedno tapniecie
+  // (nie pole tekstowe, bo tekst to najdrozszy ekran w completion). Waga 0, poza scoringiem, opcjonalne.
+  {
+    id: 'work_what',
+    optional: true,
+    section: 'Rytm tygodnia',
+    sectionNum: 'I',
+    title: 'W czym siedzisz zawodowo?',
+    subtitle: 'Ten sam wynik u właściciela firmy i u kogoś na etacie oznacza coś innego. Możesz pominąć.',
+    type: 'single',
+    domain: 'chaos',
+    upstreamWeight: 0,
+    crossDomainImpact: 0,
+    options: [
+      { id: 'ww_sales', label: 'Sprzedaż, handel, obsługa klientów', value: 0 },
+      { id: 'ww_it', label: 'IT, technologia, internet', value: 0 },
+      { id: 'ww_build', label: 'Budowa, produkcja, transport, logistyka', value: 0 },
+      { id: 'ww_finance', label: 'Finanse, prawo, księgowość, administracja', value: 0 },
+      { id: 'ww_health', label: 'Medycyna, usługi, praca z ludźmi', value: 0 },
+      { id: 'ww_creative', label: 'Marketing, media, branże kreatywne', value: 0 },
+      { id: 'ww_other', label: 'Coś innego', value: 0 },
     ],
   },
   {
@@ -548,7 +574,7 @@ export const QUESTIONS: QuestionDef[] = [
     domain: 'chaos',
     upstreamWeight: 0,
     crossDomainImpact: 0,
-    condition: (a) => a.work_load !== 'wl_clock',
+    condition: (a) => a.work_load !== 'wl_clock' && a.work_load !== 'wl_physical',
     options: [
       { id: 'sp_night', label: 'Zadanie, które rano zajęłoby 20 minut, robię o północy.', value: 0 },
       { id: 'sp_slow', label: 'Na spotkaniu jestem obecny, a głowa mieli wolniej niż rok temu.', value: 0 },

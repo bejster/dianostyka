@@ -7,6 +7,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { trackDiag, registerContext } from '../lib/analytics';
 import { captureAcquisition, withAcquisition, type AcquisitionAttribution } from '../lib/acquisition';
+import { isSelfServe } from '../lib/market-layer';
 import SingleQuestionFlow from '../components/SingleQuestionFlow';
 import { type RawAnswers } from '../lib/scoring-engine';
 import { answersToFD } from '../lib/answers-to-fd';
@@ -512,6 +513,7 @@ export default function DiagnozaPage() {
         instagram={igClean}
         naborHref={naborUrl}
         submissionId={submissionIdStr}
+        selfServe={isSelfServe(answers)}
         contentSignals={contentSignals}
         awareness={awareness}
         decision={decision}

@@ -41,6 +41,8 @@ test('analytics events use only the safe frozen event names', () => {
     'desire_selected', 'prediction_locked', 'contrast_completed', 'failed_solution', 'constraint_selected',
     'prediction_gap_type', 'confidence_state', 'experiment_shown', 'experiment_accepted',
     'help_route', 'data_needed_route', 'self_serve_route',
+    // 2026-11-22 WARSTWA RYNKU 168: tylko archetyp i anonimowy prefiks submission, zero PII i tekstu.
+    'presale_shown', 'presale_click', 'presale_waitlist', 'invite_clicked',
   ]);
   // literal trackDiag('x', ...) calls + the beat->event lookup map (dynamic trackDiag(EVT[b], ...))
   const direct = [...(result + talk).matchAll(/trackDiag\('([a-z_]+)'/g)].map((m) => m[1]);
