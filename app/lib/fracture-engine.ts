@@ -129,6 +129,7 @@ const WORK_ANCHOR: Record<string, string> = {
   wl_firefight: 'gaszenie cudzych pilnych spraw, a swoją pracę po godzinach',
   wl_people: 'odpowiedzialność za decyzje, na które czekają inni',
   wl_owner: 'prowadzenie firmy, w której niedokończone sprawy i tak wracają do Ciebie',
+  wl_physical: 'fizyczna robota, po której jesteś zajechany, zanim w ogóle pomyślisz o treningu',
 };
 const GIVE_UP_MOMENT: Record<string, string> = {
   gup_weekend: 'kiedy zaczyna się weekend',

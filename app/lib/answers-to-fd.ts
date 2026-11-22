@@ -27,6 +27,7 @@ const WORK_LOAD_HOURS: Record<string, number> = {
   wl_people: 9,     // kilka osob czeka, koniec dnia zalezy od nich
   wl_firefight: 10, // swoja robote odrabia po nocy, wprost z tresci odpowiedzi
   wl_owner: 10,     // wlasna firma, kazda niezrobiona rzecz wraca
+  wl_physical: 8,   // praca fizyczna: dzien ma stala dlugosc, obciazenie idzie w miesnie, nie w glowe
 };
 
 function workHoursFromLoad(a: RawAnswers): number {

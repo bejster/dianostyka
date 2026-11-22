@@ -25,7 +25,8 @@ export interface PremiumSignals {
 }
 
 // work_load: kazda odpowiedz poza "o 17 zamykam laptopa" oznacza realna odpowiedzialnosc.
-const NO_RESPONSIBILITY = 'wl_clock';
+// 2026-11-22: wl_physical tez nie oznacza odpowiedzialnosci za cudze decyzje (i nie widzi ekranu spillover).
+const NO_RESPONSIBILITY = new Set(['wl_clock', 'wl_physical']);
 // spillover: sp_none to jawna deklaracja braku stawki poza sylwetka.
 const NO_STAKES = 'sp_none';
 
@@ -35,7 +36,7 @@ export function classifyPremiumFit(raw: Record<string, unknown>): PremiumSignals
   const agencyMode = typeof raw.agency_mode === 'string' ? raw.agency_mode : '';
   const intent = typeof raw.intent === 'string' ? raw.intent : '';
 
-  const responsibility = Boolean(workLoad) && workLoad !== NO_RESPONSIBILITY;
+  const responsibility = Boolean(workLoad) && !NO_RESPONSIBILITY.has(workLoad);
   // stakes tylko wtedy, gdy zaznaczyl cokolwiek POZA sp_none. Brak odpowiedzi to brak dowodu,
   // nie dowod braku: pytanie jest ukryte dla wl_clock, wiec nie karzemy za nieobejrzany ekran.
   const stakes = spill.some((id) => id !== NO_STAKES);
