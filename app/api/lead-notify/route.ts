@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { buildLeadOperatorDecision } from '../../lib/lead-operator-decision';
 import { invalidDiagnosticFields, validInstagram } from '../../lib/lead-integrity';
-import { TAIL_168_IDS } from '../../lib/assessment-config';
+import { LEAD_NOTIFY_TOLERATE_MISSING } from '../../lib/assessment-config';
 import { buildReplySignals, replyPriorityHeader, fitHintLine, REPLY_PRIORITY_LABEL, REPLY_PRIORITY_NOTE } from '../../lib/reply-priority';
 
 const NOTION_CHUNK = 1900;
@@ -42,7 +42,8 @@ export async function POST(req: NextRequest) {
     // Wyłącznie kompletne sesje: pusta albo przywrócona sesja nie trafia ani do CRM, ani na Telegram.
     // Kontakt jest w tej linii opcjonalny, więc brak @ nie bramkuje zapisu; resztę sprawdzamy tak jak UI.
     // Ogon 168 (próba, wydatek, pilność): sesja sprzed wdrożenia go nie ma i nie może przez to zgubić leada.
-    const invalid = invalidDiagnosticFields(b.raw_answers, TAIL_168_IDS).filter((id) => id !== 'instagram');
+    // Pytania pominięte przez ekran (UI_SKIPPED_IDS) też nie mogą blokować zapisu: inaczej każdy prawdziwy lead = 422.
+    const invalid = invalidDiagnosticFields(b.raw_answers, LEAD_NOTIFY_TOLERATE_MISSING).filter((id) => id !== 'instagram');
     if (invalid.length) {
       return NextResponse.json({ ok: false, error: 'incomplete_lead', invalid_fields: invalid }, { status: 422 });
     }
